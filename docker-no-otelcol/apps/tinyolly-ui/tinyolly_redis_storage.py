@@ -753,6 +753,13 @@ class Storage:
             pipe.sadd(resource_key, orjson.dumps(resource))
             pipe.expire(resource_key, self.ttl)
             
+            # 3b. Store attribute combinations (Optimization for get_all_attributes)
+            if attributes:
+                attr_set_key = f"metrics:attributes:{name}"
+                # Store as JSON for consistency
+                pipe.sadd(attr_set_key, orjson.dumps(attributes, option=orjson.OPT_SORT_KEYS))
+                pipe.expire(attr_set_key, self.ttl)
+            
             # 4. Store time series data
             series_key = f"metrics:series:{name}:{resource_hash}:{attr_hash}"
             
@@ -917,6 +924,16 @@ class Storage:
         """Get all attribute combinations for a metric, optionally filtered by resource"""
         try:
             client = await self.get_client()
+            
+            # Optimization: If no resource filter, use the pre-aggregated set
+            if not resource_filter:
+                attr_set_key = f"metrics:attributes:{metric_name}"
+                # Check if key exists (it might not for old data)
+                if await client.exists(attr_set_key):
+                    attr_jsons = await client.smembers(attr_set_key)
+                    return [orjson.loads(a) for a in attr_jsons]
+            
+            # Fallback to slow scan (existing logic) or if resource filter is present
             
             # Get all series keys for this metric
             pattern = f"metrics:series:{metric_name}:*"

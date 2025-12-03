@@ -594,7 +594,7 @@ class Storage:
                         continue
                     
                     # Determine metric type and extract datapoints
-                    metric_type = None
+                    metric_type = 'unknown'
                     metric_datapoints = []
                     temporality = None
                     
@@ -752,6 +752,13 @@ class Storage:
             resource_key = f"metrics:resources:{name}"
             pipe.sadd(resource_key, orjson.dumps(resource))
             pipe.expire(resource_key, self.ttl)
+            
+            # 3b. Store attribute combinations (Optimization for get_all_attributes)
+            if attributes:
+                attr_set_key = f"metrics:attributes:{name}"
+                # Store as JSON for consistency
+                pipe.sadd(attr_set_key, orjson.dumps(attributes, option=orjson.OPT_SORT_KEYS))
+                pipe.expire(attr_set_key, self.ttl)
             
             # 4. Store time series data
             series_key = f"metrics:series:{name}:{resource_hash}:{attr_hash}"
@@ -917,6 +924,16 @@ class Storage:
         """Get all attribute combinations for a metric, optionally filtered by resource"""
         try:
             client = await self.get_client()
+            
+            # Optimization: If no resource filter, use the pre-aggregated set
+            if not resource_filter:
+                attr_set_key = f"metrics:attributes:{metric_name}"
+                # Check if key exists (it might not for old data)
+                if await client.exists(attr_set_key):
+                    attr_jsons = await client.smembers(attr_set_key)
+                    return [orjson.loads(a) for a in attr_jsons]
+            
+            # Fallback to slow scan (existing logic) or if resource filter is present
             
             # Get all series keys for this metric
             pattern = f"metrics:series:{metric_name}:*"
@@ -1259,34 +1276,55 @@ class Storage:
             duration_metric = "traces.span.metrics.duration"
             calls_metric = "traces.span.metrics.calls"
             
+            # Check if metrics exist (optimization)
             if duration_metric not in all_metrics:
                 return red
                 
-            duration_data = await self.get_metric_data(duration_metric, time.time() - 60, time.time())
-            calls_data = await self.get_metric_data(calls_metric, time.time() - 60, time.time()) if calls_metric in all_metrics else []
+            # Use resource filter for service name
+            resource_filter = {'service.name': service_name}
+            end_time = time.time()
+            start_time = end_time - 60
             
-            # Filter for this service
-            service_duration = [
-                p for p in duration_data 
-                if p.get('labels', {}).get('service.name') == service_name
-            ]
+            # Fetch Duration Data
+            duration_series = await self.get_metric_series(
+                duration_metric, 
+                resource_filter=resource_filter,
+                start_time=start_time,
+                end_time=end_time
+            )
             
-            if not service_duration:
+            # Fetch Calls Data
+            calls_series = []
+            if calls_metric in all_metrics:
+                calls_series = await self.get_metric_series(
+                    calls_metric, 
+                    resource_filter=resource_filter,
+                    start_time=start_time,
+                    end_time=end_time
+                )
+            
+            if not duration_series:
                 return red
             
             # Group by 15-second time buckets to aggregate metrics
             BUCKET_SIZE = 15  # seconds
             grouped_by_time = {}
-            for point in service_duration:
-                ts = point['timestamp']
-                bucket_ts = int(ts / BUCKET_SIZE) * BUCKET_SIZE
-                if bucket_ts not in grouped_by_time:
-                    grouped_by_time[bucket_ts] = {'count': 0, 'buckets': [], 'labels': []}
-                
-                hist = point.get('histogram', {})
-                grouped_by_time[bucket_ts]['count'] += hist.get('count', 0)
-                grouped_by_time[bucket_ts]['buckets'].append(hist.get('buckets', []))
-                grouped_by_time[bucket_ts]['labels'].append(point.get('labels', {}))
+            
+            for series in duration_series:
+                for point in series['datapoints']:
+                    ts = point['timestamp']
+                    bucket_ts = int(ts / BUCKET_SIZE) * BUCKET_SIZE
+                    if bucket_ts not in grouped_by_time:
+                        grouped_by_time[bucket_ts] = {'count': 0, 'buckets': []}
+                    
+                    hist = point.get('histogram', {})
+                    if hist:
+                        grouped_by_time[bucket_ts]['count'] += hist.get('count', 0)
+                        # Store bucket counts and bounds for aggregation
+                        grouped_by_time[bucket_ts]['buckets'].append({
+                            'counts': hist.get('bucketCounts', []),
+                            'bounds': hist.get('explicitBounds', [])
+                        })
             
             if len(grouped_by_time) >= 1:
                 sorted_times = sorted(grouped_by_time.keys())
@@ -1309,54 +1347,67 @@ class Storage:
                     red['rate'] = math.ceil(latest['count'] / BUCKET_SIZE)
                 
                 # Calculate error rate from calls metric
-                if calls_data:
-                    service_calls = [
-                        p for p in calls_data 
-                        if p.get('labels', {}).get('service.name') == service_name
-                    ]
-                    
+                if calls_series:
                     total_calls = 0
                     error_calls = 0
                     
-                    for call in service_calls:
-                        status_code = call.get('labels', {}).get('status.code', 'STATUS_CODE_UNSET')
-                        value = call.get('value', 0)
+                    for series in calls_series:
+                        # Check status code in attributes (OTLP standard is http.response.status_code or status.code)
+                        attrs = series.get('attributes', {})
+                        status_code = attrs.get('status.code') or attrs.get('http.response.status_code')
                         
-                        total_calls += value
-                        if status_code == 'STATUS_CODE_ERROR':
-                            error_calls += value
+                        for point in series['datapoints']:
+                            value = point.get('value', 0)
+                            total_calls += value
+                            
+                            # Check for error status
+                            if status_code == 'STATUS_CODE_ERROR' or status_code == 'ERROR' or (isinstance(status_code, int) and status_code >= 400):
+                                error_calls += value
                     
                     if total_calls > 0:
                         red['error_rate'] = round((error_calls / total_calls) * 100, 2)
                 
-                # Calculate percentiles from the latest data point with most samples
-                best_point = max(service_duration, key=lambda p: p.get('histogram', {}).get('count', 0))
-                hist = best_point.get('histogram', {})
-                buckets = hist.get('buckets', [])
-                count_total = hist.get('count', 0)
-                
-                if buckets and count_total > 0:
-                    cumulative = 0
-                    prev_bound = 0
-                    for bucket in buckets:
-                        bucket_count = bucket.get('count', 0)
-                        cumulative += bucket_count
-                        percentile = (cumulative / count_total) * 100
+                # Calculate percentiles from the latest aggregated buckets
+                # We need to sum up bucket counts across all series for the latest timestamp
+                latest_buckets_list = latest['buckets']
+                if latest_buckets_list:
+                    # Assume all histograms have same bounds (safe assumption for same metric)
+                    # Use bounds from first bucket entry
+                    bounds = latest_buckets_list[0]['bounds']
+                    if bounds:
+                        num_buckets = len(bounds) + 1 # +1 for +Inf
+                        aggregated_counts = [0] * num_buckets
+                        total_count = 0
                         
-                        bound = bucket.get('bound')
-                        if bound is None:
-                            continue  # Skip +Inf bucket
+                        for entry in latest_buckets_list:
+                            counts = entry['counts']
+                            # Ensure counts match expected length
+                            if len(counts) == num_buckets:
+                                for i in range(num_buckets):
+                                    aggregated_counts[i] += counts[i]
+                                    total_count += counts[i]
                         
-                        bound_ms = bound
-                        
-                        if red['duration_p50'] is None and percentile >= 50:
-                            red['duration_p50'] = round((prev_bound + bound_ms) / 2, 2)
-                        if red['duration_p95'] is None and percentile >= 95:
-                            red['duration_p95'] = round((prev_bound + bound_ms) / 2, 2)
-                        if red['duration_p99'] is None and percentile >= 99:
-                            red['duration_p99'] = round((prev_bound + bound_ms) / 2, 2)
-                        
-                        prev_bound = bound_ms
+                        if total_count > 0:
+                            cumulative = 0
+                            prev_bound = 0
+                            
+                            for i, count in enumerate(aggregated_counts):
+                                cumulative += count
+                                percentile = (cumulative / total_count) * 100
+                                
+                                # Use bound if available, else it's +Inf
+                                bound_ms = bounds[i] if i < len(bounds) else None
+                                if bound_ms is None:
+                                    continue
+                                
+                                if red['duration_p50'] is None and percentile >= 50:
+                                    red['duration_p50'] = round((prev_bound + bound_ms) / 2, 2)
+                                if red['duration_p95'] is None and percentile >= 95:
+                                    red['duration_p95'] = round((prev_bound + bound_ms) / 2, 2)
+                                if red['duration_p99'] is None and percentile >= 99:
+                                    red['duration_p99'] = round((prev_bound + bound_ms) / 2, 2)
+                                
+                                prev_bound = bound_ms
         
         except Exception as e:
             print(f"Error fetching RED metrics for {service_name}: {e}", flush=True)

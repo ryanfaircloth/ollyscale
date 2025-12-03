@@ -17,10 +17,11 @@ Why send telemetry to a cloud observabilty platform while coding? Why not have o
 
 TinyOlly is a **lightweight OpenTelemetry-native observability platform** built from scratch to visualize and correlate logs, metrics, and traces. No 3rd party observability tools - just Python (FastAPI), Redis, and JavaScript with a **comprehensive REST API**.
 
-- Think of TinyOlly as a development tool to observe and perfect your app's telemetry
-- Send whatever you want to the locally deployed Otel collector and TinyOlly will visualize it
+- TinyOlly is the world's first desktop development tool to observe and perfect your app's telemetry
+- Send telemetry to the locally deployed Otel collector and TinyOlly will visualize it in your browser
+- Swap the included Otel collector for your own or any distro for Otel Collector testing- or relay to a cloud observability platform
 - Includes a **REST API** with OpenAPI docs for programmatic access to all telemetry
-- TinyOlly is *not* designed to compete with production observability platforms - there are no alerts, custom dashboards, or advanced query languages
+- TinyOlly is *not* designed to compete with production observability platforms - it is a desktop tool for dev/test
 
 **Platform Support:**  
 TinyOlly was built and tested Docker Desktop and Minikube Kubernetes on Apple Silicon Mac but may work on other platforms
@@ -72,9 +73,10 @@ cd docker
 ```
 
 This starts:
-- **OTel Collector**: Listening on `localhost:4317` (gRPC) and `localhost:4318` (HTTP)
-- **TinyOlly UI**: `http://localhost:5005`
 - **TinyOlly OTLP Receiver**: Listening on `localhost:4343` (gRPC)
+- **TinyOlly UI**: `http://localhost:5005`
+- **TinyOlly Redis**: `localhost:6579` (Moved port to avoid conflict with default Redis)
+- **OTel Contrib Collector**: Listening on `localhost:4317` (gRPC) and `localhost:4318` (HTTP) (You can swap this for any distro of Otel Collector)
 - Rebuilds images if code changes are detected.
 
 **Open the UI:** `http://localhost:5005` (empty until you send data)
@@ -163,6 +165,42 @@ After deploying TinyOlly core (step 1 above), instrument your application to sen
 - **HTTP**: `http://otel-collector:4318`
 
  The Otel Collector will forward everything to TinyOlly's OTLP receiver, which process telemetry and stores it in Redis in OTEL format for the backend and UI to access.
+
+ ### 5. Use TinyOlly with Any OpenTelemetry Collector or Collector Config
+
+Swap out the included Otel Collector for any distro of Otel Collector.
+
+**Point your OpenTelemetry exporters to tinyolly-otlp-receiver:4343:**
+i.e.  
+```
+exporters:
+  debug:
+    verbosity: detailed
+  
+  otlp:
+    endpoint: "tinyolly-otlp-receiver:4343"
+    tls:
+      insecure: true
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug, otlp, spanmetrics]
+    
+    metrics:
+      receivers: [otlp,spanmetrics]
+      processors: [batch]
+      exporters: [debug, otlp]
+    
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug, otlp]
+```
+
+The Otel Collector will forward everything to TinyOlly's OTLP receiver, which process telemetry and stores it in Redis in OTEL format for the backend and UI to access.
 
 ## Kubernetes Deployment
 
