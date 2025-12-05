@@ -230,6 +230,13 @@ class StatsResponse(BaseModel):
     metric_count: int = Field(..., description="Total number of unique metrics")
     service_count: Optional[int] = Field(None, description="Number of services")
 
+class AdminStatsResponse(BaseModel):
+    """Detailed admin statistics including Redis and performance metrics"""
+    telemetry: Dict[str, int] = Field(..., description="Telemetry data counts (traces, spans, logs, metrics)")
+    redis: Dict[str, Any] = Field(..., description="Redis memory and connection info")
+    cardinality: Dict[str, int] = Field(..., description="Metric cardinality stats")
+    uptime: Optional[str] = Field(None, description="TinyOlly uptime")
+
 app = FastAPI(
     title="TinyOlly",
     version="2.0.0",
@@ -1030,6 +1037,37 @@ async def index(request: Request):
     })
 
 @app.get(
+    '/admin/stats',
+    tags=["System"],
+    response_model=AdminStatsResponse,
+    operation_id="admin_stats",
+    summary="Get detailed system statistics",
+    description="""
+    Get comprehensive TinyOlly performance and health metrics:
+
+    - **Telemetry counts**: Traces, spans, logs, metrics
+    - **Redis memory usage**: Current, peak, RSS
+    - **Metric cardinality**: Current vs max, dropped count
+    - **Connection stats**: Total connections, commands processed
+
+    Useful for monitoring TinyOlly's resource usage and performance.
+    """
+)
+async def admin_stats():
+    """Get detailed admin statistics including Redis memory and performance metrics"""
+    stats = await storage.get_admin_stats()
+
+    # Add uptime calculation
+    import psutil
+    import datetime
+    process = psutil.Process()
+    uptime_seconds = time.time() - process.create_time()
+    uptime_str = str(datetime.timedelta(seconds=int(uptime_seconds)))
+    stats['uptime'] = uptime_str
+
+    return stats
+
+@app.get(
     '/health',
     tags=["System"],
     response_model=HealthResponse,
@@ -1049,10 +1087,10 @@ async def index(request: Request):
 async def health():
     """
     Health check endpoint for monitoring and load balancers.
-    
+
     Returns HTTP 200 when healthy, HTTP 503 when unhealthy.
     Checks Redis connectivity to ensure the backend can store and retrieve data.
-    
+
     Use this endpoint for:
     - Kubernetes liveness/readiness probes
     - Load balancer health checks

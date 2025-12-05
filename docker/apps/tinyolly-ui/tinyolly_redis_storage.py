@@ -1430,3 +1430,46 @@ class Storage:
             'metrics_max': cardinality['max'],
             'metrics_dropped': cardinality['dropped_count']
         }
+
+    async def get_admin_stats(self):
+        """Get detailed admin stats including Redis memory usage"""
+        client = await self.get_client()
+        cardinality = await self.get_cardinality_stats()
+
+        # Get Redis INFO
+        redis_info = await client.info('memory')
+        redis_stats = await client.info('stats')
+
+        # Get telemetry counts
+        telemetry = {
+            'traces': await client.zcard('trace_index'),
+            'spans': await client.zcard('span_index'),
+            'logs': await client.zcard('log_index'),
+            'metrics': cardinality['current']
+        }
+
+        # Parse Redis memory usage
+        redis = {
+            'used_memory': redis_info.get('used_memory', 0),
+            'used_memory_human': redis_info.get('used_memory_human', '0B'),
+            'used_memory_rss': redis_info.get('used_memory_rss', 0),
+            'used_memory_peak': redis_info.get('used_memory_peak', 0),
+            'used_memory_peak_human': redis_info.get('used_memory_peak_human', '0B'),
+            'total_connections': redis_stats.get('total_connections_received', 0),
+            'total_commands': redis_stats.get('total_commands_processed', 0),
+            'connected_clients': redis_stats.get('connected_clients', 0),
+        }
+
+        # Cardinality info
+        cardinality_info = {
+            'current': cardinality['current'],
+            'max': cardinality['max'],
+            'dropped': cardinality['dropped_count'],
+            'percent_used': round((cardinality['current'] / cardinality['max']) * 100, 2) if cardinality['max'] > 0 else 0
+        }
+
+        return {
+            'telemetry': telemetry,
+            'redis': redis,
+            'cardinality': cardinality_info
+        }
