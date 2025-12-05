@@ -143,7 +143,15 @@ export function formatRoute(span) {
 
 /** Renders JSON data in styled detail view with title and action buttons */
 export function renderJsonDetailView(data, title, buttonsHtml) {
-    return `
+    // For large objects, use lazy rendering to avoid UI freeze
+    const dataSize = JSON.stringify(data).length;
+    const isLarge = dataSize > 50000; // 50KB threshold
+
+    const jsonContent = isLarge
+        ? '<div style="text-align: center; padding: 20px; color: var(--text-muted);">Rendering large JSON...</div>'
+        : `<pre style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-main); margin: 0; white-space: pre-wrap; word-wrap: break-word; line-height: 1.5;">${JSON.stringify(data, null, 2)}</pre>`;
+
+    const html = `
         <div class="json-detail-view" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; margin: 12px 0;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color);">
                 <div style="font-size: 14px; font-weight: 600; color: var(--text-main);">
@@ -153,11 +161,23 @@ export function renderJsonDetailView(data, title, buttonsHtml) {
                     ${buttonsHtml}
                 </div>
             </div>
-            <div style="background: var(--bg-hover); border: 1px solid var(--border-color); border-radius: 6px; padding: 12px; overflow: auto; max-height: 500px;">
-                <pre style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-main); margin: 0; white-space: pre-wrap; word-wrap: break-word; line-height: 1.5;">${JSON.stringify(data, null, 2)}</pre>
+            <div class="json-content-container" style="background: var(--bg-hover); border: 1px solid var(--border-color); border-radius: 6px; padding: 12px; overflow: auto; max-height: 500px;">
+                ${jsonContent}
             </div>
         </div>
     `;
+
+    // If large, render async after DOM update
+    if (isLarge) {
+        setTimeout(() => {
+            const container = document.querySelector('.json-content-container');
+            if (container && container.textContent.includes('Rendering large JSON')) {
+                container.innerHTML = `<pre style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-main); margin: 0; white-space: pre-wrap; word-wrap: break-word; line-height: 1.5;">${JSON.stringify(data, null, 2)}</pre>`;
+            }
+        }, 10);
+    }
+
+    return html;
 }
 
 
@@ -182,9 +202,17 @@ export function renderActionButton(id, label, style = 'secondary') {
     return `<button id="${id}" style="${buttonStyle}">${label}</button>`;
 }
 
-/** Renders empty state with icon and message */
-export function renderEmptyState(icon, message) {
-    return `<div class="empty"><div class="empty-icon">${icon}</div><div>${message}</div></div>`;
+/** Renders empty state with TinyOlly logo and message */
+export function renderEmptyState(message) {
+    // Use dimmed TinyOlly logo for empty states for consistency
+    return `
+        <div class="empty">
+            <div class="empty-icon">
+                <img src="/static/logo.svg" alt="" style="height: 48px; width: 48px; opacity: 0.3;">
+            </div>
+            <div>${message}</div>
+        </div>
+    `;
 }
 
 /** Renders error state with warning icon and message */
@@ -192,9 +220,14 @@ export function renderErrorState(message) {
     return `<div class="empty"><div class="empty-icon">⚠️</div><div>${message}</div></div>`;
 }
 
-/** Renders loading spinner with optional message */
+/** Renders loading spinner with TinyOlly logo and optional message */
 export function renderLoadingState(message = 'Loading...') {
-    return `<div class="loading">${message}</div>`;
+    return `
+        <div class="loading">
+            <img src="/static/logo.svg" alt="Loading..." style="height: 48px; width: 48px; animation: spin 1.5s linear infinite;">
+            <div style="margin-top: 12px;">${message}</div>
+        </div>
+    `;
 }
 
 /** Renders table header row with column definitions for consistent styling */

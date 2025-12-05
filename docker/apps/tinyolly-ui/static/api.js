@@ -46,6 +46,7 @@ export async function loadSpans(serviceName = null) {
         renderSpans(spans);
     } catch (error) {
         console.error('Error loading spans:', error);
+        document.getElementById('spans-container').innerHTML = renderErrorState('Error loading spans');
     }
 }
 

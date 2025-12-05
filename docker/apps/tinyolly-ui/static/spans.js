@@ -15,7 +15,7 @@ export function renderSpans(spans) {
     if (!container) return;
 
     if (spans.length === 0) {
-        container.innerHTML = renderEmptyState('🔍', 'No spans found');
+        container.innerHTML = renderEmptyState('No spans found');
         return;
     }
 

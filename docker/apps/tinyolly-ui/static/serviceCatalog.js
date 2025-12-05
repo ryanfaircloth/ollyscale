@@ -12,7 +12,7 @@ export function renderServiceCatalog(services) {
     if (!container) return;
 
     if (!services || services.length === 0) {
-        container.innerHTML = renderEmptyState('📋', 'No services found. Generate some traces to populate the catalog.');
+        container.innerHTML = renderEmptyState('No services found. Generate some traces to populate the catalog.');
         return;
     }
 

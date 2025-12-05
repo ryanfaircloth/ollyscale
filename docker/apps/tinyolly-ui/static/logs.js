@@ -31,7 +31,7 @@ export function renderLogs(logs, containerId = 'logs-container') {
     }
 
     if (logs.length === 0) {
-        container.innerHTML = renderEmptyState('📝', 'No logs found');
+        container.innerHTML = renderEmptyState('No logs found');
         return;
     }
 

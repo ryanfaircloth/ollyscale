@@ -23,7 +23,7 @@ export async function renderMetrics(metricsData) {
     const container = document.getElementById('metrics-container');
 
     if (!metricsData || metricsData.length === 0) {
-        container.innerHTML = renderEmptyState('📊', 'No metrics collected yet');
+        container.innerHTML = renderEmptyState('No metrics collected yet');
         return;
     }
 

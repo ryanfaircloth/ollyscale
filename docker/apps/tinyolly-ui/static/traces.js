@@ -11,7 +11,7 @@ export function renderTraces(traces) {
     const container = document.getElementById('traces-container');
 
     if (traces.length === 0) {
-        container.innerHTML = renderEmptyState('-', 'No traces yet. Send some data to get started!');
+        container.innerHTML = renderEmptyState('No traces yet. Send some data to get started!');
         return;
     }
 
@@ -172,11 +172,16 @@ export function showLogsForTrace() {
 }
 
 async function renderWaterfall(trace) {
-    const spans = trace.spans;
+    const allSpans = trace.spans;
     currentTraceData = trace;
     selectedSpanIndex = null;
 
-    // Find trace bounds
+    // For large traces, initially show only first 100 spans to avoid UI freeze
+    const MAX_INITIAL_SPANS = 100;
+    const isLargeTrace = allSpans.length > MAX_INITIAL_SPANS;
+    const spans = isLargeTrace ? allSpans.slice(0, MAX_INITIAL_SPANS) : allSpans;
+
+    // Find trace bounds (use all spans for accurate timeline)
     const startTimes = spans.map(s => s.startTimeUnixNano || s.start_time || 0);
     const endTimes = spans.map(s => s.endTimeUnixNano || s.end_time || 0);
     const traceStart = Math.min(...startTimes);
@@ -213,6 +218,13 @@ async function renderWaterfall(trace) {
         return `<div class="${className}" style="${positionStyle}">${timeMs.toFixed(2)}ms</div>`;
     }).join('');
 
+    // Warning for large traces
+    const largeTraceWarning = isLargeTrace ? `
+        <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 6px; padding: 12px; margin: 12px 0; color: #92400e;">
+            ⚠️ Large trace detected (${allSpans.length} spans). Showing first ${MAX_INITIAL_SPANS} spans for performance. Use "Trace JSON" to view complete data.
+        </div>
+    ` : '';
+
     // Render action buttons in a white box at the top
     const actionButtonsHtml = `
         <div class="json-detail-view" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; margin: 12px 0;">
@@ -231,6 +243,7 @@ async function renderWaterfall(trace) {
                 </div>
             </div>
         </div>
+        ${largeTraceWarning}
     `;
 
     // Build logs section
