@@ -1,9 +1,0 @@
-fastapi
-uvicorn[standard]
-redis[asyncio]
-jinja2
-orjson
-msgpack
-zstandard
-uvloop
-async-lru

@@ -7,19 +7,14 @@ import { showTracesList, isSpanDetailOpen } from './render.js';
 let currentTab = 'traces';
 let autoRefreshInterval = null;
 let autoRefreshEnabled = true;
-let tabPauseStates = {
-    logs: false,
-    metrics: false,
-    traces: false
-};
 try {
     autoRefreshEnabled = localStorage.getItem('tinyolly-auto-refresh') !== 'false';
-    const savedPauseStates = localStorage.getItem('tinyolly-tab-pause-states');
-    if (savedPauseStates) {
-        tabPauseStates = JSON.parse(savedPauseStates);
-    }
 } catch (e) {
     console.warn('LocalStorage access failed:', e);
+}
+
+export function getCurrentTab() {
+    return currentTab;
 }
 
 export function initTabs() {
@@ -29,7 +24,6 @@ export function initTabs() {
     } catch (e) { console.warn('LocalStorage access failed:', e); }
     switchTab(savedTab, null, true); // true = initial load, don't push to history
     updateAutoRefreshButton();
-    updateTabPauseButtons();
 
     // Handle browser back/forward buttons
     window.addEventListener('popstate', (event) => {
@@ -96,11 +90,8 @@ export function startAutoRefresh() {
             return;
         }
 
-        // Don't refresh metrics if a chart is open or tab is paused
+        // Don't refresh metrics if a chart is open
         if (currentTab === 'metrics') {
-            if (tabPauseStates.metrics) {
-                return;
-            }
             import('./metrics.js').then(module => {
                 if (module.isMetricChartOpen && module.isMetricChartOpen()) {
                     return;
@@ -109,18 +100,13 @@ export function startAutoRefresh() {
                 }
             });
         } else if (currentTab === 'traces' && !document.getElementById('trace-detail-view').style.display.includes('block')) {
-            if (!tabPauseStates.traces) {
-                loadTraces();
-            }
+            loadTraces();
         } else if (currentTab === 'spans') {
             import('./spans.js').then(spansModule => {
                 const serviceFilter = spansModule.getServiceFilter ? spansModule.getServiceFilter() : null;
                 loadSpans(serviceFilter);
             });
         } else if (currentTab === 'logs') {
-            if (tabPauseStates.logs) {
-                return;
-            }
             import('./render.js').then(module => {
                 if (module.isLogJsonOpen && module.isLogJsonOpen()) {
                     return;
@@ -178,52 +164,3 @@ function updateAutoRefreshButton() {
     }
 }
 
-function updateTabPauseButtons() {
-    updateTabPauseButton('logs');
-    updateTabPauseButton('metrics');
-    updateTabPauseButton('traces');
-}
-
-function updateTabPauseButton(tabName) {
-    const btn = document.getElementById(`${tabName}-pause-btn`);
-    const icon = document.getElementById(`${tabName}-pause-icon`);
-
-    if (!btn || !icon) return;
-
-    const isPaused = tabPauseStates[tabName];
-    if (isPaused) {
-        icon.textContent = '▶';
-        btn.title = 'Resume auto-refresh for this tab';
-        btn.style.background = '#6b7280';
-    } else {
-        icon.textContent = '⏸';
-        btn.title = 'Pause auto-refresh for this tab';
-        btn.style.background = 'var(--primary)';
-    }
-}
-
-function saveTabPauseStates() {
-    try {
-        localStorage.setItem('tinyolly-tab-pause-states', JSON.stringify(tabPauseStates));
-    } catch (e) {
-        console.warn('LocalStorage access failed:', e);
-    }
-}
-
-window.toggleLogsPause = function() {
-    tabPauseStates.logs = !tabPauseStates.logs;
-    saveTabPauseStates();
-    updateTabPauseButton('logs');
-};
-
-window.toggleMetricsPause = function() {
-    tabPauseStates.metrics = !tabPauseStates.metrics;
-    saveTabPauseStates();
-    updateTabPauseButton('metrics');
-};
-
-window.toggleTracesPause = function() {
-    tabPauseStates.traces = !tabPauseStates.traces;
-    saveTabPauseStates();
-    updateTabPauseButton('traces');
-};

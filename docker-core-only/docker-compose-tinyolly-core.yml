@@ -10,8 +10,8 @@ services:
 
   tinyolly-otlp-receiver:
     build:
-      context: ./apps/tinyolly-otlp-receiver
-      dockerfile: ../../../docker/dockerfiles/Dockerfile.tinyolly-otlp-receiver
+      context: ../docker/apps/tinyolly-otlp-receiver
+      dockerfile: ../../dockerfiles/Dockerfile.tinyolly-otlp-receiver
     container_name: tinyolly-otlp-receiver
     depends_on:
       - tinyolly-redis
@@ -30,17 +30,25 @@ services:
 
   tinyolly-ui:
     build:
-      context: ./apps/tinyolly-ui
-      dockerfile: ../../../docker/dockerfiles/Dockerfile.tinyolly-ui
+      context: ../docker/apps/tinyolly-ui
+      dockerfile: ../../dockerfiles/Dockerfile.tinyolly-ui
     container_name: tinyolly-ui
     ports:
       - "5005:5002"  # Exposed on 5005 to avoid conflict if running alongside full demo
     depends_on:
       - tinyolly-redis
+      - tinyolly-otlp-receiver
     environment:
       - REDIS_HOST=tinyolly-redis
       - REDIS_PORT=6579
       - DEPLOYMENT_ENV=docker-core
+      - OTEL_SERVICE_NAME=tinyolly-ui
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tinyolly-otlp-receiver:4343
+      - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://tinyolly-otlp-receiver:4343
+      - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://tinyolly-otlp-receiver:4343
+      - OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=http://tinyolly-otlp-receiver:4343
+      - OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED=true
     networks:
       - tinyolly-network
 

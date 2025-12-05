@@ -27,6 +27,20 @@ spec:
           value: "6579"
         - name: DEPLOYMENT_ENV
           value: "kubernetes-core"
+        - name: OTEL_SERVICE_NAME
+          value: "tinyolly-ui"
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "http://tinyolly-otlp-receiver:4343"
+        - name: OTEL_EXPORTER_OTLP_PROTOCOL
+          value: "grpc"
+        - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+          value: "http://tinyolly-otlp-receiver:4343"
+        - name: OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
+          value: "http://tinyolly-otlp-receiver:4343"
+        - name: OTEL_EXPORTER_OTLP_LOGS_ENDPOINT
+          value: "http://tinyolly-otlp-receiver:4343"
+        - name: OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED
+          value: "true"
 ---
 apiVersion: v1
 kind: Service

@@ -16,20 +16,74 @@ import json
 import os
 import time
 import logging
+import sys
 from typing import Optional, Dict, Any, List, Literal, Set
 from tinyolly_redis_storage import Storage
 import uvloop
 import asyncio
 
-# Configure logging
+# Configure logging with stdout handler
 logging.basicConfig(
     level=os.getenv("LOG_LEVEL", "INFO"),
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.StreamHandler(sys.stdout)  # Ensure logs go to stdout
+    ]
 )
 logger = logging.getLogger(__name__)
 
 # Install uvloop policy for faster event loop
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+
+# Configure OpenTelemetry metrics
+from opentelemetry import metrics
+from opentelemetry.sdk.metrics import MeterProvider
+from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
+from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
+
+# Set up OTLP metric exporter
+metric_exporter = OTLPMetricExporter(
+    endpoint=os.getenv("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT", "http://localhost:5001/v1/metrics")
+)
+
+# Configure metric reader with 60s export interval
+metric_reader = PeriodicExportingMetricReader(metric_exporter, export_interval_millis=60000)
+meter_provider = MeterProvider(metric_readers=[metric_reader])
+metrics.set_meter_provider(meter_provider)
+
+# Create meter for tinyolly-ui
+meter = metrics.get_meter("tinyolly-ui")
+
+# Create metrics
+request_counter = meter.create_counter(
+    name="http.server.requests",
+    description="Total HTTP requests",
+    unit="1"
+)
+
+error_counter = meter.create_counter(
+    name="http.server.errors",
+    description="Total HTTP errors",
+    unit="1"
+)
+
+response_time_histogram = meter.create_histogram(
+    name="http.server.duration",
+    description="HTTP request duration",
+    unit="ms"
+)
+
+ingestion_counter = meter.create_counter(
+    name="tinyolly.ingestion.count",
+    description="Total telemetry ingestion operations",
+    unit="1"
+)
+
+storage_operations_counter = meter.create_counter(
+    name="tinyolly.storage.operations",
+    description="Storage operations by type",
+    unit="1"
+)
 
 # ============================================
 # Pydantic Models for OpenAPI Schema
@@ -260,20 +314,20 @@ app = FastAPI(
     description="""
 # TinyOlly - Lightweight OpenTelemetry Observability Platform
 
-TinyOlly is a lightweight OpenTelemetry-native observability backend built from scratch 
+TinyOlly is a lightweight OpenTelemetry-native observability backend built from scratch
 to visualize and correlate logs, metrics, and traces. Perfect for local development.
 
 ## Features
 
 * 📊 **Traces** - Distributed tracing with span visualization
-* 📝 **Logs** - Structured logging with trace correlation  
+* 📝 **Logs** - Structured logging with trace correlation
 * 📈 **Metrics** - Time-series metrics with full OTLP support
 * 🗺️ **Service Map** - Auto-generated service dependency graphs
 * 🔍 **Service Catalog** - RED metrics (Rate, Errors, Duration)
 
 ## OpenTelemetry Native
 
-All data is stored and returned in standard OpenTelemetry format, ensuring 
+All data is stored and returned in standard OpenTelemetry format, ensuring
 compatibility with OTLP exporters and OpenTelemetry SDKs.
     """,
     default_response_class=ORJSONResponse,
@@ -319,6 +373,47 @@ compatibility with OTLP exporters and OpenTelemetry SDKs.
         }
     ]
 )
+
+# Add custom metrics middleware
+@app.middleware("http")
+async def metrics_middleware(request: Request, call_next):
+    """Track request metrics for all HTTP endpoints"""
+    start_time = time.time()
+
+    # Track request
+    request_counter.add(1, {
+        "method": request.method,
+        "endpoint": request.url.path
+    })
+
+    try:
+        response = await call_next(request)
+
+        # Track response time
+        duration_ms = (time.time() - start_time) * 1000
+        response_time_histogram.record(duration_ms, {
+            "method": request.method,
+            "endpoint": request.url.path,
+            "status": response.status_code
+        })
+
+        # Track errors
+        if response.status_code >= 400:
+            error_counter.add(1, {
+                "method": request.method,
+                "endpoint": request.url.path,
+                "status": response.status_code
+            })
+
+        return response
+    except Exception as e:
+        # Track exceptions
+        error_counter.add(1, {
+            "method": request.method,
+            "endpoint": request.url.path,
+            "error_type": type(e).__name__
+        })
+        raise
 
 # Add CORS middleware
 # Default to localhost only for security, can be customized via environment variable
@@ -629,6 +724,10 @@ async def ingest_traces(request: Request):
     if spans_to_store:
         await storage.store_spans(spans_to_store)
 
+        # Track ingestion metrics
+        ingestion_counter.add(len(spans_to_store), {"type": "spans"})
+        storage_operations_counter.add(1, {"operation": "store_spans", "count": len(spans_to_store)})
+
         # Check for span errors and trigger alerts
         for span in spans_to_store:
             await alert_manager.check_span_error(span)
@@ -685,10 +784,14 @@ async def ingest_logs(request: Request):
     
     # Filter valid logs
     valid_logs = [log for log in logs if isinstance(log, dict)]
-    
+
     if valid_logs:
         await storage.store_logs(valid_logs)
-    
+
+        # Track ingestion metrics
+        ingestion_counter.add(len(valid_logs), {"type": "logs"})
+        storage_operations_counter.add(1, {"operation": "store_logs", "count": len(valid_logs)})
+
     return {'status': 'ok'}
 
 @app.post(
@@ -744,16 +847,30 @@ async def ingest_metrics(request: Request):
     if isinstance(data, dict) and 'resourceMetrics' in data:
         # OTLP format - store directly
         await storage.store_metrics(data)
+
+        # Count metrics in OTLP format
+        metric_count = 0
+        for resource_metric in data.get('resourceMetrics', []):
+            for scope_metric in resource_metric.get('scopeMetrics', []):
+                metric_count += len(scope_metric.get('metrics', []))
+
+        # Track ingestion metrics
+        ingestion_counter.add(metric_count, {"type": "metrics"})
+        storage_operations_counter.add(1, {"operation": "store_metrics", "count": metric_count})
     else:
         # Legacy format - handle array or single metric
-        metrics = data if isinstance(data, list) else [data]
-        
+        metrics_data = data if isinstance(data, list) else [data]
+
         # Filter valid metrics
-        valid_metrics = [m for m in metrics if isinstance(m, dict) and 'name' in m]
-        
+        valid_metrics = [m for m in metrics_data if isinstance(m, dict) and 'name' in m]
+
         if valid_metrics:
             await storage.store_metrics(valid_metrics)
-    
+
+            # Track ingestion metrics
+            ingestion_counter.add(len(valid_metrics), {"type": "metrics"})
+            storage_operations_counter.add(1, {"operation": "store_metrics", "count": len(valid_metrics)})
+
     return {'status': 'ok'}
 
 # ============================================

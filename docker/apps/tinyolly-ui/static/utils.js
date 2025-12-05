@@ -165,9 +165,9 @@ export function renderJsonDetailView(data, title, buttonsHtml) {
 export function getSeverityColor(severity) {
     if (!severity) return 'var(--text-muted)';
     const s = String(severity).toUpperCase();
-    if (s === 'ERROR' || s === 'CRITICAL' || s === 'FATAL') return 'var(--error)';
+    if (s === 'ERROR' || s === 'CRITICAL' || s === 'FATAL') return 'var(--error-text)';
     if (s === 'WARN' || s === 'WARNING') return '#f59e0b'; // Orange
-    if (s === 'INFO') return 'var(--success)'; // Green/Blue depending on theme, using success for now
+    if (s === 'INFO') return 'var(--success-text)';
     if (s === 'DEBUG' || s === 'TRACE') return '#8b5cf6'; // Purple
     return 'var(--text-muted)';
 }

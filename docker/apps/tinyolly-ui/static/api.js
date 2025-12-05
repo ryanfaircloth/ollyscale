@@ -4,6 +4,7 @@
 import { renderSpans, renderTraces, renderLogs, renderMetrics, renderServiceMap, renderStats } from './render.js';
 import { renderServiceCatalog } from './serviceCatalog.js';
 import { renderErrorState } from './utils.js';
+import { filterTinyOllyData, filterTinyOllyTrace, filterTinyOllyMetric, filterTinyOllyMetricSeries } from './filter.js';
 
 export async function loadStats() {
     try {
@@ -18,7 +19,11 @@ export async function loadStats() {
 export async function loadTraces() {
     try {
         const response = await fetch('/api/traces?limit=50');
-        const traces = await response.json();
+        let traces = await response.json();
+
+        // Filter out TinyOlly traces if hide toggle is active
+        traces = traces.filter(filterTinyOllyTrace);
+
         renderTraces(traces);
     } catch (error) {
         console.error('Error loading traces:', error);
@@ -33,7 +38,11 @@ export async function loadSpans(serviceName = null) {
             url += `&service=${encodeURIComponent(serviceName)}`;
         }
         const response = await fetch(url);
-        const spans = await response.json();
+        let spans = await response.json();
+
+        // Filter out TinyOlly spans if hide toggle is active
+        spans = spans.filter(filterTinyOllyData);
+
         renderSpans(spans);
     } catch (error) {
         console.error('Error loading spans:', error);
@@ -53,7 +62,11 @@ export async function loadLogs(filterTraceId = null) {
         }
 
         const response = await fetch(url);
-        const logs = await response.json();
+        let logs = await response.json();
+
+        // Filter out TinyOlly logs if hide toggle is active
+        logs = logs.filter(filterTinyOllyData);
+
         renderLogs(logs, 'logs-container');
     } catch (error) {
         console.error('Error loading logs:', error);
@@ -64,7 +77,11 @@ export async function loadLogs(filterTraceId = null) {
 export async function loadMetrics() {
     try {
         const response = await fetch('/api/metrics');
-        const metrics = await response.json();
+        let metrics = await response.json();
+
+        // Filter out TinyOlly metrics if hide toggle is active
+        metrics = metrics.filter(filterTinyOllyMetric);
+
         renderMetrics(metrics);
     } catch (error) {
         console.error('Error loading metrics:', error);
@@ -74,7 +91,18 @@ export async function loadMetrics() {
 export async function loadServiceMap() {
     try {
         const response = await fetch('/api/service-map?limit=500');
-        const graph = await response.json();
+        let graph = await response.json();
+
+        // Filter out TinyOlly nodes and edges
+        if (graph.nodes) {
+            graph.nodes = graph.nodes.filter(filterTinyOllyData);
+        }
+        if (graph.edges) {
+            graph.edges = graph.edges.filter(edge => {
+                return edge.source !== 'tinyolly-ui' && edge.target !== 'tinyolly-ui';
+            });
+        }
+
         renderServiceMap(graph);
     } catch (error) {
         console.error('Error loading service map:', error);
@@ -89,7 +117,11 @@ export async function fetchTraceDetail(traceId) {
 export async function loadServiceCatalog() {
     try {
         const response = await fetch('/api/service-catalog');
-        const services = await response.json();
+        let services = await response.json();
+
+        // Filter out TinyOlly service if hide toggle is active
+        services = services.filter(filterTinyOllyData);
+
         renderServiceCatalog(services);
     } catch (error) {
         console.error('Error loading service catalog:', error);

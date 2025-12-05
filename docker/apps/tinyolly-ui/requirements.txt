@@ -7,3 +7,10 @@ msgpack
 zstandard
 uvloop
 async-lru
+psutil
+aiohttp
+opentelemetry-distro
+opentelemetry-exporter-otlp
+opentelemetry-instrumentation-fastapi
+opentelemetry-instrumentation-redis
+opentelemetry-instrumentation-logging
