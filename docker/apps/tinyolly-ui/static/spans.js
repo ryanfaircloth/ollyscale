@@ -89,11 +89,6 @@ export function renderSpans(spans) {
             setTimeout(() => showSpanDetail(currentSpanDetail, spans), 10);
         }
     }
-
-    // Add search functionality (reuse searchInput from above)
-    if (searchInput) {
-        searchInput.addEventListener('input', filterSpans);
-    }
 }
 
 export function filterSpans() {
