@@ -2,6 +2,10 @@
     <!-- Controls Section -->
     <div class="logs-controls" style="margin-bottom: 15px; display: flex; gap: 10px; align-items: center;">
         <input type="text" id="metric-search" placeholder="Search metrics..." style="flex: 1;">
+        <button id="metrics-pause-btn" onclick="window.toggleMetricsPause()" title="Pause auto-refresh for this tab"
+            style="padding: 8px 16px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; white-space: nowrap;">
+            <span id="metrics-pause-icon">⏸</span> Pause
+        </button>
         <button id="metric-filter-toggle" onclick="window.toggleREDMetricsFilter()"
             style="padding: 8px 16px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; white-space: nowrap;">
             Show RED Metrics Only
