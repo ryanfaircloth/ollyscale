@@ -78,17 +78,42 @@ You should see:
 ### Traces Tab
 View distributed traces across microservices with timing waterfall.
 
+<div align="center">
+  <img src="../images/spans.png" alt="Span Waterfall" width="600">
+  <p><em>Span waterfall showing request timing breakdown</em></p>
+</div>
+
 ### Logs Tab
 Browse logs with trace/span correlation.
+
+<div align="center">
+  <img src="../images/logs.png" alt="Logs View" width="600">
+  <p><em>Real-time logs with trace and span correlation</em></p>
+</div>
 
 ### Metrics Tab
 Visualize metrics with automatic charting.
 
+<div align="center">
+  <img src="../images/metrics.png" alt="Metrics View" width="600">
+  <p><em>Time-series metrics visualization</em></p>
+</div>
+
 ### Service Catalog
 View all services with RED metrics (Rate, Errors, Duration).
 
+<div align="center">
+  <img src="../images/servicecatalog.png" alt="Service Catalog" width="600">
+  <p><em>Service catalog with RED metrics for all services</em></p>
+</div>
+
 ### Service Map
 Visualize service dependencies with an interactive graph.
+
+<div align="center">
+  <img src="../images/servicemap.png" alt="Service Map" width="600">
+  <p><em>Interactive service dependency map</em></p>
+</div>
 
 ---
 
