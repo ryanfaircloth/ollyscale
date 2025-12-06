@@ -21,13 +21,13 @@ TinyOlly is a **lightweight OpenTelemetry-native observability platform** built 
 
 ### Key Features
 
-✅ **Development-focused** - Perfect your app's telemetry locally before production
-✅ **Full OpenTelemetry support** - Native OTLP ingestion (gRPC & HTTP)
-✅ **Trace correlation** - Link logs, metrics, and traces automatically
-✅ **Service catalog** - RED metrics (Rate, Errors, Duration) for all services
-✅ **Interactive service map** - Visualize dependencies and call graphs
-✅ **REST API** - Programmatic access with OpenAPI documentation
-✅ **Zero vendor lock-in** - Works with any OTel Collector distribution
+- **Development-focused** - Perfect your app's telemetry locally before production
+- **Full OpenTelemetry support** - Native OTLP ingestion (gRPC & HTTP)
+- **Trace correlation** - Link logs, metrics, and traces automatically
+- **Service catalog** - RED metrics (Rate, Errors, Duration) for all services
+- **Interactive service map** - Visualize dependencies and call graphs
+- **REST API** - Programmatic access with OpenAPI documentation
+- **Zero vendor lock-in** - Works with any OTel Collector distribution
 
 !!! note "Local Development Only"
     TinyOlly is *not* designed to compete with production observability platforms! It's for local development only and is not focused on infrastructure monitoring at this time.
