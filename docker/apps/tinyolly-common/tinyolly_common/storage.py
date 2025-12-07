@@ -15,6 +15,7 @@ import orjson
 from typing import Dict, Any, Optional, List, Union
 from redis import asyncio as aioredis
 from async_lru import alru_cache
+from .otlp_utils import parse_attributes, extract_resource_attributes, get_attr_value
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -225,9 +226,9 @@ class Storage:
         resource_spans_list = otlp_data.get('resourceSpans', [])
         
         for resource_spans in resource_spans_list:
-            # Extract resource attributes
+            # Extract resource attributes using centralized utility
             resource = resource_spans.get('resource', {})
-            resource_attrs = self.extract_resource_attributes(resource)
+            resource_attrs = extract_resource_attributes(resource)
             service_name = resource_attrs.get('service.name', 'unknown')
             
             # Process scope spans
@@ -373,42 +374,15 @@ class Storage:
                 
             span = self._decompress_if_needed(span_data)
             
-            # Extract attributes for display
-            def get_attr(obj: Dict[str, Any], keys: List[str]) -> Optional[Union[str, int, bool, float]]:
-                """Extract attribute value from span by trying multiple key names.
-                
-                Args:
-                    obj: Span or log object containing attributes
-                    keys: List of attribute keys to try (in order)
-                    
-                Returns:
-                    First matching attribute value or None
-                """
-                # Handle OTLP list of dicts format
-                attributes = obj.get('attributes')
-                if isinstance(attributes, list):
-                    for attr in attributes:
-                        if attr['key'] in keys:
-                            val = attr['value']
-                            # Return the first non-null value found
-                            for k in ['stringValue', 'intValue', 'boolValue', 'doubleValue']:
-                                if k in val:
-                                    return val[k]
-                # Handle dict format (if normalized)
-                elif isinstance(attributes, dict):
-                    for k in keys:
-                        if k in attributes:
-                            return attributes[k]
-                return None
-
-            method = get_attr(span, ['http.method', 'http.request.method'])
-            route = get_attr(span, ['http.route', 'http.target', 'url.path'])
-            status_code = get_attr(span, ['http.status_code', 'http.response.status_code'])
-            server_name = get_attr(span, ['http.server_name', 'net.host.name'])
-            scheme = get_attr(span, ['http.scheme', 'url.scheme'])
-            host = get_attr(span, ['http.host', 'net.host.name'])
-            target = get_attr(span, ['http.target', 'url.path'])
-            url = get_attr(span, ['http.url', 'url.full'])
+            # Extract attributes for display using centralized utility
+            method = get_attr_value(span, ['http.method', 'http.request.method'])
+            route = get_attr_value(span, ['http.route', 'http.target', 'url.path'])
+            status_code = get_attr_value(span, ['http.status_code', 'http.response.status_code'])
+            server_name = get_attr_value(span, ['http.server_name', 'net.host.name'])
+            scheme = get_attr_value(span, ['http.scheme', 'url.scheme'])
+            host = get_attr_value(span, ['http.host', 'net.host.name'])
+            target = get_attr_value(span, ['http.target', 'url.path'])
+            url = get_attr_value(span, ['http.url', 'url.full'])
             
             start_time = int(span.get('startTimeUnixNano', span.get('start_time', 0)))
             end_time = int(span.get('endTimeUnixNano', span.get('end_time', 0)))
@@ -479,31 +453,15 @@ class Storage:
         root_span_service_name = None
         
         if root_span:
-            # Helper to get attribute value
-            def get_attr(span, keys):
-                attributes = span.get('attributes', [])
-                if isinstance(attributes, list):
-                    for attr in attributes:
-                        if attr.get('key') in keys:
-                            val = attr.get('value', {})
-                            if 'stringValue' in val: return val['stringValue']
-                            if 'intValue' in val: return val['intValue']
-                            if 'boolValue' in val: return val['boolValue']
-                            return str(val)
-                elif isinstance(attributes, dict):
-                    for key in keys:
-                        if key in attributes:
-                            return attributes[key]
-                return None
-
-            root_span_method = get_attr(root_span, ['http.method', 'http.request.method'])
-            root_span_route = get_attr(root_span, ['http.route', 'http.target', 'url.path'])
-            root_span_status_code = get_attr(root_span, ['http.status_code', 'http.response.status_code'])
-            root_span_server_name = get_attr(root_span, ['http.server_name', 'net.host.name'])
-            root_span_scheme = get_attr(root_span, ['http.scheme', 'url.scheme'])
-            root_span_host = get_attr(root_span, ['http.host', 'net.host.name'])
-            root_span_target = get_attr(root_span, ['http.target', 'url.path'])
-            root_span_url = get_attr(root_span, ['http.url', 'url.full'])
+            # Use centralized utility for attribute extraction
+            root_span_method = get_attr_value(root_span, ['http.method', 'http.request.method'])
+            root_span_route = get_attr_value(root_span, ['http.route', 'http.target', 'url.path'])
+            root_span_status_code = get_attr_value(root_span, ['http.status_code', 'http.response.status_code'])
+            root_span_server_name = get_attr_value(root_span, ['http.server_name', 'net.host.name'])
+            root_span_scheme = get_attr_value(root_span, ['http.scheme', 'url.scheme'])
+            root_span_host = get_attr_value(root_span, ['http.host', 'net.host.name'])
+            root_span_target = get_attr_value(root_span, ['http.target', 'url.path'])
+            root_span_url = get_attr_value(root_span, ['http.url', 'url.full'])
             root_span_service_name = root_span.get('serviceName', 'unknown')
             
         return {
@@ -531,9 +489,9 @@ class Storage:
         resource_logs_list = otlp_data.get('resourceLogs', [])
         
         for resource_logs in resource_logs_list:
-            # Extract resource attributes
+            # Extract resource attributes using centralized utility
             resource = resource_logs.get('resource', {})
-            resource_attrs = self.extract_resource_attributes(resource)
+            resource_attrs = extract_resource_attributes(resource)
             service_name = resource_attrs.get('service.name', 'unknown')
             
             # Process scope logs
@@ -570,7 +528,7 @@ class Storage:
                         'trace_id': trace_id,
                         'span_id': span_id,
                         'service_name': service_name,
-                        'attributes': self.parse_attributes(log_record.get('attributes', [])),
+                        'attributes': parse_attributes(log_record.get('attributes', [])),
                         'resource': resource_attrs,  # Store full resource context
                         'scope': {
                             'name': scope.get('name', ''),
@@ -652,37 +610,7 @@ class Storage:
             logger.error(f"Error getting logs: {e}", exc_info=True)
             return []
 
-    def parse_attributes(self, attrs_list):
-        """Parse OTLP attributes list into a dict (reused from traces)"""
-        if not attrs_list:
-            return {}
-        
-        result = {}
-        for attr in attrs_list:
-            key = attr.get('key', '')
-            value_obj = attr.get('value', {})
-            
-            # Extract the actual value
-            if 'stringValue' in value_obj:
-                result[key] = value_obj['stringValue']
-            elif 'intValue' in value_obj:
-                result[key] = value_obj['intValue']
-            elif 'doubleValue' in value_obj:
-                result[key] = value_obj['doubleValue']
-            elif 'boolValue' in value_obj:
-                result[key] = value_obj['boolValue']
-            else:
-                result[key] = str(value_obj)
-        
-        return result
-
-    def extract_resource_attributes(self, resource):
-        """Extract resource attributes from OTLP resource (reused from traces)"""
-        if not resource:
-            return {}
-        
-        attributes = resource.get('attributes', [])
-        return self.parse_attributes(attributes)
+    # Attribute parsing methods removed - now using centralized utilities from otlp_utils
 
     def _hash_dict(self, d: Dict[str, Any]) -> str:
         """Create a stable hash for a dictionary.
@@ -706,9 +634,9 @@ class Storage:
         resource_metrics = data.get('resourceMetrics', data.get('resource_metrics', []))
         
         for resource_metric in resource_metrics:
-            # Extract resource attributes
+            # Extract resource attributes using centralized utility
             resource = resource_metric.get('resource', {})
-            resource_attrs = self.extract_resource_attributes(resource)
+            resource_attrs = extract_resource_attributes(resource)
             
             scope_metrics = resource_metric.get('scopeMetrics', [])
             
@@ -756,8 +684,8 @@ class Storage:
                     
                     # Process each datapoint
                     for dp in metric_datapoints:
-                        # Parse attributes
-                        dp_attrs = self.parse_attributes(dp.get('attributes', []))
+                        # Parse attributes using centralized utility
+                        dp_attrs = parse_attributes(dp.get('attributes', []))
                         
                         # Parse timestamp (nanoseconds to seconds)
                         time_unix_nano = dp.get('timeUnixNano', 0)
@@ -828,7 +756,7 @@ class Storage:
                                 'value': ex_value,
                                 'traceId': trace_id,
                                 'spanId': span_id,
-                                'filteredAttributes': self.parse_attributes(ex.get('filteredAttributes', []))
+                                'filteredAttributes': parse_attributes(ex.get('filteredAttributes', []))
                             })
                         
                         # Create datapoint object
@@ -1231,29 +1159,7 @@ class Storage:
         trace_ids = await self.get_recent_traces(limit)
         edges = {}  # (source, target) -> {count, durations}
         
-        # Helper to get attribute value
-        def _get_span_attr_value(span: Dict[str, Any], key_to_find: str) -> Optional[Union[str, int, bool]]:
-            """Extract attribute value from span by key.
-            
-            Args:
-                span: Span dictionary containing attributes
-                key_to_find: Attribute key to search for
-                
-            Returns:
-                Attribute value (string, int, bool) or None if not found
-            """
-            attributes = span.get('attributes', [])
-            if isinstance(attributes, list):
-                for attr in attributes:
-                    if attr.get('key') == key_to_find:
-                        val = attr.get('value', {})
-                        if 'stringValue' in val: return val['stringValue']
-                        if 'intValue' in val: return val['intValue']
-                        if 'boolValue' in val: return val['boolValue']
-                        return str(val)
-            elif isinstance(attributes, dict):
-                return attributes.get(key_to_find)
-            return None
+        # Use centralized utility for attribute extraction
 
         for trace_id in trace_ids:
             spans = await self.get_trace_spans(trace_id)
@@ -1277,15 +1183,15 @@ class Storage:
                 target_node = None
                 node_type = None
                 
-                db_system = _get_span_attr_value(span, 'db.system')
+                db_system = get_attr_value(span, ['db.system'])
                 if db_system:
-                    db_name = _get_span_attr_value(span, 'db.name') or db_system
+                    db_name = get_attr_value(span, ['db.name']) or db_system
                     target_node = db_name
                     node_type = 'database'
                     
-                messaging_system = _get_span_attr_value(span, 'messaging.system')
+                messaging_system = get_attr_value(span, ['messaging.system'])
                 if messaging_system:
-                    dest = _get_span_attr_value(span, 'messaging.destination') or messaging_system
+                    dest = get_attr_value(span, ['messaging.destination']) or messaging_system
                     target_node = dest
                     node_type = 'messaging'
 
