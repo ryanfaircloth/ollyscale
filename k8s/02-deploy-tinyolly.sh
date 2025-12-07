@@ -1,5 +1,6 @@
 #!/bin/bash
-set -e
+# Don't use set -e here - we want to handle errors gracefully and not crash the terminal
+set +e
 
 # Get the directory where the script is located
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -7,8 +8,85 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 echo "Deploying TinyOlly to Kubernetes..."
 echo "==================================="
 
-# Apply all manifests in the k8s directory
-kubectl apply -f "$SCRIPT_DIR"
+# Check if kubectl is available
+if ! command -v kubectl &> /dev/null; then
+    echo "Error: kubectl is not installed or not in PATH"
+    echo "Please install kubectl: https://kubernetes.io/docs/tasks/tools/"
+    return 2>/dev/null || exit 1
+fi
+
+# Check if connected to a cluster
+echo "Checking cluster connection..."
+if ! kubectl cluster-info &> /dev/null; then
+    echo ""
+    echo "Error: Not connected to a Kubernetes cluster"
+    echo "Please ensure your cluster is running and kubectl is configured properly"
+    echo ""
+    echo "For minikube:"
+    echo "  0. Start minikube: minikube start"
+    echo "  1. Build images: ./01-build-images.sh"
+    echo "  2. Deploy: ./02-deploy-tinyolly.sh"
+    echo ""
+    return 2>/dev/null || exit 1
+fi
+
+echo "Cluster connection verified."
+echo ""
+
+# Apply only YAML files in the correct order (exclude shell scripts)
+echo "Applying Kubernetes manifests..."
+
+# Track if any step fails
+FAILED=false
+
+# 1. Apply ConfigMap first (needed by otel-collector)
+echo "  → Creating ConfigMap..."
+if ! kubectl apply -f "$SCRIPT_DIR/otel-collector-config.yaml" 2>/dev/null; then
+    echo "    Warning: Validation failed, trying with --validate=false..."
+    if ! kubectl apply -f "$SCRIPT_DIR/otel-collector-config.yaml" --validate=false; then
+        echo "    Error: Failed to create ConfigMap"
+        FAILED=true
+    fi
+fi
+
+# 2. Apply Redis (base dependency)
+echo "  → Deploying Redis..."
+if ! kubectl apply -f "$SCRIPT_DIR/redis.yaml"; then
+    echo "    Error: Failed to apply redis.yaml"
+    FAILED=true
+fi
+
+# 3. Apply OTLP receiver (depends on Redis)
+echo "  → Deploying OTLP receiver..."
+if ! kubectl apply -f "$SCRIPT_DIR/tinyolly-otlp-receiver.yaml"; then
+    echo "    Error: Failed to apply tinyolly-otlp-receiver.yaml"
+    FAILED=true
+fi
+
+# 4. Apply OTel Collector (depends on ConfigMap and OTLP receiver)
+echo "  → Deploying OTel Collector..."
+if ! kubectl apply -f "$SCRIPT_DIR/otel-collector.yaml"; then
+    echo "    Error: Failed to apply otel-collector.yaml"
+    FAILED=true
+fi
+
+# 5. Apply UI (depends on Redis and OTel Collector)
+echo "  → Deploying TinyOlly UI..."
+if ! kubectl apply -f "$SCRIPT_DIR/tinyolly-ui.yaml"; then
+    echo "    Error: Failed to apply tinyolly-ui.yaml"
+    FAILED=true
+fi
+
+# Check if deployment was successful
+if [ "$FAILED" = true ]; then
+    echo ""
+    echo "Some deployments failed. Check the errors above."
+    echo "You may need to:"
+    echo "  1. Ensure minikube is running: minikube status"
+    echo "  2. Build images first: ./01-build-images.sh"
+    echo "  3. Check kubectl context: kubectl config current-context"
+    return 2>/dev/null || exit 1
+fi
 
 echo ""
 echo "Deployment applied successfully!"

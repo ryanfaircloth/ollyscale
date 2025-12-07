@@ -38,6 +38,8 @@ spec:
           exec:
             command:
             - redis-cli
+            - -p
+            - "6579"
             - ping
           initialDelaySeconds: 30
           periodSeconds: 10
@@ -47,6 +49,8 @@ spec:
           exec:
             command:
             - redis-cli
+            - -p
+            - "6579"
             - ping
           initialDelaySeconds: 5
           periodSeconds: 5

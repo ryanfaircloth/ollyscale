@@ -78,9 +78,13 @@ echo ""
 echo -e "${BLUE}Deleting TinyOlly resources...${NC}"
 echo ""
 
-# Method 1: Delete using kubectl delete -f on the entire directory
+# Method 1: Delete using kubectl delete -f on YAML files only
 echo -e "${YELLOW}→ Deleting all resources from k8s manifests...${NC}"
-kubectl delete -f "$SCRIPT_DIR/" --ignore-not-found=true 2>&1 | grep -v "error: the path" || true
+kubectl delete -f "$SCRIPT_DIR/tinyolly-ui.yaml" --ignore-not-found=true 2>/dev/null || true
+kubectl delete -f "$SCRIPT_DIR/otel-collector.yaml" --ignore-not-found=true 2>/dev/null || true
+kubectl delete -f "$SCRIPT_DIR/tinyolly-otlp-receiver.yaml" --ignore-not-found=true 2>/dev/null || true
+kubectl delete -f "$SCRIPT_DIR/redis.yaml" --ignore-not-found=true 2>/dev/null || true
+kubectl delete -f "$SCRIPT_DIR/otel-collector-config.yaml" --ignore-not-found=true 2>/dev/null || true
 echo ""
 
 # Method 2: Delete by resource names (fallback to ensure everything is deleted)
