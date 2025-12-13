@@ -50,7 +50,8 @@ fi
 echo ""
 echo "✓ Force rebuild complete!"
 echo ""
-echo "TinyOlly UI:    http://localhost:5005"
-echo "OTLP Endpoint:  tinyolly-otlp-receiver:4317 (gRPC only, for external collector)"
+echo "TinyOlly UI:       http://localhost:5005"
+echo "OTLP Endpoint:     localhost:4343 (gRPC only, for external collector)"
+echo "OpAMP WebSocket:   ws://localhost:4320/v1/opamp (for external collector config management)"
 echo ""
 

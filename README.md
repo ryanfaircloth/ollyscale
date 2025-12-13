@@ -75,6 +75,7 @@ cd docker
 
 **Services:**
 - **OTLP Receiver**: `localhost:4343` (gRPC)
+- **OpAMP Server**: `ws://localhost:4320/v1/opamp` (WebSocket), `localhost:4321` (HTTP REST API)
 - **UI**: `http://localhost:5005`
 - **Redis**: `localhost:6579`
 - **OTel Collector**: `localhost:4317` (gRPC), `localhost:4318` (HTTP)
@@ -112,10 +113,35 @@ Point your OpenTelemetry exporter to:
 
 ```bash
 cd docker-core-only
-docker compose -f docker-compose-tinyolly-core.yml up -d
+./01-start-core.sh
 ```
 
-Deploys TinyOlly without the bundled OTel Collector. Point your collector to `tinyolly-otlp-receiver:4343`.
+Deploys TinyOlly without the bundled OTel Collector. Includes:
+- **OTLP Receiver**: `localhost:4343` (gRPC only)
+- **OpAMP Server**: `ws://localhost:4320/v1/opamp` (WebSocket), `localhost:4321` (HTTP REST API)
+- **UI**: `http://localhost:5005`
+- **Redis**: `localhost:6579`
+
+Point your external collector to `localhost:4343` for telemetry ingestion.
+
+**OpAMP Configuration (Optional):**
+
+To enable remote configuration management via TinyOlly UI, add the OpAMP extension to your collector config:
+
+```yaml
+extensions:
+  opamp:
+    server:
+      ws:
+        endpoint: ws://localhost:4320/v1/opamp
+
+service:
+  extensions: [opamp]
+```
+
+The default configuration template (located at `docker/otelcol-configs/config.yaml`) shows a complete example with OTLP receivers, OpAMP extension, batch processing, and spanmetrics connector. Your collector will connect to the OpAMP server and receive configuration updates through the TinyOlly UI.
+
+**Stop:** `./02-stop-core.sh`
 
 ## Kubernetes Deployment
 
@@ -167,6 +193,7 @@ cd k8s-core-only
 - Interactive service dependency map
 - Distributed trace waterfall with correlated logs
 - Metric cardinality protection with visual warnings
+- OpAMP-based OpenTelemetry Collector configuration management
 
 
 ### Service Catalog
@@ -216,6 +243,7 @@ All responses return OpenTelemetry-native JSON with full trace/span context.
 - Full OpenTelemetry Protocol compliance
 - ResourceSpans, ResourceLogs, ResourceMetrics
 - Spanmetrics integration for RED metrics
+- OpAMP protocol support for remote collector configuration management
 - No vendor lock-in
 
 ---
