@@ -31,6 +31,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application
 COPY ${APP_DIR}/tinyolly-ui.py .
 COPY ${APP_DIR}/models.py .
+COPY ${APP_DIR}/app/ app/
 COPY ${APP_DIR}/templates/ templates/
 COPY ${APP_DIR}/static/ static/
 
