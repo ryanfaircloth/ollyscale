@@ -20,17 +20,33 @@ services:
       - REDIS_PORT=6579
       - PORT=4343
 
+  tinyolly-opamp-server:
+    build:
+      context: .
+      dockerfile: dockerfiles/Dockerfile.tinyolly-opamp-server
+    container_name: tinyolly-opamp-server
+    ports:
+      - "4320:4320"  # OpAMP WebSocket port
+      - "4321:4321"  # HTTP REST API port
+    volumes:
+      - ./otelcol-configs/default.yaml:/etc/otel-collector-config.yaml:ro
+    environment:
+      - OPAMP_PORT=4320
+      - HTTP_PORT=4321
+      - COLLECTOR_CONFIG_PATH=/etc/otel-collector-config.yaml
+
   otel-collector:
     image: otel/opentelemetry-collector-contrib:latest
     container_name: otel-collector
     command: ["--config=/etc/otel-collector-config.yaml"]
     volumes:
-      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
+      - ./otelcol-configs/default.yaml:/etc/otel-collector-config.yaml
     ports:
       - "4317:4317"  # OTLP gRPC receiver (external access)
       - "4318:4318"  # OTLP HTTP receiver (external access)
     depends_on:
       - tinyolly-otlp-receiver
+      - tinyolly-opamp-server
 
   tinyolly-ui:
     build:
@@ -45,10 +61,13 @@ services:
     depends_on:
       - tinyolly-redis
       - otel-collector
+    volumes:
+      - ./otelcol-configs/templates:/app/otelcol-templates:ro
     environment:
       - REDIS_HOST=tinyolly-redis
       - REDIS_PORT=6579
       - DEPLOYMENT_ENV=docker
+      - OPAMP_SERVER_URL=http://tinyolly-opamp-server:4321
       - OTEL_SERVICE_NAME=tinyolly-ui
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
       - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf

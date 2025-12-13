@@ -1,3 +1,7 @@
+# Basic OTLP Configuration
+# Simple OTLP receiver with debug exporter
+# Good starting point for testing telemetry collection
+
 receivers:
   otlp:
     protocols:
@@ -17,23 +21,10 @@ processors:
     timeout: 1s
     send_batch_size: 1024
 
-connectors:
-  spanmetrics:
-    histogram:
-      explicit:
-        buckets: [1ms, 4ms, 10ms, 20ms, 50ms, 100ms, 200ms, 500ms, 1s, 2s, 5s]
-    dimensions:
-      - name: http.method
-      - name: http.status_code
-    dimensions_cache_size: 1000
-    aggregation_temporality: "AGGREGATION_TEMPORALITY_CUMULATIVE"
-    metrics_flush_interval: 15s
-    metrics_expiration: 5m
-
 exporters:
   debug:
     verbosity: detailed
-  
+
   otlp:
     endpoint: "tinyolly-otlp-receiver:4343"
     tls:
@@ -45,15 +36,14 @@ service:
     traces:
       receivers: [otlp]
       processors: [batch]
-      exporters: [debug, otlp, spanmetrics]
-    
-    metrics:
-      receivers: [otlp,spanmetrics]
-      processors: [batch]
       exporters: [debug, otlp]
-    
-    logs:
+
+    metrics:
       receivers: [otlp]
       processors: [batch]
       exporters: [debug, otlp]
 
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug, otlp]

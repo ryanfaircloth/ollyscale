@@ -1,0 +1,520 @@
+<!-- Collector Config Tab -->
+<div id="collector-content" class="tab-content">
+    <div class="collector-header">
+        <h2>OpenTelemetry Collector Configuration</h2>
+        <p class="collector-description">
+            View and modify the OTel Collector configuration in real-time via OpAMP protocol.
+            Changes are pushed to the collector without requiring a restart.
+        </p>
+    </div>
+
+    <!-- OpAMP Status Section -->
+    <div class="opamp-status-section">
+        <div class="status-header">
+            <h3>OpAMP Server Status</h3>
+            <button class="collector-btn collector-btn-secondary collector-btn-sm" onclick="refreshOpampStatus()">Refresh Status</button>
+        </div>
+        <div id="opamp-status-container" class="status-container">
+            <div class="loading-indicator">Loading OpAMP status...</div>
+        </div>
+    </div>
+
+    <!-- Connected Agents Section -->
+    <div class="agents-section">
+        <h3>Connected Collectors</h3>
+        <div id="agents-container" class="agents-container">
+            <div class="empty-state">No collectors connected</div>
+        </div>
+    </div>
+
+    <!-- Config Editor Section -->
+    <div class="config-editor-section">
+        <div class="config-header">
+            <h3>Collector Configuration</h3>
+            <div class="config-actions">
+                <button class="collector-btn collector-btn-secondary" onclick="loadCollectorConfig()">Load Current</button>
+                <button class="collector-btn collector-btn-secondary" onclick="resetConfigToDefault()">Reset to Default</button>
+                <button class="collector-btn collector-btn-secondary" onclick="showConfigDiff()">Show Diff</button>
+                <button class="collector-btn collector-btn-primary" onclick="applyCollectorConfig()">Apply Configuration</button>
+            </div>
+        </div>
+
+        <div class="config-editor-container">
+            <div class="config-status" id="config-status"></div>
+            <textarea id="collector-config-editor"
+                      class="config-editor"
+                      spellcheck="false"
+                      placeholder="Loading collector configuration..."></textarea>
+        </div>
+
+        <div class="config-validation" id="config-validation"></div>
+    </div>
+
+    <!-- Config Diff Modal -->
+    <div id="config-diff-modal" class="diff-modal" style="display: none;" onclick="if(event.target === this) closeConfigDiff()">
+        <div class="diff-modal-content" onclick="event.stopPropagation()">
+            <div class="diff-modal-header">
+                <h3>Configuration Changes</h3>
+                <button class="diff-modal-close" onclick="closeConfigDiff()">&times;</button>
+            </div>
+            <div class="diff-modal-body">
+                <p class="diff-description">Review the changes before applying:</p>
+                <div id="config-diff-content" class="diff-content"></div>
+            </div>
+            <div class="diff-modal-footer">
+                <button class="collector-btn collector-btn-secondary" onclick="closeConfigDiff()">Cancel</button>
+                <button class="collector-btn collector-btn-primary" onclick="confirmApplyConfig()">Apply Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Config Templates Section -->
+    <div class="config-templates-section">
+        <h3>Configuration Templates</h3>
+        <p class="templates-description">Quick-start templates for common use cases (from <code>otelcol-configs/templates/</code>):</p>
+        <div class="templates-grid">
+            <div class="loading-indicator">Loading templates...</div>
+        </div>
+    </div>
+</div>
+
+<style>
+.collector-header {
+    margin-bottom: 24px;
+}
+
+.collector-header h2 {
+    margin: 0 0 8px 0;
+    color: var(--text-main);
+}
+
+.collector-description {
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.opamp-status-section,
+.agents-section,
+.config-editor-section,
+.config-templates-section {
+    background: var(--bg-card);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+    border: 1px solid var(--border-color);
+}
+
+.status-header,
+.config-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.status-header h3,
+.config-header h3 {
+    margin: 0;
+    color: var(--text-main);
+}
+
+.agents-section h3,
+.config-templates-section h3 {
+    margin: 0 0 12px 0;
+    color: var(--text-main);
+}
+
+.status-container {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+
+.status-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.status-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+
+.status-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.status-value.connected {
+    color: var(--success-text);
+}
+
+.status-value.disconnected {
+    color: var(--error-text);
+}
+
+.agents-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 12px;
+}
+
+.agent-card {
+    background: var(--bg-hover);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 12px;
+}
+
+.agent-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.agent-id {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-muted);
+    word-break: break-all;
+}
+
+.agent-status {
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.agent-status.connected {
+    background: var(--success-bg);
+    color: var(--success-text);
+}
+
+.agent-status.disconnected {
+    background: var(--error-bg);
+    color: var(--error-text);
+}
+
+.agent-info {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 4px 12px;
+    font-size: 13px;
+}
+
+.agent-info-label {
+    color: var(--text-muted);
+}
+
+.agent-info-value {
+    color: var(--text-main);
+}
+
+.config-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.config-editor-container {
+    position: relative;
+}
+
+.config-status {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 10;
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: none;
+}
+
+.config-status.success {
+    display: block;
+    background: var(--success-bg);
+    color: var(--success-text);
+}
+
+.config-status.error {
+    display: block;
+    background: var(--error-bg);
+    color: var(--error-text);
+}
+
+.config-status.pending {
+    display: block;
+    background: var(--warning-bg);
+    color: var(--warning-text);
+}
+
+.config-editor {
+    width: 100%;
+    min-height: 400px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-body);
+    color: var(--text-main);
+    resize: vertical;
+    tab-size: 2;
+}
+
+.config-editor:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
+}
+
+.config-validation {
+    margin-top: 8px;
+    font-size: 13px;
+}
+
+.config-validation.valid {
+    color: var(--success-text);
+}
+
+.config-validation.invalid {
+    color: var(--error-text);
+}
+
+.templates-description {
+    color: var(--text-muted);
+    margin: 0 0 12px 0;
+    font-size: 14px;
+}
+
+.templates-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+}
+
+.template-card {
+    background: var(--bg-hover);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 12px;
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.template-card:hover {
+    border-color: var(--primary);
+    box-shadow: 0 2px 8px rgba(0, 102, 204, 0.2);
+}
+
+.template-card h4 {
+    margin: 0 0 4px 0;
+    color: var(--text-main);
+    font-size: 14px;
+}
+
+.template-card p {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.collector-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.collector-btn-sm {
+    padding: 4px 12px;
+    font-size: 12px;
+}
+
+.collector-btn-primary {
+    background: var(--primary);
+    color: white;
+}
+
+.collector-btn-primary:hover {
+    background: var(--primary-hover);
+}
+
+.collector-btn-secondary {
+    background: var(--bg-hover);
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
+}
+
+.collector-btn-secondary:hover {
+    background: var(--border-color);
+}
+
+.loading-indicator {
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+#collector-content .empty-state {
+    color: var(--text-muted);
+    font-style: italic;
+    padding: 24px;
+    text-align: center;
+}
+
+/* Diff Modal Styles */
+.diff-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.diff-modal-content {
+    background: var(--bg-body);
+    border-radius: 8px;
+    width: 90%;
+    max-width: 900px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.diff-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.diff-modal-header h3 {
+    margin: 0;
+    color: var(--text-main);
+}
+
+.diff-modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+}
+
+.diff-modal-close:hover {
+    background: var(--bg-hover);
+    color: var(--text-main);
+}
+
+.diff-modal-body {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.diff-description {
+    color: var(--text-muted);
+    margin: 0 0 16px 0;
+    font-size: 14px;
+}
+
+.diff-content {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 16px;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.diff-line {
+    padding: 2px 8px;
+    margin: 1px 0;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+.diff-line.added {
+    background: rgba(76, 175, 80, 0.15);
+    border-left: 3px solid #4caf50;
+}
+
+.diff-line.removed {
+    background: rgba(244, 67, 54, 0.15);
+    border-left: 3px solid #f44336;
+}
+
+.diff-line.context {
+    color: var(--text-main);
+}
+
+.diff-line.added::before {
+    content: '+ ';
+    color: #4caf50;
+    font-weight: bold;
+}
+
+.diff-line.removed::before {
+    content: '- ';
+    color: #f44336;
+    font-weight: bold;
+}
+
+.diff-line.context::before {
+    content: '  ';
+}
+
+.diff-section-header {
+    font-weight: 600;
+    color: var(--text-main);
+    margin: 16px 0 8px 0;
+    padding: 8px;
+    background: var(--bg-hover);
+    border-radius: 4px;
+}
+
+.diff-section-header:first-child {
+    margin-top: 0;
+}
+
+.diff-no-changes {
+    color: var(--text-muted);
+    text-align: center;
+    padding: 24px;
+    font-style: italic;
+}
+
+.diff-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 20px;
+    border-top: 1px solid var(--border-color);
+}
+</style>

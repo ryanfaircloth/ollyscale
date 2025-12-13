@@ -1,0 +1,33 @@
+# Build stage
+FROM golang:1.22-alpine AS builder
+
+WORKDIR /app
+
+# Install git for fetching dependencies
+RUN apk add --no-cache git
+
+# Copy go mod files
+COPY apps/tinyolly-opamp-server/go.mod ./
+
+# Copy source code (needed for go mod tidy to resolve imports)
+COPY apps/tinyolly-opamp-server/*.go ./
+
+# Download dependencies and generate go.sum
+RUN go mod download && go mod tidy
+
+# Build the binary
+RUN CGO_ENABLED=0 GOOS=linux go build -o /tinyolly-opamp-server .
+
+# Runtime stage
+FROM alpine:3.19
+
+RUN apk add --no-cache ca-certificates
+
+COPY --from=builder /tinyolly-opamp-server /tinyolly-opamp-server
+
+# OpAMP port for collector connections
+EXPOSE 4320
+# HTTP REST API port
+EXPOSE 4321
+
+CMD ["/tinyolly-opamp-server"]

@@ -1,7 +1,7 @@
 /**
  * Tabs Module - Manages tab switching, auto-refresh, and browser history
  */
-import { loadLogs, loadSpans, loadTraces, loadMetrics, loadServiceMap, loadServiceCatalog } from './api.js';
+import { loadLogs, loadSpans, loadTraces, loadMetrics, loadServiceMap, loadServiceCatalog, loadCollector, initCollector } from './api.js';
 import { showTracesList, isSpanDetailOpen } from './render.js';
 
 let currentTab = 'traces';
@@ -79,6 +79,10 @@ export function switchTab(tabName, element, fromHistory = false) {
     else if (tabName === 'metrics') loadMetrics();
     else if (tabName === 'catalog') loadServiceCatalog();
     else if (tabName === 'map') loadServiceMap();
+    else if (tabName === 'collector') {
+        initCollector();
+        loadCollector();
+    }
 }
 
 export function startAutoRefresh() {
@@ -119,6 +123,7 @@ export function startAutoRefresh() {
         } else if (currentTab === 'map') {
             loadServiceMap();
         }
+        // Don't auto-refresh collector tab - user is editing config
 
         // Also refresh stats
         import('./api.js').then(module => module.loadStats());

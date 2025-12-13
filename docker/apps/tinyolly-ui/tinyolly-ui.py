@@ -18,6 +18,7 @@ import time
 import logging
 import sys
 from typing import Optional, Dict, Any, List, Literal, Set
+from pathlib import Path
 from tinyolly_common import Storage
 import uvloop
 import asyncio
@@ -160,6 +161,10 @@ compatibility with OTLP exporters and OpenTelemetry SDKs.
         {
             "name": "System",
             "description": "Health checks and system status"
+        },
+        {
+            "name": "OpAMP",
+            "description": "OpenTelemetry Agent Management Protocol - manage collector configuration"
         }
     ]
 )
@@ -1402,6 +1407,301 @@ async def health():
         raise HTTPException(
             status_code=503,
             detail={'status': 'unhealthy', 'redis': 'disconnected'}
+        )
+
+# ============================================
+# OpAMP Proxy Endpoints
+# ============================================
+
+OPAMP_SERVER_URL = os.getenv("OPAMP_SERVER_URL", "http://localhost:4321")
+
+@app.get(
+    '/api/opamp/status',
+    tags=["OpAMP"],
+    operation_id="opamp_status",
+    summary="Get OpAMP server and agent status",
+    responses={
+        200: {"description": "OpAMP server status with connected agents"},
+        503: {"description": "OpAMP server unavailable"}
+    }
+)
+async def opamp_status():
+    """
+    Get the status of the OpAMP server and connected OTel Collector agents.
+
+    Returns information about:
+    - Connected collector instances
+    - Agent health status
+    - Last seen timestamps
+    """
+    try:
+        import aiohttp
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                f"{OPAMP_SERVER_URL}/status",
+                timeout=aiohttp.ClientTimeout(total=5)
+            ) as response:
+                if response.status == 200:
+                    return await response.json()
+                else:
+                    raise HTTPException(
+                        status_code=response.status,
+                        detail=f"OpAMP server returned {response.status}"
+                    )
+    except aiohttp.ClientError as e:
+        raise HTTPException(
+            status_code=503,
+            detail=f"OpAMP server unavailable: {str(e)}"
+        )
+
+@app.get(
+    '/api/opamp/config',
+    tags=["OpAMP"],
+    operation_id="opamp_get_config",
+    summary="Get current OTel Collector configuration",
+    responses={
+        200: {"description": "Current collector configuration"},
+        503: {"description": "OpAMP server unavailable"}
+    }
+)
+async def opamp_get_config(
+    instance_id: Optional[str] = Query(default=None, description="Specific agent instance ID")
+):
+    """
+    Get the current effective configuration of the OTel Collector.
+
+    If no agents are connected, returns the last known configuration.
+    Optionally specify instance_id to get config from a specific collector.
+    """
+    try:
+        import aiohttp
+        url = f"{OPAMP_SERVER_URL}/config"
+        if instance_id:
+            url += f"?instance_id={instance_id}"
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                url,
+                timeout=aiohttp.ClientTimeout(total=5)
+            ) as response:
+                if response.status == 200:
+                    return await response.json()
+                else:
+                    raise HTTPException(
+                        status_code=response.status,
+                        detail=f"OpAMP server returned {response.status}"
+                    )
+    except aiohttp.ClientError as e:
+        raise HTTPException(
+            status_code=503,
+            detail=f"OpAMP server unavailable: {str(e)}"
+        )
+
+class ConfigUpdateRequest(BaseModel):
+    """Request body for updating OTel Collector configuration"""
+    config: str = Field(..., description="YAML configuration for the OTel Collector")
+    instance_id: Optional[str] = Field(default=None, description="Target specific agent instance")
+
+@app.post(
+    '/api/opamp/config',
+    tags=["OpAMP"],
+    operation_id="opamp_update_config",
+    summary="Update OTel Collector configuration",
+    responses={
+        200: {"description": "Configuration update queued"},
+        400: {"description": "Invalid configuration"},
+        503: {"description": "OpAMP server unavailable"}
+    }
+)
+async def opamp_update_config(request: ConfigUpdateRequest):
+    """
+    Push a new configuration to the OTel Collector via OpAMP.
+
+    The configuration is queued and will be applied when the collector
+    next communicates with the OpAMP server (typically within seconds).
+
+    **Example:**
+    ```yaml
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+    # ... rest of config
+    ```
+    """
+    # Validate YAML syntax
+    try:
+        import yaml
+        yaml.safe_load(request.config)
+    except yaml.YAMLError as e:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid YAML configuration: {str(e)}"
+        )
+
+    try:
+        import aiohttp
+        async with aiohttp.ClientSession() as session:
+            payload = {"config": request.config}
+            if request.instance_id:
+                payload["instance_id"] = request.instance_id
+
+            async with session.post(
+                f"{OPAMP_SERVER_URL}/config",
+                json=payload,
+                timeout=aiohttp.ClientTimeout(total=5)
+            ) as response:
+                if response.status == 200:
+                    return await response.json()
+                else:
+                    error_text = await response.text()
+                    raise HTTPException(
+                        status_code=response.status,
+                        detail=f"OpAMP server error: {error_text}"
+                    )
+    except aiohttp.ClientError as e:
+        raise HTTPException(
+            status_code=503,
+            detail=f"OpAMP server unavailable: {str(e)}"
+        )
+
+@app.get(
+    '/api/opamp/health',
+    tags=["OpAMP"],
+    operation_id="opamp_health",
+    summary="Check OpAMP server health",
+    responses={
+        200: {"description": "OpAMP server is healthy"},
+        503: {"description": "OpAMP server unavailable"}
+    }
+)
+async def opamp_health():
+    """
+    Health check for the OpAMP server.
+
+    Returns 200 if the OpAMP server is reachable and healthy.
+    """
+    try:
+        import aiohttp
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                f"{OPAMP_SERVER_URL}/health",
+                timeout=aiohttp.ClientTimeout(total=5)
+            ) as response:
+                if response.status == 200:
+                    return await response.json()
+                else:
+                    raise HTTPException(
+                        status_code=503,
+                        detail="OpAMP server unhealthy"
+                    )
+    except aiohttp.ClientError as e:
+        raise HTTPException(
+            status_code=503,
+            detail=f"OpAMP server unavailable: {str(e)}"
+        )
+
+# ============================================
+# OTel Collector Config Templates
+# ============================================
+
+OTELCOL_TEMPLATES_DIR = os.getenv("OTELCOL_TEMPLATES_DIR", "/app/otelcol-templates")
+
+@app.get(
+    '/api/opamp/templates',
+    tags=["OpAMP"],
+    operation_id="opamp_list_templates",
+    summary="List available OTel Collector configuration templates",
+    responses={
+        200: {"description": "List of available templates with metadata"}
+    }
+)
+async def opamp_list_templates():
+    """
+    List all available OTel Collector configuration templates.
+
+    Templates are loaded from YAML files in the otelcol-configs/templates directory.
+    Each template includes metadata extracted from YAML comments.
+    """
+    templates = []
+    templates_dir = Path(OTELCOL_TEMPLATES_DIR)
+
+    if not templates_dir.exists():
+        return {"templates": []}
+
+    for yaml_file in sorted(templates_dir.glob("*.yaml")):
+        try:
+            content = yaml_file.read_text()
+            # Extract title and description from first comment lines
+            lines = content.split('\n')
+            title = yaml_file.stem.replace('_', ' ').replace('-', ' ').title()
+            description = ""
+            found_title = False
+
+            for line in lines:
+                if line.startswith('#'):
+                    comment = line.lstrip('#').strip()
+                    if comment:
+                        if not found_title:
+                            # First non-empty comment is the title
+                            title = comment
+                            found_title = True
+                        else:
+                            # Second non-empty comment is description
+                            description = comment
+                            break
+                elif line.strip():
+                    # Hit non-comment content
+                    break
+
+            templates.append({
+                "id": yaml_file.stem,
+                "name": title,
+                "description": description,
+                "filename": yaml_file.name
+            })
+        except Exception as e:
+            logger.warning(f"Failed to read template {yaml_file}: {e}")
+
+    return {"templates": templates}
+
+@app.get(
+    '/api/opamp/templates/{template_id}',
+    tags=["OpAMP"],
+    operation_id="opamp_get_template",
+    summary="Get a specific OTel Collector configuration template",
+    responses={
+        200: {"description": "Template content"},
+        404: {"description": "Template not found"}
+    }
+)
+async def opamp_get_template(template_id: str):
+    """
+    Get the content of a specific configuration template.
+
+    The template_id corresponds to the filename without extension.
+    """
+    templates_dir = Path(OTELCOL_TEMPLATES_DIR)
+    template_file = templates_dir / f"{template_id}.yaml"
+
+    if not template_file.exists():
+        raise HTTPException(
+            status_code=404,
+            detail=f"Template '{template_id}' not found"
+        )
+
+    try:
+        content = template_file.read_text()
+        return {
+            "id": template_id,
+            "filename": template_file.name,
+            "config": content
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to read template: {str(e)}"
         )
 
 if __name__ == '__main__':

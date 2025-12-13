@@ -1,3 +1,7 @@
+# Span Metrics Configuration
+# Generates RED metrics (Rate, Errors, Duration) from traces
+# Uses the spanmetrics connector to derive metrics from spans
+
 receivers:
   otlp:
     protocols:
@@ -25,6 +29,9 @@ connectors:
     dimensions:
       - name: http.method
       - name: http.status_code
+      - name: http.route
+      - name: rpc.method
+      - name: rpc.service
     dimensions_cache_size: 1000
     aggregation_temporality: "AGGREGATION_TEMPORALITY_CUMULATIVE"
     metrics_flush_interval: 15s
@@ -33,7 +40,7 @@ connectors:
 exporters:
   debug:
     verbosity: detailed
-  
+
   otlp:
     endpoint: "tinyolly-otlp-receiver:4343"
     tls:
@@ -46,14 +53,13 @@ service:
       receivers: [otlp]
       processors: [batch]
       exporters: [debug, otlp, spanmetrics]
-    
+
     metrics:
-      receivers: [otlp,spanmetrics]
+      receivers: [otlp, spanmetrics]
       processors: [batch]
       exporters: [debug, otlp]
-    
+
     logs:
       receivers: [otlp]
       processors: [batch]
       exporters: [debug, otlp]
-

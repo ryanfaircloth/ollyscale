@@ -5,6 +5,7 @@ import { renderSpans, renderTraces, renderLogs, renderMetrics, renderServiceMap,
 import { renderServiceCatalog } from './serviceCatalog.js';
 import { renderErrorState, renderLoadingState } from './utils.js';
 import { filterTinyOllyData, filterTinyOllyTrace, filterTinyOllyMetric, filterTinyOllyMetricSeries } from './filter.js';
+import { loadOpampStatus, initCollector } from './collector.js';
 
 export async function loadStats() {
     try {
@@ -154,3 +155,9 @@ export async function loadServiceCatalog() {
         document.getElementById('catalog-container').innerHTML = renderErrorState('Error loading service catalog');
     }
 }
+
+export async function loadCollector() {
+    await loadOpampStatus();
+}
+
+export { initCollector };
