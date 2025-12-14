@@ -302,7 +302,7 @@ func (s *OpAMPServer) handleUpdateConfig(w http.ResponseWriter, r *http.Request)
 	s.currentConfig = req.Config
 
 	s.agentsMu.RLock()
-	var affectedIDs []string
+	affectedIDs := []string{} // Initialize as empty slice, not nil, so JSON marshals to [] not null
 
 	if req.InstanceID != "" {
 		if _, exists := s.agents[req.InstanceID]; exists {

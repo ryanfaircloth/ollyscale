@@ -252,8 +252,11 @@ let pendingConfig = null;
  * Compute diff between two config strings
  */
 function computeDiff(oldConfig, newConfig) {
-    const oldLines = oldConfig.split('\n');
-    const newLines = newConfig.split('\n');
+    // Ensure we have valid strings
+    const safeOldConfig = oldConfig || '';
+    const safeNewConfig = newConfig || '';
+    const oldLines = safeOldConfig.split('\n');
+    const newLines = safeNewConfig.split('\n');
     
     // Simple line-by-line diff algorithm
     const diff = [];
@@ -325,7 +328,13 @@ function computeDiff(oldConfig, newConfig) {
 function renderDiff(diff) {
     const diffContent = document.getElementById('config-diff-content');
     if (!diffContent) return;
-    
+
+    // Handle null/undefined diff
+    if (!diff || !Array.isArray(diff)) {
+        diffContent.innerHTML = '<div class="diff-no-changes">No changes detected</div>';
+        return;
+    }
+
     if (diff.length === 0 || diff.every(d => d.type === 'context')) {
         diffContent.innerHTML = '<div class="diff-no-changes">No changes detected</div>';
         return;
@@ -463,18 +472,20 @@ export async function confirmApplyConfig() {
         closeConfigDiff();
         return;
     }
-    
+
+    // Save config before closing modal (closeConfigDiff sets pendingConfig to null)
+    const configToApply = pendingConfig;
+
     closeConfigDiff();
-    
-    // Apply the pending config
+
+    // Apply the saved config
     const editor = document.getElementById('collector-config-editor');
     if (editor) {
-        editor.value = pendingConfig;
+        editor.value = configToApply;
     }
-    
+
     // Now apply it
-    await applyCollectorConfigDirect(pendingConfig);
-    pendingConfig = null;
+    await applyCollectorConfigDirect(configToApply);
 }
 
 /**
@@ -482,6 +493,12 @@ export async function confirmApplyConfig() {
  */
 async function applyCollectorConfigDirect(config) {
     setConfigStatus('pending', 'Applying...');
+
+    // Validate config parameter
+    if (!config || typeof config !== 'string') {
+        setConfigStatus('error', 'Failed: No configuration to apply');
+        return;
+    }
 
     try {
         const payload = { config };
@@ -698,7 +715,7 @@ export async function validateConfig() {
                 } else {
                     validationEl.className = 'config-validation invalid';
                     // Format errors nicely if structured errors are provided
-                    if (result.errors && result.errors.length > 0) {
+                    if (result.errors && Array.isArray(result.errors) && result.errors.length > 0) {
                         validationEl.innerHTML = formatValidationErrors(result.errors);
                     } else {
                         validationEl.textContent = result.error || 'Configuration has errors';
