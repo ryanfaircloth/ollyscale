@@ -63,6 +63,8 @@ git clone https://github.com/tinyolly/tinyolly
 
     Now you can access the TinyOlly UI at: [http://localhost:5002](http://localhost:5002)
 
+    **OpenTelemetry Collector + OpAMP Config Page:** Navigate to the "OpenTelemetry Collector + OpAMP Config" tab in the UI to view and manage collector configurations remotely. See the [OpAMP Configuration](#opamp-configuration-optional) section below for setup instructions.
+
 5.  **Send Telemetry from Host Apps:**
 
     To send telemetry from applications running on your host machine (outside Kubernetes), use `kubectl port-forward` to expose the OTel Collector ports:
@@ -209,9 +211,9 @@ service:
 
 The Otel Collector will forward everything to TinyOlly's OTLP receiver, which process telemetry and stores it in Redis in OTEL format for the backend and UI to access.
 
-**OpAMP Configuration (Optional):**
+## OpAMP Configuration (Optional)
 
-To enable remote configuration management via TinyOlly UI, add the OpAMP extension to your collector config:
+The **OpenTelemetry Collector + OpAMP Config** page in the TinyOlly UI allows you to view and manage collector configurations remotely. To enable this feature, add the OpAMP extension to your collector config:
 
 ```yaml
 extensions:

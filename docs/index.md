@@ -26,6 +26,7 @@ TinyOlly is a **lightweight OpenTelemetry-native observability platform** built 
 - **Trace correlation** - Link logs, metrics, and traces automatically
 - **Service catalog** - RED metrics (Rate, Errors, Duration) for all services
 - **Interactive service map** - Visualize dependencies and call graphs
+- **OpenTelemetry Collector management** - Remote configuration management via OpAMP protocol
 - **REST API** - Programmatic access with OpenAPI documentation
 - **Zero vendor lock-in** - Works with any OTel Collector distribution
 

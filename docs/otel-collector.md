@@ -9,6 +9,21 @@
 
 TinyOlly uses the [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) as the telemetry ingestion and shipping layer. The collector receives telemetry from your applications and forwards it to TinyOlly's OTLP receiver.
 
+## OpenTelemetry Collector + OpAMP Config Page
+
+TinyOlly includes a web interface for managing OpenTelemetry Collector configurations via the OpAMP (Open Agent Management Protocol). Access this page through the **"OpenTelemetry Collector + OpAMP Config"** tab in the TinyOlly UI.
+
+**Features:**
+- View current configuration from connected collectors
+- Apply configuration changes with real-time validation
+- Browse configuration templates for common use cases
+- Monitor OpAMP server status and connected agents
+- Preview configuration diffs before applying
+
+**Requirements:**
+- Your collector must be configured with the OpAMP extension (see [OpAMP Configuration](#opamp-configuration-optional) below)
+- Collector must be connected to the OpAMP server
+
 ## Configuration
 
 TinyOlly includes a sample collector configuration that you can customize for your needs. The configuration files are located at:
@@ -76,9 +91,9 @@ exporters:
       insecure: true
 ```
 
-**OpAMP Configuration (Optional):**
+## OpAMP Configuration (Optional)
 
-To enable remote configuration management via TinyOlly UI, add the OpAMP extension to your collector config:
+The **OpenTelemetry Collector + OpAMP Config** page in the TinyOlly UI allows you to view and manage collector configurations remotely. To enable this feature, add the OpAMP extension to your collector config:
 
 ```yaml
 extensions:

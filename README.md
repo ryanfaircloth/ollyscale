@@ -124,9 +124,9 @@ Deploys TinyOlly without the bundled OTel Collector. Includes:
 
 Point your external collector to `localhost:4343` for telemetry ingestion.
 
-**OpAMP Configuration (Optional):**
+## OpAMP Configuration (Optional)
 
-To enable remote configuration management via TinyOlly UI, add the OpAMP extension to your collector config:
+The **OpenTelemetry Collector + OpAMP Config** page in the TinyOlly UI allows you to view and manage collector configurations remotely. To enable this feature, add the OpAMP extension to your collector config:
 
 ```yaml
 extensions:
@@ -212,6 +212,14 @@ cd k8s-core-only
 - Hard limit of 1000 unique metric names (configurable via `MAX_METRIC_CARDINALITY`)
 - Visual warnings at 70% and 90%
 - Drops metrics exceeding limit with tracking
+
+### OpenTelemetry Collector + OpAMP Config
+- View and manage OpenTelemetry Collector configuration via the OpAMP protocol
+- Real-time validation of collector configurations before applying
+- Configuration templates for common use cases (default, prometheus-remote-write, etc.)
+- View OpAMP server status and connected collector agents
+- Apply configuration changes with diff preview
+- Requires collector to be connected to the OpAMP server (configured in collector config)
 
 ---
 

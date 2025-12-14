@@ -117,6 +117,17 @@ Visualize service dependencies with an interactive graph.
   <p><em>Interactive service dependency map</em></p>
 </div>
 
+### OpenTelemetry Collector + OpAMP Config
+View and manage your OpenTelemetry Collector configuration remotely via the OpAMP protocol. This page allows you to:
+
+- **View current configuration** from connected collectors
+- **Apply configuration changes** with validation and diff preview
+- **Use configuration templates** for common scenarios (default, prometheus-remote-write, etc.)
+- **Check OpAMP server status** and see connected collector agents
+- **Validate configurations** before applying to catch errors early
+
+To use this feature, your OpenTelemetry Collector must be configured with the OpAMP extension (see [Docker Deployment](docker.md#opamp-configuration-optional) or [OpenTelemetry Collector](otel-collector.md#opamp-configuration-optional) documentation).
+
 ---
 
 ## Step 6: Use Your Own Application
