@@ -193,20 +193,20 @@ print("Setting up Prometheus remote write metrics...", flush=True)
 prom_registry = CollectorRegistry()
 
 # Create Prometheus metrics for remote write
-prom_remote_gauge = Gauge(
-    'prom_remote_gauge',
+remote_prom_gauge = Gauge(
+    'remote_prom_gauge',
     'A gauge metric sent via Prometheus remote write',
     registry=prom_registry
 )
 
-prom_remote_counter = Counter(
-    'prom_remote_counter',
+remote_prom_counter = Counter(
+    'remote_prom_counter',
     'A counter metric sent via Prometheus remote write',
     registry=prom_registry
 )
 
-prom_remote_histogram = Histogram(
-    'prom_remote_histogram',
+remote_prom_histogram = Histogram(
+    'remote_prom_histogram',
     'A histogram metric sent via Prometheus remote write',
     buckets=[0.1, 0.5, 1.0, 2.5, 5.0, 10.0, 25.0, 50.0, 100.0],
     registry=prom_registry
@@ -232,13 +232,13 @@ def send_prometheus_remote_write():
         try:
             # Update metrics with random values
             # Gauge: Random value between 0 and 100
-            prom_remote_gauge.set(random.uniform(0, 100))
+            remote_prom_gauge.set(random.uniform(0, 100))
             
             # Counter: Increment by random amount
-            prom_remote_counter.inc(random.randint(1, 5))
+            remote_prom_counter.inc(random.randint(1, 5))
             
             # Histogram: Record random duration
-            prom_remote_histogram.observe(random.expovariate(1.0/10))  # Exponential distribution
+            remote_prom_histogram.observe(random.expovariate(1.0/10))  # Exponential distribution
             
             # Collect metrics from registry and convert to remote write format
             # Generate Prometheus text format

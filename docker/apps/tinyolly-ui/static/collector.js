@@ -4,7 +4,11 @@
 
 // Templates loaded from API
 let availableTemplates = [];
+// currentConfig holds the ACTUAL running config from the collector (via OpAMP)
+// This is used for diff comparison - NOT the editor content
 let currentConfig = '';
+// Flag to track if we've fetched the running config
+let runningConfigLoaded = false;
 
 /**
  * Initialize the collector tab
@@ -27,9 +31,31 @@ export async function initCollector() {
     // Load templates from API
     await loadTemplates();
 
-    // Always load default config when switching to collector tab
-    // (User can manually load current agent config if needed)
+    // Fetch the actual running config from the collector (for diff comparison)
+    await fetchRunningConfig();
+
+    // Load default template into the editor
     await loadTemplate('default');
+}
+
+/**
+ * Fetch the actual running config from the collector via OpAMP
+ * This is stored separately from the editor content for diff comparison
+ */
+async function fetchRunningConfig() {
+    try {
+        const response = await fetch('/api/opamp/config');
+        if (response.ok) {
+            const data = await response.json();
+            if (data.config) {
+                currentConfig = data.config;
+                runningConfigLoaded = true;
+                console.log('Fetched running config from collector');
+            }
+        }
+    } catch (error) {
+        console.error('Error fetching running config:', error);
+    }
 }
 
 /**
@@ -421,21 +447,20 @@ export async function showConfigDiff() {
         return;
     }
     
-    // Get current config if not already loaded
-    if (!currentConfig) {
-        try {
-            const response = await fetch('/api/opamp/config');
-            if (response.ok) {
-                const data = await response.json();
-                if (data.config) {
-                    currentConfig = data.config;
-                }
+    // Always fetch the latest running config from the collector for accurate diff
+    try {
+        const response = await fetch('/api/opamp/config');
+        if (response.ok) {
+            const data = await response.json();
+            if (data.config) {
+                currentConfig = data.config;
+                runningConfigLoaded = true;
             }
-        } catch (error) {
-            console.error('Error loading current config:', error);
         }
+    } catch (error) {
+        console.error('Error loading current config:', error);
     }
-    
+
     // If still no current config, use empty string
     const oldConfig = currentConfig || '';
     
@@ -760,6 +785,8 @@ export async function validateConfig() {
 
 /**
  * Load a config template from API
+ * Note: This loads a template into the EDITOR only - it does NOT update currentConfig
+ * currentConfig always represents the actual running config from the collector
  */
 export async function loadTemplate(templateId) {
     const editor = document.getElementById('collector-config-editor');
@@ -776,7 +803,7 @@ export async function loadTemplate(templateId) {
         const data = await response.json();
         if (data.config) {
             editor.value = data.config;
-            currentConfig = data.config; // Update current config tracking
+            // Do NOT update currentConfig here - it should only reflect the running config
             await validateConfig();
             setConfigStatus('success', `Loaded "${templateId}" template`);
             setTimeout(() => setConfigStatus(''), 2000);
