@@ -1,0 +1,40 @@
+# OpenTelemetry Collector with OpAMP Supervisor
+# This image combines the OpAMP Supervisor with the Collector for remote configuration management
+
+FROM ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:latest AS collector
+
+FROM ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-opampsupervisor:latest AS supervisor
+
+# Final image combining both
+FROM debian:bookworm-slim
+
+# Install ca-certificates for HTTPS connections
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create directories
+RUN mkdir -p /etc/otelcol /var/lib/otelcol/supervisor /opt/otelcol/bin
+
+# Copy collector binary from collector image
+COPY --from=collector /otelcol-contrib /opt/otelcol/bin/otelcol-contrib
+
+# Copy supervisor binary from supervisor image
+COPY --from=supervisor /usr/local/bin/opampsupervisor /usr/local/bin/opampsupervisor
+
+# Create non-root user
+RUN useradd -r -s /bin/false otelcol && \
+    chown -R otelcol:otelcol /var/lib/otelcol /etc/otelcol
+
+# Default supervisor config location
+VOLUME ["/etc/otelcol"]
+
+# The supervisor will manage the collector ports
+EXPOSE 4317 4318 19291
+
+# Run as non-root user
+USER otelcol
+
+# Run the supervisor with config file
+ENTRYPOINT ["/usr/local/bin/opampsupervisor"]
+CMD ["--config", "/etc/otelcol/supervisor.yaml"]

@@ -44,12 +44,21 @@ services:
       - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
       - OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=http://otel-collector:4318/v1/logs
 
+  # OpenTelemetry Collector managed by OpAMP Supervisor
+  # The supervisor accepts remote configuration from tinyolly-opamp-server
+  # and automatically restarts the collector when config changes
   otel-collector:
-    image: otel/opentelemetry-collector-contrib:latest
+    build:
+      context: .
+      dockerfile: dockerfiles/Dockerfile.otel-supervisor
     container_name: otel-collector
-    command: ["--config=/etc/otel-collector-config.yaml"]
     volumes:
-      - ./otelcol-configs/config.yaml:/etc/otel-collector-config.yaml
+      # Supervisor config
+      - ./otelcol-configs/supervisor.yaml:/etc/otelcol/supervisor.yaml:ro
+      # Default collector config (used as base, can be overridden by remote config)
+      - ./otelcol-configs/config.yaml:/etc/otelcol/config.yaml:ro
+      # Persistent storage for supervisor state
+      - otel-supervisor-data:/var/lib/otelcol/supervisor
     ports:
       - "4317:4317"  # OTLP gRPC receiver (external access)
       - "4318:4318"  # OTLP HTTP receiver (external access)
@@ -87,6 +96,10 @@ services:
       - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://otel-collector:4318/v1/metrics
       - OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=http://otel-collector:4318/v1/logs
       - OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED=true
+
+volumes:
+  otel-supervisor-data:
+    name: tinyolly-otel-supervisor-data
 
 networks:
   default:

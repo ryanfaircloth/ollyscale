@@ -10,12 +10,6 @@ receivers:
         endpoint: 0.0.0.0:4317
       http:
         endpoint: 0.0.0.0:4318
-  
-  # Prometheus Remote Write receiver
-  # Receives metrics via Prometheus Remote Write protocol
-  # Clients should send to: http://<collector-host>:19291/api/v1/write
-  prometheusremotewrite:
-    endpoint: "0.0.0.0:19291"
 
 extensions:
   opamp:
@@ -59,7 +53,7 @@ service:
       exporters: [debug, otlp, spanmetrics]
     
     metrics:
-      receivers: [otlp, prometheusremotewrite, spanmetrics]
+      receivers: [otlp, spanmetrics]
       processors: [batch]
       exporters: [debug, otlp]
     
