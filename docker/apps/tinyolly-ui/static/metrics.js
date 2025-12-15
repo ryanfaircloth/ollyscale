@@ -2,7 +2,7 @@
  * Metrics Module - OTEL Format with Resources, Attributes, and Exemplars
  */
 console.log("Metrics Module Loaded - Version 2 (Redesigned Table)");
-import { loadChartJs, renderActionButton, copyToClipboard, downloadJson, renderEmptyState, getColorForIndex, createModal, closeModal } from './utils.js';
+import { loadChartJs, renderActionButton, copyToClipboard, downloadJson, renderEmptyState, getColorForIndex, createModal, closeModal, formatCount } from './utils.js';
 
 // State management
 const MAX_METRICS_IN_MEMORY = 1000; // Prevent unbounded memory growth
@@ -114,7 +114,7 @@ export async function renderMetrics(metricsData) {
             <div style="flex: 0 0 60px;">Unit</div>
             <div style="flex: 0 0 80px;">Type</div>
             <div style="flex: 0 0 90px;">Resources</div>
-            <div style="flex: 0 0 120px;">Total Cardinality</div>
+            <div style="flex: 0 0 120px;">Cardinality</div>
             <div style="flex: 0 0 80px;">Actions</div>
         </div>
     `;
@@ -270,7 +270,7 @@ function createMetricRow(metric) {
                 ${metric.resource_count} ${metric.resource_count === 1 ? 'res.' : 'res.'}
             </div>
             <div class="metric-attributes-link metric-link" data-metric-name="${metric.name}" style="flex: 0 0 120px;" onclick="event.stopPropagation(); window.showMetricAttributes('${metric.name}', ${metric.attribute_combinations});">
-                ${metric.attribute_combinations}
+                ${metric.label_count} labels / ${metric.attribute_combinations} series
             </div>
             <div style="flex: 0 0 80px;">
                 ${renderActionButton(`view-chart-${metric.name.replace(/[^a-zA-Z0-9]/g, '_')}`, 'Chart', 'primary', 'dense')}
@@ -1537,54 +1537,105 @@ window.showMetricResources = async (metricName, resourceCount) => {
     }
 };
 
-window.showMetricAttributes = async (metricName, attributeCount) => {
+window.showMetricAttributes = async (metricName, totalSeriesCount) => {
     try {
-        const response = await fetch(`/api/metrics/${metricName}`);
+        // Fetch last 1 hour of data to get a good sample of active series
+        const endTime = Date.now() / 1000;
+        const startTime = endTime - 3600;
+        const response = await fetch(`/api/metrics/${metricName}?start=${startTime}&end=${endTime}`);
         const data = await response.json();
 
-        if (!data.series || data.series.length === 0) {
-            createModal('Metric Attributes', '<p>No attribute data available</p>', [
-                { id: 'close', label: 'Close', style: 'secondary', handler: (modal) => closeModal(modal) }
-            ]);
-            return;
-        }
+        const activeSeries = data.series || [];
+        const activeSeriesCount = activeSeries.length;
 
-        // Extract unique attribute combinations
-        const attributesMap = new Map();
-        data.series.forEach(series => {
+        // Analyze labels
+        const labelStats = {}; // key -> Set(values)
+
+        activeSeries.forEach(series => {
             if (series.attributes) {
-                const attrKey = JSON.stringify(series.attributes);
-                if (!attributesMap.has(attrKey)) {
-                    attributesMap.set(attrKey, series.attributes);
-                }
+                Object.entries(series.attributes).forEach(([key, value]) => {
+                    if (!labelStats[key]) {
+                        labelStats[key] = new Set();
+                    }
+                    // Handle non-string values
+                    const displayValue = value === null ? 'null' : String(value);
+                    labelStats[key].add(displayValue);
+                });
             }
         });
 
-        let contentHtml = `<div style="max-height: 400px; overflow-y: auto;">`;
-        contentHtml += `<p style="margin-bottom: 10px;"><strong>Found ${attributesMap.size} unique attribute combination(s):</strong></p>`;
+        const labelKeys = Object.keys(labelStats).sort();
 
-        let index = 1;
-        attributesMap.forEach((attributes) => {
-            contentHtml += `<div style="margin-bottom: 15px; padding: 10px; background: var(--bg-hover); border-radius: 4px;">`;
-            contentHtml += `<div style="font-weight: 600; margin-bottom: 5px;">Combination ${index}:</div>`;
-            contentHtml += `<table style="width: 100%; font-size: 12px;">`;
+        let contentHtml = `<div style="display: flex; flex-direction: column; gap: 16px;">`;
 
-            Object.entries(attributes).forEach(([key, value]) => {
-                contentHtml += `<tr><td style="padding: 2px 5px; color: var(--text-muted);">${key}:</td><td style="padding: 2px 5px;">${value}</td></tr>`;
+        // Header Stats
+        contentHtml += `
+            <div style="background: var(--bg-secondary); padding: 12px; border-radius: 6px; border: 1px solid var(--border-color); display: flex; gap: 24px; font-size: 12px;">
+                <div>
+                    <div style="color: var(--text-muted); margin-bottom: 4px;">Total Series (Historic)</div>
+                    <div style="font-size: 16px; font-weight: 600; font-family: 'JetBrains Mono', monospace;">${formatCount(totalSeriesCount)}</div>
+                </div>
+                <div>
+                    <div style="color: var(--text-muted); margin-bottom: 4px;">Active Series (1h)</div>
+                    <div style="font-size: 16px; font-weight: 600; font-family: 'JetBrains Mono', monospace; color: var(--primary);">${formatCount(activeSeriesCount)}</div>
+                </div>
+                <div>
+                    <div style="color: var(--text-muted); margin-bottom: 4px;">Label Dimensions</div>
+                    <div style="font-size: 16px; font-weight: 600; font-family: 'JetBrains Mono', monospace;">${labelKeys.length}</div>
+                </div>
+            </div>
+        `;
+
+        // Label Analysis Table
+        if (labelKeys.length > 0) {
+            contentHtml += `
+                <div>
+                    <h4 style="font-size: 13px; font-weight: 600; margin-bottom: 8px;">Label Analysis</h4>
+                    <div style="border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                            <thead style="background: var(--bg-hover); font-weight: 600; color: var(--text-muted); text-align: left;">
+                                <tr>
+                                    <th style="padding: 8px 12px; border-bottom: 1px solid var(--border-color);">Label Name</th>
+                                    <th style="padding: 8px 12px; border-bottom: 1px solid var(--border-color); width: 100px;">Cardinality</th>
+                                    <th style="padding: 8px 12px; border-bottom: 1px solid var(--border-color);">Values (Top 5)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+            `;
+
+            labelKeys.forEach(key => {
+                const values = Array.from(labelStats[key]).sort();
+                const uniqueCount = values.length;
+                const topValues = values.slice(0, 5).join(', ') + (values.length > 5 ? ', ...' : '');
+
+                contentHtml += `
+                    <tr style="border-bottom: 1px solid var(--border-color);">
+                        <td style="padding: 8px 12px; font-family: 'JetBrains Mono', monospace; color: var(--primary);">${key}</td>
+                        <td style="padding: 8px 12px;">${formatCount(uniqueCount)}</td>
+                        <td style="padding: 8px 12px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;">${topValues}</td>
+                    </tr>
+                `;
             });
 
-            contentHtml += `</table></div>`;
-            index++;
-        });
+            contentHtml += `
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        } else {
+            contentHtml += `<div style="padding: 20px; text-align: center; color: var(--text-muted);">No labels found for this metric.</div>`;
+        }
 
         contentHtml += `</div>`;
 
-        createModal(`Attributes for ${metricName}`, contentHtml, [
+        createModal(`Cardinality Explorer: ${metricName}`, contentHtml, [
             { id: 'close', label: 'Close', style: 'secondary', handler: (modal) => closeModal(modal) }
-        ]);
+        ], '800px'); // Wider modal for analysis view
+
     } catch (error) {
         console.error('Error loading metric attributes:', error);
-        createModal('Error', '<p>Failed to load metric attributes</p>', [
+        createModal('Error', `<p>Failed to load metric attributes: ${error.message}</p>`, [
             { id: 'close', label: 'Close', style: 'secondary', handler: (modal) => closeModal(modal) }
         ]);
     }

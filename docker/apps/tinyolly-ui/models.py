@@ -138,6 +138,7 @@ class MetricMetadata(BaseModel):
     description: str = Field(default="", description="Metric description")
     resource_count: int = Field(..., description="Number of unique resource combinations")
     attribute_combinations: int = Field(..., description="Number of unique attribute combinations")
+    label_count: int = Field(..., description="Number of label dimension keys")
     
     class Config:
         json_schema_extra = {

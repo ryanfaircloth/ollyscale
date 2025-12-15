@@ -261,7 +261,8 @@ async def get_metrics(
             'unit': metadata.get('unit', ''),
             'description': metadata.get('description', ''),
             'resource_count': len(resources),
-            'attribute_combinations': len(attributes)
+            'attribute_combinations': len(attributes),
+            'label_count': len(attributes[0].keys()) if attributes else 0
         }
 
     # Fetch all metrics in parallel
