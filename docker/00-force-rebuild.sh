@@ -6,9 +6,11 @@ echo "=================================================="
 echo ""
 echo "This will:"
 echo "  1. Stop all running containers"
-echo "  2. Remove all images"
-echo "  3. Clear Docker build cache"
-echo "  4. Rebuild everything from scratch"
+echo "  2. Clear Redis data (traces, metrics, logs)"
+echo "  3. Clear cached collector config"
+echo "  4. Remove all images"
+echo "  5. Clear Docker build cache"
+echo "  6. Rebuild everything from scratch"
 echo ""
 read -p "Are you sure you want to continue? (y/N) " -n 1 -r
 echo ""
@@ -23,19 +25,27 @@ echo "Step 1: Stopping containers..."
 docker-compose -f docker-compose-tinyolly-core.yml down
 
 echo ""
-echo "Step 2: Removing TinyOlly images..."
+echo "Step 2: Clearing Redis data..."
+docker exec tinyolly-redis redis-cli -p 6579 FLUSHALL 2>/dev/null || true
+
+echo ""
+echo "Step 3: Clearing cached collector config..."
+docker volume rm tinyolly-otel-supervisor-data 2>/dev/null || true
+
+echo ""
+echo "Step 4: Removing TinyOlly images..."
 docker-compose -f docker-compose-tinyolly-core.yml down --rmi all
 
 echo ""
-echo "Step 3: Cleaning Docker build cache..."
+echo "Step 5: Cleaning Docker build cache..."
 docker builder prune -f
 
 echo ""
-echo "Step 4: Rebuilding from scratch (no cache)..."
+echo "Step 6: Rebuilding from scratch (no cache)..."
 docker-compose -f docker-compose-tinyolly-core.yml build --no-cache
 
 echo ""
-echo "Step 5: Starting services..."
+echo "Step 7: Starting services..."
 docker-compose -f docker-compose-tinyolly-core.yml up -d
 
 EXIT_CODE=$?
