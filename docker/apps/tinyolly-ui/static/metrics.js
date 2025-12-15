@@ -126,38 +126,6 @@ export async function renderMetrics(metricsData) {
 
     container.innerHTML = '';
     container.appendChild(countHeader);
-
-    // Check for Prometheus Remote Write histogram metrics and show info note
-    const hasPromHistograms = allMetrics.some(m =>
-        m.name.endsWith('_bucket') || m.name.endsWith('_count') || m.name.endsWith('_sum')
-    );
-    if (hasPromHistograms) {
-        const promNote = document.createElement('div');
-        promNote.style.cssText = `
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            padding: 12px 16px;
-            background: var(--info-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            margin-bottom: 15px;
-            font-size: 12px;
-            color: var(--info-text);
-        `;
-        promNote.innerHTML = `
-            <span style="font-size: 16px;">ℹ️</span>
-            <div>
-                <strong>Prometheus Remote Write Metrics Detected</strong><br>
-                <span style="opacity: 0.9;">
-                    Prometheus histograms are received as separate <code>_bucket</code>, <code>_count</code>, and <code>_sum</code> metrics.
-                    Each bucket (e.g., <code>le="0.1"</code>) is a separate time series. Use the attribute filter dropdowns to view specific buckets.
-                </span>
-            </div>
-        `;
-        container.appendChild(promNote);
-    }
-
     container.appendChild(tableContainer);
 }
 
