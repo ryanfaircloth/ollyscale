@@ -22,7 +22,7 @@ export function renderServiceCatalog(services) {
     const limitNote = `<div style="text-align: center; padding: 10px; font-size: 12px; color: var(--text-muted);">Showing ${services.length} service${services.length !== 1 ? 's' : ''}</div>`;
 
     const headerRow = `
-        <div class="catalog-header-row" style="display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-bottom: 2px solid var(--border-color); background: var(--bg-secondary); font-weight: bold; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">
+        <div class="catalog-header-row" style="display: flex; align-items: center; gap: 10px; padding: 6px 12px; border-bottom: 2px solid var(--border-color); background: var(--bg-secondary); font-weight: bold; font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">
             <div data-sort="name" style="flex: 0 0 200px; cursor: pointer; user-select: none;" title="Click to sort">Service Name ${getSortIndicator('name', currentSort)}</div>
             <div data-sort="rate" style="flex: 0 0 80px; text-align: right; cursor: pointer; user-select: none;" title="Click to sort">Rate ${getSortIndicator('rate', currentSort)}</div>
             <div data-sort="error_rate" style="flex: 0 0 70px; text-align: right; cursor: pointer; user-select: none;" title="Click to sort">Errors ${getSortIndicator('error_rate', currentSort)}</div>
@@ -57,8 +57,8 @@ export function renderServiceCatalog(services) {
 
         return `
             <div class="catalog-service-row" data-service-id="${serviceId}">
-                <div class="catalog-item" style="display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-bottom: 1px solid var(--border-color); font-size: 11px; transition: background 0.2s; cursor: pointer;">
-                    <div style="flex: 0 0 200px; font-weight: 600; color: var(--text-main); font-size: 14px;">${escapeHtml(service.name)}</div>
+                <div class="catalog-item" style="display: flex; align-items: center; gap: 10px; padding: 6px 12px; border-bottom: 1px solid var(--border-color); font-size: 11px; transition: background 0.2s; cursor: pointer;">
+                    <div style="flex: 0 0 200px; font-weight: 600; color: var(--text-main); font-size: 13px;">${escapeHtml(service.name)}</div>
                     <div data-metric="calls" data-service="${escapeHtml(service.name)}" style="flex: 0 0 80px; text-align: right; color: var(--primary); font-family: monospace; font-weight: 600; cursor: pointer; text-decoration: underline; text-decoration-style: dotted;" title="Click to view metric">${rate}</div>
                     <div data-metric="calls" data-service="${escapeHtml(service.name)}" style="flex: 0 0 70px; text-align: right; color: ${errorColor}; font-family: monospace; font-weight: 600; cursor: pointer; text-decoration: underline; text-decoration-style: dotted;" title="Click to view metric">${errorRate}</div>
                     <div data-metric="duration" data-service="${escapeHtml(service.name)}" style="flex: 0 0 70px; text-align: right; color: var(--text-main); font-family: monospace; cursor: pointer; text-decoration: underline; text-decoration-style: dotted;" title="Click to view metric">${p50}</div>

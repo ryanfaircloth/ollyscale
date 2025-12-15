@@ -48,7 +48,7 @@ export function renderSpans(spans) {
 
         return `
             <div class="span-row-wrapper">
-                <div class="trace-item" data-span-id="${span.span_id}" style="display: flex; align-items: center; gap: 15px; padding: 8px 12px; border-bottom: 1px solid var(--border-color); font-size: 11px; cursor: pointer;">
+                <div class="trace-item" data-span-id="${span.span_id}" style="display: flex; align-items: center; gap: 10px; padding: 6px 12px; border-bottom: 1px solid var(--border-color); font-size: 10px; cursor: pointer;">
                     <div class="trace-time" style="font-family: monospace; color: var(--text-muted); flex: 0 0 100px;">${startTime}</div>
                     <div class="span-service" style="flex: 0 0 120px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${serviceName}">${serviceName}</div>
                     <div class="trace-id" style="flex: 0 0 260px; font-family: monospace; color: var(--text-muted); font-size: 0.9em;">${displayTraceId}</div>
@@ -250,7 +250,7 @@ function viewTraceFromSpan(traceId) {
     if (window.switchTab) {
         window.switchTab('traces');
     }
-    
+
     // Wait for tab to load, then show the trace detail
     setTimeout(() => {
         if (window.showTraceDetail) {
@@ -266,30 +266,30 @@ function showLogsForSpan(traceId, spanId) {
 function viewMetricsForSpan(span) {
     // Extract service name
     let serviceName = extractServiceName(span);
-    
+
     // Extract HTTP attributes for filtering
     const httpMethod = getAttributeValue(span, ['http.method', 'http.request.method']);
     const httpStatusCode = getAttributeValue(span, ['http.status_code', 'http.response.status_code']);
     const httpRoute = getAttributeValue(span, ['http.route', 'http.target', 'url.path']);
-    
+
     // Build filters object
     const filters = {
         resource: {},
         attributes: {}
     };
-    
+
     if (serviceName) {
         filters.resource['service.name'] = serviceName;
     }
-    
+
     if (httpMethod) {
         filters.attributes['http.method'] = httpMethod;
     }
-    
+
     if (httpStatusCode) {
         filters.attributes['http.status_code'] = String(httpStatusCode);
     }
-    
+
     // Call global function to view metrics with filters
     if (window.viewMetricsWithFilters) {
         window.viewMetricsWithFilters(filters);
@@ -300,7 +300,7 @@ function viewMetricsForSpan(span) {
 window.closeAllSpans = () => {
     closeAllExpandedItems({
         containers: ['.span-detail-inline'],
-        callbacks: [() => { 
+        callbacks: [() => {
             currentSpanDetail = null;
             currentSpanData = null;
         }]

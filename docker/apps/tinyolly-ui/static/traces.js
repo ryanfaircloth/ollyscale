@@ -52,7 +52,7 @@ export function renderTraces(traces) {
         const serviceName = trace.service_name || trace.root_span_service_name || '-';
 
         return `
-            <div class="trace-item" data-trace-id="${trace.trace_id}" style="display: flex; align-items: center; gap: 15px; padding: 8px 12px; border-bottom: 1px solid var(--border-color); font-size: 11px; cursor: pointer;">
+            <div class="trace-item" data-trace-id="${trace.trace_id}" style="display: flex; align-items: center; gap: 10px; padding: 6px 12px; border-bottom: 1px solid var(--border-color); font-size: 10px; cursor: pointer;">
                 <div class="trace-time" style="font-family: monospace; color: var(--text-muted); flex: 0 0 100px;">${startTime}</div>
                 <div class="trace-service" style="flex: 0 0 120px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${serviceName}">${serviceName}</div>
                 <div class="trace-id" style="flex: 0 0 260px; font-family: monospace; color: var(--text-muted); font-size: 0.9em;">${displayTraceId}</div>
@@ -319,23 +319,23 @@ async function renderWaterfall(trace) {
             </div>
             <div style="max-height: 200px; overflow-y: auto;">
                 ${traceLogs.map(log => {
-                    const timestamp = new Date(log.timestamp * 1000).toLocaleTimeString();
-                    const severity = log.severity || 'INFO';
-                    const severityColors = {
-                        'ERROR': '#ef4444',
-                        'WARN': '#f59e0b',
-                        'INFO': '#3b82f6',
-                        'DEBUG': '#6b7280'
-                    };
-                    const color = severityColors[severity] || '#6b7280';
-                    return `
+        const timestamp = new Date(log.timestamp * 1000).toLocaleTimeString();
+        const severity = log.severity || 'INFO';
+        const severityColors = {
+            'ERROR': '#ef4444',
+            'WARN': '#f59e0b',
+            'INFO': '#3b82f6',
+            'DEBUG': '#6b7280'
+        };
+        const color = severityColors[severity] || '#6b7280';
+        return `
                         <div style="padding: 6px; border-bottom: 1px solid var(--border-color); font-size: 11px; display: flex; gap: 12px; align-items: start;">
                             <span style="font-family: monospace; color: var(--text-muted); white-space: nowrap;">${timestamp}</span>
                             <span style="font-weight: 600; color: ${color}; min-width: 50px;">${severity}</span>
                             <span style="flex: 1; color: var(--text-main);">${log.message || ''}</span>
                         </div>
                     `;
-                }).join('')}
+    }).join('')}
             </div>
         </div>
     ` : '';
@@ -439,18 +439,18 @@ function showSpanJson(spanIndex) {
 function viewMetricsForTrace(trace) {
     // Extract service name from root span
     if (!trace || !trace.spans || trace.spans.length === 0) return;
-    
+
     // Find root span (no parent)
     const rootSpan = trace.spans.find(s => !s.parentSpanId && !s.parent_span_id) || trace.spans[0];
-    
+
     // Extract service.name from span
     let serviceName = extractServiceName(rootSpan);
-    
+
     // Calculate time range (±5 minutes around trace)
     const traceStartNano = rootSpan.startTimeUnixNano || rootSpan.start_time || 0;
     const traceStartSec = traceStartNano / 1_000_000_000;
     const fiveMinutes = 5 * 60;
-    
+
     // Call global function to view metrics with filters
     if (window.viewMetricsForService) {
         window.viewMetricsForService(serviceName, traceStartSec - fiveMinutes, traceStartSec + fiveMinutes);

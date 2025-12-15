@@ -108,7 +108,7 @@ export async function renderMetrics(metricsData) {
     tableContainer.style.cssText = 'background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; box-shadow: var(--shadow);';
 
     const headerHtml = `
-        <div style="display: flex; align-items: center; gap: 15px; padding: 8px 12px; border-bottom: 2px solid var(--border-color); background: var(--bg-secondary); font-weight: bold; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">
+        <div style="display: flex; align-items: center; gap: 10px; padding: 6px 12px; border-bottom: 2px solid var(--border-color); background: var(--bg-secondary); font-weight: bold; font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">
             <div style="flex: 0 0 250px;">Name</div>
             <div style="flex: 1; min-width: 150px;">Description</div>
             <div style="flex: 0 0 60px;">Unit</div>
@@ -251,26 +251,26 @@ function createMetricRow(metric) {
     const promNote = isPromHistogram ? `<div style="font-size: 10px; color: #f97316; margin-top: 2px;">📊 Prometheus histogram metric (via Remote Write)</div>` : '';
 
     rowDiv.innerHTML = `
-        <div class="metric-header" style="display: flex; align-items: center; gap: 15px; padding: 8px 12px; border-bottom: 1px solid var(--border-color); font-size: 11px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''">
+        <div class="metric-header" style="display: flex; align-items: center; gap: 10px; padding: 6px 12px; border-bottom: 1px solid var(--border-color); font-size: 10px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''">
             <div style="flex: 0 0 250px;">
-                <div style="font-weight: 600; color: var(--text-main); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${metric.name}">${metric.name}</div>
+                <div style="font-weight: 600; color: var(--text-main); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${metric.name}">${metric.name}</div>
                 ${promNote}
             </div>
-            <div style="flex: 1; min-width: 150px; color: var(--text-muted); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${metric.description || ''}">
+            <div style="flex: 1; min-width: 150px; color: var(--text-muted); font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${metric.description || ''}">
                 ${metric.description || '-'}
             </div>
-            <div style="flex: 0 0 60px; color: var(--text-muted); font-size: 11px;">
+            <div style="flex: 0 0 60px; color: var(--text-muted); font-size: 10px;">
                 ${metric.unit || '-'}
             </div>
             <div style="flex: 0 0 80px;">
-                <span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; background: ${typeBadge.color}15; color: ${typeBadge.color}; border: 1px solid ${typeBadge.color}30;">
+                <span style="padding: 1px 5px; border-radius: 4px; font-size: 9px; font-weight: 600; background: ${typeBadge.color}15; color: ${typeBadge.color}; border: 1px solid ${typeBadge.color}30;">
                     ${typeBadge.label}
                 </span>
             </div>
-            <div class="metric-resources-link" data-metric-name="${metric.name}" style="flex: 0 0 90px; font-size: 11px; color: var(--primary); cursor: pointer; text-decoration: underline;" onclick="event.stopPropagation(); window.showMetricResources('${metric.name}', ${metric.resource_count});">
+            <div class="metric-resources-link" data-metric-name="${metric.name}" style="flex: 0 0 90px; font-size: 10px; color: var(--primary); cursor: pointer; text-decoration: underline;" onclick="event.stopPropagation(); window.showMetricResources('${metric.name}', ${metric.resource_count});">
                 ${metric.resource_count} ${metric.resource_count === 1 ? 'res.' : 'res.'}
             </div>
-            <div class="metric-attributes-link" data-metric-name="${metric.name}" style="flex: 0 0 100px; font-size: 11px; color: var(--primary); cursor: pointer; text-decoration: underline;" onclick="event.stopPropagation(); window.showMetricAttributes('${metric.name}', ${metric.attribute_combinations});">
+            <div class="metric-attributes-link" data-metric-name="${metric.name}" style="flex: 0 0 100px; font-size: 10px; color: var(--primary); cursor: pointer; text-decoration: underline;" onclick="event.stopPropagation(); window.showMetricAttributes('${metric.name}', ${metric.attribute_combinations});">
                 ${metric.attribute_combinations} ${metric.attribute_combinations === 1 ? 'attr.' : 'attrs.'}
             </div>
             <div style="flex: 0 0 50px; text-align: center;">
