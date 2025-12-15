@@ -29,8 +29,10 @@ agent:
   # Timeout for collector startup
   bootstrap_timeout: 10s
 
-  # Configuration files to merge (in order, later overrides earlier)
-  # $REMOTE_CONFIG is the config received from OpAMP server
+  # Configuration files to use
+  # When $REMOTE_CONFIG is provided via OpAMP, it completely replaces the base config
+  # (the supervisor handles this as a full replacement, not a merge)
+  # The base config is only used until a remote config is first received
   config_files:
     - /etc/otelcol/config.yaml
     - $REMOTE_CONFIG
