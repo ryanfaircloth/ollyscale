@@ -248,7 +248,7 @@ export function renderTableHeader(columns) {
     }).join('');
 
     return `
-        <div style="display: flex; align-items: center; gap: 15px; padding: 8px 12px; border-bottom: 2px solid var(--border-color); background: var(--bg-secondary); font-weight: bold; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">
+        <div class="data-table-header">
             ${columnsHtml}
         </div>
     `;
