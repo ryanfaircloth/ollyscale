@@ -67,13 +67,13 @@ if [ "$USE_MINIKUBE" = true ]; then
         read -n 1 -r
         echo ""
         if [[ $REPLY =~ ^[Yy]$ ]]; then
-            bash "$SCRIPT_DIR/build-images.sh"
+            bash "$SCRIPT_DIR/00-build-images.sh"
         else
             echo -e "${GREEN}✓ Using existing images${NC}"
         fi
     else
         echo -e "${YELLOW}Images not found. Building...${NC}"
-        bash "$SCRIPT_DIR/build-images.sh"
+        bash "$SCRIPT_DIR/00-build-images.sh"
         
         if [ $? -ne 0 ]; then
             echo -e "${RED}✗ Failed to build images${NC}"

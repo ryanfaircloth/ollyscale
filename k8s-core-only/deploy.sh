@@ -3,7 +3,12 @@
 echo "Deploying TinyOlly Core (No Collector) to Kubernetes..."
 echo "==================================="
 
+# Apply ConfigMap first
+echo "Creating ConfigMaps..."
+kubectl apply -f otelcol-templates-config.yaml
+
 # Apply manifests
+echo "Deploying services..."
 kubectl apply -f redis.yaml
 kubectl apply -f tinyolly-otlp-receiver.yaml
 kubectl apply -f tinyolly-opamp-server.yaml

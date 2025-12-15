@@ -81,7 +81,8 @@ spec:
         configMap:
           name: otel-collector-config
       - name: otelcol-templates-vol
-        emptyDir: {}
+        configMap:
+          name: otelcol-templates
 ---
 apiVersion: v1
 kind: Service

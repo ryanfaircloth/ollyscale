@@ -17,12 +17,15 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
       - name: otel-collector
-        image: otel/opentelemetry-collector-contrib:latest
-        args: ["--config=/etc/otel-collector-config.yaml"]
+        image: otel-supervisor:latest
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 4317
+          name: otlp-grpc
         - containerPort: 4318
-        - containerPort: 13133
+          name: otlp-http
+        - containerPort: 19291
+          name: prom-rw
         resources:
           requests:
             memory: "128Mi"
@@ -30,30 +33,24 @@ spec:
           limits:
             memory: "512Mi"
             cpu: "500m"
-        livenessProbe:
-          httpGet:
-            path: /
-            port: 13133
-          initialDelaySeconds: 30
-          periodSeconds: 10
-          timeoutSeconds: 5
-          failureThreshold: 3
-        readinessProbe:
-          httpGet:
-            path: /
-            port: 13133
-          initialDelaySeconds: 10
-          periodSeconds: 5
-          timeoutSeconds: 3
-          failureThreshold: 3
         volumeMounts:
+        - name: supervisor-config-vol
+          mountPath: /etc/otelcol/supervisor.yaml
+          subPath: supervisor.yaml
         - name: otel-collector-config-vol
-          mountPath: /etc/otel-collector-config.yaml
+          mountPath: /etc/otelcol/config.yaml
           subPath: otel-collector-config.yaml
+        - name: supervisor-data
+          mountPath: /var/lib/otelcol/supervisor
       volumes:
+      - name: supervisor-config-vol
+        configMap:
+          name: otel-supervisor-config
       - name: otel-collector-config-vol
         configMap:
           name: otel-collector-config
+      - name: supervisor-data
+        emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
@@ -71,3 +68,7 @@ spec:
       protocol: TCP
       port: 4318
       targetPort: 4318
+    - name: prom-rw
+      protocol: TCP
+      port: 19291
+      targetPort: 19291

@@ -30,6 +30,14 @@ spec:
           value: "4321"
         - name: COLLECTOR_CONFIG_PATH
           value: "/etc/otel-collector-config.yaml"
+        - name: OTEL_SERVICE_NAME
+          value: "tinyolly-opamp-server"
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "http://otel-collector:4318"
+        - name: OTEL_EXPORTER_OTLP_PROTOCOL
+          value: "http/protobuf"
+        - name: OTEL_EXPORTER_OTLP_LOGS_ENDPOINT
+          value: "http://otel-collector:4318/v1/logs"
         volumeMounts:
         - name: otel-collector-config-vol
           mountPath: /etc/otel-collector-config.yaml

@@ -8,10 +8,7 @@ echo ""
 echo "Checking for TinyOlly resources..."
 echo "The following resources will be deleted:"
 echo ""
-kubectl get deployments,services -l app=tinyolly-ui
-kubectl get deployments,services -l app=tinyolly-opamp-server
-kubectl get deployments,services -l app=tinyolly-otlp-receiver
-kubectl get deployments,services -l app=tinyolly-redis
+kubectl get deployments,services,configmaps 2>/dev/null | grep -E "(tinyolly-redis|tinyolly|otel-collector)" || echo "  (checking resources...)"
 echo ""
 
 read -p "Do you want to proceed with cleanup? [y/N]:" confirm
@@ -29,6 +26,11 @@ kubectl delete -f tinyolly-ui.yaml --ignore-not-found
 kubectl delete -f tinyolly-opamp-server.yaml --ignore-not-found
 kubectl delete -f tinyolly-otlp-receiver.yaml --ignore-not-found
 kubectl delete -f redis.yaml --ignore-not-found
+
+echo ""
+echo "→ Ensuring all configmaps are deleted..."
+kubectl delete configmap otel-collector-config --ignore-not-found=true 2>/dev/null || true
+kubectl delete configmap otelcol-templates --ignore-not-found=true 2>/dev/null || true
 
 echo ""
 echo "Waiting for pods to terminate..."

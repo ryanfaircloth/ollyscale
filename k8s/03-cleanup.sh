@@ -51,7 +51,9 @@ if kubectl get deployment tinyolly-redis &> /dev/null || \
    kubectl get service tinyolly-ui &> /dev/null || \
    kubectl get service tinyolly-opamp-server &> /dev/null || \
    kubectl get service otel-collector &> /dev/null || \
-   kubectl get configmap otel-collector-config &> /dev/null; then
+   kubectl get configmap otel-collector-config &> /dev/null || \
+   kubectl get configmap otel-supervisor-config &> /dev/null || \
+   kubectl get configmap otelcol-templates &> /dev/null; then
     RESOURCES_EXIST=true
 fi
 
@@ -107,6 +109,8 @@ kubectl delete service otel-collector --ignore-not-found=true 2>/dev/null || tru
 
 echo -e "${YELLOW}→ Ensuring all configmaps are deleted...${NC}"
 kubectl delete configmap otel-collector-config --ignore-not-found=true 2>/dev/null || true
+kubectl delete configmap otel-supervisor-config --ignore-not-found=true 2>/dev/null || true
+kubectl delete configmap otelcol-templates --ignore-not-found=true 2>/dev/null || true
 
 # Wait for pods to terminate
 echo ""

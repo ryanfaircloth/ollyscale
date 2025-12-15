@@ -27,8 +27,16 @@ spec:
           value: "6579"
         - name: PORT
           value: "4343"
-        - name: REDIS_TTL
-          value: "1800"
+        - name: OTEL_SERVICE_NAME
+          value: "tinyolly-otlp-receiver"
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "http://otel-collector:4318"
+        - name: OTEL_EXPORTER_OTLP_PROTOCOL
+          value: "http/protobuf"
+        - name: OTEL_EXPORTER_OTLP_LOGS_ENDPOINT
+          value: "http://otel-collector:4318/v1/logs"
+        - name: OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED
+          value: "true"
         resources:
           requests:
             memory: "128Mi"

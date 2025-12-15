@@ -25,6 +25,8 @@ spec:
           value: "http://otel-collector:4317"
         - name: OTEL_SERVICE_NAME
           value: "demo-frontend"
+        - name: PROM_REMOTE_WRITE_ENDPOINT
+          value: "http://otel-collector:19291/api/v1/write"
 ---
 apiVersion: v1
 kind: Service

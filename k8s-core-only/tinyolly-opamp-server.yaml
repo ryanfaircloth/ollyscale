@@ -16,6 +16,12 @@ data:
             endpoint: 0.0.0.0:4317
           http:
             endpoint: 0.0.0.0:4318
+      
+      # Prometheus Remote Write receiver
+      # Receives metrics via Prometheus Remote Write protocol
+      # Clients should send to: http://<collector-host>:19291/api/v1/write
+      prometheusremotewrite:
+        endpoint: "0.0.0.0:19291"
 
     extensions:
       opamp:
@@ -59,7 +65,7 @@ data:
           exporters: [debug, otlp, spanmetrics]
         
         metrics:
-          receivers: [otlp,spanmetrics]
+          receivers: [otlp, prometheusremotewrite, spanmetrics]
           processors: [batch]
           exporters: [debug, otlp]
         
@@ -100,6 +106,14 @@ spec:
           value: "4321"
         - name: COLLECTOR_CONFIG_PATH
           value: "/etc/otel-collector-config.yaml"
+        - name: OTEL_SERVICE_NAME
+          value: "tinyolly-opamp-server"
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "http://tinyolly-otlp-receiver:4343"
+        - name: OTEL_EXPORTER_OTLP_PROTOCOL
+          value: "http/protobuf"
+        - name: OTEL_EXPORTER_OTLP_LOGS_ENDPOINT
+          value: "http://tinyolly-otlp-receiver:4343/v1/logs"
         volumeMounts:
         - name: otel-collector-config-vol
           mountPath: /etc/otel-collector-config.yaml

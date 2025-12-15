@@ -39,12 +39,19 @@ echo "Applying Kubernetes manifests..."
 # Track if any step fails
 FAILED=false
 
-# 1. Apply ConfigMap first (needed by otel-collector)
-echo "  → Creating ConfigMap..."
+# 1. Apply ConfigMaps first (needed by otel-collector and UI)
+echo "  → Creating ConfigMaps..."
 if ! kubectl apply -f "$SCRIPT_DIR/otel-collector-config.yaml" 2>/dev/null; then
     echo "    Warning: Validation failed, trying with --validate=false..."
     if ! kubectl apply -f "$SCRIPT_DIR/otel-collector-config.yaml" --validate=false; then
-        echo "    Error: Failed to create ConfigMap"
+        echo "    Error: Failed to create otel-collector-config ConfigMap"
+        FAILED=true
+    fi
+fi
+if ! kubectl apply -f "$SCRIPT_DIR/otelcol-templates-config.yaml" 2>/dev/null; then
+    echo "    Warning: Validation failed, trying with --validate=false..."
+    if ! kubectl apply -f "$SCRIPT_DIR/otelcol-templates-config.yaml" --validate=false; then
+        echo "    Error: Failed to create otelcol-templates ConfigMap"
         FAILED=true
     fi
 fi

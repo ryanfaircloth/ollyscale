@@ -118,6 +118,11 @@ cd k8s-demo
 ./01-deploy.sh
 ```
 
+The deploy script automatically builds the demo images if needed. To manually rebuild images:
+```bash
+./00-build-images.sh
+```
+
 To clean up the demo:
 ```bash
 ./02-cleanup.sh
