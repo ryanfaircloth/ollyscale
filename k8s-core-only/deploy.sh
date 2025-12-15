@@ -3,9 +3,9 @@
 echo "Deploying TinyOlly Core (No Collector) to Kubernetes..."
 echo "==================================="
 
-# Apply ConfigMap first
+# Apply ConfigMaps first
 echo "Creating ConfigMaps..."
-kubectl apply -f otelcol-templates-config.yaml
+kubectl apply -f otelcol-configs/templates/prometheus-remote-write.yaml
 
 # Apply manifests
 echo "Deploying services..."
