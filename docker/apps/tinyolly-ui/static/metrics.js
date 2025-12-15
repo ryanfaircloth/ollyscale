@@ -230,6 +230,11 @@ function filterMetricsByAttributes(metrics) {
     return metrics;
 }
 
+// Check if metric is from Prometheus histogram (Remote Write)
+function isPrometheusHistogramMetric(metricName) {
+    return metricName.endsWith('_bucket') || metricName.endsWith('_count') || metricName.endsWith('_sum');
+}
+
 function createMetricRow(metric) {
     const rowDiv = document.createElement('div');
     rowDiv.className = 'metric-row';
@@ -238,12 +243,17 @@ function createMetricRow(metric) {
     const type = metric.type ? metric.type.toLowerCase() : 'unknown';
     const typeBadge = TYPE_BADGES[type] || TYPE_BADGES.gauge;
 
+    // Check if this is a Prometheus histogram metric
+    const isPromHistogram = isPrometheusHistogramMetric(metric.name);
+    const promNote = isPromHistogram ? `<div style="font-size: 10px; color: #f97316; margin-top: 2px;">📊 Prometheus histogram metric (via Remote Write)</div>` : '';
+
     rowDiv.innerHTML = `
         <div class="metric-header" style="display: flex; align-items: center; gap: 15px; padding: 8px 12px; border-bottom: 1px solid var(--border-color); font-size: 11px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''">
             <div style="flex: 1; min-width: 200px;">
                 <div style="font-weight: 500; color: var(--text-main); font-size: 13px;">${metric.name}</div>
                 ${metric.description ? `<div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">${metric.description}</div>` : ''}
                 ${metric.unit ? `<div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Unit: ${metric.unit}</div>` : ''}
+                ${promNote}
             </div>
             <div style="flex: 0 0 80px;">
                 <span style="padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: 600; background: ${typeBadge.color}20; color: ${typeBadge.color};">
