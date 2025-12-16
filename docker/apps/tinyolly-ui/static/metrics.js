@@ -1606,41 +1606,65 @@ window.showMetricAttributes = async (metricName, totalSeriesCount) => {
             labelKeys.forEach(key => {
                 const values = Array.from(labelStats[key]).sort();
                 const uniqueCount = values.length;
-                const topValues = values.slice(0, 5).join(', ') + (values.length > 5 ? ', ...' : '');
+
+                let valueDisplay = '';
+                if (values.length > 5) {
+                    const firstFive = values.slice(0, 5).join(', ');
+                    const remaining = values.slice(5).join(', ');
+                    valueDisplay = `
+                        <span>${firstFive}, </span>
+                        <a style="cursor: pointer; color: var(--primary); font-weight: 600; text-decoration: none;" 
+                           onclick="this.style.display='none'; this.nextElementSibling.style.display='inline'">...</a>
+                        <span style="display: none">${remaining}</span>
+                    `;
+                } else {
+                    valueDisplay = values.join(', ');
+                }
 
                 contentHtml += `
                     <tr style="border-bottom: 1px solid var(--border-color);">
                         <td style="padding: 8px 12px; font-family: 'JetBrains Mono', monospace; color: var(--primary);">${key}</td>
                         <td style="padding: 8px 12px;">${formatCount(uniqueCount)}</td>
-                        <td style="padding: 8px 12px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;">${topValues}</td>
+                        <td style="padding: 8px 12px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;">${valueDisplay}</td>
                     </tr>
                 `;
             });
 
-            // ... (Header and Label Analysis sections remain) ...
-
-            // Raw Series Data (Scrollable & Exportable)
             contentHtml += `
-            <div>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                    <h4 style="font-size: 13px; font-weight: 600;">Raw Active Series (${activeSeriesCount})</h4>
-                    <div style="display: flex; gap: 8px;">
-                        ${renderActionButton('copy-prom-btn', '📋 Copy PromQL', 'secondary', 'dense')}
-                        ${renderActionButton('download-json-btn', '⬇ Download JSON', 'secondary', 'dense')}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-                <div id="raw-series-container" style="max-height: 200px; overflow-y: auto; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; padding: 12px; font-family: 'JetBrains Mono', monospace; font-size: 11px; white-space: pre-wrap;"></div>
-            </div>
-        `;
+            `;
+        } else {
+            contentHtml += `<div style="padding: 20px; text-align: center; color: var(--text-muted);">No labels found for this metric.</div>`;
+        }
 
-            contentHtml += `</div>`;
+        // Raw Series Data (Scrollable & Exportable)
+        if (activeSeriesCount > 0) {
+            contentHtml += `
+                <div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <h4 style="font-size: 13px; font-weight: 600;">Raw Active Series (${activeSeriesCount})</h4>
+                        <div style="display: flex; gap: 8px;">
+                            ${renderActionButton('copy-prom-btn', 'Copy PromQL', 'secondary', 'dense')}
+                            ${renderActionButton('download-json-btn', '⬇ Download JSON', 'secondary', 'dense')}
+                        </div>
+                    </div>
+                    <div id="raw-series-container" style="max-height: 200px; overflow-y: auto; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; padding: 12px; font-family: 'JetBrains Mono', monospace; font-size: 11px; white-space: pre-wrap;"></div>
+                </div>
+            `;
+        }
 
-            // Create Modal
-            const modal = createModal(`Cardinality Explorer: ${metricName}`, contentHtml, [
-                { id: 'close', label: 'Close', style: 'secondary', handler: (modal) => closeModal(modal) }
-            ], '800px');
+        contentHtml += `</div>`;
 
-            // Populate Raw Series Content
+        // Create Modal
+        const modal = createModal(`Cardinality Explorer: ${metricName}`, contentHtml, [
+            { id: 'close', label: 'Close', style: 'secondary', handler: (modal) => closeModal(modal) }
+        ], '800px');
+
+        // Populate Raw Series Content and Attach Handlers
+        if (activeSeriesCount > 0) {
             const rawContainer = modal.querySelector('#raw-series-container');
             const rawSeriesText = activeSeries.map(series => {
                 if (!series.attributes) return '{}';
@@ -1655,22 +1679,27 @@ window.showMetricAttributes = async (metricName, totalSeriesCount) => {
 
             // Attach Export Handlers
             const copyBtn = modal.querySelector('#copy-prom-btn');
-            copyBtn.onclick = () => {
-                copyToClipboard(rawSeriesText);
-                const originalText = copyBtn.textContent;
-                copyBtn.textContent = '✓ Copied!';
-                setTimeout(() => copyBtn.textContent = originalText, 2000);
-            };
+            if (copyBtn) {
+                copyBtn.onclick = () => {
+                    copyToClipboard(rawSeriesText);
+                    const originalText = copyBtn.textContent;
+                    copyBtn.textContent = '✓ Copied!';
+                    setTimeout(() => copyBtn.textContent = originalText, 2000);
+                };
+            }
 
             const downloadBtn = modal.querySelector('#download-json-btn');
-            downloadBtn.onclick = () => {
-                downloadJson(activeSeries, `${metricName}_series.json`);
-            };
-
-        } catch (error) {
-            console.error('Error loading metric attributes:', error);
-            createModal('Error', `<p>Failed to load metric attributes: ${error.message}</p>`, [
-                { id: 'close', label: 'Close', style: 'secondary', handler: (modal) => closeModal(modal) }
-            ]);
+            if (downloadBtn) {
+                downloadBtn.onclick = () => {
+                    downloadJson(activeSeries, `${metricName}_series.json`);
+                };
+            }
         }
-    };
+
+    } catch (error) {
+        console.error('Error loading metric attributes:', error);
+        createModal('Error', `<p>Failed to load metric attributes: ${error.message}</p>`, [
+            { id: 'close', label: 'Close', style: 'secondary', handler: (modal) => closeModal(modal) }
+        ]);
+    }
+};
