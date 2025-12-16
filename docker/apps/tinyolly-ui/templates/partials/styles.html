@@ -17,6 +17,7 @@
         --error-text: #991b1b;
         --info-bg: #dbeafe;
         --info-text: #1e40af;
+        --text-brand: #0000AA;
         --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
     }
 
@@ -38,6 +39,7 @@
         --error-text: #fca5a5;
         --info-bg: #1e3a8a;
         --info-text: #93c5fd;
+        --text-brand: #93c5fd;
         --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.5);
     }
 
@@ -78,7 +80,7 @@
     }
 
     header h1 {
-        color: #0000AA;
+        color: var(--text-brand);
         font-size: 18px;
         font-weight: 700;
         letter-spacing: -0.5px;
@@ -172,7 +174,7 @@
         padding: 6px 12px;
         background: transparent;
         border: none;
-        color: #0000AA;
+        color: var(--text-brand);
         cursor: pointer;
         font-size: 12px;
         font-weight: 500;
@@ -183,14 +185,14 @@
     }
 
     .tab:hover {
-        color: #0000AA;
+        color: var(--text-brand);
         background: var(--bg-hover);
         opacity: 1;
     }
 
     .tab.active {
-        color: #0000AA;
-        border-bottom-color: #0000AA;
+        color: var(--text-brand);
+        border-bottom-color: var(--text-brand);
         font-weight: 600;
         opacity: 1;
     }
