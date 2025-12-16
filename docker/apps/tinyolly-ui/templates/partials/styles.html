@@ -1319,4 +1319,139 @@
     .bg-hover-on-hover:hover {
         background: var(--bg-hover);
     }
+
+    /* AI Agents Tab Styles */
+    .ai-metrics-row {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+
+    .ai-metric-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 16px;
+        text-align: center;
+    }
+
+    .ai-metric-label {
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--text-muted);
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .ai-metric-value {
+        font-size: 28px;
+        font-weight: 600;
+        color: var(--primary);
+    }
+
+    .prompt-cell {
+        max-width: 250px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-family: monospace;
+        font-size: 12px;
+    }
+
+    .tokens-cell {
+        font-family: monospace;
+        font-size: 12px;
+        white-space: nowrap;
+    }
+
+    .badge-model {
+        background: #8b5cf6;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 500;
+    }
+
+    .ai-span-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 12px;
+    }
+
+    .ai-span-card.ai-span {
+        border-left: 4px solid #8b5cf6;
+    }
+
+    .ai-span-card.tool-span {
+        border-left: 4px solid #f59e0b;
+    }
+
+    .span-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+
+    .span-name {
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .span-timing {
+        font-size: 12px;
+        color: var(--text-muted);
+        font-family: monospace;
+    }
+
+    .ai-content {
+        background: var(--bg-body);
+        border-radius: 6px;
+        padding: 12px;
+    }
+
+    .prompt-section,
+    .completion-section {
+        margin-bottom: 12px;
+    }
+
+    .completion-section {
+        margin-bottom: 0;
+        padding-top: 12px;
+        border-top: 1px dashed var(--border-color);
+    }
+
+    .section-label {
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 6px;
+    }
+
+    .section-content {
+        font-family: monospace;
+        font-size: 13px;
+        line-height: 1.5;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    .completion-section .section-content {
+        color: #10b981;
+    }
+
+    .ai-meta {
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid var(--border-color);
+        font-size: 11px;
+        color: var(--text-muted);
+    }
 </style>

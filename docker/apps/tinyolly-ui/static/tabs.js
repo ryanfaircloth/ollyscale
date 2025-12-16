@@ -21,11 +21,11 @@ export function initTabs() {
     // Check URL parameter first (for bookmarks/direct links)
     const urlParams = new URLSearchParams(window.location.search);
     const urlTab = urlParams.get('tab');
-    
+
     // Always default to 'logs' tab when opening the base URL
     // Only use URL parameter if explicitly provided
     const savedTab = urlTab || 'logs';
-    
+
     switchTab(savedTab, null, true); // true = initial load, don't push to history
     updateAutoRefreshButton();
 
@@ -87,6 +87,9 @@ export function switchTab(tabName, element, fromHistory = false) {
         initCollector();
         loadCollector();
     }
+    else if (tabName === 'ai-agents') {
+        import('./aiAgents.js').then(module => module.loadAISessions());
+    }
 }
 
 export function startAutoRefresh() {
@@ -126,6 +129,8 @@ export function startAutoRefresh() {
             loadServiceCatalog();
         } else if (currentTab === 'map') {
             loadServiceMap();
+        } else if (currentTab === 'ai-agents' && !document.getElementById('ai-detail-view').style.display.includes('block')) {
+            import('./aiAgents.js').then(module => module.loadAISessions());
         }
         // Don't auto-refresh collector tab - user is editing config
 
