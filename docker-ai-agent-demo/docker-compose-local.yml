@@ -25,7 +25,7 @@ services:
 
   # AI Agent with zero-code auto-instrumentation
   ai-agent:
-    image: tinyolly/ai-agent-demo:latest
+    build: .
     depends_on:
       ollama:
         condition: service_healthy

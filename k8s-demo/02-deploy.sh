@@ -47,38 +47,38 @@ echo ""
 
 # Check if using Minikube
 USE_MINIKUBE=false
+RESTORE_MANIFESTS=false
 if [ "$CONTEXT" = "minikube" ]; then
     USE_MINIKUBE=true
 fi
 
-# Build images if using Minikube
+# Build images if using Minikube (optional - will pull from Docker Hub by default)
 if [ "$USE_MINIKUBE" = true ]; then
-    echo -e "${CYAN}Checking demo images...${NC}"
-    
-    # Check if images exist
-    IMAGES_EXIST=false
-    if minikube ssh "docker images" 2>/dev/null | grep -q "demo-frontend" && \
-       minikube ssh "docker images" 2>/dev/null | grep -q "demo-backend"; then
-        IMAGES_EXIST=true
-    fi
-    
-    if [ "$IMAGES_EXIST" = true ]; then
-        echo -e "${YELLOW}Demo images already exist. Rebuild? [y/N]:${NC} "
-        read -n 1 -r
-        echo ""
-        if [[ $REPLY =~ ^[Yy]$ ]]; then
-            bash "$SCRIPT_DIR/01-build-images.sh"
-        else
-            echo -e "${GREEN}✓ Using existing images${NC}"
-        fi
-    else
-        echo -e "${YELLOW}Images not found. Building...${NC}"
+    echo -e "${CYAN}Note: Images will be pulled from Docker Hub by default.${NC}"
+    echo -e "${CYAN}Do you want to build images locally instead? [y/N]:${NC} "
+    read -n 1 -r
+    echo ""
+
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        echo -e "${CYAN}Building demo images locally...${NC}"
         bash "$SCRIPT_DIR/01-build-images.sh"
 
         if [ $? -ne 0 ]; then
             echo -e "${RED}✗ Failed to build images${NC}"
             exit 1
         fi
+
+        # Update manifests to use local images
+        echo -e "${CYAN}Updating manifests for local images...${NC}"
+        sed -i.bak 's/imagePullPolicy: Always/imagePullPolicy: Never/' "$SCRIPT_DIR/demo-frontend.yaml"
+        sed -i.bak 's/imagePullPolicy: Always/imagePullPolicy: Never/' "$SCRIPT_DIR/demo-backend.yaml"
+        sed -i.bak 's|image: tinyolly/demo-frontend:latest|image: demo-frontend:latest|' "$SCRIPT_DIR/demo-frontend.yaml"
+        sed -i.bak 's|image: tinyolly/demo-backend:latest|image: demo-backend:latest|' "$SCRIPT_DIR/demo-backend.yaml"
+
+        # Set cleanup flag
+        RESTORE_MANIFESTS=true
+    else
+        echo -e "${GREEN}✓ Will pull images from Docker Hub (tinyolly/demo-frontend:latest, tinyolly/demo-backend:latest)${NC}"
     fi
     echo ""
 fi
@@ -131,5 +131,12 @@ if [ "$USE_MINIKUBE" = true ]; then
     echo ""
     echo -e "${CYAN}Optional - Generate additional traffic:${NC}"
     echo -e "  ${YELLOW}./generate-traffic.sh${NC}"
+fi
+
+# Restore manifests if they were modified for local builds
+if [ "$RESTORE_MANIFESTS" = true ]; then
+    echo -e "${CYAN}Restoring manifests to Docker Hub defaults...${NC}"
+    mv "$SCRIPT_DIR/demo-frontend.yaml.bak" "$SCRIPT_DIR/demo-frontend.yaml" 2>/dev/null || true
+    mv "$SCRIPT_DIR/demo-backend.yaml.bak" "$SCRIPT_DIR/demo-backend.yaml" 2>/dev/null || true
 fi
 

@@ -12,8 +12,11 @@ if [[ "$1" == "--no-cache" ]] || [[ "$1" == "-n" ]]; then
 fi
 
 echo "========================================================"
-echo "  TinyOlly - Deploy Demo Apps"
+echo "  TinyOlly - Deploy AI Agent Demo (LOCAL BUILD)"
 echo "========================================================"
+echo ""
+echo "This builds the AI agent image locally instead of using Docker Hub."
+echo "For faster deployment, use ./01-deploy-ai-demo.sh instead."
 echo ""
 
 # Check if docker is available
@@ -52,56 +55,54 @@ fi
 echo "✓ TinyOlly core is running"
 echo ""
 
-# Deploy demo apps
-echo "Deploying demo applications..."
+# Deploy AI demo
+echo "Building and deploying AI Agent demo locally..."
+echo ""
+echo "NOTE: First run will pull the Ollama image and tinyllama model (~1.5GB total)."
+echo "      This may take a few minutes..."
 echo ""
 
-# Check if compose file exists
-if [ ! -f "docker-compose-demo.yml" ]; then
-    echo "✗ docker-compose-demo.yml not found in current directory"
-    echo "Make sure you're running this from the docker-demo/ directory"
-    exit 1
-fi
+docker-compose -f docker-compose-local.yml build $NO_CACHE
+BUILD_EXIT_CODE=$?
 
-# Pull images from Docker Hub
-echo "Pulling demo images from Docker Hub..."
-docker-compose -f docker-compose-demo.yml pull
-PULL_EXIT_CODE=$?
-
-if [ $PULL_EXIT_CODE -ne 0 ]; then
+if [ $BUILD_EXIT_CODE -ne 0 ]; then
     echo ""
-    echo "✗ Failed to pull demo images from Docker Hub (exit code: $PULL_EXIT_CODE)"
-    echo "  Note: For local builds, use docker-compose-demo-local.yml"
+    echo "✗ Failed to build AI agent demo (exit code: $BUILD_EXIT_CODE)"
+    echo "Check the error messages above for details"
     exit 1
 fi
 
-docker-compose -f docker-compose-demo.yml up -d
+docker-compose -f docker-compose-local.yml up -d
 EXIT_CODE=$?
 
 if [ $EXIT_CODE -ne 0 ]; then
     echo ""
-    echo "✗ Failed to deploy demo apps (exit code: $EXIT_CODE)"
+    echo "✗ Failed to deploy AI agent demo (exit code: $EXIT_CODE)"
     echo "Check the error messages above for details"
     exit 1
 fi
 
 echo ""
 echo "========================================================"
-echo "  Demo Apps Deployed!"
+echo "  AI Agent Demo Deployed!"
 echo "========================================================"
 echo ""
-echo "Demo Frontend:  http://localhost:5001"
-echo "TinyOlly UI:    http://localhost:5005"
+echo "Services:"
+echo "  - Ollama (tinyllama model): http://localhost:11434"
+echo "  - AI Agent: generating traces every 15 seconds"
 echo ""
-echo "The demo apps will automatically generate traffic."
-echo "Watch the TinyOlly UI for traces, logs, and metrics!"
+echo "TinyOlly UI: http://localhost:5005"
+echo "  → Click 'AI Agents' tab to see GenAI traces"
 echo ""
-echo "Usage:"
-echo "  ./01-deploy-demo.sh           # Normal build with cache"
-echo "  ./01-deploy-demo.sh --no-cache # Force rebuild without cache"
-echo "  ./01-deploy-demo.sh -n         # Short form"
+echo "Watch agent logs:"
+echo "  docker-compose -f docker-compose-local.yml logs -f ai-agent"
 echo ""
-echo "To stop demo apps:"
-echo "  ./02-cleanup-demo.sh"
+echo "Watch Ollama logs:"
+echo "  docker-compose -f docker-compose-local.yml logs -f ollama"
 echo ""
-
+echo "To stop AI demo:"
+echo "  ./02-stop-ai-demo.sh"
+echo ""
+echo "To cleanup (remove volumes):"
+echo "  ./03-cleanup-ai-demo.sh"
+echo ""

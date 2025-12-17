@@ -1,6 +1,8 @@
 services:
   demo-backend:
-    image: tinyolly/demo-backend:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
     container_name: demo-backend
     ports:
       - "5004:5000"
@@ -10,7 +12,7 @@ services:
       - tinyolly-network
 
   demo-frontend:
-    image: tinyolly/demo-frontend:latest
+    build: .
     container_name: demo-frontend
     ports:
       - "5001:5000"

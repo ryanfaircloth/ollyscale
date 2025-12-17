@@ -4,13 +4,6 @@ set +e  # Don't exit on errors
 # Trap to prevent terminal exit
 trap 'echo "Script interrupted"; exit 0' INT TERM
 
-# Parse arguments
-NO_CACHE=""
-if [[ "$1" == "--no-cache" ]] || [[ "$1" == "-n" ]]; then
-    NO_CACHE="--no-cache"
-    echo "Building with --no-cache option"
-fi
-
 echo "========================================================"
 echo "  TinyOlly - Deploy AI Agent Demo (Ollama + Auto-Instrumentation)"
 echo "========================================================"
@@ -59,13 +52,15 @@ echo "NOTE: First run will pull the Ollama image and tinyllama model (~1.5GB tot
 echo "      This may take a few minutes..."
 echo ""
 
-docker-compose build $NO_CACHE
-BUILD_EXIT_CODE=$?
+# Pull images from Docker Hub
+echo "Pulling AI agent demo image from Docker Hub..."
+docker-compose pull
+PULL_EXIT_CODE=$?
 
-if [ $BUILD_EXIT_CODE -ne 0 ]; then
+if [ $PULL_EXIT_CODE -ne 0 ]; then
     echo ""
-    echo "✗ Failed to build AI agent demo (exit code: $BUILD_EXIT_CODE)"
-    echo "Check the error messages above for details"
+    echo "✗ Failed to pull AI agent demo image from Docker Hub (exit code: $PULL_EXIT_CODE)"
+    echo "  Note: For local builds, use ./01-deploy-ai-demo-local.sh"
     exit 1
 fi
 
@@ -96,11 +91,6 @@ echo "  docker-compose logs -f ai-agent"
 echo ""
 echo "Watch Ollama logs:"
 echo "  docker-compose logs -f ollama"
-echo ""
-echo "Usage:"
-echo "  ./01-deploy-ai-demo.sh             # Normal build with cache"
-echo "  ./01-deploy-ai-demo.sh --no-cache  # Force rebuild without cache"
-echo "  ./01-deploy-ai-demo.sh -n          # Short form"
 echo ""
 echo "To stop AI demo:"
 echo "  ./02-stop-ai-demo.sh"

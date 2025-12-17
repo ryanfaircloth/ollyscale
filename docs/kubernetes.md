@@ -27,23 +27,23 @@ git clone https://github.com/tinyolly/tinyolly
     minikube start
     ```
 
-2.  **Build Images:**
+2.  **Deploy TinyOlly:**
 
-    Run the build script to build the Docker images inside Minikube's Docker daemon:
-
-    ```bash
-    ./k8s/01-build-images.sh
-    ```
-
-3.  **Apply Manifests:**
-
-    Apply the Kubernetes manifests to deploy the services:
+    Images will be pulled from Docker Hub automatically:
 
     ```bash
     ./k8s/02-deploy-tinyolly.sh
     ```
 
-    Or manually apply all manifests:
+    !!! note "Local Development Build (Optional)"
+        To build images locally instead of pulling from Docker Hub:
+        ```bash
+        ./k8s/01-build-images.sh
+        ```
+
+3.  **Manual Deployment (Alternative):**
+
+    You can also manually apply all manifests:
 
     ```bash
     kubectl apply -f k8s/
@@ -118,10 +118,7 @@ cd k8s-demo
 ./02-deploy.sh
 ```
 
-The deploy script automatically builds the demo images if needed. To manually rebuild images:
-```bash
-./01-build-images.sh
-```
+The deploy script pulls demo images from Docker Hub by default. For local development, you can build images locally when prompted.
 
 To clean up the demo:
 ```bash
@@ -161,12 +158,7 @@ This removes the OpenTelemetry Demo but leaves TinyOlly running.
 
 To deploy TinyOlly without the bundled OTel Collector (e.g., if you have an existing collector daemonset). Includes OpAMP server for optional remote collector configuration management:
 
-1.  **Build Images:**
-    ```bash
-    ./k8s/01-build-images.sh
-    ```
-
-2.  **Deploy Core:**
+1.  **Deploy Core:**
     ```bash
     cd k8s-core-only
     ./01-deploy.sh

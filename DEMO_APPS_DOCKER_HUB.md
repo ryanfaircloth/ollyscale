@@ -1,10 +1,10 @@
-# TinyOlly Demo Apps - Docker Hub Publishing Guide
+# TinyOlly Demo Apps - Docker Hub Deployment Guide
 
 ## Overview
 
-This guide explains how to optionally publish and use demo application images from Docker Hub.
+This guide explains how to use pre-built demo application images from Docker Hub and how to build them locally for development.
 
-**Note:** Demo apps are **examples** and most users build them locally. Publishing to Docker Hub is optional and primarily for maintainers to speed up demo deployments.
+**Note:** Demo apps use Docker Hub by default for faster deployment. Local builds are available for development and customization.
 
 ---
 
@@ -65,28 +65,9 @@ This publishes:
 
 ---
 
-## Using Pre-Built Demo Images
+## Using Demo Applications
 
-### Option 1: Use Docker Hub Images (Faster)
-
-**Docker Demo:**
-```bash
-cd docker-demo
-docker-compose -f docker-compose-demo-dockerhub.yml up -d
-```
-
-**AI Agent Demo:**
-```bash
-cd docker-ai-agent-demo
-docker-compose -f docker-compose-dockerhub.yml up -d
-```
-
-**Benefits:**
-- Instant deployment (no build time)
-- Consistent across environments
-- Smaller download (optimized layers)
-
-### Option 2: Build Locally (Default)
+### Option 1: Use Docker Hub Images (Default - Recommended)
 
 **Docker Demo:**
 ```bash
@@ -101,9 +82,29 @@ cd docker-ai-agent-demo
 ```
 
 **Benefits:**
-- Can modify demo code
+- Instant deployment (~30 seconds vs 5-10 minutes)
+- Consistent across environments
+- Multi-architecture support (amd64, arm64)
+- No build time or dependencies
+
+### Option 2: Build Locally (For Development)
+
+**Docker Demo:**
+```bash
+cd docker-demo
+./01-deploy-demo-local.sh
+```
+
+**AI Agent Demo:**
+```bash
+cd docker-ai-agent-demo
+./01-deploy-ai-demo-local.sh
+```
+
+**Benefits:**
+- Can modify demo code for testing
 - No Docker Hub dependency
-- Useful for development
+- Useful for demo app development
 
 ---
 
@@ -120,12 +121,12 @@ cd docker-ai-agent-demo
 ### Compose Files
 
 **Docker Demo:**
-- `docker-compose-demo.yml` - Local builds (default)
-- `docker-compose-demo-dockerhub.yml` - Uses Docker Hub images
+- `docker-compose-demo.yml` - Uses Docker Hub images (default)
+- `docker-compose-demo-local.yml` - Local builds (development)
 
 **AI Agent Demo:**
-- `docker-compose.yml` - Local build (default)
-- `docker-compose-dockerhub.yml` - Uses Docker Hub images
+- `docker-compose.yml` - Uses Docker Hub images (default)
+- `docker-compose-local.yml` - Local builds (development)
 
 ---
 
@@ -147,7 +148,7 @@ When releasing a new TinyOlly version:
    ./build-and-push-ai-demo-image.sh v2.1.0
    ```
 
-3. **Update docker-compose-dockerhub.yml** (if using specific version)
+3. **Update docker-compose-demo.yml** (if pinning to specific version)
    ```yaml
    services:
      demo-frontend:
@@ -156,7 +157,8 @@ When releasing a new TinyOlly version:
 
 4. **Test deployment**
    ```bash
-   docker-compose -f docker-compose-demo-dockerhub.yml up -d
+   cd docker-demo
+   ./01-deploy-demo.sh
    ```
 
 ---
@@ -173,24 +175,26 @@ When published, these images will be available at:
 
 ---
 
-## Why Demos Build Locally by Default
+## Why Demos Use Docker Hub by Default
 
-1. **Examples** - Users often modify demo code to learn
-2. **Small apps** - Build time is minimal (<1 minute)
-3. **No dependency** - Works without Docker Hub access
-4. **Educational** - Shows how to containerize apps
+1. **Speed** - Deployment in ~30 seconds vs 5-10 minutes
+2. **Consistency** - Same images across all environments
+3. **Multi-arch** - Works on both Intel and ARM (Apple Silicon)
+4. **Simplicity** - No build tools required
+
+Local builds are still available for users who want to modify demo code.
 
 ---
 
 ## Decision Matrix
 
-| Scenario | Use Local Build | Use Docker Hub |
-|----------|----------------|----------------|
-| First time user | ✅ Default | ⚠️ Optional |
-| Workshop/demo | ⚠️ Slower | ✅ Faster setup |
-| Modifying demo code | ✅ Required | ❌ Can't modify |
+| Scenario | Use Docker Hub | Use Local Build |
+|----------|----------------|-----------------|
+| First time user | ✅ Default (faster) | ⚠️ Optional |
+| Workshop/demo | ✅ Faster setup | ⚠️ Slower |
+| Modifying demo code | ❌ Can't modify | ✅ Required |
 | Production use | ❌ Not for production | ❌ Not for production |
-| Testing TinyOlly | ✅ Recommended | ⚠️ Optional |
+| Testing TinyOlly | ✅ Recommended (faster) | ⚠️ Optional |
 
 **Note:** Demo apps are **never** for production use. They're examples only.
 
@@ -200,19 +204,20 @@ When published, these images will be available at:
 
 ### Q: Should I publish demo apps to Docker Hub?
 
-**A:** Only if you're a TinyOlly maintainer. Regular users should build locally.
+**A:** Only if you're a TinyOlly maintainer. Regular users use pre-built images from `tinyolly` organization.
 
-### Q: Why aren't demos on Docker Hub by default?
+### Q: Can I modify the demo apps?
 
-**A:** They're examples meant to be modified and learned from. Building locally is educational.
+**A:** Yes! Use the local build scripts (`01-deploy-demo-local.sh`) to build your modified versions.
 
-### Q: What if I want faster demo deployment?
+### Q: What if I want to publish my own modified demos?
 
-**A:** You can publish your own fork to your Docker Hub account:
+**A:** You can publish to your own Docker Hub account:
 ```bash
 export DOCKER_HUB_ORG=myusername
 cd docker-demo
 ./build-and-push-demo-images.sh
+# Then update compose files to use your org name
 ```
 
 ### Q: Can I use demo images in production?
@@ -224,10 +229,10 @@ cd docker-demo
 ## Summary
 
 - ✅ Build scripts created for demo apps
-- ✅ Docker Hub compose variants created
-- ⚠️ Publishing is optional (local builds recommended)
-- ✅ Useful for maintainers and workshop scenarios
-- ❌ Not required for regular users
+- ✅ Images published to Docker Hub (`tinyolly` organization)
+- ✅ Docker Hub deployment is default (faster)
+- ✅ Local build scripts available for development
+- ✅ Multi-architecture support (amd64, arm64)
 
-**Default behavior:** Demos build locally (unchanged)
-**Optional behavior:** Use pre-built images for faster deployment
+**Default behavior:** Deploy from Docker Hub (~30 seconds)
+**Optional behavior:** Build locally for development/customization

@@ -16,8 +16,8 @@ spec:
     spec:
       containers:
       - name: demo-frontend
-        image: demo-frontend:latest
-        imagePullPolicy: Never
+        image: tinyolly/demo-frontend:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 5000
         env:

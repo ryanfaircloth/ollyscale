@@ -12,8 +12,11 @@ if [[ "$1" == "--no-cache" ]] || [[ "$1" == "-n" ]]; then
 fi
 
 echo "========================================================"
-echo "  TinyOlly - Deploy Demo Apps"
+echo "  TinyOlly - Deploy Demo Apps (LOCAL BUILD)"
 echo "========================================================"
+echo ""
+echo "This builds demo images locally instead of using Docker Hub."
+echo "For faster deployment, use ./01-deploy-demo.sh instead."
 echo ""
 
 # Check if docker is available
@@ -53,29 +56,27 @@ echo "✓ TinyOlly core is running"
 echo ""
 
 # Deploy demo apps
-echo "Deploying demo applications..."
+echo "Building and deploying demo applications locally..."
 echo ""
 
 # Check if compose file exists
-if [ ! -f "docker-compose-demo.yml" ]; then
-    echo "✗ docker-compose-demo.yml not found in current directory"
+if [ ! -f "docker-compose-demo-local.yml" ]; then
+    echo "✗ docker-compose-demo-local.yml not found in current directory"
     echo "Make sure you're running this from the docker-demo/ directory"
     exit 1
 fi
 
-# Pull images from Docker Hub
-echo "Pulling demo images from Docker Hub..."
-docker-compose -f docker-compose-demo.yml pull
-PULL_EXIT_CODE=$?
+docker-compose -f docker-compose-demo-local.yml build $NO_CACHE
+BUILD_EXIT_CODE=$?
 
-if [ $PULL_EXIT_CODE -ne 0 ]; then
+if [ $BUILD_EXIT_CODE -ne 0 ]; then
     echo ""
-    echo "✗ Failed to pull demo images from Docker Hub (exit code: $PULL_EXIT_CODE)"
-    echo "  Note: For local builds, use docker-compose-demo-local.yml"
+    echo "✗ Failed to build demo apps (exit code: $BUILD_EXIT_CODE)"
+    echo "Check the error messages above for details"
     exit 1
 fi
 
-docker-compose -f docker-compose-demo.yml up -d
+docker-compose -f docker-compose-demo-local.yml up -d
 EXIT_CODE=$?
 
 if [ $EXIT_CODE -ne 0 ]; then
@@ -96,12 +97,6 @@ echo ""
 echo "The demo apps will automatically generate traffic."
 echo "Watch the TinyOlly UI for traces, logs, and metrics!"
 echo ""
-echo "Usage:"
-echo "  ./01-deploy-demo.sh           # Normal build with cache"
-echo "  ./01-deploy-demo.sh --no-cache # Force rebuild without cache"
-echo "  ./01-deploy-demo.sh -n         # Short form"
-echo ""
 echo "To stop demo apps:"
 echo "  ./02-cleanup-demo.sh"
 echo ""
-
