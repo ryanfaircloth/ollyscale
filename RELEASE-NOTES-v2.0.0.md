@@ -8,6 +8,32 @@ Major update to TinyOlly with comprehensive OpenAPI enhancements, making the RES
 
 ## What's New
 
+### Docker Hub Deployment
+
+TinyOlly now uses Docker Hub for faster, more consistent deployments:
+
+#### Pre-Built Images
+- **All images on Docker Hub**: `tinyolly/*` organization
+- **Multi-architecture**: linux/amd64, linux/arm64 (Apple Silicon)
+- **Faster deployment**: ~30 seconds vs 5-10 minutes
+- **Version tags**: `:latest` and semantic versions (e.g., `:v2.0.0`)
+
+#### Images Available
+- `tinyolly/python-base` - Shared Python base image
+- `tinyolly/ui` - TinyOlly web UI
+- `tinyolly/otlp-receiver` - OTLP data receiver
+- `tinyolly/opamp-server` - OpAMP configuration server
+- `tinyolly/otel-supervisor` - OpenTelemetry Collector with OpAMP
+- `tinyolly/demo-frontend` - Demo frontend application
+- `tinyolly/demo-backend` - Demo backend service
+- `tinyolly/ai-agent-demo` - AI agent with GenAI instrumentation
+
+#### Developer Benefits
+- **Instant deployment**: No build time required
+- **Consistent images**: Same across all environments
+- **Local builds optional**: Use `-local` scripts for development
+- **Cross-platform**: Works on Intel and ARM Macs
+
 ### OpenAPI & REST API Enhancements
 
 This release dramatically improves the REST API with professional-grade OpenAPI documentation:
@@ -78,7 +104,17 @@ This release dramatically improves the REST API with professional-grade OpenAPI 
 ### Core Application
 - `/docker/apps/tinyolly-ui/tinyolly-ui.py` - Enhanced with full OpenAPI support
 - `/docker-core-only/apps/tinyolly-ui/tinyolly-ui.py` - Enhanced with full OpenAPI support
-- `/README.md` - Updated with OpenAPI improvements section
+
+### Docker Hub Migration
+- All `docker-compose*.yml` files - Updated to use Docker Hub images
+- All deployment scripts - Updated to pull from Docker Hub
+- Kubernetes manifests - Updated for Docker Hub images
+- Build scripts - Created for publishing to Docker Hub
+
+### Documentation
+- `/README.md` - Updated with Docker Hub and OpenAPI improvements
+- `/docs/docker.md` - Updated deployment instructions
+- `/docs/kubernetes.md` - Updated for Docker Hub deployment
 
 ---
 
@@ -144,24 +180,34 @@ After starting TinyOlly, access the enhanced API documentation:
 TinyOlly v2.0.0 is **100% backward compatible** with v1.0.0. No breaking changes to:
 - API endpoints (all URLs remain the same)
 - Data formats
-- Docker/Kubernetes configurations
 - Functionality or business logic
 
-Simply pull the latest version and restart:
+**Major change**: Now uses Docker Hub by default for faster deployment.
 
 ```bash
 # Pull latest changes
 git pull origin main
 
-# Docker
+# Docker - Now pulls images from Docker Hub (~30 seconds)
 cd docker
 ./02-stop-core.sh
 ./01-start-core.sh
 
-# Or Kubernetes
+# Or Kubernetes - Now pulls images from Docker Hub
 cd k8s
 ./03-cleanup.sh
 ./02-deploy-tinyolly.sh
+```
+
+**For local development**: Use `-local` variants of deployment scripts to build images locally:
+```bash
+# Docker local builds
+cd docker
+./01-start-core-local.sh
+
+# Demo apps local builds
+cd docker-demo
+./01-deploy-demo-local.sh
 ```
 
 No configuration changes required!
@@ -208,12 +254,17 @@ openapi-generator-cli generate \
 
 ## Statistics
 
+### API Improvements
 - **20 endpoints** fully documented
 - **13 Pydantic models** with validation and examples
 - **7 API tags** for organization
 - **60+ improvements** across all endpoints
-- **0 breaking changes** - 100% backward compatible
-- **0 linter errors**
+
+### Docker Hub Migration
+- **8 images** published to Docker Hub
+- **2 architectures** supported (amd64, arm64)
+- **~30 second** deployment time (vs 5-10 minutes)
+- **100% backward compatible** - 0 breaking changes
 
 ---
 
@@ -264,9 +315,13 @@ git clone https://github.com/tinyolly/tinyolly
 cd tinyolly
 git checkout v2.0.0
 
-# Start with Docker
+# Start with Docker (pulls from Docker Hub - ~30 seconds)
 cd docker
 ./01-start-core.sh
+
+# Deploy demo apps (optional)
+cd docker-demo
+./01-deploy-demo.sh
 
 # Access the application
 # - Web UI: http://localhost:5005

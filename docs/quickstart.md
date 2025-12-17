@@ -35,7 +35,7 @@ cd docker
 ./01-start-core.sh
 ```
 
-This starts:
+This pulls pre-built images from Docker Hub and starts:
 
 - **OpenTelemetry Collector** (ports 4317/4318)
 - **OpAMP Server** (ports 4320/4321)
@@ -43,7 +43,9 @@ This starts:
 - **TinyOlly UI** (port 5005)
 - **Redis storage** (internal)
 
-Wait for the containers to start (~30 seconds).
+**Deployment time:** ~30 seconds (pulls from Docker Hub)
+
+**For local development:** Use `./01-start-core-local.sh` to build images locally.
 
 ---
 
@@ -56,9 +58,11 @@ cd docker-demo
 ./01-deploy-demo.sh
 ```
 
-This deploys two Flask microservices that automatically generate traffic.
+This pulls demo images from Docker Hub and deploys two Flask microservices that automatically generate traffic.
 
 **Wait 30 seconds** for telemetry to appear!
+
+**For local development:** Use `./01-deploy-demo-local.sh` to build images locally.
 
 ---
 

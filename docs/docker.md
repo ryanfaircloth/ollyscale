@@ -240,3 +240,71 @@ The default configuration template (located at `docker/otelcol-configs/config.ya
 ```bash
 ./02-stop-core.sh
 ```
+
+---
+
+## Building Images Locally (Optional)
+
+By default, all deployment scripts pull pre-built images from Docker Hub for faster deployment (~30 seconds). For development or customization, you can build images locally.
+
+### Core Images
+
+**Build and deploy locally:**
+```bash
+cd docker
+./01-start-core-local.sh
+```
+
+This builds all core images locally and then starts the services.
+
+**Build core-only locally:**
+```bash
+cd docker-core-only
+./01-start-core-local.sh
+```
+
+### Demo Applications
+
+**Build demo apps locally:**
+```bash
+cd docker-demo
+./01-deploy-demo-local.sh
+```
+
+**Build AI agent demo locally:**
+```bash
+cd docker-ai-agent-demo
+./01-deploy-ai-demo-local.sh
+```
+
+### When to Build Locally
+
+- **Modifying code**: When you've changed TinyOlly or demo app code
+- **Custom features**: Adding your own customizations
+- **Development**: Testing changes before publishing
+- **Offline work**: No internet connection to Docker Hub
+- **Custom base images**: Using different base images
+
+### Publishing to Docker Hub (Maintainers)
+
+If you're a maintainer or want to publish to your own Docker Hub organization:
+
+**Core images:**
+```bash
+cd docker
+./build-and-push-images.sh v2.0.0
+```
+
+**Demo images:**
+```bash
+cd docker-demo
+./build-and-push-demo-images.sh v2.0.0
+
+cd ../docker-ai-agent-demo
+./build-and-push-ai-demo-image.sh v2.0.0
+```
+
+To use your own organization, set the environment variable:
+```bash
+export DOCKER_HUB_ORG=myusername
+```

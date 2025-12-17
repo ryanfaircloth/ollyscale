@@ -24,8 +24,10 @@ Visualize and correlate logs, metrics, and traces without sending data to the cl
 - Service catalog, dependency maps, and distributed tracing
 - Works with any OTel Collector distro
 - Built with Python (FastAPI), Redis, and JavaScript
+- Pre-built Docker images available on Docker Hub
 
 **Platform Support:** Tested on Docker Desktop and Minikube Kubernetes (Apple Silicon Mac)
+**Architectures:** linux/amd64, linux/arm64 (Apple Silicon)
 
 ## Screenshots
 
@@ -77,12 +79,14 @@ git clone https://github.com/tinyolly/tinyolly
 
 ### 1. Deploy TinyOlly Core (Required)
 
-Start the observability backend (OTel Collector, TinyOlly Receiver, Redis, UI):
+Start the observability backend (pulls pre-built images from Docker Hub):
 
 ```bash
 cd docker
 ./01-start-core.sh
 ```
+
+**Deployment time:** ~30 seconds (pulls images from Docker Hub)
 
 **Services:**
 - **OTLP Receiver**: `localhost:4343` (gRPC)
@@ -102,8 +106,9 @@ cd docker-demo
 ./01-deploy-demo.sh
 ```
 
-Two Flask microservices with automatic traffic generation. Wait 30 seconds for telemetry to appear.
+Two Flask microservices with automatic traffic generation (pulls from Docker Hub). Wait 30 seconds for telemetry to appear.
 
+**For local development:** Use `./01-deploy-demo-local.sh` to build images locally
 **Stop:** `./02-cleanup-demo.sh`
 
 ---
@@ -123,6 +128,7 @@ This starts:
 
 View AI traces in the **AI Agents** tab - see prompts, responses, token usage (in/out), and latency for each LLM call.
 
+**For local development:** Use `./01-deploy-ai-demo-local.sh` to build locally
 **Stop:** `./02-stop-ai-demo.sh`
 **Cleanup (remove volumes):** `./03-cleanup-ai-demo.sh`
 
