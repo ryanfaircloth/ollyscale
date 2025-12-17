@@ -17,8 +17,8 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
       - name: otel-collector
-        image: otel-supervisor:latest
-        imagePullPolicy: IfNotPresent
+        image: tinyolly/otel-supervisor:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 4317
           name: otlp-grpc

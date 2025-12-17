@@ -16,8 +16,8 @@ spec:
     spec:
       containers:
       - name: tinyolly-ui
-        image: tinyolly-ui:latest
-        imagePullPolicy: Never
+        image: tinyolly/ui:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 5002
         env:

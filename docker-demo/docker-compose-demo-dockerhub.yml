@@ -1,0 +1,29 @@
+services:
+  demo-backend:
+    image: tinyolly/demo-backend:latest
+    container_name: demo-backend
+    ports:
+      - "5004:5000"
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+    networks:
+      - tinyolly-network
+
+  demo-frontend:
+    image: tinyolly/demo-frontend:latest
+    container_name: demo-frontend
+    ports:
+      - "5001:5000"
+    depends_on:
+      - demo-backend
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - PROM_REMOTE_WRITE_ENDPOINT=http://otel-collector:19291/api/v1/write
+    networks:
+      - tinyolly-network
+
+networks:
+  tinyolly-network:
+    external: true
+    name: tinyolly-network
+

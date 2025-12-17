@@ -73,8 +73,8 @@ if [ "$USE_MINIKUBE" = true ]; then
         fi
     else
         echo -e "${YELLOW}Images not found. Building...${NC}"
-        bash "$SCRIPT_DIR/00-build-images.sh"
-        
+        bash "$SCRIPT_DIR/01-build-images.sh"
+
         if [ $? -ne 0 ]; then
             echo -e "${RED}✗ Failed to build images${NC}"
             exit 1
