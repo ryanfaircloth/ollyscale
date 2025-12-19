@@ -2,7 +2,18 @@
 
 **Release Date:** December 2024
 
-Major update to TinyOlly with comprehensive OpenAPI enhancements, making the REST API production-ready with full documentation, type safety, and SDK generation support.
+Major release with Docker Hub deployment, comprehensive OpenAPI documentation, modular architecture refactoring, OpAMP server for collector management, and AI agent observability.
+
+---
+
+## Highlights
+
+- **Docker Hub Images** - Pre-built multi-arch images for 30-second deployments
+- **Modular Architecture** - Complete refactoring into FastAPI best practices
+- **OpenAPI 3.0** - Full API documentation with 13 Pydantic models
+- **OpAMP Server** - Remote OpenTelemetry Collector configuration management
+- **AI Agent Observability** - New tab for GenAI/LLM tracing with Ollama integration
+- **Core-Only Mode** - Deploy TinyOlly without bundled collector
 
 ---
 
@@ -10,15 +21,9 @@ Major update to TinyOlly with comprehensive OpenAPI enhancements, making the RES
 
 ### Docker Hub Deployment
 
-TinyOlly now uses Docker Hub for faster, more consistent deployments:
+TinyOlly images are now published to Docker Hub for instant deployment:
 
-#### Pre-Built Images
-- **All images on Docker Hub**: `tinyolly/*` organization
-- **Multi-architecture**: linux/amd64, linux/arm64 (Apple Silicon)
-- **Faster deployment**: ~30 seconds vs 5-10 minutes
-- **Version tags**: `:latest` and semantic versions (e.g., `:v2.0.0`)
-
-#### Images Available
+**Published Images:**
 - `tinyolly/python-base` - Shared Python base image
 - `tinyolly/ui` - TinyOlly web UI
 - `tinyolly/otlp-receiver` - OTLP data receiver
@@ -28,148 +33,176 @@ TinyOlly now uses Docker Hub for faster, more consistent deployments:
 - `tinyolly/demo-backend` - Demo backend service
 - `tinyolly/ai-agent-demo` - AI agent with GenAI instrumentation
 
-#### Developer Benefits
-- **Instant deployment**: No build time required
-- **Consistent images**: Same across all environments
-- **Local builds optional**: Use `-local` scripts for development
-- **Cross-platform**: Works on Intel and ARM Macs
+**Benefits:**
+- Multi-architecture: linux/amd64, linux/arm64 (Apple Silicon)
+- ~30 second deployment vs 5-10 minutes building locally
+- Version tags: `:latest` and semantic versions (`:v2.0.0`)
+- Local build scripts available with `-local` suffix
+
+### Modular Architecture Refactoring
+
+The monolithic application has been refactored into a clean, modular FastAPI structure:
+
+```
+tinyolly-ui/
+├── app/
+│   ├── main.py           # App factory
+│   ├── config.py         # Centralized settings
+│   ├── models.py         # Pydantic models
+│   ├── core/
+│   │   ├── logging.py    # Logging setup
+│   │   ├── middleware.py # HTTP middleware
+│   │   └── telemetry.py  # OpenTelemetry instrumentation
+│   ├── managers/
+│   │   ├── websocket.py  # WebSocket connections
+│   │   └── alerts.py     # Alert management
+│   ├── routers/
+│   │   ├── ingest.py     # OTLP ingestion
+│   │   ├── query.py      # Data queries
+│   │   ├── services.py   # Service catalog/map
+│   │   ├── admin.py      # Admin operations
+│   │   ├── system.py     # Health & WebSocket
+│   │   └── opamp.py      # OpAMP protocol
+│   └── services/
+│       └── validation.py # Config validation
+```
+
+**Improvements:**
+- Clear separation of concerns
+- Dependency injection pattern
+- Uvloop for faster async event loop
+- ORJSONResponse for faster JSON serialization
+- Comprehensive OpenTelemetry instrumentation
 
 ### OpenAPI & REST API Enhancements
 
-This release dramatically improves the REST API with professional-grade OpenAPI documentation:
+**13 Pydantic Models:**
+- `ErrorResponse`, `HealthResponse`, `IngestResponse`
+- `TraceDetail`, `TraceSummary`, `SpanDetail`
+- `LogEntry`, `MetricMetadata`, `MetricDetail`, `MetricQueryResult`
+- `ServiceMap`, `ServiceCatalogEntry`, `StatsResponse`
 
-#### Type Safety & Validation
-- **13 Pydantic Models**: Complete request/response validation
-  - `ErrorResponse`, `HealthResponse`, `IngestResponse`
-  - `TraceDetail`, `TraceSummary`, `SpanDetail`
-  - `LogEntry`, `MetricMetadata`, `MetricDetail`, `MetricQueryResult`
-  - `ServiceMap`, `ServiceCatalogEntry`, `StatsResponse`
-- **Automatic Validation**: All endpoints now validate inputs and outputs
-- **IDE Support**: Full autocomplete and type checking
+**8 API Tags:**
+- Ingestion, Traces, Spans, Logs, Metrics, Services, System, OpAMP
 
-#### Comprehensive Documentation
-- **All 20 endpoints** fully documented with detailed descriptions
-- **Request/Response Schemas**: Every endpoint shows exactly what to send and expect
-- **Code Examples**: Markdown examples showing how to use each endpoint
-- **Error Documentation**: All possible HTTP status codes documented
-- **Parameter Descriptions**: Every query parameter explained with limits and defaults
+**Documentation:**
+- 20+ endpoints fully documented
+- Request/response schemas with examples
+- Parameter limits and defaults
+- HTTP status codes documented
+- Operation IDs for SDK generation
 
-#### Better Organization
-- **7 API Tags**: Endpoints organized into logical categories
-  - Ingestion (OTLP data ingestion)
-  - Traces (query traces)
-  - Spans (query spans)
-  - Logs (query and stream logs)
-  - Metrics (query metrics)
-  - Services (catalog and map)
-  - System (health and stats)
-- **Operation IDs**: Unique identifiers for all endpoints (perfect for code generation)
-- **Rich Metadata**: Contact info, license, comprehensive descriptions
+**Access Points:**
+- Swagger UI: `http://localhost:5005/docs`
+- ReDoc: `http://localhost:5005/redoc`
+- OpenAPI JSON: `http://localhost:5005/openapi.json`
 
-#### SDK Generation Ready
-- **OpenAPI 3.0 Compliant**: Full, valid OpenAPI specification
-- **Client Generation**: Generate SDKs in any language using OpenAPI Generator
-- **Tool Compatible**: Works with Postman, Insomnia, Swagger Editor, etc.
+### OpAMP Server
 
-#### Enhanced Developer Experience
-- **Interactive Swagger UI**: Try endpoints directly in the browser
-- **ReDoc Interface**: Beautiful, searchable API documentation
-- **Schema Examples**: Every model includes example data
-- **Response Models**: All endpoints declare return types
+New Go-based OpAMP server for remote OpenTelemetry Collector management:
 
----
+**Features:**
+- Real-time collector configuration viewing and editing
+- Configuration validation before applying
+- Template support for common configurations
+- Live status of connected collectors
+- Configuration diff preview
 
-## Technical Improvements
+**Ports:**
+- 4320 - OpAMP WebSocket
+- 4321 - OpAMP HTTP REST API
 
-### Code Quality
-- **Missing Import Fixed**: Added `StreamingResponse` import (was causing runtime errors)
-- **Status Codes**: Added `status` module import for HTTP status code constants
-- **Type Hints**: Enhanced with `Literal` types for enum-like fields
+**New UI Tab:** Collector configuration management with visual editor
 
-### API Enhancements
-- **Parameter Validation**: Max limits on pagination (e.g., `le=1000`)
-- **Default Values**: Clear defaults documented for all parameters
-- **Error Standardization**: Consistent error response format across all endpoints
-- **Response Codes**: All endpoints document possible HTTP responses
+### AI Agent Observability
 
-### Documentation Updates
-- **README Enhanced**: New section highlighting OpenAPI features
-- **SDK Generation Guide**: Instructions for generating client libraries
-- **API Feature List**: Complete list of API capabilities
+New tab for observing Generative AI / LLM applications:
 
----
+**Features:**
+- Zero-code auto-instrumentation via `opentelemetry-instrumentation-ollama`
+- GenAI semantic conventions support
+- LLM call prompts and responses
+- Token usage tracking (input/output)
+- Latency per LLM call
+- Model information
 
-## Files Modified
+**Demo Application:**
+- Ollama integration for local LLM inference
+- Sample AI agent in `docker-ai-agent-demo/`
 
-### Core Application
-- `/docker/apps/tinyolly-ui/tinyolly-ui.py` - Enhanced with full OpenAPI support
-- `/docker-core-only/apps/tinyolly-ui/tinyolly-ui.py` - Enhanced with full OpenAPI support
+### Core-Only Deployment
 
-### Docker Hub Migration
-- All `docker-compose*.yml` files - Updated to use Docker Hub images
-- All deployment scripts - Updated to pull from Docker Hub
-- Kubernetes manifests - Updated for Docker Hub images
-- Build scripts - Created for publishing to Docker Hub
+New deployment option without bundled OpenTelemetry Collector:
 
-### Documentation
-- `/README.md` - Updated with Docker Hub and OpenAPI improvements
-- `/docs/docker.md` - Updated deployment instructions
-- `/docs/kubernetes.md` - Updated for Docker Hub deployment
+```bash
+# Docker
+cd docker-core-only
+./01-start-core.sh
 
----
-
-## Highlights
-
-### Before v2.0.0
-```python
-@app.get('/api/traces', tags=["Traces"])
-async def get_traces(limit: int = Query(default=100)):
-    """Get list of recent traces with summaries"""
+# Kubernetes
+cd k8s-core-only
+./01-deploy.sh
 ```
 
-### After v2.0.0
-```python
-@app.get(
-    '/api/traces',
-    tags=["Traces"],
-    response_model=List[Dict[str, Any]],
-    operation_id="get_traces",
-    summary="Get recent traces",
-    responses={
-        200: {"description": "List of trace summaries"}
-    }
-)
-async def get_traces(
-    limit: int = Query(default=100, le=1000, 
-                      description="Maximum number of traces to return (max 1000)")
-):
-    """
-    Get list of recent traces with summaries.
-    
-    Returns trace metadata including root service, operation name, duration, 
-    span count, and error status. Results are sorted by most recent first.
-    """
-```
+Use your own external collector pointing to TinyOlly's OTLP receiver.
+
+### Shared Common Package
+
+New `tinyolly-common` Python package for shared utilities:
+
+- Redis storage layer with ZSTD compression + msgpack
+- OTLP format utilities
+- TTL-based automatic cleanup (30-minute default)
+- Async/await interface with connection pooling
 
 ---
 
-## Documentation Access
+## New Deployment Scripts
 
-After starting TinyOlly, access the enhanced API documentation:
+**Docker:**
+- `01-start-core.sh` - Start with Docker Hub images
+- `01-start-core-local.sh` - Start with local builds
+- `build-and-push-images.sh` - Publish to Docker Hub
+- `04-rebuild-ui.sh` - Rebuild UI only
 
-- **Swagger UI**: http://localhost:5005/docs
-  - Interactive API explorer
-  - Try endpoints directly
-  - See all models and examples
+**Kubernetes:**
+- `02-deploy-tinyolly.sh` - Deploy from Docker Hub
+- `01-build-images.sh` - Build locally for K8s
 
-- **ReDoc**: http://localhost:5005/redoc
-  - Clean, three-panel documentation
-  - Better for reading and reference
+**Demo Applications:**
+- `docker-demo/01-deploy-demo.sh` - Standard demo
+- `docker-ai-agent-demo/01-deploy-ai-demo.sh` - AI agent demo
 
-- **OpenAPI JSON**: http://localhost:5005/openapi.json
-  - Machine-readable schema
-  - Use with code generators
-  - Import into Postman, Insomnia, etc.
+---
+
+## Enhanced Features
+
+### Metrics Cardinality
+
+- Inline cardinality indicators per metric
+- Label analysis with high-cardinality detection
+- Top values for each label (expandable)
+- Raw series view in PromQL-like syntax
+- Copy PromQL queries
+- JSON export
+- Protection limits with visual warnings
+
+### Frontend Enhancements
+
+- `aiAgents.js` - AI agent session visualization
+- `collector.js` - OpAMP collector configuration UI
+- `filter.js` - Filtering utilities
+- Enhanced metrics cardinality explorer
+- New tabs for AI Agents and Collector management
+
+---
+
+## Bug Fixes
+
+- Fixed missing `StreamingResponse` import in log streaming endpoint
+- Added proper type hints throughout codebase
+- Standardized error response format
+- Added `status` module import for HTTP status constants
 
 ---
 
@@ -177,133 +210,28 @@ After starting TinyOlly, access the enhanced API documentation:
 
 ### From v1.0.0
 
-TinyOlly v2.0.0 is **100% backward compatible** with v1.0.0. No breaking changes to:
+TinyOlly v2.0.0 is **100% backward compatible**. No breaking changes to:
 - API endpoints (all URLs remain the same)
 - Data formats
-- Functionality or business logic
+- OTLP ingestion
 
-**Major change**: Now uses Docker Hub by default for faster deployment.
-
+**Upgrade Steps:**
 ```bash
 # Pull latest changes
 git pull origin main
 
-# Docker - Now pulls images from Docker Hub (~30 seconds)
+# Docker - now pulls from Docker Hub (~30 seconds)
 cd docker
 ./02-stop-core.sh
 ./01-start-core.sh
 
-# Or Kubernetes - Now pulls images from Docker Hub
+# Or Kubernetes
 cd k8s
 ./03-cleanup.sh
 ./02-deploy-tinyolly.sh
 ```
 
-**For local development**: Use `-local` variants of deployment scripts to build images locally:
-```bash
-# Docker local builds
-cd docker
-./01-start-core-local.sh
-
-# Demo apps local builds
-cd docker-demo
-./01-deploy-demo-local.sh
-```
-
-No configuration changes required!
-
----
-
-## New Capabilities
-
-### Generate API Clients
-
-Now you can generate type-safe client libraries in any language:
-
-```bash
-# Download OpenAPI spec
-curl http://localhost:5005/openapi.json > openapi.json
-
-# Generate Python client
-openapi-generator-cli generate \
-  -i openapi.json \
-  -g python \
-  -o ./tinyolly-python-client
-
-# Generate TypeScript client
-openapi-generator-cli generate \
-  -i openapi.json \
-  -g typescript-fetch \
-  -o ./tinyolly-ts-client
-
-# Generate Go client
-openapi-generator-cli generate \
-  -i openapi.json \
-  -g go \
-  -o ./tinyolly-go-client
-```
-
-### Import into API Tools
-
-- **Postman**: Import `/openapi.json` to get instant collection
-- **Insomnia**: Import spec for full API exploration
-- **Swagger Editor**: Validate and customize the spec
-- **API Testing**: Use with Dredd, Prism, or other tools
-
----
-
-## Statistics
-
-### API Improvements
-- **20 endpoints** fully documented
-- **13 Pydantic models** with validation and examples
-- **7 API tags** for organization
-- **60+ improvements** across all endpoints
-
-### Docker Hub Migration
-- **8 images** published to Docker Hub
-- **2 architectures** supported (amd64, arm64)
-- **~30 second** deployment time (vs 5-10 minutes)
-- **100% backward compatible** - 0 breaking changes
-
----
-
-## Use Cases Enabled
-
-### For Developers
-- Auto-generated, always up-to-date documentation
-- Type-safe client libraries in any language
-- Better IDE support with autocomplete
-- Clear error messages and validation
-
-### For Integration
-- OpenAPI 3.0 standard compliance
-- Easy third-party tool integration
-- SDK generation for any language
-- Import into Postman/Insomnia
-
-### For Production
-- Comprehensive API documentation
-- Request/response validation
-- Standardized error handling
-- Professional API presentation
-
----
-
-## Future Enhancements
-
-While v2.0.0 provides comprehensive OpenAPI support, future versions may include:
-- API versioning with `/api/v1/` prefix
-- Authentication (API keys, OAuth2)
-- Rate limiting documentation
-- GraphQL endpoint
-- Webhook support
-
----
-
-## Acknowledgments
-
-TinyOlly v2.0.0 builds on the solid foundation of v1.0.0 while dramatically improving the developer experience through comprehensive OpenAPI documentation.
+**For local development:** Use `-local` script variants to build images locally.
 
 ---
 
@@ -315,40 +243,42 @@ git clone https://github.com/tinyolly/tinyolly
 cd tinyolly
 git checkout v2.0.0
 
-# Start with Docker (pulls from Docker Hub - ~30 seconds)
+# Start with Docker (pulls from Docker Hub)
 cd docker
 ./01-start-core.sh
 
 # Deploy demo apps (optional)
-cd docker-demo
+cd ../docker-demo
 ./01-deploy-demo.sh
 
 # Access the application
-# - Web UI: http://localhost:5005
-# - Swagger UI: http://localhost:5005/docs
-# - ReDoc: http://localhost:5005/redoc
-# - OpenAPI Spec: http://localhost:5005/openapi.json
+# Web UI: http://localhost:5005
+# Swagger UI: http://localhost:5005/docs
+# ReDoc: http://localhost:5005/redoc
 ```
 
 ---
 
-## Bug Fixes
+## Statistics
 
-- Fixed missing `StreamingResponse` import in log streaming endpoint
-- Added proper type hints throughout the codebase
-- Standardized error response format
+- **108 commits** since v1.0.0
+- **13 Pydantic models** for type safety
+- **20+ API endpoints** fully documented
+- **8 Docker images** on Docker Hub
+- **2 architectures** supported (amd64, arm64)
+- **~30 second** deployment time
+- **100% backward compatible**
 
 ---
 
 ## Additional Resources
 
-- [Main Documentation](https://tinyolly.github.io/tinyolly/)
+- [Documentation](https://tinyolly.github.io/tinyolly/)
 - [GitHub Repository](https://github.com/tinyolly/tinyolly)
-- [API Documentation](docs/api.md)
-- [Docker Deployment](docs/docker.md)
-- [Kubernetes Deployment](docs/kubernetes.md)
+- [Docker Deployment Guide](docs/docker.md)
+- [Kubernetes Deployment Guide](docs/kubernetes.md)
+- [API Reference](docs/api.md)
 
 ---
 
 **Built for the OpenTelemetry community**
-
