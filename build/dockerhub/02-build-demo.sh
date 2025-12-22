@@ -1,24 +1,27 @@
 #!/bin/bash
 set -e
 
-# Build and push TinyOlly demo app images to Docker Hub
-# Usage: ./build-and-push-demo-images.sh [version]
-# Example: ./build-and-push-demo-images.sh v2.0.0
+# Build TinyOlly demo images locally (multi-arch)
+# Usage: ./build-demo.sh [version]
+# Example: ./build-demo.sh v2.1.0
+#
+# NOTE: Uses --no-cache for fresh builds. Does NOT push to Docker Hub.
+# To push, run: ./03-push-demo.sh [version]
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR/../../docker-demo"
 
 VERSION=${1:-"latest"}
 DOCKER_HUB_ORG=${DOCKER_HUB_ORG:-"tinyolly"}
 PLATFORMS="linux/amd64,linux/arm64"
 
 echo "=========================================="
-echo "TinyOlly Demo Apps - Build & Push"
+echo "TinyOlly Demo - Build (No Push)"
 echo "=========================================="
 echo "Organization: $DOCKER_HUB_ORG"
 echo "Version: $VERSION"
 echo "Platforms: $PLATFORMS"
-echo ""
-echo "NOTE: These are demo/example applications."
-echo "      Most users build these locally."
-echo "      Only push if you're a maintainer."
+echo "Cache: disabled (fresh build)"
 echo ""
 
 # Ensure buildx builder exists
@@ -32,11 +35,12 @@ echo "----------------------------------------"
 echo "Building demo-frontend..."
 echo "----------------------------------------"
 docker buildx build --platform $PLATFORMS \
+  --no-cache \
   -f Dockerfile \
   -t $DOCKER_HUB_ORG/demo-frontend:latest \
   -t $DOCKER_HUB_ORG/demo-frontend:$VERSION \
-  --push .
-echo "✓ Pushed $DOCKER_HUB_ORG/demo-frontend:$VERSION"
+  --load .
+echo "✓ Built $DOCKER_HUB_ORG/demo-frontend:$VERSION"
 echo ""
 
 # Build demo-backend
@@ -44,21 +48,22 @@ echo "----------------------------------------"
 echo "Building demo-backend..."
 echo "----------------------------------------"
 docker buildx build --platform $PLATFORMS \
+  --no-cache \
   -f Dockerfile.backend \
   -t $DOCKER_HUB_ORG/demo-backend:latest \
   -t $DOCKER_HUB_ORG/demo-backend:$VERSION \
-  --push .
-echo "✓ Pushed $DOCKER_HUB_ORG/demo-backend:$VERSION"
+  --load .
+echo "✓ Built $DOCKER_HUB_ORG/demo-backend:$VERSION"
 echo ""
 
 echo "=========================================="
-echo "✓ Demo images built and pushed!"
+echo "✓ Demo images built locally!"
 echo "=========================================="
 echo ""
-echo "Published images:"
+echo "Built images:"
 echo "  - $DOCKER_HUB_ORG/demo-frontend:$VERSION"
 echo "  - $DOCKER_HUB_ORG/demo-backend:$VERSION"
 echo ""
-echo "To use pre-built images:"
-echo "  Edit docker-compose-demo.yml and replace 'build:' with 'image: $DOCKER_HUB_ORG/demo-frontend:latest'"
+echo "Next step - push to Docker Hub:"
+echo "  ./03-push-demo.sh $VERSION"
 echo ""

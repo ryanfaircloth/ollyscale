@@ -1,24 +1,27 @@
 #!/bin/bash
 set -e
 
-# Build and push TinyOlly AI Agent demo image to Docker Hub
-# Usage: ./build-and-push-ai-demo-image.sh [version]
-# Example: ./build-and-push-ai-demo-image.sh v2.0.0
+# Build TinyOlly AI Agent demo image locally (multi-arch)
+# Usage: ./build-ai-demo.sh [version]
+# Example: ./build-ai-demo.sh v2.1.0
+#
+# NOTE: Uses --no-cache for fresh builds. Does NOT push to Docker Hub.
+# To push, run: ./03-push-ai-demo.sh [version]
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR/../../docker-ai-agent-demo"
 
 VERSION=${1:-"latest"}
 DOCKER_HUB_ORG=${DOCKER_HUB_ORG:-"tinyolly"}
 PLATFORMS="linux/amd64,linux/arm64"
 
 echo "=========================================="
-echo "TinyOlly AI Agent Demo - Build & Push"
+echo "TinyOlly AI Demo - Build (No Push)"
 echo "=========================================="
 echo "Organization: $DOCKER_HUB_ORG"
 echo "Version: $VERSION"
 echo "Platforms: $PLATFORMS"
-echo ""
-echo "NOTE: This is a demo/example application."
-echo "      Most users build this locally."
-echo "      Only push if you're a maintainer."
+echo "Cache: disabled (fresh build)"
 echo ""
 
 # Ensure buildx builder exists
@@ -27,27 +30,26 @@ docker buildx create --name tinyolly-builder --use 2>/dev/null || docker buildx 
 docker buildx inspect --bootstrap
 echo ""
 
-# Build ai-agent
+# Build ai-agent-demo
 echo "----------------------------------------"
 echo "Building ai-agent-demo..."
 echo "----------------------------------------"
 docker buildx build --platform $PLATFORMS \
+  --no-cache \
   -f Dockerfile \
   -t $DOCKER_HUB_ORG/ai-agent-demo:latest \
   -t $DOCKER_HUB_ORG/ai-agent-demo:$VERSION \
-  --push .
-echo "✓ Pushed $DOCKER_HUB_ORG/ai-agent-demo:$VERSION"
+  --load .
+echo "✓ Built $DOCKER_HUB_ORG/ai-agent-demo:$VERSION"
 echo ""
 
 echo "=========================================="
-echo "✓ AI Agent demo image built and pushed!"
+echo "✓ AI demo image built locally!"
 echo "=========================================="
 echo ""
-echo "Published image:"
+echo "Built image:"
 echo "  - $DOCKER_HUB_ORG/ai-agent-demo:$VERSION"
 echo ""
-echo "To use pre-built image:"
-echo "  Edit docker-compose.yml and replace 'build: .' with 'image: $DOCKER_HUB_ORG/ai-agent-demo:latest'"
-echo ""
-echo "Note: Ollama image (ollama/ollama:latest) is already from Docker Hub."
+echo "Next step - push to Docker Hub:"
+echo "  ./03-push-ai-demo.sh $VERSION"
 echo ""
