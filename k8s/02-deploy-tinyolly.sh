@@ -23,8 +23,7 @@ if ! kubectl cluster-info &> /dev/null; then
     echo "Please ensure your cluster is running and kubectl is configured properly"
     echo ""
     echo "For minikube:"
-    echo "  0. Start minikube: minikube start"
-    echo "  1. Build images: ./01-build-images.sh"
+    echo "  1. Start minikube: minikube start"
     echo "  2. Deploy: ./02-deploy-tinyolly.sh"
     echo ""
     return 2>/dev/null || exit 1
@@ -104,8 +103,7 @@ if [ "$FAILED" = true ]; then
     echo "Some deployments failed. Check the errors above."
     echo "You may need to:"
     echo "  1. Ensure minikube is running: minikube status"
-    echo "  2. Build images first: ./01-build-images.sh"
-    echo "  3. Check kubectl context: kubectl config current-context"
+    echo "  2. Check kubectl context: kubectl config current-context"
     return 2>/dev/null || exit 1
 fi
 

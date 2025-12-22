@@ -35,21 +35,15 @@ git clone https://github.com/tinyolly/tinyolly
     ./k8s/02-deploy-tinyolly.sh
     ```
 
+    Alternatively, you can manually apply all manifests with `kubectl apply -f k8s/`
+
     !!! note "Local Development Build (Optional)"
-        To build images locally instead of pulling from Docker Hub:
+        To build images locally for Minikube instead of pulling from Docker Hub:
         ```bash
-        ./k8s/01-build-images.sh
+        ./build/local/build-core-minikube.sh
         ```
 
-3.  **Manual Deployment (Alternative):**
-
-    You can also manually apply all manifests:
-
-    ```bash
-    kubectl apply -f k8s/
-    ```
-
-4.  **Access the UI:**
+3.  **Access the UI:**
 
     To access the TinyOlly UI (Service Type: LoadBalancer) on macOS with Minikube, you need to use `minikube tunnel`.
 
@@ -65,7 +59,7 @@ git clone https://github.com/tinyolly/tinyolly
 
     **OpenTelemetry Collector + OpAMP Config Page:** Navigate to the "OpenTelemetry Collector + OpAMP Config" tab in the UI to view and manage collector configurations remotely. See the [OpAMP Configuration](#opamp-configuration-optional) section below for setup instructions.
 
-5.  **Send Telemetry from Host Apps:**
+4.  **Send Telemetry from Host Apps:**
 
     To send telemetry from applications running on your host machine (outside Kubernetes), use `kubectl port-forward` to expose the OTel Collector ports:
 
@@ -89,7 +83,7 @@ git clone https://github.com/tinyolly/tinyolly
     - **gRPC**: `http://otel-collector:4317`  
     - **HTTP**: `http://otel-collector:4318`  
 
-6.  **Clean Up:**
+5.  **Clean Up:**
 
     Use the cleanup script to remove all TinyOlly resources:
 
@@ -164,10 +158,10 @@ To deploy TinyOlly without the bundled OTel Collector (e.g., if you have an exis
     ./01-deploy.sh
     ```
 
-3.  **Access UI:**
+2.  **Access UI:**
     Run `minikube tunnel` and access `http://localhost:5002`.
 
-4.  **Cleanup:**
+3.  **Cleanup:**
     ```bash
     ./02-cleanup.sh
     ```

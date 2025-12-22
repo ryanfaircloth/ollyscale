@@ -9,7 +9,7 @@ eval $(minikube docker-env)
 echo "Rebuilding TinyOlly UI (Minikube)..."
 echo "=================================================="
 
-# Build image (same as in 01-build-images.sh but only for UI)
+# Build image locally for minikube (only for UI)
 # Using --no-cache to ensure latest changes are picked up
 echo "Building tinyolly-ui:latest..."
 docker build --no-cache -t tinyolly-ui:latest \

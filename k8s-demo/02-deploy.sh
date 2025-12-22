@@ -61,7 +61,7 @@ if [ "$USE_MINIKUBE" = true ]; then
 
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         echo -e "${CYAN}Building demo images locally...${NC}"
-        bash "$SCRIPT_DIR/01-build-images.sh"
+        bash "$SCRIPT_DIR/../build/local/build-demo-minikube.sh"
 
         if [ $? -ne 0 ]; then
             echo -e "${RED}✗ Failed to build images${NC}"

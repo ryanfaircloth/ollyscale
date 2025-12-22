@@ -208,7 +208,6 @@ The default configuration template (located at `docker/otelcol-configs/config.ya
 
 ```bash
 minikube start
-./k8s/01-build-images.sh
 ./k8s/02-deploy-tinyolly.sh
 ```
 
@@ -229,7 +228,7 @@ cd k8s-demo
 ./02-deploy.sh  # Automatically builds images if needed
 ```
 
-**Manual image build (optional):** `./01-build-images.sh`
+**Manual image build (optional):** `./build/local/build-demo-minikube.sh`
 **Cleanup:** `./03-cleanup.sh`
 
 ### 3. eBPF Zero-Code Tracing Demo (Optional)
@@ -248,7 +247,6 @@ See [eBPF Demo Documentation](docs/ebpf.md) for details.
 ### 4. Core-Only Deployment (Use Your Own OTel Collector)
 
 ```bash
-./k8s/01-build-images.sh
 cd k8s-core-only
 ./01-deploy.sh
 ```
