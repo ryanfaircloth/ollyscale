@@ -13,17 +13,42 @@ This demo showcases **OpenTelemetry eBPF Instrumentation (OBI)** - automatic tra
 
 ## Quick Start
 
+### Docker
+
 ```bash
 # Start TinyOlly core first
 cd docker
 ./01-start-core.sh
 
-# Deploy eBPF demo
+# Deploy eBPF demo (pulls pre-built images from Docker Hub)
 cd ../docker-demo-ebpf
 ./01-deploy-ebpf-demo.sh
 ```
 
 Access the UI at `http://localhost:5005`
+
+### Kubernetes
+
+```bash
+# Start TinyOlly core first
+minikube start
+./k8s/01-build-images.sh
+./k8s/02-deploy-tinyolly.sh
+
+# Deploy eBPF demo (pulls pre-built images from Docker Hub)
+cd k8s-demo-ebpf
+./02-deploy.sh
+```
+
+Run `minikube tunnel` in a separate terminal, then access the UI at `http://localhost:5002`
+
+### Docker Hub Images
+
+The eBPF demo uses pre-built images from Docker Hub:
+- `tinyolly/ebpf-frontend:latest` - Frontend with OTel SDK for metrics/logs
+- `tinyolly/ebpf-backend:latest` - Pure Flask backend (no OTel SDK)
+
+For local development, use the build scripts in each demo folder.
 
 ## What's Different from SDK Instrumentation?
 
@@ -91,54 +116,6 @@ This is expected behavior - eBPF operates at the kernel level and cannot inject 
 
 Metrics work the same way in both approaches - they're exported via the OTel SDK regardless of how traces are captured.
 
-## Demo Architecture
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    docker-demo-ebpf                          │
-├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  ┌──────────────────┐       ┌──────────────────┐            │
-│  │  ebpf-frontend   │──────▶│   ebpf-backend   │            │
-│  │                  │       │                  │            │
-│  │  OTel SDK:       │       │  NO OTel SDK     │            │
-│  │  - Metrics ✓     │       │  - Pure Flask    │            │
-│  │  - Logs ✓        │       │                  │            │
-│  │  - Traces ✗      │       │                  │            │
-│  └──────────────────┘       └──────────────────┘            │
-│           │                          │                       │
-│           └──────────┬───────────────┘                       │
-│                      │                                       │
-│                      ▼                                       │
-│           ┌──────────────────┐                              │
-│           │  otel-ebpf-agent │                              │
-│           │                  │                              │
-│           │  Captures HTTP   │                              │
-│           │  traces via eBPF │                              │
-│           │  kernel hooks    │                              │
-│           └────────┬─────────┘                              │
-│                    │                                        │
-└────────────────────┼────────────────────────────────────────┘
-                     │
-                     ▼
-            ┌────────────────┐
-            │ otel-collector │
-            │                │
-            │  Receives:     │
-            │  - Traces      │
-            │  - Logs        │
-            │  - Metrics     │
-            └───────┬────────┘
-                    │
-                    ▼
-            ┌────────────────┐
-            │    TinyOlly    │
-            │                │
-            │  http://       │
-            │  localhost:5005│
-            └────────────────┘
-```
-
 ## Components
 
 ### Frontend (`ebpf-frontend`)
@@ -176,6 +153,8 @@ Metrics work the same way in both approaches - they're exported via the OTel SDK
 
 ## Configuration
 
+### Docker
+
 The eBPF agent is configured via environment variables in `docker-compose.yml`:
 
 ```yaml
@@ -190,10 +169,43 @@ otel-ebpf-agent:
     - /sys/kernel/debug:/sys/kernel/debug:rw
 ```
 
-Key settings:
+### Kubernetes
+
+In Kubernetes, the eBPF agent runs as a DaemonSet to instrument all pods on each node:
+
+```yaml
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: otel-ebpf-agent
+spec:
+  template:
+    spec:
+      hostPID: true
+      containers:
+      - name: ebpf-agent
+        image: docker.io/otel/ebpf-instrument:main
+        securityContext:
+          privileged: true
+        env:
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "http://otel-collector:4317"
+        - name: OTEL_EBPF_OPEN_PORT
+          value: "5000"
+        volumeMounts:
+        - name: sys-kernel-debug
+          mountPath: /sys/kernel/debug
+      volumes:
+      - name: sys-kernel-debug
+        hostPath:
+          path: /sys/kernel/debug
+```
+
+### Key Settings
+
 - `OTEL_EBPF_OPEN_PORT`: Which port to monitor (5000 = Flask default)
 - `privileged: true`: Required for eBPF kernel access
-- `pid: host`: Required to see processes in other containers
+- `hostPID: true` / `pid: host`: Required to see processes in other containers/pods
 
 ## Troubleshooting
 

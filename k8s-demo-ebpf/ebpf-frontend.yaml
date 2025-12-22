@@ -1,0 +1,46 @@
+# Frontend service - uses OTel SDK for METRICS and LOGS only
+# Traces captured automatically by eBPF agent
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ebpf-frontend
+  labels:
+    app: ebpf-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ebpf-frontend
+  template:
+    metadata:
+      labels:
+        app: ebpf-frontend
+    spec:
+      containers:
+      - name: ebpf-frontend
+        image: tinyolly/ebpf-frontend:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 5000
+        env:
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "http://otel-collector:4317"
+        - name: OTEL_SERVICE_NAME
+          value: "ebpf-frontend"
+        - name: BACKEND_URL
+          value: "http://ebpf-backend:5000"
+        - name: PROM_REMOTE_WRITE_ENDPOINT
+          value: "http://otel-collector:19291/api/v1/write"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ebpf-frontend
+spec:
+  type: LoadBalancer
+  selector:
+    app: ebpf-frontend
+  ports:
+    - protocol: TCP
+      port: 5001
+      targetPort: 5000

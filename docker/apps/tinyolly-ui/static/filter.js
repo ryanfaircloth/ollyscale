@@ -90,13 +90,14 @@ export function filterTinyOllyData(item) {
 }
 
 /**
- * Filter traces - exclude if root service is tinyolly-ui
+ * Filter traces - exclude if service is tinyolly-ui
  */
 export function filterTinyOllyTrace(trace) {
     if (!hideTinyOlly) return true;
 
-    const rootService = trace.root_service || trace.rootService;
-    return rootService !== 'tinyolly-ui';
+    // API returns service_name field for traces
+    const serviceName = trace.service_name || trace.serviceName || trace.root_service || trace.rootService;
+    return serviceName !== 'tinyolly-ui';
 }
 
 /**

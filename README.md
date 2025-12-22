@@ -122,6 +122,8 @@ cd docker-demo-ebpf
 ./01-deploy-ebpf-demo.sh
 ```
 
+**Deployment time:** ~30 seconds (pulls pre-built images from Docker Hub)
+
 This demonstrates:
 - **eBPF Agent** captures HTTP traces automatically at kernel level
 - **No tracing SDK** in application code - traces come from eBPF
@@ -227,10 +229,23 @@ cd k8s-demo
 ./02-deploy.sh  # Automatically builds images if needed
 ```
 
-**Manual image build (optional):** `./01-build-images.sh`  
+**Manual image build (optional):** `./01-build-images.sh`
 **Cleanup:** `./03-cleanup.sh`
 
-### 3. Core-Only Deployment (Use Your Own OTel Collector)
+### 3. eBPF Zero-Code Tracing Demo (Optional)
+
+```bash
+cd k8s-demo-ebpf
+./02-deploy.sh
+```
+
+Deploys the eBPF demo with traces captured at the kernel level. Images are pulled from Docker Hub (`tinyolly/ebpf-frontend`, `tinyolly/ebpf-backend`).
+
+See [eBPF Demo Documentation](docs/ebpf.md) for details.
+
+**Cleanup:** `./03-cleanup.sh`
+
+### 4. Core-Only Deployment (Use Your Own OTel Collector)
 
 ```bash
 ./k8s/01-build-images.sh
