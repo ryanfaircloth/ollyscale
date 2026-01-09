@@ -44,8 +44,8 @@ Run `minikube tunnel` in a separate terminal, then access the UI at `http://loca
 ### Docker Hub Images
 
 The eBPF demo uses pre-built images from Docker Hub:
-- `tinyolly/ebpf-frontend:latest` - Frontend with OTel SDK for metrics/logs
-- `tinyolly/ebpf-backend:latest` - Pure Flask backend (no OTel SDK)
+- `ghcr.io/ryanfaircloth/ebpf-frontend:latest` - Frontend with OTel SDK for metrics/logs
+- `ghcr.io/ryanfaircloth/ebpf-backend:latest` - Pure Flask backend (no OTel SDK)
 
 For local development, use the build scripts in each demo folder.
 

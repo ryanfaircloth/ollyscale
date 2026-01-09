@@ -43,7 +43,7 @@ VERSION=${1:-"latest"}
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "=========================================="
-echo "TinyOlly - Push ALL Images to Docker Hub"
+echo "TinyOlly - Push ALL Images to Container Registry"
 echo "=========================================="
 echo "Version: $VERSION"
 echo ""
@@ -74,7 +74,7 @@ echo ""
 
 echo ""
 echo "=========================================="
-echo "✓ ALL images pushed to Docker Hub!"
+echo "✓ ALL images pushed to registry!"
 echo "=========================================="
 echo ""
 echo "Published images:"

@@ -103,13 +103,13 @@ if [ "$USE_MINIKUBE" = true ]; then
         echo -e "${CYAN}Updating manifests for local images...${NC}"
         sed -i.bak 's/imagePullPolicy: Always/imagePullPolicy: Never/' "$SCRIPT_DIR/demo-frontend.yaml"
         sed -i.bak 's/imagePullPolicy: Always/imagePullPolicy: Never/' "$SCRIPT_DIR/demo-backend.yaml"
-        sed -i.bak 's|image: tinyolly/demo-frontend:latest|image: demo-frontend:latest|' "$SCRIPT_DIR/demo-frontend.yaml"
-        sed -i.bak 's|image: tinyolly/demo-backend:latest|image: demo-backend:latest|' "$SCRIPT_DIR/demo-backend.yaml"
+        sed -i.bak 's|image: ghcr.io/ryanfaircloth/demo-frontend:latest|image: demo-frontend:latest|' "$SCRIPT_DIR/demo-frontend.yaml"
+        sed -i.bak 's|image: ghcr.io/ryanfaircloth/demo-backend:latest|image: demo-backend:latest|' "$SCRIPT_DIR/demo-backend.yaml"
 
         # Set cleanup flag
         RESTORE_MANIFESTS=true
     else
-        echo -e "${GREEN}✓ Will pull images from Docker Hub (tinyolly/demo-frontend:latest, tinyolly/demo-backend:latest)${NC}"
+        echo -e "${GREEN}✓ Will pull images from GHCR (ghcr.io/ryanfaircloth/demo-frontend:latest, ghcr.io/ryanfaircloth/demo-backend:latest)${NC}"
     fi
     echo ""
 fi

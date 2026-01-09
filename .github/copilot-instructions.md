@@ -70,7 +70,7 @@ The `docker/apps/tinyolly-common` package contains shared utilities:
 
 ```bash
 cd docker
-./01-start-core.sh              # Pull & run from Docker Hub
+./01-start-core.sh              # Pull & run from GHCR
 ./02-stop-core.sh               # Stop all services
 ./04-rebuild-ui.sh              # Rebuild UI only (local changes)
 ```
@@ -145,7 +145,7 @@ kubectl set image deployment/tinyolly-ui tinyolly-ui=localhost:5050/tinyolly/ui:
 
 ### Docker Hub (`docker-compose-*.yml`)
 
-- Pulls pre-built images from `tinyolly/*`
+- Pulls pre-built images from GHCR (`ghcr.io/ryanfaircloth/*`)
 - Production-like setup
 - Used for demos and releases
 

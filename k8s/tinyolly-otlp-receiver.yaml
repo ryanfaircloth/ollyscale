@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: tinyolly-otlp-receiver
-        image: tinyolly/otlp-receiver:latest
+        image: ghcr.io/ryanfaircloth/otlp-receiver:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 4343

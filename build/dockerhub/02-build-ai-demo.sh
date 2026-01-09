@@ -43,13 +43,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/../../docker-ai-agent-demo"
 
 VERSION=${1:-"latest"}
-DOCKER_HUB_ORG=${DOCKER_HUB_ORG:-"tinyolly"}
+CONTAINER_REGISTRY=${CONTAINER_REGISTRY:-"tinyolly"}
 PLATFORMS="linux/amd64,linux/arm64"
 
 echo "=========================================="
 echo "TinyOlly AI Demo - Build (No Push)"
 echo "=========================================="
-echo "Organization: $DOCKER_HUB_ORG"
+echo "Registry: $CONTAINER_REGISTRY"
 echo "Version: $VERSION"
 echo "Platforms: $PLATFORMS"
 echo "Cache: disabled (fresh build)"
@@ -68,10 +68,10 @@ echo "----------------------------------------"
 docker buildx build --platform $PLATFORMS \
   --no-cache \
   -f Dockerfile \
-  -t $DOCKER_HUB_ORG/ai-agent-demo:latest \
-  -t $DOCKER_HUB_ORG/ai-agent-demo:$VERSION \
+  -t $CONTAINER_REGISTRY/ai-agent-demo:latest \
+  -t $CONTAINER_REGISTRY/ai-agent-demo:$VERSION \
   --load .
-echo "✓ Built $DOCKER_HUB_ORG/ai-agent-demo:$VERSION"
+echo "✓ Built $CONTAINER_REGISTRY/ai-agent-demo:$VERSION"
 echo ""
 
 echo "=========================================="
@@ -79,8 +79,8 @@ echo "✓ AI demo image built locally!"
 echo "=========================================="
 echo ""
 echo "Built image:"
-echo "  - $DOCKER_HUB_ORG/ai-agent-demo:$VERSION"
+echo "  - $CONTAINER_REGISTRY/ai-agent-demo:$VERSION"
 echo ""
-echo "Next step - push to Docker Hub:"
+echo "Next step - push to registry:"
 echo "  ./03-push-ai-demo.sh $VERSION"
 echo ""

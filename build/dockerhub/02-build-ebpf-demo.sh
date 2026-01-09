@@ -43,13 +43,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/../../docker-demo-ebpf"
 
 VERSION=${1:-"latest"}
-DOCKER_HUB_ORG=${DOCKER_HUB_ORG:-"tinyolly"}
+CONTAINER_REGISTRY=${CONTAINER_REGISTRY:-"tinyolly"}
 PLATFORMS="linux/amd64,linux/arm64"
 
 echo "=========================================="
 echo "TinyOlly eBPF Demo - Build (No Push)"
 echo "=========================================="
-echo "Organization: $DOCKER_HUB_ORG"
+echo "Registry: $CONTAINER_REGISTRY"
 echo "Version: $VERSION"
 echo "Platforms: $PLATFORMS"
 echo "Cache: disabled (fresh build)"
@@ -68,10 +68,10 @@ echo "----------------------------------------"
 docker buildx build --platform $PLATFORMS \
   --no-cache \
   -f Dockerfile \
-  -t $DOCKER_HUB_ORG/ebpf-frontend:latest \
-  -t $DOCKER_HUB_ORG/ebpf-frontend:$VERSION \
+  -t $CONTAINER_REGISTRY/ebpf-frontend:latest \
+  -t $CONTAINER_REGISTRY/ebpf-frontend:$VERSION \
   --load .
-echo "✓ Built $DOCKER_HUB_ORG/ebpf-frontend:$VERSION"
+echo "✓ Built $CONTAINER_REGISTRY/ebpf-frontend:$VERSION"
 echo ""
 
 # Build ebpf-backend
@@ -81,10 +81,10 @@ echo "----------------------------------------"
 docker buildx build --platform $PLATFORMS \
   --no-cache \
   -f Dockerfile.backend \
-  -t $DOCKER_HUB_ORG/ebpf-backend:latest \
-  -t $DOCKER_HUB_ORG/ebpf-backend:$VERSION \
+  -t $CONTAINER_REGISTRY/ebpf-backend:latest \
+  -t $CONTAINER_REGISTRY/ebpf-backend:$VERSION \
   --load .
-echo "✓ Built $DOCKER_HUB_ORG/ebpf-backend:$VERSION"
+echo "✓ Built $CONTAINER_REGISTRY/ebpf-backend:$VERSION"
 echo ""
 
 echo "=========================================="
@@ -92,9 +92,9 @@ echo "✓ eBPF demo images built locally!"
 echo "=========================================="
 echo ""
 echo "Built images:"
-echo "  - $DOCKER_HUB_ORG/ebpf-frontend:$VERSION"
-echo "  - $DOCKER_HUB_ORG/ebpf-backend:$VERSION"
+echo "  - $CONTAINER_REGISTRY/ebpf-frontend:$VERSION"
+echo "  - $CONTAINER_REGISTRY/ebpf-backend:$VERSION"
 echo ""
-echo "Next step - push to Docker Hub:"
+echo "Next step - push to registry:"
 echo "  ./03-push-ebpf-demo.sh $VERSION"
 echo ""

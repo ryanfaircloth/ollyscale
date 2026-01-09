@@ -17,7 +17,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
       - name: otel-collector
-        image: tinyolly/otel-supervisor:latest
+        image: ghcr.io/ryanfaircloth/otel-supervisor:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 4317

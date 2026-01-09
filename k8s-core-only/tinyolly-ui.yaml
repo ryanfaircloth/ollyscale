@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: tinyolly-ui
-        image: tinyolly/ui:latest
+        image: ghcr.io/ryanfaircloth/ui:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 5002

@@ -75,7 +75,7 @@ fi
 echo -e "${GREEN}✓ TinyOlly core services found${NC}"
 echo ""
 
-# Note: Images are pulled from Docker Hub (tinyolly/ebpf-frontend, tinyolly/ebpf-backend)
+# Note: Images are pulled from GHCR (ghcr.io/ryanfaircloth/ebpf-frontend, ghcr.io/ryanfaircloth/ebpf-backend)
 # For local development, use ./build/local/build-ebpf-demo-minikube.sh to build locally
 
 # Deploy eBPF agent first

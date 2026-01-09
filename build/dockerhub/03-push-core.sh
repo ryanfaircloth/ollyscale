@@ -42,12 +42,12 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/../../docker"
 
 VERSION=${1:-"latest"}
-DOCKER_HUB_ORG=${DOCKER_HUB_ORG:-"tinyolly"}
+CONTAINER_REGISTRY=${CONTAINER_REGISTRY:-"tinyolly"}  # Default to Docker Hub (tinyolly), can be overridden with ghcr.io/ryanfaircloth
 
 echo "=========================================="
-echo "TinyOlly Core - Push to Docker Hub"
+echo "TinyOlly Core - Push to Container Registry"
 echo "=========================================="
-echo "Organization: $DOCKER_HUB_ORG"
+echo "Registry: $CONTAINER_REGISTRY"
 echo "Version: $VERSION"
 echo ""
 
@@ -61,23 +61,23 @@ IMAGES=(
 )
 
 for IMAGE in "${IMAGES[@]}"; do
-  echo "Pushing $DOCKER_HUB_ORG/$IMAGE:$VERSION..."
-  docker push $DOCKER_HUB_ORG/$IMAGE:$VERSION
-  docker push $DOCKER_HUB_ORG/$IMAGE:latest
-  echo "✓ Pushed $DOCKER_HUB_ORG/$IMAGE:$VERSION"
+  echo "Pushing $CONTAINER_REGISTRY/$IMAGE:$VERSION..."
+  docker push $CONTAINER_REGISTRY/$IMAGE:$VERSION
+  docker push $CONTAINER_REGISTRY/$IMAGE:latest
+  echo "✓ Pushed $CONTAINER_REGISTRY/$IMAGE:$VERSION"
   echo ""
 done
 
 echo "=========================================="
-echo "✓ All core images pushed to Docker Hub!"
+echo "✓ All core images pushed to container registry!"
 echo "=========================================="
 echo ""
 echo "Published images:"
-echo "  - $DOCKER_HUB_ORG/python-base:$VERSION"
-echo "  - $DOCKER_HUB_ORG/otlp-receiver:$VERSION"
-echo "  - $DOCKER_HUB_ORG/ui:$VERSION"
-echo "  - $DOCKER_HUB_ORG/opamp-server:$VERSION"
-echo "  - $DOCKER_HUB_ORG/otel-supervisor:$VERSION"
+echo "  - $CONTAINER_REGISTRY/python-base:$VERSION"
+echo "  - $CONTAINER_REGISTRY/otlp-receiver:$VERSION"
+echo "  - $CONTAINER_REGISTRY/ui:$VERSION"
+echo "  - $CONTAINER_REGISTRY/opamp-server:$VERSION"
+echo "  - $CONTAINER_REGISTRY/otel-supervisor:$VERSION"
 echo ""
-echo "Verify: docker pull $DOCKER_HUB_ORG/ui:$VERSION"
+echo "Verify: docker pull $CONTAINER_REGISTRY/ui:$VERSION"
 echo ""

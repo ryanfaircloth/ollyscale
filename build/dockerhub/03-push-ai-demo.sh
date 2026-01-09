@@ -39,25 +39,25 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 VERSION=${1:-"latest"}
-DOCKER_HUB_ORG=${DOCKER_HUB_ORG:-"tinyolly"}
+CONTAINER_REGISTRY=${CONTAINER_REGISTRY:-"tinyolly"}
 
 echo "=========================================="
-echo "TinyOlly AI Demo - Push to Docker Hub"
+echo "TinyOlly AI Demo - Push to Container Registry"
 echo "=========================================="
-echo "Organization: $DOCKER_HUB_ORG"
+echo "Registry: $CONTAINER_REGISTRY"
 echo "Version: $VERSION"
 echo ""
 
-echo "Pushing $DOCKER_HUB_ORG/ai-agent-demo:$VERSION..."
-docker push $DOCKER_HUB_ORG/ai-agent-demo:$VERSION
-docker push $DOCKER_HUB_ORG/ai-agent-demo:latest
-echo "✓ Pushed $DOCKER_HUB_ORG/ai-agent-demo:$VERSION"
+echo "Pushing $CONTAINER_REGISTRY/ai-agent-demo:$VERSION..."
+docker push $CONTAINER_REGISTRY/ai-agent-demo:$VERSION
+docker push $CONTAINER_REGISTRY/ai-agent-demo:latest
+echo "✓ Pushed $CONTAINER_REGISTRY/ai-agent-demo:$VERSION"
 echo ""
 
 echo "=========================================="
-echo "✓ AI demo image pushed to Docker Hub!"
+echo "✓ AI demo image pushed to registry!"
 echo "=========================================="
 echo ""
 echo "Published image:"
-echo "  - $DOCKER_HUB_ORG/ai-agent-demo:$VERSION"
+echo "  - $CONTAINER_REGISTRY/ai-agent-demo:$VERSION"
 echo ""

@@ -12,7 +12,7 @@ services:
       retries: 5
 
   tinyolly-otlp-receiver:
-    image: tinyolly/otlp-receiver:latest
+    image: ghcr.io/ryanfaircloth/otlp-receiver:latest
     container_name: tinyolly-otlp-receiver
     ports:
       - "4343:4343"
@@ -30,11 +30,11 @@ services:
       - OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED=true
 
   tinyolly-opamp-server:
-    image: tinyolly/opamp-server:latest
+    image: ghcr.io/ryanfaircloth/opamp-server:latest
     container_name: tinyolly-opamp-server
     ports:
-      - "4320:4320"  # OpAMP WebSocket port
-      - "4321:4321"  # HTTP REST API port
+      - "4320:4320" # OpAMP WebSocket port
+      - "4321:4321" # HTTP REST API port
     volumes:
       - ./otelcol-configs/config.yaml:/etc/otel-collector-config.yaml:ro
     environment:
@@ -50,7 +50,7 @@ services:
   # The supervisor accepts remote configuration from tinyolly-opamp-server
   # and automatically restarts the collector when config changes
   otel-collector:
-    image: tinyolly/otel-supervisor:latest
+    image: ghcr.io/ryanfaircloth/otel-supervisor:latest
     container_name: otel-collector
     volumes:
       # Supervisor config
@@ -60,18 +60,18 @@ services:
       # Persistent storage for supervisor state
       - otel-supervisor-data:/var/lib/otelcol/supervisor
     ports:
-      - "4317:4317"  # OTLP gRPC receiver (external access)
-      - "4318:4318"  # OTLP HTTP receiver (external access)
-      - "19291:19291"  # Prometheus Remote Write receiver
+      - "4317:4317" # OTLP gRPC receiver (external access)
+      - "4318:4318" # OTLP HTTP receiver (external access)
+      - "19291:19291" # Prometheus Remote Write receiver
     depends_on:
       - tinyolly-otlp-receiver
       - tinyolly-opamp-server
 
   tinyolly-ui:
-    image: tinyolly/ui:latest
+    image: ghcr.io/ryanfaircloth/ui:latest
     container_name: tinyolly-ui
     ports:
-      - "5005:5002"  # Changed to 5005 to avoid conflict with K8s (which uses 5002)
+      - "5005:5002" # Changed to 5005 to avoid conflict with K8s (which uses 5002)
     depends_on:
       tinyolly-redis:
         condition: service_healthy

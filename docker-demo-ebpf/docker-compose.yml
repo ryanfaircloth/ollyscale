@@ -2,7 +2,7 @@ services:
   # Backend service - pure Flask, NO OTel SDK
   # Traces captured automatically by eBPF agent
   ebpf-backend:
-    image: tinyolly/ebpf-backend:latest
+    image: ghcr.io/ryanfaircloth/ebpf-backend:latest
     container_name: ebpf-backend
     ports:
       - "5004:5000"
@@ -12,7 +12,7 @@ services:
   # Frontend service - uses OTel SDK for METRICS only
   # Traces captured automatically by eBPF agent
   ebpf-frontend:
-    image: tinyolly/ebpf-frontend:latest
+    image: ghcr.io/ryanfaircloth/ebpf-frontend:latest
     container_name: ebpf-frontend
     ports:
       - "5001:5000"

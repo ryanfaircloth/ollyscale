@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
       - name: ebpf-backend
-        image: tinyolly/ebpf-backend:latest
+        image: ghcr.io/ryanfaircloth/ebpf-backend:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 5000

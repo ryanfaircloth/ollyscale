@@ -42,27 +42,27 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/../../docker"
 
 VERSION=${1:-"latest"}
-DOCKER_HUB_ORG=${DOCKER_HUB_ORG:-"tinyolly"}
+CONTAINER_REGISTRY=${CONTAINER_REGISTRY:-"tinyolly"}
 
 echo "=========================================="
-echo "TinyOlly UI - Push to Docker Hub"
+echo "TinyOlly UI - Push to Container Registry"
 echo "=========================================="
-echo "Organization: $DOCKER_HUB_ORG"
+echo "Registry: $CONTAINER_REGISTRY"
 echo "Version: $VERSION"
 echo ""
 
-echo "Pushing $DOCKER_HUB_ORG/ui:$VERSION..."
-docker push $DOCKER_HUB_ORG/ui:$VERSION
-docker push $DOCKER_HUB_ORG/ui:latest
-echo "✓ Pushed $DOCKER_HUB_ORG/ui:$VERSION"
+echo "Pushing $CONTAINER_REGISTRY/ui:$VERSION..."
+docker push $CONTAINER_REGISTRY/ui:$VERSION
+docker push $CONTAINER_REGISTRY/ui:latest
+echo "✓ Pushed $CONTAINER_REGISTRY/ui:$VERSION"
 echo ""
 
 echo "=========================================="
-echo "✓ UI image pushed to Docker Hub!"
+echo "✓ UI image pushed to registry!"
 echo "=========================================="
 echo ""
 echo "Published image:"
-echo "  - $DOCKER_HUB_ORG/ui:$VERSION"
+echo "  - $CONTAINER_REGISTRY/ui:$VERSION"
 echo ""
-echo "Verify: docker pull $DOCKER_HUB_ORG/ui:$VERSION"
+echo "Verify: docker pull $CONTAINER_REGISTRY/ui:$VERSION"
 echo ""

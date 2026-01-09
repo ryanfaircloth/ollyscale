@@ -43,13 +43,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/../../docker-demo"
 
 VERSION=${1:-"latest"}
-DOCKER_HUB_ORG=${DOCKER_HUB_ORG:-"tinyolly"}
+CONTAINER_REGISTRY=${CONTAINER_REGISTRY:-"tinyolly"}
 PLATFORMS="linux/amd64,linux/arm64"
 
 echo "=========================================="
 echo "TinyOlly Demo - Build (No Push)"
 echo "=========================================="
-echo "Organization: $DOCKER_HUB_ORG"
+echo "Registry: $CONTAINER_REGISTRY"
 echo "Version: $VERSION"
 echo "Platforms: $PLATFORMS"
 echo "Cache: disabled (fresh build)"
@@ -68,10 +68,10 @@ echo "----------------------------------------"
 docker buildx build --platform $PLATFORMS \
   --no-cache \
   -f Dockerfile \
-  -t $DOCKER_HUB_ORG/demo-frontend:latest \
-  -t $DOCKER_HUB_ORG/demo-frontend:$VERSION \
+  -t $CONTAINER_REGISTRY/demo-frontend:latest \
+  -t $CONTAINER_REGISTRY/demo-frontend:$VERSION \
   --load .
-echo "✓ Built $DOCKER_HUB_ORG/demo-frontend:$VERSION"
+echo "✓ Built $CONTAINER_REGISTRY/demo-frontend:$VERSION"
 echo ""
 
 # Build demo-backend
@@ -81,10 +81,10 @@ echo "----------------------------------------"
 docker buildx build --platform $PLATFORMS \
   --no-cache \
   -f Dockerfile.backend \
-  -t $DOCKER_HUB_ORG/demo-backend:latest \
-  -t $DOCKER_HUB_ORG/demo-backend:$VERSION \
+  -t $CONTAINER_REGISTRY/demo-backend:latest \
+  -t $CONTAINER_REGISTRY/demo-backend:$VERSION \
   --load .
-echo "✓ Built $DOCKER_HUB_ORG/demo-backend:$VERSION"
+echo "✓ Built $CONTAINER_REGISTRY/demo-backend:$VERSION"
 echo ""
 
 echo "=========================================="
@@ -92,9 +92,9 @@ echo "✓ Demo images built locally!"
 echo "=========================================="
 echo ""
 echo "Built images:"
-echo "  - $DOCKER_HUB_ORG/demo-frontend:$VERSION"
-echo "  - $DOCKER_HUB_ORG/demo-backend:$VERSION"
+echo "  - $CONTAINER_REGISTRY/demo-frontend:$VERSION"
+echo "  - $CONTAINER_REGISTRY/demo-backend:$VERSION"
 echo ""
-echo "Next step - push to Docker Hub:"
+echo "Next step - push to registry:"
 echo "  ./03-push-demo.sh $VERSION"
 echo ""

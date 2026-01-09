@@ -43,13 +43,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/../../docker"
 
 VERSION=${1:-"latest"}
-DOCKER_HUB_ORG=${DOCKER_HUB_ORG:-"tinyolly"}
+CONTAINER_REGISTRY=${CONTAINER_REGISTRY:-"tinyolly"}
 PLATFORMS="linux/amd64,linux/arm64"
 
 echo "=========================================="
 echo "TinyOlly UI - Build (No Push)"
 echo "=========================================="
-echo "Organization: $DOCKER_HUB_ORG"
+echo "Registry: $CONTAINER_REGISTRY"
 echo "Version: $VERSION"
 echo "Platforms: $PLATFORMS"
 echo "Cache: disabled (fresh build)"
@@ -68,10 +68,10 @@ docker buildx build --platform $PLATFORMS \
   --no-cache \
   -f dockerfiles/Dockerfile.tinyolly-ui \
   --build-arg APP_DIR=tinyolly-ui \
-  -t $DOCKER_HUB_ORG/ui:latest \
-  -t $DOCKER_HUB_ORG/ui:$VERSION \
+  -t $CONTAINER_REGISTRY/ui:latest \
+  -t $CONTAINER_REGISTRY/ui:$VERSION \
   --load .
-echo "✓ Built $DOCKER_HUB_ORG/ui:$VERSION"
+echo "✓ Built $CONTAINER_REGISTRY/ui:$VERSION"
 echo ""
 
 echo "=========================================="
@@ -79,8 +79,8 @@ echo "✓ UI image built locally!"
 echo "=========================================="
 echo ""
 echo "Built image:"
-echo "  - $DOCKER_HUB_ORG/ui:$VERSION"
+echo "  - $CONTAINER_REGISTRY/ui:$VERSION"
 echo ""
-echo "Next step - push to Docker Hub:"
+echo "Next step - push to registry:"
 echo "  ./03-push-ui.sh $VERSION"
 echo ""

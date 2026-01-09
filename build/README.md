@@ -7,8 +7,8 @@ Centralized build scripts for all TinyOlly Docker images.
 ```
 build/
 ├── README.md
-├── dockerhub/                     # Build & push to Docker Hub
-│   ├── 01-login.sh                # Step 1: Login to Docker Hub
+├── dockerhub/                     # Build & push to GitHub Container Registry (GHCR)
+│   ├── 01-login.sh                # Step 1: Login (not needed for GHCR with GitHub Actions)
 │   ├── 02-build-all.sh            # Step 2: Build all images
 │   ├── 02-build-core.sh           # Step 2: Build core images
 │   ├── 02-build-ui.sh             # Step 2: Build UI only (quick iteration)
@@ -27,22 +27,25 @@ build/
     └── build-ebpf-demo-minikube.sh
 ```
 
-## Quick Start - Docker Hub
+## Quick Start - GitHub Container Registry (GHCR)
 
 ```bash
 cd build/dockerhub
 
-# Step 1: Login to Docker Hub
-./01-login.sh
+# Step 1: Login to GHCR (for manual builds)
+# For CI/CD, authentication is automatic via GITHUB_TOKEN
+echo $GITHUB_TOKEN | docker login ghcr.io -u $GITHUB_USER --password-stdin
 
 # Step 2: Build images locally
+export CONTAINER_REGISTRY=ghcr.io/ryanfaircloth
 ./02-build-all.sh v2.1.0       # All images
 # or
 ./02-build-core.sh v2.1.0      # Core only
 # or
 ./02-build-ui.sh v2.1.0        # UI only (quick iteration)
 
-# Step 3: Push to Docker Hub
+# Step 3: Push to GHCR
+export CONTAINER_REGISTRY=ghcr.io/ryanfaircloth
 ./03-push-all.sh v2.1.0        # All images
 # or
 ./03-push-core.sh v2.1.0       # Core only
@@ -66,7 +69,7 @@ cd build/local
 
 | Script | Description |
 |--------|-------------|
-| `01-login.sh` | Login to Docker Hub |
+| `01-login.sh` | Login to Docker Hub (legacy - use docker login for GHCR) |
 
 ### Step 2: Build
 
@@ -83,7 +86,7 @@ cd build/local
 
 | Script | Description |
 |--------|-------------|
-| `03-push-all.sh` | Push all images to Docker Hub |
+| `03-push-all.sh` | Push all images to container registry |
 | `03-push-core.sh` | Push core images |
 | `03-push-ui.sh` | Push UI image only |
 | `03-push-demo.sh` | Push demo images |
@@ -96,31 +99,31 @@ cd build/local
 
 | Image | Description |
 |-------|-------------|
-| `tinyolly/python-base` | Shared Python base image |
-| `tinyolly/ui` | Web UI |
-| `tinyolly/otlp-receiver` | OTLP receiver service |
-| `tinyolly/opamp-server` | OpAMP configuration server |
-| `tinyolly/otel-supervisor` | OTel Collector supervisor |
+| `ghcr.io/ryanfaircloth/python-base` | Shared Python base image |
+| `ghcr.io/ryanfaircloth/ui` | Web UI |
+| `ghcr.io/ryanfaircloth/otlp-receiver` | OTLP receiver service |
+| `ghcr.io/ryanfaircloth/opamp-server` | OpAMP configuration server |
+| `ghcr.io/ryanfaircloth/otel-supervisor` | OTel Collector supervisor |
 
 ### Demo Images
 
 | Image | Description |
 |-------|-------------|
-| `tinyolly/demo-frontend` | Demo frontend app |
-| `tinyolly/demo-backend` | Demo backend app |
+| `ghcr.io/ryanfaircloth/demo-frontend` | Demo frontend app |
+| `ghcr.io/ryanfaircloth/demo-backend` | Demo backend app |
 
 ### eBPF Demo Images
 
 | Image | Description |
 |-------|-------------|
-| `tinyolly/ebpf-frontend` | eBPF demo frontend |
-| `tinyolly/ebpf-backend` | eBPF demo backend |
+| `ghcr.io/ryanfaircloth/ebpf-frontend` | eBPF demo frontend |
+| `ghcr.io/ryanfaircloth/ebpf-backend` | eBPF demo backend |
 
 ### AI Demo Image
 
 | Image | Description |
 |-------|-------------|
-| `tinyolly/ai-agent-demo` | AI agent demo app |
+| `ghcr.io/ryanfaircloth/ai-agent-demo` | AI agent demo app |
 
 ## Build Behavior
 
@@ -132,7 +135,7 @@ cd build/local
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `DOCKER_HUB_ORG` | `tinyolly` | Docker Hub organization |
+| `CONTAINER_REGISTRY` | `tinyolly` | Container registry path (use `ghcr.io/ryanfaircloth` for GHCR) |
 
 ## CI/CD Integration
 
@@ -154,27 +157,45 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Login to Docker Hub
+      - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build images
         run: ./build/dockerhub/02-build-all.sh ${{ github.ref_name }}
+        env:
+          CONTAINER_REGISTRY: ghcr.io/ryanfaircloth
 
       - name: Push images
         run: ./build/dockerhub/03-push-all.sh ${{ github.ref_name }}
+        env:
+          CONTAINER_REGISTRY: ghcr.io/ryanfaircloth
 ```
 
 ### Required Secrets
 
 | Secret | Description |
 |--------|-------------|
-| `DOCKERHUB_USERNAME` | Docker Hub username |
-| `DOCKERHUB_TOKEN` | Docker Hub access token |
+| `GITHUB_TOKEN` | Automatically provided by GitHub Actions (no setup needed) |
 
-### Creating a Docker Hub Access Token
+### About GHCR Authentication
+
+GitHub Container Registry authentication is automatic in GitHub Actions using the built-in `GITHUB_TOKEN`. No additional secrets are required.
+
+For local manual pushes, create a Personal Access Token (PAT):
+
+1. Go to https://github.com/settings/tokens
+2. Click "Generate new token" → "Generate new token (classic)"
+3. Select scopes: `write:packages`, `read:packages`, `delete:packages`
+4. Use the token for login:
+   ```bash
+   echo $GITHUB_TOKEN | docker login ghcr.io -u YOUR_USERNAME --password-stdin
+   ```
+
+### Creating a Docker Hub Access Token (Legacy)
 
 1. Go to https://hub.docker.com/settings/security
 2. Click "New Access Token"
@@ -186,17 +207,20 @@ jobs:
 ```bash
 cd build/dockerhub
 
-# Step 1: Login
-./01-login.sh
+# Step 1: Login to GHCR
+echo $GITHUB_TOKEN | docker login ghcr.io -u $GITHUB_USER --password-stdin
 
-# Step 2: Build all images
+# Step 2: Set registry environment variable
+export CONTAINER_REGISTRY=ghcr.io/ryanfaircloth
+
+# Step 3: Build all images
 ./02-build-all.sh v2.1.0
 
-# Step 3: Push to Docker Hub
+# Step 4: Push to GHCR
 ./03-push-all.sh v2.1.0
 
-# Step 4: Verify
-docker pull tinyolly/ui:v2.1.0
+# Step 5: Verify
+docker pull ghcr.io/ryanfaircloth/ui:v2.1.0
 
 # Step 5: Test Docker deployment
 cd ../../docker

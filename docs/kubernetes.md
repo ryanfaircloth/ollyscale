@@ -223,7 +223,7 @@ The default configuration template (included as a ConfigMap in `k8s-core-only/ti
 
 ## Building Images
 
-By default, deployment scripts pull pre-built images from Docker Hub. For building images locally (Minikube) or publishing to Docker Hub, see [build/README.md](https://github.com/tinyolly/tinyolly/blob/main/build/README.md).
+By default, deployment scripts pull pre-built images from GitHub Container Registry (GHCR). For building images locally (Minikube) or publishing to GHCR, see [build/README.md](https://github.com/tinyolly/tinyolly/blob/main/build/README.md).
 
 ---
 

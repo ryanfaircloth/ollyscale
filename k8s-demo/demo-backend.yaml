@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: demo-backend
-        image: tinyolly/demo-backend:latest
+        image: ghcr.io/ryanfaircloth/demo-backend:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 5000

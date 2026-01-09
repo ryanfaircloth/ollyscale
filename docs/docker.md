@@ -245,4 +245,4 @@ The default configuration template (located at `docker/otelcol-configs/config.ya
 
 ## Building Images
 
-By default, all deployment scripts pull pre-built images from Docker Hub. For building images locally or publishing to Docker Hub, see [build/README.md](https://github.com/tinyolly/tinyolly/blob/main/build/README.md).
+By default, all deployment scripts pull pre-built images from GitHub Container Registry (GHCR). For building images locally or publishing to GHCR, see [build/README.md](https://github.com/tinyolly/tinyolly/blob/main/build/README.md).

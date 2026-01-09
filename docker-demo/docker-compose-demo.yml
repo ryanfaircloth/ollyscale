@@ -1,6 +1,6 @@
 services:
   demo-backend:
-    image: tinyolly/demo-backend:latest
+    image: ghcr.io/ryanfaircloth/demo-backend:latest
     container_name: demo-backend
     ports:
       - "5004:5000"
@@ -10,7 +10,7 @@ services:
       - tinyolly-network
 
   demo-frontend:
-    image: tinyolly/demo-frontend:latest
+    image: ghcr.io/ryanfaircloth/demo-frontend:latest
     container_name: demo-frontend
     ports:
       - "5001:5000"
@@ -26,4 +26,3 @@ networks:
   tinyolly-network:
     external: true
     name: tinyolly-network
-

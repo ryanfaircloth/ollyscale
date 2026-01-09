@@ -43,13 +43,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/../../docker"
 
 VERSION=${1:-"latest"}
-DOCKER_HUB_ORG=${DOCKER_HUB_ORG:-"tinyolly"}
+CONTAINER_REGISTRY=${CONTAINER_REGISTRY:-"tinyolly"}  # Default to Docker Hub (tinyolly), can be overridden with ghcr.io/ryanfaircloth
 PLATFORMS="linux/amd64,linux/arm64"
 
 echo "=========================================="
 echo "TinyOlly Core - Build (No Push)"
 echo "=========================================="
-echo "Organization: $DOCKER_HUB_ORG"
+echo "Registry: $CONTAINER_REGISTRY"
 echo "Version: $VERSION"
 echo "Platforms: $PLATFORMS"
 echo "Cache: disabled (fresh build)"
@@ -71,10 +71,10 @@ echo "----------------------------------------"
 docker buildx build --platform $PLATFORMS \
   --no-cache \
   -f dockerfiles/Dockerfile.tinyolly-python-base \
-  -t $DOCKER_HUB_ORG/python-base:latest \
-  -t $DOCKER_HUB_ORG/python-base:$VERSION \
+  -t $CONTAINER_REGISTRY/python-base:latest \
+  -t $CONTAINER_REGISTRY/python-base:$VERSION \
   --load .
-echo "✓ Built $DOCKER_HUB_ORG/python-base:$VERSION"
+echo "✓ Built $CONTAINER_REGISTRY/python-base:$VERSION"
 echo ""
 
 # Image 2: OTLP Receiver (depends on python-base)
@@ -85,10 +85,10 @@ docker buildx build --platform $PLATFORMS \
   --no-cache \
   -f dockerfiles/Dockerfile.tinyolly-otlp-receiver \
   --build-arg APP_DIR=tinyolly-otlp-receiver \
-  -t $DOCKER_HUB_ORG/otlp-receiver:latest \
-  -t $DOCKER_HUB_ORG/otlp-receiver:$VERSION \
+  -t $CONTAINER_REGISTRY/otlp-receiver:latest \
+  -t $CONTAINER_REGISTRY/otlp-receiver:$VERSION \
   --load .
-echo "✓ Built $DOCKER_HUB_ORG/otlp-receiver:$VERSION"
+echo "✓ Built $CONTAINER_REGISTRY/otlp-receiver:$VERSION"
 echo ""
 
 # Image 3: UI (depends on python-base)
@@ -99,10 +99,10 @@ docker buildx build --platform $PLATFORMS \
   --no-cache \
   -f dockerfiles/Dockerfile.tinyolly-ui \
   --build-arg APP_DIR=tinyolly-ui \
-  -t $DOCKER_HUB_ORG/ui:latest \
-  -t $DOCKER_HUB_ORG/ui:$VERSION \
+  -t $CONTAINER_REGISTRY/ui:latest \
+  -t $CONTAINER_REGISTRY/ui:$VERSION \
   --load .
-echo "✓ Built $DOCKER_HUB_ORG/ui:$VERSION"
+echo "✓ Built $CONTAINER_REGISTRY/ui:$VERSION"
 echo ""
 
 # Image 4: OpAMP Server (independent Go build)
@@ -112,10 +112,10 @@ echo "----------------------------------------"
 docker buildx build --platform $PLATFORMS \
   --no-cache \
   -f dockerfiles/Dockerfile.tinyolly-opamp-server \
-  -t $DOCKER_HUB_ORG/opamp-server:latest \
-  -t $DOCKER_HUB_ORG/opamp-server:$VERSION \
+  -t $CONTAINER_REGISTRY/opamp-server:latest \
+  -t $CONTAINER_REGISTRY/opamp-server:$VERSION \
   --load .
-echo "✓ Built $DOCKER_HUB_ORG/opamp-server:$VERSION"
+echo "✓ Built $CONTAINER_REGISTRY/opamp-server:$VERSION"
 echo ""
 
 # Image 5: OTel Supervisor (independent)
@@ -125,10 +125,10 @@ echo "----------------------------------------"
 docker buildx build --platform $PLATFORMS \
   --no-cache \
   -f dockerfiles/Dockerfile.otel-supervisor \
-  -t $DOCKER_HUB_ORG/otel-supervisor:latest \
-  -t $DOCKER_HUB_ORG/otel-supervisor:$VERSION \
+  -t $CONTAINER_REGISTRY/otel-supervisor:latest \
+  -t $CONTAINER_REGISTRY/otel-supervisor:$VERSION \
   --load .
-echo "✓ Built $DOCKER_HUB_ORG/otel-supervisor:$VERSION"
+echo "✓ Built $CONTAINER_REGISTRY/otel-supervisor:$VERSION"
 echo ""
 
 echo "=========================================="
@@ -136,12 +136,12 @@ echo "✓ All core images built locally!"
 echo "=========================================="
 echo ""
 echo "Built images:"
-echo "  - $DOCKER_HUB_ORG/python-base:$VERSION"
-echo "  - $DOCKER_HUB_ORG/otlp-receiver:$VERSION"
-echo "  - $DOCKER_HUB_ORG/ui:$VERSION"
-echo "  - $DOCKER_HUB_ORG/opamp-server:$VERSION"
-echo "  - $DOCKER_HUB_ORG/otel-supervisor:$VERSION"
+echo "  - $CONTAINER_REGISTRY/python-base:$VERSION"
+echo "  - $CONTAINER_REGISTRY/otlp-receiver:$VERSION"
+echo "  - $CONTAINER_REGISTRY/ui:$VERSION"
+echo "  - $CONTAINER_REGISTRY/opamp-server:$VERSION"
+echo "  - $CONTAINER_REGISTRY/otel-supervisor:$VERSION"
 echo ""
-echo "Next step - push to Docker Hub:"
+echo "Next step - push to registry:"
 echo "  ./03-push-core.sh $VERSION"
 echo ""

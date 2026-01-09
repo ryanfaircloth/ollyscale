@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: tinyolly-opamp-server
-        image: tinyolly/opamp-server:latest
+        image: ghcr.io/ryanfaircloth/opamp-server:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 4320

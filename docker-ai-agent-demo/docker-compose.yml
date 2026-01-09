@@ -25,15 +25,15 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '2.0'      # Limit to 2 CPU cores
-          memory: 4G       # Limit to 4GB RAM
+          cpus: "2.0" # Limit to 2 CPU cores
+          memory: 4G # Limit to 4GB RAM
         reservations:
-          cpus: '0.5'      # Reserve at least 0.5 CPU cores
-          memory: 1G       # Reserve at least 1GB RAM
+          cpus: "0.5" # Reserve at least 0.5 CPU cores
+          memory: 1G # Reserve at least 1GB RAM
 
   # AI Agent with zero-code auto-instrumentation
   ai-agent:
-    image: tinyolly/ai-agent-demo:latest
+    image: ghcr.io/ryanfaircloth/ai-agent-demo:latest
     depends_on:
       ollama:
         condition: service_healthy

@@ -39,12 +39,12 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 VERSION=${1:-"latest"}
-DOCKER_HUB_ORG=${DOCKER_HUB_ORG:-"tinyolly"}
+CONTAINER_REGISTRY=${CONTAINER_REGISTRY:-"tinyolly"}
 
 echo "=========================================="
-echo "TinyOlly eBPF Demo - Push to Docker Hub"
+echo "TinyOlly eBPF Demo - Push to Container Registry"
 echo "=========================================="
-echo "Organization: $DOCKER_HUB_ORG"
+echo "Registry: $CONTAINER_REGISTRY"
 echo "Version: $VERSION"
 echo ""
 
@@ -54,18 +54,18 @@ IMAGES=(
 )
 
 for IMAGE in "${IMAGES[@]}"; do
-  echo "Pushing $DOCKER_HUB_ORG/$IMAGE:$VERSION..."
-  docker push $DOCKER_HUB_ORG/$IMAGE:$VERSION
-  docker push $DOCKER_HUB_ORG/$IMAGE:latest
-  echo "✓ Pushed $DOCKER_HUB_ORG/$IMAGE:$VERSION"
+  echo "Pushing $CONTAINER_REGISTRY/$IMAGE:$VERSION..."
+  docker push $CONTAINER_REGISTRY/$IMAGE:$VERSION
+  docker push $CONTAINER_REGISTRY/$IMAGE:latest
+  echo "✓ Pushed $CONTAINER_REGISTRY/$IMAGE:$VERSION"
   echo ""
 done
 
 echo "=========================================="
-echo "✓ eBPF demo images pushed to Docker Hub!"
+echo "✓ eBPF demo images pushed to registry!"
 echo "=========================================="
 echo ""
 echo "Published images:"
-echo "  - $DOCKER_HUB_ORG/ebpf-frontend:$VERSION"
-echo "  - $DOCKER_HUB_ORG/ebpf-backend:$VERSION"
+echo "  - $CONTAINER_REGISTRY/ebpf-frontend:$VERSION"
+echo "  - $CONTAINER_REGISTRY/ebpf-backend:$VERSION"
 echo ""
