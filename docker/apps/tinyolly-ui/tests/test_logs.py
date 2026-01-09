@@ -39,7 +39,6 @@ These tests verify:
 - Trace correlation
 """
 import pytest
-import pytest_asyncio
 
 
 class TestLogStorage:

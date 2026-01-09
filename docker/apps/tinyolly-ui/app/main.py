@@ -37,7 +37,6 @@ from fastapi.responses import ORJSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from .config import settings
 from .core.logging import setup_logging
 from .core.telemetry import setup_telemetry
 from .core.middleware import setup_middleware

@@ -37,7 +37,6 @@ These tests verify:
 - Compression threshold behavior
 """
 import pytest
-import pytest_asyncio
 
 
 class TestCompression:

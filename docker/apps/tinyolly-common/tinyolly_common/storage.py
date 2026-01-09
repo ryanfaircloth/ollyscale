@@ -42,7 +42,7 @@ import os
 import logging
 import msgpack
 import orjson
-from typing import Dict, Any, Optional, List, Union
+from typing import Dict, Any, Optional, List
 from redis import asyncio as aioredis
 from async_lru import alru_cache
 from .otlp_utils import parse_attributes, extract_resource_attributes, get_attr_value
@@ -1255,7 +1255,7 @@ class Storage:
 
         # Get catalog for node metrics
         catalog_services = await self.get_service_catalog()
-        service_metrics = {s['name']: s for s in catalog_services}
+        {s['name']: s for s in catalog_services}
         
         nodes = {} # name -> {type, metrics}
         

@@ -32,7 +32,6 @@
 
 import json
 from fastapi import APIRouter, Request, HTTPException, status, Depends
-from fastapi.responses import ORJSONResponse
 
 from models import IngestResponse, ErrorResponse
 from ..dependencies import get_storage, get_alert_manager

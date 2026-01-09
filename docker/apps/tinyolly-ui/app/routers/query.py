@@ -211,7 +211,7 @@ async def stream_logs(storage: Storage = Depends(get_storage)):
     logger = logging.getLogger(__name__)
     
     async def event_generator():
-        last_check = time.time()
+        time.time()
         sent_log_ids = set()
         
         while True:

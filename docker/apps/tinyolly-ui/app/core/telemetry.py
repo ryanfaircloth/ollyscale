@@ -30,9 +30,7 @@
 
 """OpenTelemetry metrics and logging setup"""
 
-import os
 import logging
-import sys
 from opentelemetry import metrics
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader

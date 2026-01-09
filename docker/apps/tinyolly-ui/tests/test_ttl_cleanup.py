@@ -37,7 +37,6 @@ These tests verify:
 - Cleanup doesn't affect recent data
 """
 import pytest
-import pytest_asyncio
 
 
 class TestTTLCleanup:

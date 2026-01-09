@@ -36,7 +36,7 @@ import subprocess
 import logging
 from typing import Optional
 from pathlib import Path
-from fastapi import APIRouter, Query, HTTPException, Depends
+from fastapi import APIRouter, Query, HTTPException
 from pydantic import BaseModel, Field
 import yaml
 import aiohttp

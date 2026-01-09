@@ -30,7 +30,6 @@
 
 """Admin endpoints"""
 
-import os
 import time
 import psutil
 import datetime

@@ -39,7 +39,6 @@ These tests verify:
 - Label/attribute handling
 """
 import pytest
-import pytest_asyncio
 
 
 class TestGaugeMetrics:

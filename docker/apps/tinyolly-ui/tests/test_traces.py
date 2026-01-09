@@ -39,7 +39,6 @@ These tests verify:
 - Unicode and special character handling
 """
 import pytest
-import pytest_asyncio
 
 
 class TestTraceStorage:
