@@ -1,0 +1,104 @@
+# ArgoCD Helm Values
+# Configuration for ArgoCD deployment in local Kind cluster
+
+global:
+  # Domain configuration for accessing ArgoCD UI
+  domain: argocd.local
+  logging:
+    format: json
+
+# Server configuration
+server:
+  # Service type for accessing ArgoCD UI
+  service:
+    type: ClusterIP
+    # Use NodePort for Kind cluster access via port-forward
+    # type: NodePort
+    # nodePortHttp: 30080
+    # nodePortHttps: 30443
+
+  # Ingress disabled for local dev - use port-forward or LoadBalancer
+  ingress:
+    enabled: false
+
+  # Server configuration
+  extraArgs:
+    - --insecure # Disable TLS for local development
+
+  # Resource limits for local dev
+  resources:
+    limits: {}
+    requests:
+      cpu: 250m
+      memory: 128Mi
+
+# Redis configuration (used by ArgoCD for caching)
+redis:
+  enabled: true
+  resources:
+    limits: {}
+    requests:
+      cpu: 100m
+      memory: 64Mi
+
+# Repo server configuration
+repoServer:
+  resources:
+    limits: {}
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+# Application controller configuration
+controller:
+  resources:
+    limits: {}
+    requests:
+      cpu: 500m
+      memory: 512Mi
+
+# Dex (SSO) - disabled for local dev
+dex:
+  enabled: false
+
+# Notifications controller - disabled for local dev
+notifications:
+  enabled: false
+
+# ApplicationSet controller - enabled for advanced app deployment patterns
+applicationSet:
+  enabled: true
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# Config management plugins - disabled for basic setup
+configs:
+  params:
+    # Disable TLS for local development
+    server.insecure: true
+    # Enable exec provider for kubectl authentication
+    server.rbac.log.enforce.enable: false
+  
+  # Repository credentials templates
+  credentialTemplates: {}
+  
+  # Default repositories
+  repositories: {}
+
+# RBAC configuration
+rbac:
+  # Default policy is role:readonly for all authenticated users
+  policy.default: role:admin
+  # Admin users
+  policy.csv: |
+    g, admin, role:admin
+
+# Install CRDs
+crds:
+  install: true
+  keep: true

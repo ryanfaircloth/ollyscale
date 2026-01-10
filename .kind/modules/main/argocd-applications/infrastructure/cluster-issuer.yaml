@@ -1,0 +1,113 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cluster-issuer
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: 'https://bedag.github.io/helm-charts/'
+    chart: raw
+    targetRevision: 2.0.2
+    helm:
+      values: |
+        resources:
+          - 
+            apiVersion: cert-manager.io/v1
+            kind: ClusterIssuer
+            metadata:
+              name: selfsigned-cluster-issuer
+            spec:
+              selfSigned: {}
+          -
+            apiVersion: cert-manager.io/v1
+            kind: Certificate
+            metadata:
+              name: ca
+            spec:
+              isCA: true
+              commonName: cluster-ca
+              secretName: cluster-root-secret
+              privateKey:
+                algorithm: ECDSA
+                size: 256
+              issuerRef:
+                name: selfsigned-cluster-issuer
+                kind: ClusterIssuer
+                group: cert-manager.io
+          -
+            apiVersion: cert-manager.io/v1
+            kind: ClusterIssuer
+            metadata:
+              name: cluster-ca-issuer
+            spec:
+              ca:
+                secretName: cluster-root-secret
+          - apiVersion: trust.cert-manager.io/v1alpha1
+            kind: Bundle
+            metadata:
+              name: trust-bundle-cluster-with-defaults
+            spec:
+              sources:
+              - useDefaultCAs: true
+              - configMap:
+                  name: "kube-root-ca.crt"
+                  key: "ca.crt"
+              - secret:
+                  name: "cluster-root-secret"
+                  key: "tls.crt"
+              target:
+                configMap:
+                  key: "root-certs.pem"
+                  metadata:
+                    labels:
+                      app.kubernetes.io/component: "trust-bundle"
+                additionalFormats:
+                  jks:
+                    key: "bundle.jks"
+                  pkcs12:
+                    key: "bundle.p12"
+                namespaceSelector:
+                  matchExpressions:
+                    - key: kubernetes.io/metadata.name
+                      operator: NotIn
+                      values: ["default", "kube-public", "kube-system", "kube-node-lease", "cert-manager"]
+          - apiVersion: trust.cert-manager.io/v1alpha1
+            kind: Bundle
+            metadata:
+              name: trust-bundle-cluster
+            spec:
+              sources:
+              - configMap:
+                  name: "kube-root-ca.crt"
+                  key: "ca.crt"
+              - secret:
+                  name: "cluster-root-secret"
+                  key: "tls.crt"
+              target:
+                configMap:
+                  key: "root-certs.pem"
+                  metadata:
+                    labels:
+                      app.kubernetes.io/component: "trust-bundle"
+                additionalFormats:
+                  jks:
+                    key: "bundle.jks"
+                  pkcs12:
+                    key: "bundle.p12"
+                namespaceSelector:
+                  matchExpressions:
+                    - key: kubernetes.io/metadata.name
+                      operator: NotIn
+                      values: ["default", "kube-public", "kube-system", "kube-node-lease", "cert-manager"]
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: cert-manager
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

@@ -1,0 +1,64 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kafka-ui
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "50"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: 'https://bedag.github.io/helm-charts/'
+    chart: raw
+    targetRevision: 2.0.2
+    helm:
+      valuesObject:
+        # Disable ingress as we'll use HTTPRoute instead
+        ingress:
+          enabled: false
+        # Environment variable configuration
+        env:
+          - name: KAFKA_CLUSTERS_0_NAME
+            value: "kafka-dev"
+          - name: KAFKA_CLUSTERS_0_PROPERTIES_SSL_TRUSTSTORE_LOCATION
+            value: "/ssl/ssl.truststore.crt"
+          - name: KAFKA_CLUSTERS_0_PROPERTIES_SSL_TRUSTSTORE_TYPE
+            value: "PEM"
+        # Volume mounts
+        volumeMounts:
+          - name: kafkaaccess-volume
+            mountPath: /ssl
+        # Volumes
+        volumes:
+          - name: kafkaaccess-volume
+            secret:
+              secretName: kafka-ui
+              items:
+                - key: ssl.truststore.crt
+                  path: ssl.truststore.crt
+        # Secret mappings for Kafka authentication
+        envs:
+          secretMappings:
+            KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS:
+              name: kafka-ui
+              keyName: bootstrap.servers
+            KAFKA_CLUSTERS_0_PROPERTIES_SECURITY_PROTOCOL:
+              name: kafka-ui
+              keyName: security.protocol
+            KAFKA_CLUSTERS_0_PROPERTIES_SASL_MECHANISM:
+              name: kafka-ui
+              keyName: sasl.mechanism
+            KAFKA_CLUSTERS_0_PROPERTIES_SASL_JAAS_CONFIG:
+              name: kafka-ui
+              keyName: sasl.jaas.config
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: kafka-ui
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

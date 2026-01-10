@@ -1,0 +1,717 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: otel-logs-collector
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "40"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: 'https://bedag.github.io/helm-charts/'
+    chart: raw
+    targetRevision: 2.0.2
+    helm:
+      valuesObject:
+        resources:
+          - apiVersion: opentelemetry.io/v1beta1
+            kind: OpenTelemetryCollector
+            metadata:
+              name: agent
+              namespace: opentelemetry-operator-system
+            spec:
+              mode: daemonset
+              serviceAccount: agent
+              env:
+                - name: KUBE_NODE_NAME
+                  valueFrom:
+                    fieldRef:
+                      apiVersion: v1
+                      fieldPath: spec.nodeName
+              volumes:
+                - name: varlogpods
+                  hostPath:
+                    path: /var/log/pods
+                - name: varlibdockercontainers
+                  hostPath:
+                    path: /var/lib/docker/containers
+                - name: varlogcontainers
+                  hostPath:
+                    path: /var/log/containers
+                - name: otel-logs-storage
+                  emptyDir: {}
+              volumeMounts:
+                - name: varlogpods
+                  mountPath: /var/log/pods
+                  readOnly: true
+                - name: varlibdockercontainers
+                  mountPath: /var/lib/docker/containers
+                  readOnly: true
+                - name: varlogcontainers
+                  mountPath: /var/log/containers
+                  readOnly: true
+                - name: otel-logs-storage
+                  mountPath: /otel-logs-storage
+              config:
+                receivers:
+                  # OTLP receiver for application telemetry
+                  otlp:
+                    protocols:
+                      grpc:
+                        endpoint: 0.0.0.0:4317
+                      http:
+                        endpoint: 0.0.0.0:4318
+                  # File log collection from Kubernetes pods
+                  filelog:
+                    include:
+                      - /var/log/pods/*/*/*.log
+                    exclude:
+                      # Exclude logs from the logging system itself to prevent loops
+                      - /var/log/pods/opentelemetry-operator-system_*/*/*.log
+                      - /var/log/pods/flux-system_*/*/*.log
+                    start_at: end
+                    include_file_path: true
+                    include_file_name: false
+                    operators:
+                      # Handle multiline logs - merge lines starting with whitespace
+                      - type: recombine
+                        id: multiline-merger
+                        combine_field: body
+                        is_first_entry: 'body matches "^\\S"'
+                      # Parse container logs using the standard container operator
+                      - type: container
+                        id: container-parser
+                      # Parse JSON structured logs
+                      - type: json_parser
+                        id: json-parser
+                        parse_from: body
+                        parse_to: attributes
+                        on_error: send
+                      # Parse log level to OpenTelemetry severity
+                      - type: severity_parser
+                        id: severity-parser
+                        parse_from: attributes.level
+                        on_error: send
+                      # Parse log_level to OpenTelemetry severity if level wasn't found
+                      - type: severity_parser
+                        id: severity-parser-alt
+                        parse_from: attributes.log_level
+                        on_error: send
+                      # Remove original level fields after parsing
+                      - type: remove
+                        id: remove-level
+                        field: attributes.level
+                        if: attributes.level != nil
+                      - type: remove
+                        id: remove-log-level
+                        field: attributes.log_level
+                        if: attributes.log_level != nil
+                      # Map legacy field names to semantic conventions
+                      - type: move
+                        id: map-legacy-app-to-service-name
+                        from: attributes.legacy.app
+                        to: attributes.service.name
+                        if: 'attributes.legacy.app != nil and attributes.service.name == nil'
+                      - type: move
+                        id: map-legacy-version-to-service-version
+                        from: attributes.legacy.version
+                        to: attributes.service.version
+                        if: 'attributes.legacy.version != nil and attributes.service.version == nil'
+                      # Clean up legacy fields after mapping
+                      - type: remove
+                        id: remove-legacy-app
+                        field: attributes.legacy.app
+                        if: attributes.legacy.app != nil
+                      - type: remove
+                        id: remove-legacy-version
+                        field: attributes.legacy.version
+                        if: attributes.legacy.version != nil
+                      # Parse W3C Trace Context with regex (lowercase)
+                      - type: regex_parser
+                        id: parse-w3c-trace-context-lower
+                        if: attributes.traceparent != nil
+                        parse_from: attributes.traceparent
+                        regex: '^(?P<version>[0-9a-f]{2})-(?P<trace_id>[0-9a-f]{32})-(?P<span_id>[0-9a-f]{16})-(?P<trace_flags>[0-9a-f]{2})$'
+                        parse_to: attributes.w3c_trace
+                      # Parse W3C Trace Context with regex (uppercase)  
+                      - type: regex_parser
+                        id: parse-w3c-trace-context-upper
+                        if: attributes.Traceparent != nil
+                        parse_from: attributes.Traceparent
+                        regex: '^(?P<version>[0-9a-f]{2})-(?P<trace_id>[0-9a-f]{32})-(?P<span_id>[0-9a-f]{16})-(?P<trace_flags>[0-9a-f]{2})$'
+                        parse_to: attributes.w3c_trace
+                      # Move parsed trace_id and span_id to resource for proper trace correlation
+                      - type: move
+                        id: set-trace-id-from-w3c
+                        from: attributes.w3c_trace.trace_id
+                        to: resource.trace_id
+                        if: attributes.w3c_trace.trace_id != nil
+                      - type: move
+                        id: set-span-id-from-w3c
+                        from: attributes.w3c_trace.span_id
+                        to: resource.span_id
+                        if: attributes.w3c_trace.span_id != nil
+                      # Clean up temporary w3c_trace object
+                      - type: remove
+                        id: remove-w3c-trace-temp
+                        field: attributes.w3c_trace
+                        if: attributes.w3c_trace != nil
+                      # Set top-level trace_id and span_id from resource for proper correlation
+                      - type: trace_parser
+                        id: set-trace-correlation
+                        if: resource.trace_id != nil
+                        trace_id:
+                          parse_from: resource.trace_id
+                        span_id:
+                          parse_from: resource.span_id
+                      # Remove original traceparent field after parsing
+                      - type: remove
+                        id: remove-traceparent
+                        field: attributes.traceparent
+                        if: attributes.traceparent != nil
+                      - type: remove
+                        id: remove-Traceparent
+                        field: attributes.Traceparent
+                        if: attributes.Traceparent != nil
+                      # Remove trace fields from resource since they should only be at top level
+                      - type: remove
+                        id: remove-resource-trace-id
+                        field: resource.trace_id
+                        if: resource.trace_id != nil
+                      - type: remove
+                        id: remove-resource-span-id
+                        field: resource.span_id
+                        if: resource.span_id != nil
+                      - type: remove
+                        id: remove-version
+                        field: attributes.version
+                        if: 'attributes.version != nil and attributes.version matches "^[0-9a-f]{2}$"'
+                      # Extract main message from msg field if present
+                      - type: move
+                        id: extract-msg-field
+                        from: attributes.msg
+                        to: body
+                        if: attributes.msg != nil
+                      # Extract main message from message field if present
+                      - type: move
+                        id: extract-message-field
+                        from: attributes.message
+                        to: body
+                        if: attributes.message != nil
+                    storage: file_storage
+                processors:
+                  batch:
+                    timeout: 1s
+                    send_batch_size: 1024
+                  # Step 1: Mark existing service names for preservation
+                  transform/preserve-service:
+                    error_mode: ignore
+                    log_statements:
+                      - context: resource
+                        statements:
+                          # Mark meaningful service names for preservation
+                          - set(attributes["_preserve_service_name"], "true") where attributes["service.name"] != nil and not IsMatch(attributes["service.name"], "^(unknown_service|kubernetes-logs|otel-collector|default|)$")
+                  # Step 2: Add Kubernetes context without overwriting preserved service names
+                  k8sattributes:
+                    auth_type: "serviceAccount"
+                    passthrough: false
+                    filter:
+                      node_from_env_var: KUBE_NODE_NAME
+                    extract:
+                      metadata:
+                        - k8s.pod.name
+                        - k8s.pod.uid
+                        - k8s.deployment.name
+                        - k8s.namespace.name
+                        - k8s.node.name
+                        - k8s.pod.start_time
+                      labels:
+                        # Extract to k8s.* attributes instead of directly overwriting service.*
+                        - tag_name: k8s.app.name
+                          key: app.kubernetes.io/name
+                          from: pod
+                        - tag_name: k8s.app.version
+                          key: app.kubernetes.io/version
+                          from: pod
+                        - tag_name: k8s.app.component
+                          key: app.kubernetes.io/component
+                          from: pod
+                        - tag_name: k8s.app.instance
+                          key: app.kubernetes.io/instance
+                          from: pod
+                        # Legacy label mappings to separate namespace
+                        - tag_name: k8s.legacy.app
+                          key: app
+                          from: pod
+                        - tag_name: k8s.legacy.version
+                          key: version
+                          from: pod
+                      annotations:
+                        - tag_name: k8s.deployment_config
+                          key: deployment.kubernetes.io/config-hash
+                          from: pod
+                    pod_association:
+                      - sources:
+                          - from: resource_attribute
+                            name: k8s.pod.uid
+                      - sources:
+                          - from: resource_attribute
+                            name: k8s.pod.name
+                          - from: resource_attribute
+                            name: k8s.namespace.name
+                      - sources:
+                          - from: connection # Use connection for proxy telemetry
+                  # Step 3: Apply service naming rules with precedence
+                  resource/service-naming:
+                    attributes:
+                      # Set service.name from k8s.app.name if available and service.name is empty
+                      - key: service.name
+                        from_attribute: k8s.app.name
+                        action: insert
+                      # Fallback to legacy app label if k8s standard label missing  
+                      - key: service.name
+                        from_attribute: k8s.legacy.app
+                        action: insert
+                      # Set service.version with same precedence
+                      - key: service.version
+                        from_attribute: k8s.app.version
+                        action: upsert
+                      - key: service.version
+                        from_attribute: k8s.legacy.version
+                        action: upsert
+                      # Set other service attributes
+                      - key: service.component
+                        from_attribute: k8s.app.component
+                        action: upsert
+                      - key: service.instance.id
+                        from_attribute: k8s.app.instance
+                        action: upsert
+                      # Set environment
+                      - key: deployment.environment
+                        value: dev
+                        action: upsert
+                      # Final fallback service name if nothing else worked (only if empty)
+                      - key: service.name
+                        value: kubernetes-logs
+                        action: insert
+                  # Step 3.5: Fix service names when fallback was applied but component exists
+                  transform/fix-service-names:
+                    error_mode: ignore
+                    trace_statements:
+                      - context: resource
+                        statements:
+                          # Fix backend services with kubernetes-logs fallback - use service.component directly
+                          - set(attributes["service.name"], attributes["service.component"]) where attributes["service.name"] == "kubernetes-logs" and attributes["service.component"] != nil
+                    log_statements:
+                      - context: resource
+                        statements:
+                          # Fix backend services for logs
+                          - set(attributes["service.name"], attributes["service.component"]) where attributes["service.name"] == "kubernetes-logs" and attributes["service.component"] != nil
+                    metric_statements:
+                      - context: resource
+                        statements:
+                          # Fix backend services for metrics
+                          - set(attributes["service.name"], attributes["service.component"]) where attributes["service.name"] == "kubernetes-logs" and attributes["service.component"] != nil
+                  # Step 4: Clean up temporary and redundant attributes
+                  attributes/cleanup:
+                    actions:
+                      # Remove temporary preservation flag
+                      - key: _preserve_service_name
+                        action: delete
+                      # Clean up k8s attributes that duplicate service attributes
+                      - key: k8s.app.name
+                        action: delete
+                      - key: k8s.app.version
+                        action: delete
+                      - key: k8s.app.component
+                        action: delete
+                      - key: k8s.app.instance
+                        action: delete
+                      - key: k8s.legacy.app
+                        action: delete
+                      - key: k8s.legacy.version
+                        action: delete
+                    # Keep k8s.pod.name, k8s.namespace.name, k8s.deployment.name, k8s.deployment_config
+                extensions:
+                  file_storage:
+                    directory: /otel-logs-storage
+                    timeout: 10s
+                    create_directory: true
+                exporters:
+                  # Forward traces to central gateway for distributed processing with load balancing
+                  loadbalancing/gateway:
+                    resolver:
+                      dns:
+                        hostname: gateway-collector-headless.opentelemetry-operator-system.svc.cluster.local
+                        port: "4317"
+                    protocol:
+                      otlp:
+                        tls:
+                          insecure: true
+                        sending_queue:
+                          enabled: true
+                          num_consumers: 4
+                          queue_size: 100
+                        retry_on_failure:
+                          enabled: true
+                          initial_interval: 10ms
+                          max_interval: 1m
+                          max_elapsed_time: 10m
+                  otlp/to:
+                    endpoint: tinyolly-otlp-receiver.tinyolly.svc.cluster.local:4343
+                    tls:
+                      insecure: true
+                    sending_queue:
+                      enabled: true
+                      num_consumers: 4
+                      queue_size: 100
+                    retry_on_failure:
+                      enabled: true
+                      initial_interval: 10ms
+                      max_interval: 1m
+                      max_elapsed_time: 10m
+                service:
+                  extensions: [file_storage]
+                  pipelines:
+                    traces:
+                      receivers: [otlp]
+                      processors: [transform/preserve-service, k8sattributes, resource/service-naming, transform/fix-service-names, attributes/cleanup, batch]
+                      exporters: [loadbalancing/gateway]
+                    metrics:
+                      receivers: [otlp]
+                      processors: [transform/preserve-service, k8sattributes, resource/service-naming, transform/fix-service-names, attributes/cleanup, batch]
+                      exporters: [loadbalancing/gateway]
+                    logs:
+                      receivers: [filelog, otlp]
+                      processors: [transform/preserve-service, k8sattributes, resource/service-naming, transform/fix-service-names, attributes/cleanup, batch]
+                      exporters: [loadbalancing/gateway]
+          # Central Gateway Collector for distributed trace processing
+          - apiVersion: opentelemetry.io/v1beta1
+            kind: OpenTelemetryCollector
+            metadata:
+              name: gateway
+              namespace: opentelemetry-operator-system
+            spec:
+              mode: deployment
+              serviceAccount: gateway
+              replicas: 1 # HA deployment
+              config:
+                receivers:
+                  otlp:
+                    protocols:
+                      grpc:
+                        endpoint: 0.0.0.0:4317
+                      http:
+                        endpoint: 0.0.0.0:4318
+                processors:
+                  batch:
+                    timeout: 1s
+                    send_batch_size: 1024
+                  # Tail sampling to collect complete traces before processing
+                  tail_sampling:
+                    decision_wait: 10s
+                    num_traces: 50000
+                    expected_new_traces_per_sec: 10
+                    policies:
+                      # Sample all traces for now, but collect them completely first
+                      - name: sample_all
+                        type: always_sample
+                  # Step 1: Mark existing service names for preservation
+                  transform/preserve-service:
+                    error_mode: ignore
+                    trace_statements:
+                      - context: resource
+                        statements:
+                          # Mark meaningful service names for preservation
+                          - set(attributes["_preserve_service_name"], "true") where attributes["service.name"] != nil and not IsMatch(attributes["service.name"], "^(unknown_service|kubernetes-logs|otel-collector|gateway|agent|default|)$")
+                  # Step 2: Enhanced Envoy service name extraction
+                  transform/envoy-service-name:
+                    error_mode: ignore
+                    trace_statements:
+                      - context: span
+                        conditions:
+                          - resource.attributes["telemetry.sdk.name"] == "envoy"
+                        statements:
+                          # Extract service name from HTTPRoute upstream_cluster 
+                          # "httproute/courier-dev/cd-o365-courier-o365-webhook/rule/1" -> "cd-o365-courier-o365-webhook"
+                          - set(resource.attributes["service.name"], Split(attributes["upstream_cluster"], "/")[2]) where attributes["upstream_cluster"] != nil and IsMatch(attributes["upstream_cluster"], "^httproute/[^/]+/[^/]+/rule/\\d+$")
+                          # Set http.route from HTTPRoute upstream_cluster
+                          # "httproute/courier-dev/cd-o365-courier-o365-webhook/rule/1" -> "cd-o365-courier-o365-webhook"  
+                          - set(attributes["http.route"], Split(attributes["upstream_cluster"], "/")[2]) where attributes["upstream_cluster"] != nil and IsMatch(attributes["upstream_cluster"], "^httproute/[^/]+/[^/]+/rule/\\d+$")
+                          # Extract service name from SecurityPolicy upstream_cluster for auth services
+                          # "securitypolicy/courier-dev/cd-o365-courier-o365-auth-filter/extauth/0" -> "cd-o365-courier-o365-auth-filter"  
+                          - set(resource.attributes["service.name"], Split(attributes["upstream_cluster"], "/")[2]) where attributes["upstream_cluster"] != nil and IsMatch(attributes["upstream_cluster"], "^securitypolicy/[^/]+/[^/]+/extauth/\\d+$")
+                          # Set http.route from SecurityPolicy upstream_cluster (for auth routes)
+                          # "securitypolicy/courier-dev/cd-o365-courier-o365-auth-filter/extauth/0" -> "cd-o365-courier-o365-auth-filter/auth"
+                          - set(attributes["http.route"], Split(attributes["upstream_cluster"], "/")[2]) where attributes["upstream_cluster"] != nil and IsMatch(attributes["upstream_cluster"], "^securitypolicy/[^/]+/[^/]+/extauth/\\d+$")
+                          # Fallback: extract hostname from http.url if service.name is still "envoy"
+                          # "https://courier-o365.strimzi.tinyolly.test:9443/" -> "courier-o365"
+                          - set(resource.attributes["service.name"], Split(Split(attributes["http.url"], "://")[1], ".")[0]) where attributes["http.url"] != nil and resource.attributes["service.name"] == "envoy"
+                          # Set fallback http.route from hostname if no route was set from upstream_cluster
+                          - set(attributes["http.route"], Split(Split(attributes["http.url"], "://")[1], ".")[0]) where attributes["http.url"] != nil and attributes["http.route"] == nil
+                  # Step 3: Transform processor for generic upstream cluster cases
+                  # Only apply to spans that don't already have preserved service names
+                  transform/service_names:
+                    error_mode: ignore
+                    trace_statements:
+                      - context: span
+                        statements:
+                          # Only extract from upstream_cluster if service.name isn't preserved
+                          - set(resource.attributes["service.name"], Split(attributes["upstream_cluster"], "/")[2]) where attributes["upstream_cluster"] != nil and IsMatch(attributes["upstream_cluster"], "^httproute/[^/]+/[^/]+/rule/\\d+$") and resource.attributes["_preserve_service_name"] == nil
+                          # Also handle security policy upstream clusters for auth services
+                          - set(resource.attributes["service.name"], Split(attributes["upstream_cluster"], "/")[2]) where attributes["upstream_cluster"] != nil and IsMatch(attributes["upstream_cluster"], "^securitypolicy/[^/]+/[^/]+/extauth/\\d+$") and resource.attributes["_preserve_service_name"] == nil
+                  # Step 4: Add Kubernetes attributes for direct OTLP telemetry (non-destructive)
+                  k8sattributes:
+                    auth_type: "serviceAccount"
+                    passthrough: false
+                    extract:
+                      metadata:
+                        - k8s.pod.name
+                        - k8s.pod.uid
+                        - k8s.deployment.name
+                        - k8s.namespace.name
+                        - k8s.node.name
+                        - k8s.pod.start_time
+                      labels:
+                        # Extract to k8s.* namespace to avoid conflicts
+                        - tag_name: k8s.app.name
+                          key: app.kubernetes.io/name
+                          from: pod
+                        - tag_name: k8s.app.version
+                          key: app.kubernetes.io/version
+                          from: pod
+                        - tag_name: k8s.app.component
+                          key: app.kubernetes.io/component
+                          from: pod
+                        - tag_name: k8s.app.instance
+                          key: app.kubernetes.io/instance
+                          from: pod
+                        # Legacy label mappings
+                        - tag_name: k8s.legacy.app
+                          key: app
+                          from: pod
+                        - tag_name: k8s.legacy.version
+                          key: version
+                          from: pod
+                      annotations:
+                        - tag_name: k8s.deployment_config
+                          key: deployment.kubernetes.io/config-hash
+                          from: pod
+                    pod_association:
+                      - sources:
+                          - from: resource_attribute
+                            name: k8s.pod.uid
+                      - sources:
+                          - from: resource_attribute
+                            name: k8s.pod.name
+                          - from: resource_attribute
+                            name: k8s.namespace.name
+                  # Step 5: Apply fallback service naming (only if needed)
+                  resource/service-naming:
+                    attributes:
+                      # Set service.name from k8s labels if not already set
+                      - key: service.name
+                        from_attribute: k8s.app.name
+                        action: insert
+                      # Fallback to legacy label
+                      - key: service.name
+                        from_attribute: k8s.legacy.app
+                        action: insert
+                      # Set other service attributes
+                      - key: service.version
+                        from_attribute: k8s.app.version
+                        action: upsert
+                      - key: service.version
+                        from_attribute: k8s.legacy.version
+                        action: upsert
+                  # Step 5.5: Fix service names when fallback was applied but component exists
+                  transform/fix-service-names:
+                    error_mode: ignore
+                    trace_statements:
+                      - context: resource
+                        statements:
+                          # Fix backend services with kubernetes-logs fallback - use service.component directly
+                          - set(attributes["service.name"], attributes["service.component"]) where attributes["service.name"] == "kubernetes-logs" and attributes["service.component"] != nil
+                    log_statements:
+                      - context: resource
+                        statements:
+                          # Fix backend services for logs
+                          - set(attributes["service.name"], attributes["service.component"]) where attributes["service.name"] == "kubernetes-logs" and attributes["service.component"] != nil
+                    metric_statements:
+                      - context: resource
+                        statements:
+                          # Fix backend services for metrics
+                          - set(attributes["service.name"], attributes["service.component"]) where attributes["service.name"] == "kubernetes-logs" and attributes["service.component"] != nil
+                  # Step 6: Clean up temporary and redundant attributes
+                  attributes/cleanup:
+                    actions:
+                      # Remove temporary preservation flag
+                      - key: _preserve_service_name
+                        action: delete
+                      # Clean up k8s attributes that duplicate service attributes
+                      - key: k8s.app.name
+                        action: delete
+                      - key: k8s.app.version
+                        action: delete
+                      - key: k8s.app.component
+                        action: delete
+                      - key: k8s.app.instance
+                        action: delete
+                      - key: k8s.legacy.app
+                        action: delete
+                      - key: k8s.legacy.version
+                        action: delete
+                    # Keep k8s.pod.name, k8s.namespace.name, k8s.deployment.name, k8s.deployment_config
+                connectors:
+                  # Generate RED metrics from corrected traces
+                  spanmetrics:
+                    histogram:
+                      explicit:
+                        buckets: [1ms, 4ms, 10ms, 20ms, 50ms, 100ms, 200ms, 500ms, 1s, 2s, 5s]
+                    dimensions:
+                      - name: http.method
+                      - name: http.status_code
+                    dimensions_cache_size: 1000
+                    aggregation_temporality: "AGGREGATION_TEMPORALITY_CUMULATIVE"
+                    metrics_flush_interval: 15s
+                    metrics_expiration: 5m
+                exporters:
+                  otlp/to:
+                    endpoint: tinyolly-otlp-receiver.tinyolly.svc.cluster.local:4343
+                    tls:
+                      insecure: true
+                    sending_queue:
+                      enabled: true
+                      num_consumers: 4
+                      queue_size: 100
+                    retry_on_failure:
+                      enabled: true
+                      initial_interval: 10ms
+                      max_interval: 1m
+                      max_elapsed_time: 10m
+                service:
+                  pipelines:
+                    traces:
+                      receivers: [otlp]
+                      processors: [transform/preserve-service, tail_sampling, transform/envoy-service-name, transform/service_names, k8sattributes, resource/service-naming, transform/fix-service-names, attributes/cleanup, batch]
+                      exporters: [spanmetrics, otlp/to]
+                    metrics:
+                      receivers: [spanmetrics, otlp]
+                      processors: [transform/preserve-service, k8sattributes, resource/service-naming, transform/fix-service-names, attributes/cleanup, batch]
+                      exporters: [otlp/to]
+                    logs:
+                      receivers: [otlp]
+                      processors: [transform/preserve-service, k8sattributes, resource/service-naming, transform/fix-service-names, attributes/cleanup, batch]
+                      exporters: [otlp/to]
+          - apiVersion: v1
+            kind: ServiceAccount
+            metadata:
+              name: agent
+              namespace: opentelemetry-operator-system
+          - apiVersion: v1
+            kind: ServiceAccount
+            metadata:
+              name: gateway
+              namespace: opentelemetry-operator-system
+          - apiVersion: rbac.authorization.k8s.io/v1
+            kind: ClusterRole
+            metadata:
+              name: agent
+            rules:
+              - apiGroups: [""]
+                resources: ["pods", "namespaces"]
+                verbs: ["get", "watch", "list"]
+              - apiGroups: ["apps"]
+                resources: ["replicasets"]
+                verbs: ["get", "list", "watch"]
+              - apiGroups: ["extensions"]
+                resources: ["replicasets"]
+                verbs: ["get", "list", "watch"]
+          - apiVersion: rbac.authorization.k8s.io/v1
+            kind: ClusterRole
+            metadata:
+              name: gateway
+            rules:
+              - apiGroups: [""]
+                resources: ["pods", "namespaces", "services", "endpoints"]
+                verbs: ["get", "watch", "list"]
+              - apiGroups: ["apps"]
+                resources: ["replicasets"]
+                verbs: ["get", "list", "watch"]
+          - apiVersion: rbac.authorization.k8s.io/v1
+            kind: ClusterRoleBinding
+            metadata:
+              name: agent
+            roleRef:
+              apiGroup: rbac.authorization.k8s.io
+              kind: ClusterRole
+              name: agent
+            subjects:
+              - kind: ServiceAccount
+                name: agent
+                namespace: opentelemetry-operator-system
+          - apiVersion: rbac.authorization.k8s.io/v1
+            kind: ClusterRoleBinding
+            metadata:
+              name: gateway
+            roleRef:
+              apiGroup: rbac.authorization.k8s.io
+              kind: ClusterRole
+              name: gateway
+            subjects:
+              - kind: ServiceAccount
+                name: gateway
+                namespace: opentelemetry-operator-system
+          # OpenTelemetry Instrumentation CR for Python applications (opt-in)
+          - apiVersion: opentelemetry.io/v1alpha1
+            kind: Instrumentation
+            metadata:
+              name: python-instrumentation
+              namespace: opentelemetry-operator-system
+            spec:
+              # Collector endpoint where telemetry will be exported
+              exporter:
+                endpoint: http://agent-collector.opentelemetry-operator-system.svc.cluster.local:4318
+              # Propagators configuration
+              propagators:
+                - tracecontext
+                - baggage
+              # Resource attributes applied to all telemetry
+              resource:
+                attributes:
+                  deployment.environment: "development"
+              # Python auto-instrumentation configuration
+              python:
+                # image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:0.44b0
+                env:
+                  # Python-specific instrumentation settings (no spec equivalent)
+                  - name: OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED
+                    value: "true"
+                  - name: OTEL_PYTHON_LOGGING_INJECTION_ENABLED
+                    value: "true"
+                  - name: OTEL_PYTHON_LOG_LEVEL
+                    value: "INFO"
+                  - name: OTEL_PYTHON_LOG_CORRELATION
+                    value: "true"
+                  - name: OTEL_INSTRUMENTATION_HTTP_CAPTURE_HEADERS_SERVER_REQUEST
+                    value: "content-.*,x-.*"
+                  - name: OTEL_INSTRUMENTATION_HTTP_CAPTURE_HEADERS_SERVER_RESPONSE
+                    value: "content-.*,x-.*"
+                  - name: OTEL_PYTHON_EXCLUDED_URLS
+                    value: "/health,/metrics,ready"
+                    # # Resource attributes that will be applied to all telemetry
+                    # resource:
+                    #   attributes:
+                    #     deployment.environment: "development"
+                    #     service.namespace: "default"
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: opentelemetry-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
