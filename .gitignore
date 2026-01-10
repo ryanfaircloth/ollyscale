@@ -16,3 +16,12 @@ docker/certs/
 *.key
 *.crt
 .claude
+
+# Terraform
+.terraform/
+.terraform.lock.hcl
+terraform.tfstate
+terraform.tfstate.backup
+
+# Helm packages
+*.tgz
