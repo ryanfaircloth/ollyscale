@@ -51,20 +51,9 @@ class Settings:
     otelcol_templates_dir: str = os.getenv("OTELCOL_TEMPLATES_DIR", "/app/otelcol-templates")
     otel_collector_container: str = os.getenv("OTEL_COLLECTOR_CONTAINER", "otel-collector")
     
-    # OTLP
+    # OTLP - These are only used if not auto-instrumented by the OTel Operator
+    # In Kubernetes, the operator injects all OTEL_* env vars automatically
     otel_service_name: str = os.getenv("OTEL_SERVICE_NAME", "tinyolly-ui")
-    otel_exporter_otlp_endpoint: str = os.getenv(
-        "OTEL_EXPORTER_OTLP_ENDPOINT",
-        "http://localhost:4318"
-    )
-    otel_exporter_otlp_metrics_endpoint: str = os.getenv(
-        "OTEL_EXPORTER_OTLP_METRICS_ENDPOINT",
-        "http://localhost:4318/v1/metrics"
-    )
-    otel_exporter_otlp_logs_endpoint: str = os.getenv(
-        "OTEL_EXPORTER_OTLP_LOGS_ENDPOINT",
-        "http://localhost:4318/v1/logs"
-    )
     
     # CORS
     cors_origins: str = os.getenv("CORS_ORIGINS", "http://localhost:*,http://127.0.0.1:*")

@@ -28,102 +28,127 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""OpenTelemetry metrics and logging setup"""
+"""OpenTelemetry metrics and logging setup
+
+Note: When running in Kubernetes with the OpenTelemetry Operator,
+auto-instrumentation is injected automatically via the Instrumentation CR.
+This module provides fallback setup for local development and metric definitions.
+"""
 
 import logging
-from opentelemetry import metrics
-from opentelemetry.sdk.metrics import MeterProvider
-from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
-from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
-from opentelemetry.exporter.otlp.proto.http._log_exporter import OTLPLogExporter
-from opentelemetry.sdk._logs import LoggerProvider, LoggingHandler
-from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
-from opentelemetry._logs import set_logger_provider
-from opentelemetry.sdk.resources import Resource
-from opentelemetry.instrumentation.logging import LoggingInstrumentor
+import os
 
-from ..config import settings
+logger = logging.getLogger(__name__)
+
+# Global flag to track if telemetry is enabled
+_telemetry_enabled = True
+
+
+def _is_auto_instrumented() -> bool:
+    """Check if the app is already auto-instrumented by the OTel Operator"""
+    # The operator sets this env var when injecting instrumentation
+    return os.getenv("OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED") == "true"
+
+
+def _is_telemetry_disabled() -> bool:
+    """Check if telemetry should be disabled"""
+    # Disable telemetry if OTEL_SDK_DISABLED is set
+    return os.getenv("OTEL_SDK_DISABLED", "false").lower() in ("true", "1", "yes")
 
 
 def setup_telemetry():
-    """Configure OpenTelemetry metrics and logging"""
-    # Create resource with service name
-    resource = Resource.create({"service.name": settings.otel_service_name})
-
-    # Set up OTLP metric exporter
-    metric_exporter = OTLPMetricExporter(
-        endpoint=settings.otel_exporter_otlp_metrics_endpoint
-    )
-
-    # Configure metric reader with 60s export interval
-    metric_reader = PeriodicExportingMetricReader(metric_exporter, export_interval_millis=60000)
-    meter_provider = MeterProvider(metric_readers=[metric_reader], resource=resource)
-    metrics.set_meter_provider(meter_provider)
-
-    # Set up OTLP log exporter
-    log_exporter = OTLPLogExporter(
-        endpoint=settings.otel_exporter_otlp_logs_endpoint
-    )
-
-    # Configure logger provider with batch processor
-    logger_provider = LoggerProvider(resource=resource)
-    logger_provider.add_log_record_processor(BatchLogRecordProcessor(log_exporter))
-    set_logger_provider(logger_provider)
-
-    # Add OTLP handler to root logger - this sends logs to OTLP
-    otlp_handler = LoggingHandler(level=logging.INFO, logger_provider=logger_provider)
-    root_logger = logging.getLogger()
-    root_logger.addHandler(otlp_handler)
-
-    # Also add handler to uvicorn loggers to capture HTTP requests
-    for logger_name in ['uvicorn', 'uvicorn.access', 'uvicorn.error']:
-        uv_logger = logging.getLogger(logger_name)
-        uv_logger.addHandler(otlp_handler)
-
-    # Initialize LoggingInstrumentor AFTER logger provider is set up
-    # This injects trace_id and span_id into log records
-    LoggingInstrumentor().instrument(set_logging_format=False)
+    """Configure OpenTelemetry metrics and logging
     
-    # Create meter for tinyolly-ui
-    meter = metrics.get_meter("tinyolly-ui")
+    When running in Kubernetes with OTel Operator, the operator automatically:
+    - Injects the opentelemetry-instrument wrapper
+    - Sets all OTEL_* environment variables
+    - Configures exporters to send to the collector
     
-    # Create metrics
-    request_counter = meter.create_counter(
-        name="http.server.requests",
-        description="Total HTTP requests",
-        unit="1"
-    )
+    This function only needs to provide metric definitions that the app uses.
+    """
+    global _telemetry_enabled
     
-    error_counter = meter.create_counter(
-        name="http.server.errors",
-        description="Total HTTP errors",
-        unit="1"
-    )
+    # Check if telemetry is explicitly disabled
+    if _is_telemetry_disabled():
+        logger.info("OpenTelemetry SDK is disabled via OTEL_SDK_DISABLED environment variable")
+        _telemetry_enabled = False
+        return _create_noop_metrics()
     
-    response_time_histogram = meter.create_histogram(
-        name="http.server.duration",
-        description="HTTP request duration",
-        unit="ms"
-    )
+    # Check if auto-instrumented by operator
+    if _is_auto_instrumented():
+        logger.info("Auto-instrumentation detected - using operator-injected configuration")
+    else:
+        logger.info("Running without auto-instrumentation (development mode)")
     
-    ingestion_counter = meter.create_counter(
-        name="tinyolly.ingestion.count",
-        description="Total telemetry ingestion operations",
-        unit="1"
-    )
+    try:
+        from opentelemetry import metrics
+        
+        # Get the meter - operator will have already configured the provider
+        meter = metrics.get_meter("tinyolly-ui")
+        
+        # Create metrics that the application uses
+        request_counter = meter.create_counter(
+            name="http.server.requests",
+            description="Total HTTP requests",
+            unit="1"
+        )
+        
+        error_counter = meter.create_counter(
+            name="http.server.errors",
+            description="Total HTTP errors",
+            unit="1"
+        )
+        
+        response_time_histogram = meter.create_histogram(
+            name="http.server.duration",
+            description="HTTP request duration",
+            unit="ms"
+        )
+        
+        ingestion_counter = meter.create_counter(
+            name="tinyolly.ingestion.count",
+            description="Total telemetry ingestion operations",
+            unit="1"
+        )
+        
+        storage_operations_counter = meter.create_counter(
+            name="tinyolly.storage.operations",
+            description="Storage operations by type",
+            unit="1"
+        )
+        
+        logger.info("OpenTelemetry metrics initialized successfully")
+        return {
+            "request_counter": request_counter,
+            "error_counter": error_counter,
+            "response_time_histogram": response_time_histogram,
+            "ingestion_counter": ingestion_counter,
+            "storage_operations_counter": storage_operations_counter,
+        }
     
-    storage_operations_counter = meter.create_counter(
-        name="tinyolly.storage.operations",
-        description="Storage operations by type",
-        unit="1"
-    )
+    except Exception as e:
+        # If telemetry setup fails, log and continue with noop metrics
+        logger.warning(f"Failed to initialize OpenTelemetry metrics: {e}. Application will continue without custom metrics.")
+        _telemetry_enabled = False
+        return _create_noop_metrics()
+
+
+def _create_noop_metrics():
+    """Create no-op metrics that do nothing when called"""
+    class NoopMetric:
+        def add(self, *args, **kwargs):
+            pass
+        
+        def record(self, *args, **kwargs):
+            pass
     
+    noop = NoopMetric()
     return {
-        "request_counter": request_counter,
-        "error_counter": error_counter,
-        "response_time_histogram": response_time_histogram,
-        "ingestion_counter": ingestion_counter,
-        "storage_operations_counter": storage_operations_counter,
+        "request_counter": noop,
+        "error_counter": noop,
+        "response_time_histogram": noop,
+        "ingestion_counter": noop,
+        "storage_operations_counter": noop,
     }
 
 
