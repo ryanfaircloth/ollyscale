@@ -49,3 +49,8 @@ variable "mgmt_https_nodeport" {
   description = "NodePort for management HTTPS traffic"
   type        = number
 }
+
+variable "bootstrap" {
+  description = "Bootstrap mode - true for initial cluster creation (no HTTPRoutes), false for subsequent runs"
+  type        = bool
+}

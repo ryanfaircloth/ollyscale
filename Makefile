@@ -15,13 +15,25 @@ up:
 	@if [ ! -f .kind/terraform.tfstate ]; then \
 		pushd .kind && terraform init && popd; \
 	fi
-	pushd .kind && terraform apply -auto-approve || terraform apply -auto-approve && popd
+	@# Check if cluster exists to determine bootstrap mode
+	@if ! kind get clusters 2>/dev/null | grep -q "^$(CLUSTER_NAME)$$"; then \
+		echo "🚀 Bootstrap mode: Creating new cluster..."; \
+		export TF_VAR_bootstrap=true && pushd .kind && terraform apply -auto-approve && popd; \
+		echo ""; \
+		echo "🔄 Running second pass to enable HTTPRoutes..."; \
+		export TF_VAR_bootstrap=false && pushd .kind && terraform apply -auto-approve && popd; \
+	else \
+		echo "♻️  Updating existing cluster..."; \
+		export TF_VAR_bootstrap=false && pushd .kind && terraform apply -auto-approve && popd; \
+	fi
 	@echo ""
 	@echo "🎉 TinyOlly cluster deployment complete!"
 	@echo ""
 	@echo "📋 Next Steps:"
-	@echo "  1. Deploy TinyOlly: cd k8s && ./02-deploy-tinyolly.sh"
-	@echo "  2. Access UI via kubectl port-forward or LoadBalancer"
+	@echo "  1. Access ArgoCD UI: https://argocd.tinyolly.test:49443"
+	@echo "  2. Get ArgoCD admin password:"
+	@echo "     cd .kind && terraform output -raw argocd_admin_password"
+	@echo "  3. Deploy applications via ArgoCD"
 	@echo ""
 
 ## Destroy KIND cluster and registry

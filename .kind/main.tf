@@ -16,4 +16,5 @@ module "main" {
   kafka_nodeport                   = module.kind_cluster.kafka_nodeport
   https_nodeport                   = module.kind_cluster.https_nodeport
   mgmt_https_nodeport              = module.kind_cluster.mgmt_https_nodeport
+  bootstrap                        = var.bootstrap
 }

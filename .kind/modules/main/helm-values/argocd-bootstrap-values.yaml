@@ -1,9 +1,9 @@
 # ArgoCD Helm Values
-# Configuration for ArgoCD deployment with Gateway API HTTPRoute
+# Configuration for ArgoCD deployment in local Kind cluster
 
 global:
   # Domain configuration for accessing ArgoCD UI
-  domain: argocd.${gateway_dns_suffix}
+  domain: argocd.local
   logging:
     format: json
 
@@ -12,14 +12,18 @@ server:
   # Service type for accessing ArgoCD UI
   service:
     type: ClusterIP
+    # Use NodePort for Kind cluster access via port-forward
+    # type: NodePort
+    # nodePortHttp: 30080
+    # nodePortHttps: 30443
 
-  # Ingress disabled - using Gateway API HTTPRoute (created separately in argocd.tf)
+  # Ingress disabled for local dev - use port-forward or LoadBalancer
   ingress:
     enabled: false
 
   # Server configuration
   extraArgs:
-    - --insecure # Disable TLS for local development (TLS terminated at gateway)
+    - --insecure # Disable TLS for local development
 
   # Resource limits for local dev
   resources:
