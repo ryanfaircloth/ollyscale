@@ -25,3 +25,4 @@ terraform.tfstate.backup
 
 # Helm packages
 *.tgz
+.kind/tinyolly-config
