@@ -1,10 +1,10 @@
 apiVersion: argoproj.io/v1alpha1
 kind: AppProject
 metadata:
-  name: kafka
+  name: middleware
   namespace: argocd
 spec:
-  description: Kafka platform - Strimzi operator, Kafka UI, access control
+  description: Middleware platform - Kafka (Strimzi), Redis operators, UI tools, access control
   sourceRepos:
     - '*'
   destinations:

@@ -36,9 +36,9 @@ resource "kubectl_manifest" "application_applications" {
   ]
 }
 
-# Deploy kafka applications (depends on applications)
-resource "kubectl_manifest" "kafka_applications" {
-  for_each = fileset(local.argocd_apps_path, "kafka/*.yaml")
+# Deploy middleware applications (depends on applications)
+resource "kubectl_manifest" "middleware_applications" {
+  for_each = fileset(local.argocd_apps_path, "middleware/*.yaml")
 
   yaml_body = templatefile("${local.argocd_apps_path}/${each.value}", local.template_vars)
 
@@ -47,13 +47,13 @@ resource "kubectl_manifest" "kafka_applications" {
   ]
 }
 
-# Deploy observability applications (depends on kafka)
+# Deploy observability applications (depends on middleware)
 resource "kubectl_manifest" "observability_applications" {
   for_each = fileset(local.argocd_apps_path, "observability/*.yaml")
 
   yaml_body = templatefile("${local.argocd_apps_path}/${each.value}", local.template_vars)
 
   depends_on = [
-    kubectl_manifest.kafka_applications
+    kubectl_manifest.middleware_applications
   ]
 }

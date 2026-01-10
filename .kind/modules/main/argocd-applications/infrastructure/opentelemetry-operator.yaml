@@ -1,24 +1,23 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: strimzi-access-operator
+  name: opentelemetry-operator
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "30"
+    argocd.argoproj.io/sync-wave: "20"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
-  project: kafka
+  project: infrastructure
   source:
-    repoURL: quay.io
-    chart: strimzi-helm/strimzi-access-operator
-    targetRevision: 0.2.0
+    repoURL: 'https://open-telemetry.github.io/opentelemetry-helm-charts'
+    chart: opentelemetry-operator
+    targetRevision: 0.102.0
     helm:
-      valuesObject:
-        watchAnyNamespace: true
+      valuesObject: {}
   destination:
     server: 'https://kubernetes.default.svc'
-    namespace: strimzi-operator
+    namespace: opentelemetry-operator-system
   syncPolicy:
     automated:
       prune: true

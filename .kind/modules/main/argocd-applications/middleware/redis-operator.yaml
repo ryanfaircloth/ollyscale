@@ -1,0 +1,32 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: redis-operator
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "35"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: middleware
+  source:
+    repoURL: 'ghcr.io/ot-container-kit/charts'
+    chart: redis-operator
+    targetRevision: 0.23.0
+    helm:
+      parameters:
+        - name: certificate.secretName
+          value: redis-operator-webhook-cert
+        - name: certmanager.enabled
+          value: "true"
+        - name: redisOperator.webhook
+          value: "true"
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: redis-operator
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

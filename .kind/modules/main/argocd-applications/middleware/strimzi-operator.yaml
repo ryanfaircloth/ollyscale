@@ -1,34 +1,27 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: envoyproxy
+  name: strimzi-operator
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "20"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
-  project: observability
+  project: middleware
   source:
-    repoURL: docker.io
-    chart: envoyproxy/gateway-helm
-    targetRevision: 1.6.1
+    repoURL: quay.io
+    chart: strimzi-helm/strimzi-kafka-operator
+    targetRevision: 0.49.1
     helm:
       valuesObject:
-        deployment:
-          replicas: 1
-          pod:
-            tolerations:
-            - key: node-role.kubernetes.io/control-plane
-              effect: NoSchedule
+        watchAnyNamespace: true
   destination:
     server: 'https://kubernetes.default.svc'
-    namespace: envoy-gateway-system
+    namespace: strimzi-system
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
-      - ServerSideApply=true
-      - RespectIgnoreDifferences=true
