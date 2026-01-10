@@ -1,0 +1,65 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kafka-ui
+  namespace: kafka-ui
+spec:
+  interval: 15m
+  dependsOn:
+    - name: kafka-dev
+      namespace: kafka
+    - name: gateway
+      namespace: envoy-gateway-system
+    - name: strimzi-access-operator
+      namespace: strimzi-operator
+  chart:
+    spec:
+      chart: kafka-ui
+      version: "1.5.3"
+      sourceRef:
+        kind: HelmRepository
+        name: kafka-ui
+        namespace: flux-system
+  values:
+    # Disable ingress as we'll use HTTPRoute instead
+    ingress:
+      enabled: false
+    
+    # Environment variable configuration
+    env:
+      - name: KAFKA_CLUSTERS_0_NAME
+        value: "kafka-dev"
+      - name: KAFKA_CLUSTERS_0_PROPERTIES_SSL_TRUSTSTORE_LOCATION
+        value: "/ssl/ssl.truststore.crt"
+      - name: KAFKA_CLUSTERS_0_PROPERTIES_SSL_TRUSTSTORE_TYPE
+        value: "PEM"
+    
+    # Volume mounts
+    volumeMounts:
+      - name: kafkaaccess-volume
+        mountPath: /ssl
+    
+    # Volumes
+    volumes:
+      - name: kafkaaccess-volume
+        secret:
+          secretName: kafka-ui
+          items:
+            - key: ssl.truststore.crt
+              path: ssl.truststore.crt
+    
+    # Secret mappings for Kafka authentication
+    envs:
+      secretMappings:
+        KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS:
+          name: kafka-ui
+          keyName: bootstrap.servers
+        KAFKA_CLUSTERS_0_PROPERTIES_SECURITY_PROTOCOL:
+          name: kafka-ui
+          keyName: security.protocol
+        KAFKA_CLUSTERS_0_PROPERTIES_SASL_MECHANISM:
+          name: kafka-ui
+          keyName: sasl.mechanism
+        KAFKA_CLUSTERS_0_PROPERTIES_SASL_JAAS_CONFIG:
+          name: kafka-ui
+          keyName: sasl.jaas.config

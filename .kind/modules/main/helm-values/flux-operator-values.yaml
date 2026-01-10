@@ -1,0 +1,4 @@
+# Default values for Flux2 Helm chart
+# You can customize this file as needed for your environment
+---
+installCRDs: true

@@ -1,0 +1,99 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kafka-ui-resources
+  namespace: kafka-ui
+spec:
+  interval: 15m
+  dependsOn:
+    - name: kafka-dev
+      namespace: kafka
+    - name: strimzi-access-operator
+      namespace: strimzi-operator
+  chart:
+    spec:
+      chart: raw
+      version: "2.0.2"
+      sourceRef:
+        kind: HelmRepository
+        name: bedag
+        namespace: flux-system
+  values:
+    resources:
+      # KafkaUser for Kafka UI
+      - apiVersion: kafka.strimzi.io/v1
+        kind: KafkaUser
+        metadata:
+          name: kafka-ui
+          namespace: kafka
+          labels:
+            strimzi.io/cluster: kafka-dev-sci
+        spec:
+          authentication:
+            type: scram-sha-512
+          authorization:
+            type: simple
+            acls:
+              # Full access to all topics
+              - resource:
+                  type: topic
+                  name: "*"
+                  patternType: literal
+                operations:
+                  - All
+                host: "*"
+              # Full access to all consumer groups
+              - resource:
+                  type: group
+                  name: "*"
+                  patternType: literal
+                operations:
+                  - All
+                host: "*"
+              # Full access to cluster operations
+              - resource:
+                  type: cluster
+                operations:
+                  - All
+                host: "*"
+      
+      # KafkaUserAccess for Kafka UI - creates connection secret
+      - apiVersion: access.strimzi.io/v1alpha1
+        kind: KafkaAccess
+        metadata:
+          name: kafka-ui
+        spec:
+          kafka:
+            name: kafka-dev-sci
+            namespace: kafka
+          user:
+            apiGroup: kafka.strimzi.io
+            kind: KafkaUser
+            name: kafka-ui
+            namespace: kafka
+      
+      # HTTPRoute for Kafka UI
+      - apiVersion: gateway.networking.k8s.io/v1
+        kind: HTTPRoute
+        metadata:
+          name: kafka-ui-route
+          namespace: kafka-ui
+          annotations:
+            gateway.envoyproxy.io/backend-service: "kafka-ui"
+            opentelemetry.io/service-name: "kafka-ui"
+        spec:
+          parentRefs:
+            - name: management-gateway
+              namespace: envoy-gateway-system
+              sectionName: mgmt-https-listener
+          hostnames:
+            - "kafka-ui.tinyolly.test"
+          rules:
+            - matches:
+                - path:
+                    type: PathPrefix
+                    value: /
+              backendRefs:
+                - name: kafka-ui
+                  namespace: kafka-ui
+                  port: 80

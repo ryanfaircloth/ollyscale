@@ -1,0 +1,26 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kafka-dev
+  namespace: kafka
+spec:
+  interval: 5m
+  chart:
+    spec:
+      chart: tinyolly-instance
+      sourceRef:
+        kind: HelmRepository
+        name: localregistry
+        namespace: flux-system
+      version: "${strimzi_cluster_instance_version}"
+  dependsOn:
+    - name: trust-manager
+      namespace: cert-manager
+    - name: strimzi-operator
+      namespace: strimzi-operator
+    - name: strimzi-access-operator
+      namespace: strimzi-operator
+  valuesFrom:
+    - kind: ConfigMap
+      name: flux-tinyolly-values
+      valuesKey: values.yaml

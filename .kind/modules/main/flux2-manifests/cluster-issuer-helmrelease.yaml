@@ -1,0 +1,129 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: cluster-issuer
+  namespace: flux-system
+spec:
+  interval: 5m
+  chart:
+    spec:
+      chart: raw
+      sourceRef:
+        kind: HelmRepository
+        name: bedag
+        namespace: flux-system
+      version: "2.0.2"
+  dependsOn:
+    - name: cert-manager
+      namespace: cert-manager
+    - name: trust-manager
+      namespace: cert-manager
+  values:
+    resources:
+      - 
+        apiVersion: cert-manager.io/v1
+        kind: ClusterIssuer
+        metadata:
+          name: selfsigned-cluster-issuer
+        spec:
+          selfSigned: {}
+      -
+        apiVersion: cert-manager.io/v1
+        kind: Certificate
+        metadata:
+          name: ca
+        spec:
+          isCA: true
+          commonName: cluster-ca
+          secretName: cluster-root-secret
+          privateKey:
+            algorithm: ECDSA
+            size: 256
+          issuerRef:
+            name: selfsigned-cluster-issuer
+            kind: ClusterIssuer
+            group: cert-manager.io
+      -
+        apiVersion: cert-manager.io/v1
+        kind: ClusterIssuer
+        metadata:
+          name: cluster-ca-issuer
+        spec:
+          ca:
+            # `ClusterIssuer` resource is not namespaced, so `secretName` is assumed to reference secret in `cert-manager` namespace.
+            secretName: cluster-root-secret
+      - apiVersion: trust.cert-manager.io/v1alpha1
+        kind: Bundle
+        metadata:
+          name: trust-bundle-cluster-with-defaults  # The bundle name will also be used for the target
+        spec:
+          sources:
+          # Include a bundle of publicly trusted certificates which can be
+          # used to validate most TLS certificates on the internet, such as
+          # those issued by Let's Encrypt, Google, Amazon and others.
+          # NB: Unless you pin the package providing these CAs, the default can change!
+          - useDefaultCAs: true
+
+          - configMap:
+              name: "kube-root-ca.crt"
+              key: "ca.crt"
+          - secret:
+              name: "cluster-root-secret"
+              key: "tls.crt"
+
+          target:
+            # Sync the bundle to a ConfigMap called `my-org.com` in every namespace which
+            # has the label "linkerd.io/inject=enabled"
+            # All ConfigMaps will include a PEM-formatted bundle, here named "root-certs.pem"
+            # and in this case we also request binary formatted bundles in JKS and PKCS#12 formats,
+            # here named "bundle.jks" and "bundle.p12".
+            configMap:
+              key: "root-certs.pem"
+              metadata:
+                labels:
+                  app.kubernetes.io/component: "trust-bundle"
+            additionalFormats:
+              jks:
+                key: "bundle.jks"
+              pkcs12:
+                key: "bundle.p12"
+            namespaceSelector:
+              matchExpressions:
+                - key: kubernetes.io/metadata.name
+                  operator: NotIn
+                  values: ["default", "kube-public", "kube-system", "kube-node-lease", "cert-manager"]
+      - apiVersion: trust.cert-manager.io/v1alpha1
+        kind: Bundle
+        metadata:
+          name: trust-bundle-cluster  # The bundle name will also be used for the target
+        spec:
+          sources:
+
+          - configMap:
+              name: "kube-root-ca.crt"
+              key: "ca.crt"
+          - secret:
+              name: "cluster-root-secret"
+              key: "tls.crt"
+
+          target:
+            # Sync the bundle to a ConfigMap called `my-org.com` in every namespace which
+            # has the label "linkerd.io/inject=enabled"
+            # All ConfigMaps will include a PEM-formatted bundle, here named "root-certs.pem"
+            # and in this case we also request binary formatted bundles in JKS and PKCS#12 formats,
+            # here named "bundle.jks" and "bundle.p12".
+            configMap:
+              key: "root-certs.pem"
+              metadata:
+                labels:
+                  app.kubernetes.io/component: "trust-bundle"
+            additionalFormats:
+              jks:
+                key: "bundle.jks"
+              pkcs12:
+                key: "bundle.p12"
+            namespaceSelector:
+              matchExpressions:
+                - key: kubernetes.io/metadata.name
+                  operator: NotIn
+                  values: ["default", "kube-public", "kube-system", "kube-node-lease", "cert-manager"]
