@@ -8,7 +8,7 @@ metadata:
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
-  project: default
+  project: infrastructure
   source:
     repoURL: 'https://bedag.github.io/helm-charts/'
     chart: raw

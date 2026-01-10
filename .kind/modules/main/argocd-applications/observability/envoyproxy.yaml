@@ -8,7 +8,7 @@ metadata:
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
-  project: default
+  project: observability
   source:
     repoURL: docker.io
     chart: envoyproxy/gateway-helm

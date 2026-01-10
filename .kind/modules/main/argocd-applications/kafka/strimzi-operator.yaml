@@ -8,7 +8,7 @@ metadata:
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
-  project: default
+  project: kafka
   source:
     repoURL: quay.io
     chart: strimzi-helm/strimzi-kafka-operator

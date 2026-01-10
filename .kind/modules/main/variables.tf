@@ -34,3 +34,18 @@ variable "gateway_dns_suffix" {
   type        = string
   default     = "tinyolly.test"
 }
+
+variable "kafka_nodeport" {
+  description = "NodePort for Kafka TLS traffic"
+  type        = number
+}
+
+variable "https_nodeport" {
+  description = "NodePort for HTTPS traffic"
+  type        = number
+}
+
+variable "mgmt_https_nodeport" {
+  description = "NodePort for management HTTPS traffic"
+  type        = number
+}

@@ -8,7 +8,7 @@ metadata:
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
-  project: default
+  project: observability
   source:
     repoURL: 'https://open-telemetry.github.io/opentelemetry-helm-charts'
     chart: opentelemetry-operator

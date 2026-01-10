@@ -8,7 +8,7 @@ metadata:
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
-  project: default
+  project: infrastructure
   source:
     repoURL: 'https://bedag.github.io/helm-charts/'
     chart: raw
@@ -24,8 +24,8 @@ spec:
               namespace: envoy-gateway-system
             spec:
               dnsNames:
-              - '*.apps.tinyolly.test'
-              - '*.tinyolly.test'
+              - '*.apps.${gateway_dns_suffix}'
+              - '*.${gateway_dns_suffix}'
               issuerRef:
                 kind: ClusterIssuer
                 name: cluster-ca-issuer
@@ -57,12 +57,12 @@ spec:
                         spec:
                           ports:
                           - name: kafka-port
-                            nodePort: 30994
+                            nodePort: ${kafka_nodeport}
                             port: 9094
                             protocol: TCP
                             targetPort: 9094
                           - name: https-port
-                            nodePort: 30943
+                            nodePort: ${https_nodeport}
                             port: 9443
                             protocol: TCP
                             targetPort: 9443      
@@ -123,7 +123,7 @@ spec:
                         spec:
                           ports:
                           - name: mgmt-https-port
-                            nodePort: 30949
+                            nodePort: ${mgmt_https_nodeport}
                             port: 49443
                             protocol: TCP
                             targetPort: 49443

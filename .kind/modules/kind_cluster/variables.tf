@@ -15,3 +15,21 @@ variable "export_kubectl_conf" {
   type        = bool
   default     = true
 }
+
+variable "kafka_nodeport" {
+  description = "NodePort for Kafka TLS traffic (container_port in Kind)"
+  type        = number
+  default     = 30994
+}
+
+variable "https_nodeport" {
+  description = "NodePort for HTTPS traffic (container_port in Kind)"
+  type        = number
+  default     = 30943
+}
+
+variable "mgmt_https_nodeport" {
+  description = "NodePort for management HTTPS traffic (container_port in Kind)"
+  type        = number
+  default     = 30949
+}

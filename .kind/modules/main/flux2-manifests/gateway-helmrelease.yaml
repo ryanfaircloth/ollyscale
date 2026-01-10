@@ -1,0 +1,219 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: gateway
+  namespace: envoy-gateway-system
+spec:
+  interval: 5m
+  chart:
+    spec:
+      chart: raw
+      sourceRef:
+        kind: HelmRepository
+        name: bedag
+        namespace: flux-system
+      version: "2.0.2"
+  dependsOn:
+    - name: cert-manager
+      namespace: cert-manager
+    - name: trust-manager
+      namespace: cert-manager
+    - name: envoyproxy
+      namespace: envoy-gateway-system
+  values:
+    resources:
+      -
+        apiVersion: cert-manager.io/v1
+        kind: Certificate
+        metadata:
+          name: cluster-gateway-cert
+          namespace: envoy-gateway-system
+        spec:
+          dnsNames:
+          - '*.apps.${gateway_dns_suffix}'
+          - '*.${gateway_dns_suffix}'
+          issuerRef:
+            kind: ClusterIssuer
+            name: cluster-ca-issuer
+          privateKey:
+            algorithm: ECDSA
+            encoding: PKCS8
+            size: 256
+          secretName: cluster-gateway-cert
+          subject:
+            organizations:
+            - my-org
+          usages:
+          - server auth
+          - client auth
+      -
+        apiVersion: gateway.envoyproxy.io/v1alpha1
+        kind: EnvoyProxy
+        metadata:
+          name: cluster-gateway
+          namespace: envoy-gateway-system
+        spec:
+          provider:
+            type: Kubernetes
+            kubernetes:
+              envoyService:
+                type: NodePort
+                patch:
+                  value:
+                    spec:
+                      ports:
+                      # Port 9094 for Kafka TLS traffic
+                      - name: kafka-port
+                        nodePort: ${kafka_nodeport}
+                        port: 9094
+                        protocol: TCP
+                        targetPort: 9094
+                      # Port 9443 for HTTPS traffic
+                      - name: https-port
+                        nodePort: ${https_nodeport}
+                        port: 9443
+                        protocol: TCP
+                        targetPort: 9443      
+          telemetry:
+            metrics:
+              sinks:
+                - type: OpenTelemetry
+                  openTelemetry:
+                    host: agent-collector.opentelemetry-operator-system.svc.cluster.local
+                    port: 4317          
+            tracing:
+              # sample 100% of requests
+              samplingRate: 100
+              provider:
+                host: agent-collector.opentelemetry-operator-system.svc.cluster.local
+                port: 4317
+                type: OpenTelemetry
+                serviceName: "envoy-cluster-gateway"
+            accessLog:
+              settings:
+                - format:
+                    type: JSON
+                    json:
+                      "@timestamp": "%START_TIME%"
+                      "http.request.method": "%REQ(:METHOD)%"
+                      "url.path": "%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%"
+                      "network.protocol.name": "%PROTOCOL%"
+                      "http.response.status_code": "%RESPONSE_CODE%"
+                      "envoy.response_flags": "%RESPONSE_FLAGS%"
+                      "http.request.body.size": "%BYTES_RECEIVED%"
+                      "http.response.body.size": "%BYTES_SENT%"
+                      "http.request.duration": "%DURATION%"
+                      "client.address": "%REQ(X-FORWARDED-FOR)%"
+                      "user_agent.original": "%REQ(USER-AGENT)%"
+                      "http.request.id": "%REQ(X-REQUEST-ID)%"
+                      "server.address": "%REQ(:AUTHORITY)%"
+                      "network.peer.address": "%DOWNSTREAM_REMOTE_ADDRESS%"
+                      "upstream.address": "%UPSTREAM_HOST%"
+                      "http.response.header.x_envoy_upstream_service_time": "%RESP(X-ENVOY-UPSTREAM-SERVICE-TIME)%"
+                  sinks:
+                    - type: OpenTelemetry
+                      openTelemetry:
+                        host: agent-collector.opentelemetry-operator-system.svc.cluster.local
+                        port: 4317                        
+      - 
+        apiVersion: gateway.envoyproxy.io/v1alpha1
+        kind: EnvoyProxy
+        metadata:
+          name: management-gateway
+          namespace: envoy-gateway-system
+        spec:
+          provider:
+            type: Kubernetes
+            kubernetes:
+              envoyService:
+                type: NodePort
+                patch:
+                  value:
+                    spec:
+                      ports:
+                      # Port 49443 for management HTTPS traffic (no telemetry)
+                      - name: mgmt-https-port
+                        nodePort: ${mgmt_https_nodeport}
+                        port: 49443
+                        protocol: TCP
+                        targetPort: 49443
+          telemetry:
+            # Disable telemetry for management gateway - remove tracing and access logs entirely
+      - 
+        apiVersion: gateway.networking.k8s.io/v1
+        kind: GatewayClass
+        metadata:
+          name: cluster-gateway-class
+          namespace: envoy-gateway-system
+        spec:
+          controllerName: gateway.envoyproxy.io/gatewayclass-controller
+          parametersRef:
+            group: gateway.envoyproxy.io
+            kind: EnvoyProxy
+            name: cluster-gateway
+            namespace: envoy-gateway-system
+      -
+        apiVersion: gateway.networking.k8s.io/v1
+        kind: GatewayClass
+        metadata:
+          name: management-gateway-class
+          namespace: envoy-gateway-system
+        spec:
+          controllerName: gateway.envoyproxy.io/gatewayclass-controller
+          parametersRef:
+            group: gateway.envoyproxy.io
+            kind: EnvoyProxy
+            name: management-gateway
+            namespace: envoy-gateway-system
+      -
+        apiVersion: gateway.networking.k8s.io/v1
+        kind: Gateway
+        metadata:
+          name: management-gateway
+          namespace: envoy-gateway-system
+        spec:
+          gatewayClassName: management-gateway-class
+          listeners:
+          - name: mgmt-https-listener
+            protocol: HTTPS
+            port: 49443
+            tls:
+              mode: Terminate
+              certificateRefs:
+              - kind: Secret
+                name: cluster-gateway-cert
+                namespace: envoy-gateway-system
+            allowedRoutes:
+              namespaces:
+                from: All
+      -
+        apiVersion: gateway.networking.k8s.io/v1
+        kind: Gateway
+        metadata:
+          name: cluster-gateway
+          # Envoy Gateway can control gateways in all namespaces. Depending on your
+          # cluster permissions model, a Gateway can be in the envoy-gateway-system namespace
+          # or in the same namespace as your applications.
+        spec:
+          gatewayClassName: cluster-gateway-class
+          listeners:
+          - name: kafka-listener
+            protocol: TLS
+            port: 9094
+            tls:
+              mode: Passthrough
+            allowedRoutes:
+              namespaces:
+                from: All
+          - name: https-listener
+            protocol: HTTPS
+            port: 9443
+            tls:
+              mode: Terminate
+              certificateRefs:
+              - kind: Secret
+                name: cluster-gateway-cert
+                namespace: envoy-gateway-system
+            allowedRoutes:
+              namespaces:
+                from: All

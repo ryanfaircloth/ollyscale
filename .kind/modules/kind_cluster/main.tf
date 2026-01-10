@@ -24,17 +24,17 @@ resource "kind_cluster" "default" {
         "ingress-ready"               = "true"
       }
       extra_port_mappings {
-        container_port = 30994
+        container_port = var.kafka_nodeport
         host_port      = 9094
         protocol       = "TCP"
       }
       extra_port_mappings {
-        container_port = 30943
+        container_port = var.https_nodeport
         host_port      = 9443
         protocol       = "TCP"
       }
       extra_port_mappings {
-        container_port = 30949
+        container_port = var.mgmt_https_nodeport
         host_port      = 49443
         protocol       = "TCP"
       }
