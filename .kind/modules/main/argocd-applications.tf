@@ -3,16 +3,21 @@
 
 locals {
   argocd_apps_path = "${path.module}/argocd-applications"
-}
 
-# Deploy gateway application with templated NodePort values
-resource "kubectl_manifest" "gateway_application" {
-  yaml_body = templatefile("${local.argocd_apps_path}/infrastructure/gateway.yaml", {
+  # Common template variables passed to all applications
+  template_vars = {
     kafka_nodeport      = var.kafka_nodeport
     https_nodeport      = var.https_nodeport
     mgmt_https_nodeport = var.mgmt_https_nodeport
     gateway_dns_suffix  = var.gateway_dns_suffix
-  })
+  }
+}
+
+# Deploy infrastructure applications
+resource "kubectl_manifest" "infrastructure_applications" {
+  for_each = fileset(local.argocd_apps_path, "infrastructure/*.yaml")
+
+  yaml_body = templatefile("${local.argocd_apps_path}/${each.value}", local.template_vars)
 
   depends_on = [
     helm_release.argocd,
@@ -20,14 +25,35 @@ resource "kubectl_manifest" "gateway_application" {
   ]
 }
 
-# Deploy all other ArgoCD Application manifests (excluding gateway which is templated)
-resource "kubectl_manifest" "argocd_applications" {
-  for_each = setsubtract(fileset(local.argocd_apps_path, "**/*.yaml"), ["infrastructure/gateway.yaml"])
+# Deploy application applications (depends on infrastructure)
+resource "kubectl_manifest" "application_applications" {
+  for_each = fileset(local.argocd_apps_path, "applications/*.yaml")
 
-  yaml_body = file("${local.argocd_apps_path}/${each.value}")
+  yaml_body = templatefile("${local.argocd_apps_path}/${each.value}", local.template_vars)
 
   depends_on = [
-    helm_release.argocd,
-    kubectl_manifest.argocd_projects
+    kubectl_manifest.infrastructure_applications
+  ]
+}
+
+# Deploy kafka applications (depends on applications)
+resource "kubectl_manifest" "kafka_applications" {
+  for_each = fileset(local.argocd_apps_path, "kafka/*.yaml")
+
+  yaml_body = templatefile("${local.argocd_apps_path}/${each.value}", local.template_vars)
+
+  depends_on = [
+    kubectl_manifest.application_applications
+  ]
+}
+
+# Deploy observability applications (depends on kafka)
+resource "kubectl_manifest" "observability_applications" {
+  for_each = fileset(local.argocd_apps_path, "observability/*.yaml")
+
+  yaml_body = templatefile("${local.argocd_apps_path}/${each.value}", local.template_vars)
+
+  depends_on = [
+    kubectl_manifest.kafka_applications
   ]
 }

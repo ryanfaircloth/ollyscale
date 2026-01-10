@@ -45,20 +45,6 @@ resource "helm_release" "argocd" {
   ]
 }
 
-# HTTPRoute for ArgoCD UI on management gateway (only created when not bootstrapping)
-resource "kubectl_manifest" "argocd_httproute" {
-  count = var.bootstrap ? 0 : 1
-
-  yaml_body = templatefile("${path.module}/argocd-httproute.yaml", {
-    gateway_dns_suffix = var.gateway_dns_suffix
-  })
-
-  depends_on = [
-    helm_release.argocd,
-    kubectl_manifest.gateway_application
-  ]
-}
-
 # Data source to read ArgoCD initial admin password
 data "kubernetes_secret_v1" "argocd_initial_admin_secret" {
   metadata {

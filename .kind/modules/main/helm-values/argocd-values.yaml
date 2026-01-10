@@ -13,9 +13,19 @@ server:
   service:
     type: ClusterIP
 
-  # Ingress disabled - using Gateway API HTTPRoute (created separately in argocd.tf)
+  # Ingress disabled - using Gateway API HTTPRoute
   ingress:
     enabled: false
+
+  # HTTPRoute configuration for Gateway API
+  httproute:
+    enabled: true
+    hostnames:
+      - argocd.${gateway_dns_suffix}
+    parentRefs:
+      - name: management-gateway
+        namespace: envoy-gateway-system
+        sectionName: mgmt-https-listener
 
   # Server configuration
   extraArgs:
