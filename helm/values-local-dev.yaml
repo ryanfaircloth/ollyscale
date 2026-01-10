@@ -1,18 +1,19 @@
 # Auto-generated local development values
-# Generated: Sat Jan 10 10:19:42 CST 2026
-# Version: latest
+# Generated: Sat Jan 10 14:23:18 CST 2026
+# Version: v2.1.9-perms
+# Uses INTERNAL registry for cluster access
 
 ui:
   image:
-    repository: registry.tinyolly.test:49443/tinyolly/ui
-    tag: latest
+    repository: docker-registry.registry.svc.cluster.local:5000/tinyolly/ui
+    tag: v2.1.9-perms
 
 opampServer:
   image:
-    repository: registry.tinyolly.test:49443/tinyolly/opamp-server
-    tag: latest
+    repository: docker-registry.registry.svc.cluster.local:5000/tinyolly/opamp-server
+    tag: v2.1.9-perms
 
 otlpReceiver:
   image:
-    repository: registry.tinyolly.test:49443/tinyolly/otlp-receiver
-    tag: latest
+    repository: docker-registry.registry.svc.cluster.local:5000/tinyolly/otlp-receiver
+    tag: v2.1.9-perms

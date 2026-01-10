@@ -1,16 +1,17 @@
 #!/usr/bin/env bash
 # Deploy TinyOlly Helm chart to ArgoCD after local build
 # This script updates the ArgoCD Application with the correct chart version
-# and triggers a sync
+# and image tags, then triggers a sync
 #
-# Usage: ./deploy-to-argocd.sh [chart-version]
-# Example: ./deploy-to-argocd.sh 0.1.0
+# Usage: ./deploy-to-argocd.sh [chart-version] [image-version]
+# Example: ./deploy-to-argocd.sh 0.1.0 v2.1.9-perms
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CHART_DIR="$SCRIPT_DIR/tinyolly"
 ARGOCD_APP_FILE="${ARGOCD_APP_FILE:-$SCRIPT_DIR/../.kind/modules/main/argocd-applications/observability/tinyolly.yaml}"
+INTERNAL_REGISTRY="docker-registry.registry.svc.cluster.local:5000"
 
 # Get chart version from Chart.yaml or use provided version
 if [ $# -ge 1 ]; then
@@ -21,11 +22,22 @@ else
     echo "Using chart version from Chart.yaml: $CHART_VERSION"
 fi
 
+# Get image version (defaults to chart version if not provided)
+if [ $# -ge 2 ]; then
+    IMAGE_VERSION="$2"
+    echo "Using provided image version: $IMAGE_VERSION"
+else
+    IMAGE_VERSION="$CHART_VERSION"
+    echo "Using image version same as chart: $IMAGE_VERSION"
+fi
+
 echo ""
 echo "📋 Deploying TinyOlly to ArgoCD"
 echo "========================================"
-echo "Chart version: $CHART_VERSION"
-echo "ArgoCD App:    $ARGOCD_APP_FILE"
+echo "Chart version:  $CHART_VERSION"
+echo "Image version:  $IMAGE_VERSION"
+echo "Image registry: $INTERNAL_REGISTRY"
+echo "ArgoCD App:     $ARGOCD_APP_FILE"
 echo ""
 
 # Check if ArgoCD Application exists
@@ -59,13 +71,35 @@ fi
 
 # Check if the Application is managed by ArgoCD
 if kubectl get application tinyolly -n argocd &>/dev/null; then
-    echo "🔄 Syncing ArgoCD Application..."
+    echo "🔄 Updating ArgoCD Application with image tags and chart version..."
     
-    # Patch the Application directly in the cluster
+    # Patch the Application with both chart version and image tags
     kubectl patch application tinyolly -n argocd --type=merge -p "{
       \"spec\": {
         \"source\": {
-          \"targetRevision\": \"$CHART_VERSION\"
+          \"targetRevision\": \"$CHART_VERSION\",
+          \"helm\": {
+            \"valuesObject\": {
+              \"ui\": {
+                \"image\": {
+                  \"repository\": \"$INTERNAL_REGISTRY/tinyolly/ui\",
+                  \"tag\": \"$IMAGE_VERSION\"
+                }
+              },
+              \"opampServer\": {
+                \"image\": {
+                  \"repository\": \"$INTERNAL_REGISTRY/tinyolly/opamp-server\",
+                  \"tag\": \"$IMAGE_VERSION\"
+                }
+              },
+              \"otlpReceiver\": {
+                \"image\": {
+                  \"repository\": \"$INTERNAL_REGISTRY/tinyolly/otlp-receiver\",
+                  \"tag\": \"$IMAGE_VERSION\"
+                }
+              }
+            }
+          }
         }
       }
     }"
@@ -99,7 +133,7 @@ else
 fi
 
 echo "📋 Image versions being deployed:"
-echo "  • UI:            docker-registry.registry.svc.cluster.local:5000/tinyolly/ui:latest"
-echo "  • OpAMP Server:  docker-registry.registry.svc.cluster.local:5000/tinyolly/opamp-server:latest"
-echo "  • OTLP Receiver: docker-registry.registry.svc.cluster.local:5000/tinyolly/otlp-receiver:latest"
+echo "  • UI:            $INTERNAL_REGISTRY/tinyolly/ui:$IMAGE_VERSION"
+echo "  • OpAMP Server:  $INTERNAL_REGISTRY/tinyolly/opamp-server:$IMAGE_VERSION"
+echo "  • OTLP Receiver: $INTERNAL_REGISTRY/tinyolly/otlp-receiver:$IMAGE_VERSION"
 echo ""

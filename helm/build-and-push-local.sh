@@ -10,8 +10,9 @@
 set -euo pipefail
 
 VERSION=${1:-"local-$(date +%s)"}
-REGISTRY="registry.tinyolly.test:49443"
-CHART_REGISTRY="${REGISTRY}/tinyolly/charts"
+EXTERNAL_REGISTRY="registry.tinyolly.test:49443"  # For desktop build/push
+INTERNAL_REGISTRY="docker-registry.registry.svc.cluster.local:5000"  # For cluster pulls
+CHART_REGISTRY="${EXTERNAL_REGISTRY}/tinyolly/charts"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -19,7 +20,8 @@ echo "==============================================="
 echo "Building TinyOlly: Containers + Helm Chart"
 echo "==============================================="
 echo "Version tag: $VERSION"
-echo "Container registry: $REGISTRY"
+echo "External registry (desktop): $EXTERNAL_REGISTRY"
+echo "Internal registry (cluster): $INTERNAL_REGISTRY"
 echo "Chart registry: oci://$CHART_REGISTRY"
 echo ""
 
@@ -32,7 +34,7 @@ elif command -v docker &> /dev/null; then
     CONTAINER_CMD="docker"
     PUSH_FLAGS=""
     echo "Using: docker"
-    echo "Note: Ensure Docker daemon has $REGISTRY in insecure-registries"
+    echo "Note: Ensure Docker daemon has $EXTERNAL_REGISTRY in insecure-registries"
 else
     echo "❌ Error: Neither podman nor docker found"
     exit 1
@@ -67,8 +69,8 @@ $CONTAINER_CMD build \
   --build-arg APP_DIR=tinyolly-ui \
   -t tinyolly/ui:latest \
   -t tinyolly/ui:$VERSION \
-  -t $REGISTRY/tinyolly/ui:latest \
-  -t $REGISTRY/tinyolly/ui:$VERSION \
+  -t $EXTERNAL_REGISTRY/tinyolly/ui:latest \
+  -t $EXTERNAL_REGISTRY/tinyolly/ui:$VERSION \
   .
 echo "✓ UI image built"
 echo ""
@@ -80,8 +82,8 @@ $CONTAINER_CMD build \
   --build-arg APP_DIR=tinyolly-otlp-receiver \
   -t tinyolly/otlp-receiver:latest \
   -t tinyolly/otlp-receiver:$VERSION \
-  -t $REGISTRY/tinyolly/otlp-receiver:latest \
-  -t $REGISTRY/tinyolly/otlp-receiver:$VERSION \
+  -t $EXTERNAL_REGISTRY/tinyolly/otlp-receiver:latest \
+  -t $EXTERNAL_REGISTRY/tinyolly/otlp-receiver:$VERSION \
   .
 echo "✓ OTLP Receiver image built"
 echo ""
@@ -93,8 +95,8 @@ $CONTAINER_CMD build \
   --build-arg APP_DIR=tinyolly-opamp-server \
   -t tinyolly/opamp-server:latest \
   -t tinyolly/opamp-server:$VERSION \
-  -t $REGISTRY/tinyolly/opamp-server:latest \
-  -t $REGISTRY/tinyolly/opamp-server:$VERSION \
+  -t $EXTERNAL_REGISTRY/tinyolly/opamp-server:latest \
+  -t $EXTERNAL_REGISTRY/tinyolly/opamp-server:$VERSION \
   .
 echo "✓ OpAMP Server image built"
 echo ""
@@ -104,20 +106,20 @@ echo "=========================================="
 echo ""
 
 echo "Pushing UI..."
-$CONTAINER_CMD push $PUSH_FLAGS $REGISTRY/tinyolly/ui:latest
-$CONTAINER_CMD push $PUSH_FLAGS $REGISTRY/tinyolly/ui:$VERSION
+$CONTAINER_CMD push $PUSH_FLAGS $EXTERNAL_REGISTRY/tinyolly/ui:latest
+$CONTAINER_CMD push $PUSH_FLAGS $EXTERNAL_REGISTRY/tinyolly/ui:$VERSION
 echo "✓ UI pushed"
 echo ""
 
 echo "Pushing OTLP Receiver..."
-$CONTAINER_CMD push $PUSH_FLAGS $REGISTRY/tinyolly/otlp-receiver:latest
-$CONTAINER_CMD push $PUSH_FLAGS $REGISTRY/tinyolly/otlp-receiver:$VERSION
+$CONTAINER_CMD push $PUSH_FLAGS $EXTERNAL_REGISTRY/tinyolly/otlp-receiver:latest
+$CONTAINER_CMD push $PUSH_FLAGS $EXTERNAL_REGISTRY/tinyolly/otlp-receiver:$VERSION
 echo "✓ OTLP Receiver pushed"
 echo ""
 
 echo "Pushing OpAMP Server..."
-$CONTAINER_CMD push $PUSH_FLAGS $REGISTRY/tinyolly/opamp-server:latest
-$CONTAINER_CMD push $PUSH_FLAGS $REGISTRY/tinyolly/opamp-server:$VERSION
+$CONTAINER_CMD push $PUSH_FLAGS $EXTERNAL_REGISTRY/tinyolly/opamp-server:latest
+$CONTAINER_CMD push $PUSH_FLAGS $EXTERNAL_REGISTRY/tinyolly/opamp-server:$VERSION
 echo "✓ OpAMP Server pushed"
 echo ""
 
@@ -139,6 +141,22 @@ CHART_YAML="$CHART_DIR/Chart.yaml"
 CURRENT_CHART_VERSION=$(grep "^version:" "$CHART_YAML" | awk '{print $2}')
 echo "Current chart version: $CURRENT_CHART_VERSION"
 
+# Auto-increment chart version with timestamp for local builds
+BASE_VERSION=$(echo "$CURRENT_CHART_VERSION" | cut -d'-' -f1)
+NEW_CHART_VERSION="${BASE_VERSION}-${VERSION}"
+echo "New chart version: $NEW_CHART_VERSION"
+echo ""
+
+# Update Chart.yaml with new version
+echo "📝 Updating Chart.yaml version..."
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    sed -i '' "s/^version: .*/version: $NEW_CHART_VERSION/" "$CHART_DIR/Chart.yaml"
+else
+    sed -i "s/^version: .*/version: $NEW_CHART_VERSION/" "$CHART_DIR/Chart.yaml"
+fi
+echo "✓ Updated Chart.yaml to version $NEW_CHART_VERSION"
+echo ""
+
 # Update values.yaml to use the new image tags
 VALUES_YAML="$CHART_DIR/values.yaml"
 echo "Updating image tags in values.yaml to: $VERSION"
@@ -148,20 +166,21 @@ cat > "$SCRIPT_DIR/values-local-dev.yaml" <<EOF
 # Auto-generated local development values
 # Generated: $(date)
 # Version: $VERSION
+# Uses INTERNAL registry for cluster access
 
 ui:
   image:
-    repository: $REGISTRY/tinyolly/ui
+    repository: $INTERNAL_REGISTRY/tinyolly/ui
     tag: $VERSION
 
 opampServer:
   image:
-    repository: $REGISTRY/tinyolly/opamp-server
+    repository: $INTERNAL_REGISTRY/tinyolly/opamp-server
     tag: $VERSION
 
 otlpReceiver:
   image:
-    repository: $REGISTRY/tinyolly/otlp-receiver
+    repository: $INTERNAL_REGISTRY/tinyolly/otlp-receiver
     tag: $VERSION
 EOF
 
@@ -177,7 +196,7 @@ echo ""
 # Package the chart
 echo "📦 Packaging chart..."
 helm package "$CHART_DIR" -d "$SCRIPT_DIR"
-CHART_PACKAGE="$SCRIPT_DIR/tinyolly-${CURRENT_CHART_VERSION}.tgz"
+CHART_PACKAGE="$SCRIPT_DIR/tinyolly-${NEW_CHART_VERSION}.tgz"
 echo "✓ Chart packaged: $(basename "$CHART_PACKAGE")"
 echo ""
 
@@ -190,17 +209,19 @@ if [[ "$CONTAINER_CMD" == "podman" ]]; then
     # Helm uses the container credential helper, so we need to login
     echo "🔐 Logging into registry (required for Helm with podman)..."
     # Check if already logged in
-    if ! helm registry login "$REGISTRY" --help &>/dev/null 2>&1; then
-        echo "⚠️  Note: You may need to run: helm registry login $REGISTRY"
+    if ! helm registry login "$EXTERNAL_REGISTRY" --help &>/dev/null 2>&1; then
+        echo "⚠️  Note: You may need to run: helm registry login $EXTERNAL_REGISTRY"
     fi
 fi
 
-# Push the chart (skip if helm can't handle insecure registries easily)
-if helm push "$CHART_PACKAGE" "oci://$CHART_REGISTRY" 2>/dev/null; then
+# Push the chart
+echo "Pushing chart with: helm push $CHART_PACKAGE oci://$CHART_REGISTRY"
+if helm push "$CHART_PACKAGE" "oci://$CHART_REGISTRY" --insecure-skip-tls-verify; then
     echo "✓ Chart pushed successfully"
 else
-    echo "⚠️  Warning: Chart push may have failed (this is common with local registries)"
-    echo "   You can still install from the local package: $CHART_PACKAGE"
+    echo "❌ Error: Chart push failed"
+    echo "   Please check helm registry login and credentials"
+    exit 1
 fi
 echo ""
 
@@ -212,13 +233,12 @@ echo "✅ BUILD COMPLETE"
 echo "=========================================="
 echo ""
 echo "Container Images:"
-echo "  • $REGISTRY/tinyolly/ui:$VERSION"
-echo "  • $REGISTRY/tinyolly/opamp-server:$VERSION"
-echo "  • $REGISTRY/tinyolly/otlp-receiver:$VERSION"
+echo "  • Built/pushed to: $EXTERNAL_REGISTRY/tinyolly/*:$VERSION"
+echo "  • Cluster pulls from: $INTERNAL_REGISTRY/tinyolly/*:$VERSION"
 echo ""
 echo "Helm Chart:"
 echo "  • Package: $(basename "$CHART_PACKAGE")"
-echo "  • Version: $CURRENT_CHART_VERSION"
+echo "  • Version: $NEW_CHART_VERSION"
 echo ""
 echo "📋 Next Steps:"
 echo ""
@@ -239,11 +259,10 @@ echo "    ./deploy-to-argocd.sh"
 echo ""
 echo "  Deploy specific image version with kubectl:"
 echo "    kubectl set image deployment/tinyolly-ui \\"
-echo "      tinyolly-ui=$REGISTRY/tinyolly/ui:$VERSION -n tinyolly"
+echo "      tinyolly-ui=$EXTERNAL_REGISTRY/tinyolly/ui:$VERSION -n tinyolly"
 echo ""
 
-# Optionally deploy to ArgoCD
-if [ "${DEPLOY_TO_ARGOCD:-}" = "true" ]; then
-    echo "🚀 Deploying to ArgoCD..."
-    "$SCRIPT_DIR/deploy-to-argocd.sh"
-fi
+# Auto-deploy to ArgoCD with new chart version and image version
+echo "🚀 Deploying to ArgoCD with chart version $NEW_CHART_VERSION and image version $VERSION..."
+echo ""
+"$SCRIPT_DIR/deploy-to-argocd.sh" "$NEW_CHART_VERSION" "$VERSION"

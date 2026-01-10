@@ -12,6 +12,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application
 COPY apps/${APP_DIR}/tinyolly-otlp-receiver.py .
 
+# Set ownership to tinyolly user
+RUN chown -R tinyolly:tinyolly /app
+
+# Switch to non-root user
+USER tinyolly
+
 # Expose gRPC port
 EXPOSE 4343
 

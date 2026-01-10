@@ -20,8 +20,18 @@ up:
 		echo "🚀 Bootstrap mode: Creating new cluster..."; \
 		export TF_VAR_bootstrap=true && pushd .kind && terraform apply -auto-approve && popd; \
 		echo ""; \
+		echo "⏳ Waiting for ArgoCD to sync infrastructure apps..."; \
+		sleep 30; \
 		echo "⏳ Waiting for Gateway API CRDs to be installed..."; \
-		kubectl wait --for condition=established --timeout=300s crd/gateways.gateway.networking.k8s.io crd/httproutes.gateway.networking.k8s.io || true; \
+		for i in 1 2 3 4 5 6 7 8 9 10; do \
+			if kubectl get crd gateways.gateway.networking.k8s.io httproutes.gateway.networking.k8s.io 2>/dev/null; then \
+				echo "✅ Gateway API CRDs are ready!"; \
+				kubectl wait --for condition=established --timeout=60s crd/gateways.gateway.networking.k8s.io crd/httproutes.gateway.networking.k8s.io; \
+				break; \
+			fi; \
+			echo "  Attempt $$i/10: CRDs not found yet, waiting 30s..."; \
+			sleep 30; \
+		done; \
 		echo ""; \
 		echo "🔄 Running second pass to enable HTTPRoutes..."; \
 		export TF_VAR_bootstrap=false && pushd .kind && terraform apply -auto-approve && popd; \

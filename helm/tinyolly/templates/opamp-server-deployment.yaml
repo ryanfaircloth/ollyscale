@@ -63,9 +63,12 @@ spec:
         - name: {{ $key }}
           value: {{ $value | quote }}
         {{- end }}
-        {{- with .Values.opampServer.volumeMounts }}
         volumeMounts:
-          {{- toYaml . | nindent 10 }}
+        - name: otel-collector-config-vol
+          mountPath: /etc/otel-collector-config.yaml
+          subPath: otel-collector-config.yaml
+        {{- with .Values.opampServer.volumeMounts }}
+          {{- toYaml . | nindent 8 }}
         {{- end }}
         {{- with .Values.opampServer.resources }}
         resources:
@@ -79,9 +82,12 @@ spec:
         readinessProbe:
           {{- toYaml . | nindent 10 }}
         {{- end }}
-      {{- with .Values.opampServer.volumes }}
       volumes:
-        {{- toYaml . | nindent 8 }}
+      - name: otel-collector-config-vol
+        configMap:
+          name: otel-collector-config
+      {{- with .Values.opampServer.volumes }}
+        {{- toYaml . | nindent 6 }}
       {{- end }}
       {{- with .Values.opampServer.nodeSelector }}
       nodeSelector:

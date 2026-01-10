@@ -27,10 +27,17 @@ RUN apk add --no-cache \
     bash \
     coreutils
 
+# Create non-root user
+RUN addgroup -g 1000 tinyolly && \
+    adduser -u 1000 -G tinyolly -h /home/tinyolly -D -s /bin/bash tinyolly
+
 # Set bash as default shell
 SHELL ["/bin/bash", "-c"]
 
-COPY --from=builder /tinyolly-opamp-server /tinyolly-opamp-server
+COPY --from=builder --chown=tinyolly:tinyolly /tinyolly-opamp-server /tinyolly-opamp-server
+
+# Switch to non-root user
+USER tinyolly
 
 # OpAMP port for collector connections
 EXPOSE 4320

@@ -27,6 +27,12 @@ COPY apps/${APP_DIR}/app/ app/
 COPY apps/${APP_DIR}/templates/ templates/
 COPY apps/${APP_DIR}/static/ static/
 
+# Set ownership to tinyolly user
+RUN chown -R tinyolly:tinyolly /app
+
+# Switch to non-root user
+USER tinyolly
+
 # Expose port
 EXPOSE 5002
 

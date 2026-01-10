@@ -32,3 +32,4 @@ override.tf.json
 .terraformrc
 terraform.rc
 *-config
+helm/values-local-dev.yaml

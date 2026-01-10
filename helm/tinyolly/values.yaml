@@ -151,22 +151,11 @@ ui:
   # -- Additional environment variables (key-value pairs)
   extraEnv: {}
   
-  # -- Volume mounts
-  volumeMounts:
-    - name: otelcol-config-vol
-      mountPath: /app/otelcol-config.yaml
-      subPath: otel-collector-config.yaml
-    - name: otelcol-templates-vol
-      mountPath: /app/otelcol-templates
+  # -- Additional volume mounts (core mounts are defined in template)
+  volumeMounts: []
   
-  # -- Volumes
-  volumes:
-    - name: otelcol-config-vol
-      configMap:
-        name: otel-collector-config
-    - name: otelcol-templates-vol
-      configMap:
-        name: otelcol-templates
+  # -- Additional volumes (core volumes are defined in template)
+  volumes: []
   
   # -- Node selector
   nodeSelector: {}
@@ -267,17 +256,11 @@ opampServer:
   # -- Additional environment variables
   extraEnv: {}
   
-  # -- Volume mounts
-  volumeMounts:
-    - name: otel-collector-config-vol
-      mountPath: /etc/otel-collector-config.yaml
-      subPath: otel-collector-config.yaml
+  # -- Additional volume mounts (core mounts are defined in template)
+  volumeMounts: []
   
-  # -- Volumes
-  volumes:
-    - name: otel-collector-config-vol
-      configMap:
-        name: otel-collector-config
+  # -- Additional volumes (core volumes are defined in template)
+  volumes: []
   
   # -- Node selector
   nodeSelector: {}

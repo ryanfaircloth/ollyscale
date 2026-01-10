@@ -18,7 +18,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 SHELL ["/bin/bash", "-c"]
 RUN echo 'if [ -f /etc/bash_completion ]; then . /etc/bash_completion; fi' >> /etc/bash.bashrc
 
+# Create non-root user
+RUN groupadd -g 1000 tinyolly && \
+    useradd -u 1000 -g tinyolly -m -s /bin/bash tinyolly && \
+    mkdir -p /app && \
+    chown -R tinyolly:tinyolly /app
+
 # Copy and install shared tinyolly-common package
 # We copy to /tmp to keep the final image clean if we wanted to remove it later (though we keep it installed)
 COPY apps/tinyolly-common /tmp/tinyolly-common
-RUN pip install --no-cache-dir -e /tmp/tinyolly-common
+RUN pip install --no-cache-dir -e /tmp/tinyolly-common && \
+    chown -R tinyolly:tinyolly /tmp/tinyolly-common
