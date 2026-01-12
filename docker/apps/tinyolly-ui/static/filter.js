@@ -151,12 +151,9 @@ export function filterTinyOllyMetric(metric) {
 
     // Check services array (from metrics list endpoint)
     if (metric.services && Array.isArray(metric.services)) {
-        // If only service is a TinyOlly service, filter it out
-        if (metric.services.length === 1 && isTinyOllyService(metric.services[0])) {
-            return false;
-        }
-        // If TinyOlly service is one of multiple services, keep the metric
-        return true;
+        // Filter out if ALL services are TinyOlly internal services
+        const hasNonTinyOllyService = metric.services.some(service => !isTinyOllyService(service));
+        return hasNonTinyOllyService;
     }
 
     // Check in resources object (for single metric detail)
