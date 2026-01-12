@@ -33,7 +33,7 @@
 import uvloop
 import asyncio
 from typing import Any
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
