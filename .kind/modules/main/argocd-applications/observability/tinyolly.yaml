@@ -20,13 +20,16 @@ spec:
   source:
     repoURL: 'docker-registry.registry.svc.cluster.local:5000/tinyolly/charts'
     chart: tinyolly
-    targetRevision: 0.1.1-v2.1.23-namespace-fix
+    targetRevision: 0.1.1-v2.1.25-no-limits
     helm:
       valuesObject:
         ui:
           image:
             repository: docker-registry.registry.svc.cluster.local:5000/tinyolly/ui
             tag: latest
+          
+          resources:
+            limits: {}
           
           httpRoute:
             enabled: true
@@ -42,11 +45,17 @@ spec:
           image:
             repository: docker-registry.registry.svc.cluster.local:5000/tinyolly/opamp-server
             tag: latest
+          
+          resources:
+            limits: {}
         
         otlpReceiver:
           image:
             repository: docker-registry.registry.svc.cluster.local:5000/tinyolly/otlp-receiver
             tag: latest
+          
+          resources:
+            limits: {}
         
         redis:
           host: tinyolly-redis

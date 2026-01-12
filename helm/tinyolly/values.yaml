@@ -43,35 +43,48 @@ otelCollector:
 # Agent Collector configuration (daemonset for node-level log collection)
 agentCollector:
   # -- Enable Agent OpenTelemetryCollector Custom Resource
-  enabled: false
+  enabled: true
   
   # -- Namespace for agent collector (defaults to release namespace)
   namespace: tinyolly
   
   # -- Full collector configuration (receivers, processors, exporters, service)
-  # This should be a complete OTel Collector config YAML structure
-  config: {}
-  # Example config structure (commented out):
-  # config:
-  #   receivers:
-  #     otlp:
-  #       protocols:
-  #         grpc:
-  #           endpoint: 0.0.0.0:4317
-  #   processors:
-  #     batch: {}
-  #   exporters:
-  #     loadbalancing/gateway:
-  #       resolver:
-  #         dns:
-  #           hostname: gateway-collector-headless.tinyolly.svc.cluster.local
-  #           port: "4317"
-  #   service:
-  #     pipelines:
-  #       traces:
-  #         receivers: [otlp]
-  #         processors: [batch]
-  #         exporters: [loadbalancing/gateway]
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+    processors:
+      batch:
+        timeout: 1s
+        send_batch_size: 1024
+    exporters:
+      loadbalancing/gateway:
+        resolver:
+          dns:
+            hostname: gateway-collector-headless.tinyolly.svc.cluster.local
+            port: "4317"
+        protocol:
+          otlp:
+            tls:
+              insecure: true
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [loadbalancing/gateway]
+        metrics:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [loadbalancing/gateway]
+        logs:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [loadbalancing/gateway]
 
 # Gateway Collector configuration (deployment for centralized processing)
 # This is the main TinyOlly collector - it receives from the agent collector,
@@ -79,7 +92,7 @@ agentCollector:
 # and forwards to TinyOlly's OTLP receiver.
 gatewayCollector:
   # -- Enable Gateway OpenTelemetryCollector Custom Resource
-  enabled: false
+  enabled: true
   
   # -- Namespace for gateway collector (defaults to release namespace)
   namespace: tinyolly
@@ -99,17 +112,38 @@ gatewayCollector:
       cpu: 200m
       memory: 256Mi
   
-  # -- Full collector configuration (receivers, processors, exporters, service)
-  # This should be a complete OTel Collector config YAML structure
-  config: {}
-  # Example config structure (commented out):
-  # config:
-  #   receivers:
-  #     otlp:
-  #       protocols:
-  #         grpc:
-  #           endpoint: 0.0.0.0:4317
-  #   processors:
+  # -- Full collector configuration
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+    processors:
+      batch:
+        timeout: 1s
+        send_batch_size: 1024
+    exporters:
+      otlp/to:
+        endpoint: tinyolly-otlp-receiver.tinyolly.svc.cluster.local:4343
+        tls:
+          insecure: true
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [otlp/to]
+        metrics:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [otlp/to]
+        logs:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [otlp/to]
   #     batch: {}
   #   exporters:
   #     otlp:
@@ -126,7 +160,7 @@ gatewayCollector:
 # OpenTelemetry Instrumentation configuration
 instrumentation:
   # -- Enable TinyOlly Instrumentation Custom Resource (managed by OpenTelemetry Operator)
-  enabled: false
+  enabled: true
   
   # -- Name of the Instrumentation CR
   name: python-instrumentation
@@ -277,11 +311,11 @@ ui:
   # -- Resource limits and requests
   resources:
     limits:
-      cpu: 500m
-      memory: 512Mi
+      cpu: 1000m
+      memory: 1Gi
     requests:
       cpu: 100m
-      memory: 128Mi
+      memory: 256Mi
   
   # -- Liveness probe configuration
   livenessProbe:
@@ -379,12 +413,10 @@ opampServer:
   
   # -- Resource limits and requests
   resources:
-    limits:
-      cpu: 200m
-      memory: 256Mi
+    limits: {}
     requests:
       cpu: 50m
-      memory: 64Mi
+      memory: 128Mi
   
   # -- Liveness probe configuration
   livenessProbe:
@@ -484,12 +516,10 @@ otlpReceiver:
   
   # -- Resource limits and requests
   resources:
-    limits:
-      cpu: 500m
-      memory: 512Mi
+    limits: {}
     requests:
       cpu: 100m
-      memory: 128Mi
+      memory: 256Mi
   
   # -- Liveness probe configuration
   livenessProbe:
