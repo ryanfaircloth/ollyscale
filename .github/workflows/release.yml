@@ -64,21 +64,21 @@ jobs:
       - name: Update Chart version and image tags
         run: |
           cd helm/tinyolly
-          
+
           # Extract version without 'v' prefix for chart version
           VERSION="${{ github.ref_name }}"
           CHART_VERSION="${VERSION#v}"
-          
+
           # Update Chart.yaml version
           sed -i "s/^version: .*/version: ${CHART_VERSION}/" Chart.yaml
           sed -i "s/^appVersion: .*/appVersion: \"${VERSION}\"/" Chart.yaml
-          
+
           # Update image tags in values.yaml to use GHCR images
           sed -i "s|repository: .*tinyolly/ui|repository: ghcr.io/ryanfaircloth/tinyolly/ui|" values.yaml
           sed -i "s|repository: .*tinyolly/otlp-receiver|repository: ghcr.io/ryanfaircloth/tinyolly/otlp-receiver|" values.yaml
           sed -i "s|repository: .*tinyolly/opamp-server|repository: ghcr.io/ryanfaircloth/tinyolly/opamp-server|" values.yaml
           sed -i "s|tag: .*|tag: ${VERSION}|g" values.yaml
-          
+
           echo "Updated Chart.yaml and values.yaml with version ${CHART_VERSION}"
           cat Chart.yaml | grep -E "^version:|^appVersion:"
 
@@ -91,7 +91,7 @@ jobs:
         run: |
           cd helm
           helm package tinyolly -d .
-          
+
           VERSION="${{ github.ref_name }}"
           CHART_VERSION="${VERSION#v}"
           echo "CHART_PACKAGE=tinyolly-${CHART_VERSION}.tgz" >> $GITHUB_ENV
@@ -112,38 +112,38 @@ jobs:
         run: |
           VERSION="${{ github.ref_name }}"
           CHART_VERSION="${VERSION#v}"
-          
+
           # Update ArgoCD Application to use GHCR chart and released version
           ARGOCD_APP_FILE=".kind/modules/main/argocd-applications/observability/tinyolly.yaml"
-          
+
           # Update repoURL to GHCR
           sed -i "s|repoURL: .*|repoURL: 'oci://ghcr.io/ryanfaircloth/charts'|" "$ARGOCD_APP_FILE"
-          
+
           # Update targetRevision to the release version
           sed -i "s|targetRevision: .*|targetRevision: ${CHART_VERSION}|" "$ARGOCD_APP_FILE"
-          
+
           # Update image repositories to GHCR and tags to release version
           sed -i "s|repository: .*tinyolly/ui|repository: ghcr.io/ryanfaircloth/tinyolly/ui|" "$ARGOCD_APP_FILE"
           sed -i "s|repository: .*tinyolly/otlp-receiver|repository: ghcr.io/ryanfaircloth/tinyolly/otlp-receiver|" "$ARGOCD_APP_FILE"
           sed -i "s|repository: .*tinyolly/opamp-server|repository: ghcr.io/ryanfaircloth/tinyolly/opamp-server|" "$ARGOCD_APP_FILE"
-          
+
           # Update all image tags to the release version
           sed -i "/tag:/c\            tag: ${VERSION}" "$ARGOCD_APP_FILE"
-          
+
           echo "Updated ArgoCD Application:"
           grep -A 2 "repoURL:\|targetRevision:\|repository:\|tag:" "$ARGOCD_APP_FILE" || true
 
       - name: Commit and push ArgoCD Application updates
         run: |
           VERSION="${{ github.ref_name }}"
-          
+
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          
+
           git add .kind/modules/main/argocd-applications/observability/tinyolly.yaml
           git add helm/tinyolly/Chart.yaml
           git add helm/tinyolly/values.yaml
-          
+
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
