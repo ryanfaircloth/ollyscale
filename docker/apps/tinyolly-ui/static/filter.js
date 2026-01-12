@@ -34,11 +34,12 @@
  * Filter Module - Manages hiding TinyOlly's own telemetry
  */
 
-let hideTinyOlly = false;
+let hideTinyOlly = true;
 
 // Load state from localStorage
 try {
-    hideTinyOlly = localStorage.getItem('tinyolly-hide-self') === 'true';
+    const savedState = localStorage.getItem('tinyolly-hide-self');
+    hideTinyOlly = savedState !== null ? savedState === 'true' : true;
 } catch (e) {
     console.warn('LocalStorage access failed:', e);
 }
