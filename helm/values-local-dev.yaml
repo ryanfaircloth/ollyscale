@@ -1,22 +1,22 @@
 # Auto-generated local development values
-# Generated: Mon Jan 12 12:08:01 CST 2026
-# Version: v2.1.26-no-kafkaui
+# Generated: Mon Jan 12 14:10:19 CST 2026
+# Version: v2.1.36-destroy-cy
 # Uses INTERNAL registry for cluster access
 
 ui:
   image:
     repository: docker-registry.registry.svc.cluster.local:5000/tinyolly/ui
-    tag: v2.1.26-no-kafkaui
+    tag: v2.1.36-destroy-cy
 
 opampServer:
   image:
     repository: docker-registry.registry.svc.cluster.local:5000/tinyolly/opamp-server
-    tag: v2.1.26-no-kafkaui
+    tag: v2.1.36-destroy-cy
 
 otlpReceiver:
   image:
     repository: docker-registry.registry.svc.cluster.local:5000/tinyolly/otlp-receiver
-    tag: v2.1.26-no-kafkaui
+    tag: v2.1.36-destroy-cy
 
 otelCollector:
   enabled: true

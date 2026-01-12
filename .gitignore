@@ -26,4 +26,3 @@ terraform.tfstate.backup
 *.tgz
 .kind/tinyolly-config
 helm/values-local-dev.yaml
-helm/values-local-dev.yaml

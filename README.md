@@ -26,7 +26,7 @@ Visualize and correlate logs, metrics, and traces without sending data to the cl
 - Built with Python (FastAPI), Redis, and JavaScript
 - Pre-built Docker images available on Docker Hub
 
-**Platform Support:** Tested on Docker Desktop and Minikube Kubernetes (Apple Silicon Mac)
+**Platform Support:** Tested on Docker Desktop and KIND Kubernetes (Apple Silicon Mac)
 **Architectures:** linux/amd64, linux/arm64 (Apple Silicon)
 
 ## Screenshots
@@ -213,9 +213,9 @@ cd helm
 
 **Access UI:**
 ```bash
-minikube tunnel  # Keep running in separate terminal
+# UI exposed via Envoy Gateway on localhost
 ```
-UI available at: `http://localhost:5002`
+UI available at: `http://tinyolly.test`
 
 **Cleanup:** 
 ```bash
@@ -232,7 +232,7 @@ cd k8s-demo
 ./02-deploy.sh  # Automatically builds images if needed
 ```
 
-**Manual image build (optional):** `./build/local/build-demo-minikube.sh`
+**Manual image build (optional):** `cd helm && ./build-and-push-local.sh v2.1.x-demo`
 **Cleanup:** `./03-cleanup.sh`
 
 ### 3. eBPF Zero-Code Tracing Demo (Optional)

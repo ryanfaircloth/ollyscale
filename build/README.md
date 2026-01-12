@@ -7,25 +7,23 @@ Centralized build scripts for all TinyOlly Docker images.
 ```
 build/
 ├── README.md
-├── dockerhub/                     # Build & push to GitHub Container Registry (GHCR)
-│   ├── 01-login.sh                # Step 1: Login (not needed for GHCR with GitHub Actions)
-│   ├── 02-build-all.sh            # Step 2: Build all images
-│   ├── 02-build-core.sh           # Step 2: Build core images
-│   ├── 02-build-ui.sh             # Step 2: Build UI only (quick iteration)
-│   ├── 02-build-demo.sh           # Step 2: Build demo images
-│   ├── 02-build-ebpf-demo.sh      # Step 2: Build eBPF demo images
-│   ├── 02-build-ai-demo.sh        # Step 2: Build AI demo image
-│   ├── 03-push-all.sh             # Step 3: Push all images
-│   ├── 03-push-core.sh            # Step 3: Push core images
-│   ├── 03-push-ui.sh              # Step 3: Push UI only
-│   ├── 03-push-demo.sh            # Step 3: Push demo images
-│   ├── 03-push-ebpf-demo.sh       # Step 3: Push eBPF demo images
-│   └── 03-push-ai-demo.sh         # Step 3: Push AI demo image
-└── local/                         # Local builds (Minikube)
-    ├── build-core-minikube.sh
-    ├── build-demo-minikube.sh
-    └── build-ebpf-demo-minikube.sh
+└── dockerhub/                     # Build & push to GitHub Container Registry (GHCR)
+    ├── 01-login.sh                # Step 1: Login (not needed for GHCR with GitHub Actions)
+    ├── 02-build-all.sh            # Step 2: Build all images
+    ├── 02-build-core.sh           # Step 2: Build core images
+    ├── 02-build-ui.sh             # Step 2: Build UI only (quick iteration)
+    ├── 02-build-demo.sh           # Step 2: Build demo images
+    ├── 02-build-ebpf-demo.sh      # Step 2: Build eBPF demo images
+    ├── 02-build-ai-demo.sh        # Step 2: Build AI demo image
+    ├── 03-push-all.sh             # Step 3: Push all images
+    ├── 03-push-core.sh            # Step 3: Push core images
+    ├── 03-push-ui.sh              # Step 3: Push UI only
+    ├── 03-push-demo.sh            # Step 3: Push demo images
+    ├── 03-push-ebpf-demo.sh       # Step 3: Push eBPF demo images
+    └── 03-push-ai-demo.sh         # Step 3: Push AI demo image
 ```
+
+**Note**: For local Kubernetes development with KIND, use `helm/build-and-push-local.sh` instead. See [helm/README.md](../helm/README.md) for details.
 
 ## Quick Start - GitHub Container Registry (GHCR)
 
@@ -53,15 +51,24 @@ export CONTAINER_REGISTRY=ghcr.io/ryanfaircloth
 ./03-push-ui.sh v2.1.0         # UI only
 ```
 
-## Quick Start - Local (Minikube)
+## Quick Start - Local Kubernetes (KIND)
+
+For local Kubernetes development, use the Helm-based workflow:
 
 ```bash
-cd build/local
+# Bootstrap KIND cluster with Terraform + ArgoCD
+make up
 
-./build-core-minikube.sh       # Core images
-./build-demo-minikube.sh       # Demo images
-./build-ebpf-demo-minikube.sh  # eBPF demo images
+# Build and push images + Helm chart to local registry
+cd helm
+./build-and-push-local.sh v2.1.x-feature
+
+# Deploy to ArgoCD
+cd ../.kind
+terraform apply -replace='kubectl_manifest.observability_applications["observability/tinyolly.yaml"]' -auto-approve
 ```
+
+See [helm/README.md](../helm/README.md) for complete documentation.
 
 ## Scripts Reference
 

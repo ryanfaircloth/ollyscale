@@ -4,7 +4,7 @@ This directory contains Kubernetes manifests for deploying the TinyOlly AI Agent
 
 ## Prerequisites
 
-- Kubernetes cluster (minikube, kind, or cloud provider)
+- Kubernetes cluster (KIND or cloud provider)
 - kubectl configured
 - TinyOlly core services deployed via Helm (see `../helm/`)
 
