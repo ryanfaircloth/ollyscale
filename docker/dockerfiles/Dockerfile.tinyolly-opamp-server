@@ -19,7 +19,7 @@ RUN go mod download && go mod tidy
 RUN CGO_ENABLED=0 GOOS=linux go build -o /tinyolly-opamp-server .
 
 # Runtime stage
-FROM alpine:3.19
+FROM alpine:3.23
 
 # Install bash for better shell experience (bash-completion not readily available in Alpine)
 RUN apk add --no-cache \
