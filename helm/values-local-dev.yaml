@@ -1,22 +1,28 @@
 # Auto-generated local development values
-# Generated: Mon Jan 12 14:10:19 CST 2026
-# Version: v2.1.36-destroy-cy
+# Generated: Mon Jan 12 17:50:52 CST 2026
+# Version: v2.2.0
 # Uses INTERNAL registry for cluster access
 
 ui:
   image:
-    repository: docker-registry.registry.svc.cluster.local:5000/tinyolly/ui
-    tag: v2.1.36-destroy-cy
+    repository: docker-registry.registry.svc.cluster.local:5000/tinyolly/tinyolly
+    tag: v2.2.0
+  env:
+    - name: MODE
+      value: "ui"
 
 opampServer:
   image:
     repository: docker-registry.registry.svc.cluster.local:5000/tinyolly/opamp-server
-    tag: v2.1.36-destroy-cy
+    tag: v2.2.0
 
 otlpReceiver:
   image:
-    repository: docker-registry.registry.svc.cluster.local:5000/tinyolly/otlp-receiver
-    tag: v2.1.36-destroy-cy
+    repository: docker-registry.registry.svc.cluster.local:5000/tinyolly/tinyolly
+    tag: v2.2.0
+  env:
+    - name: MODE
+      value: "receiver"
 
 otelCollector:
   enabled: true

@@ -73,48 +73,20 @@ echo ""
 echo "Building images in dependency order..."
 echo ""
 
-# Image 1: Python base (no dependencies)
+# Image 1: TinyOlly unified (UI + OTLP Receiver in one image)
 echo "----------------------------------------"
-echo "Building python-base..."
-echo "----------------------------------------"
-docker buildx build --platform $PLATFORMS \
-  --no-cache \
-  -f dockerfiles/Dockerfile.tinyolly-python-base \
-  -t $CONTAINER_REGISTRY/python-base:latest \
-  -t $CONTAINER_REGISTRY/python-base:$VERSION \
-  $BUILD_ACTION .
-echo "✓ Built $CONTAINER_REGISTRY/python-base:$VERSION"
-echo ""
-
-# Image 2: OTLP Receiver (depends on python-base)
-echo "----------------------------------------"
-echo "Building otlp-receiver..."
+echo "Building tinyolly..."
 echo "----------------------------------------"
 docker buildx build --platform $PLATFORMS \
   --no-cache \
-  -f dockerfiles/Dockerfile.tinyolly-otlp-receiver \
-  --build-arg APP_DIR=tinyolly-otlp-receiver \
-  -t $CONTAINER_REGISTRY/otlp-receiver:latest \
-  -t $CONTAINER_REGISTRY/otlp-receiver:$VERSION \
+  -f dockerfiles/Dockerfile.tinyolly \
+  -t $CONTAINER_REGISTRY/tinyolly:latest \
+  -t $CONTAINER_REGISTRY/tinyolly:$VERSION \
   $BUILD_ACTION .
-echo "✓ Built $CONTAINER_REGISTRY/otlp-receiver:$VERSION"
+echo "✓ Built $CONTAINER_REGISTRY/tinyolly:$VERSION"
 echo ""
 
-# Image 3: UI (depends on python-base)
-echo "----------------------------------------"
-echo "Building ui..."
-echo "----------------------------------------"
-docker buildx build --platform $PLATFORMS \
-  --no-cache \
-  -f dockerfiles/Dockerfile.tinyolly-ui \
-  --build-arg APP_DIR=tinyolly-ui \
-  -t $CONTAINER_REGISTRY/ui:latest \
-  -t $CONTAINER_REGISTRY/ui:$VERSION \
-  $BUILD_ACTION .
-echo "✓ Built $CONTAINER_REGISTRY/ui:$VERSION"
-echo ""
-
-# Image 4: OpAMP Server (independent Go build)
+# Image 2: OpAMP Server (independent Go build)
 echo "----------------------------------------"
 echo "Building opamp-server..."
 echo "----------------------------------------"
@@ -132,9 +104,7 @@ echo "✓ All core images built locally!"
 echo "=========================================="
 echo ""
 echo "Built images:"
-echo "  - $CONTAINER_REGISTRY/python-base:$VERSION"
-echo "  - $CONTAINER_REGISTRY/otlp-receiver:$VERSION"
-echo "  - $CONTAINER_REGISTRY/ui:$VERSION"
+echo "  - $CONTAINER_REGISTRY/tinyolly:$VERSION (unified UI + OTLP receiver)"
 echo "  - $CONTAINER_REGISTRY/opamp-server:$VERSION"
 echo ""
 echo "Next step - push to registry:"

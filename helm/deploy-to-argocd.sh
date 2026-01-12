@@ -82,9 +82,15 @@ if kubectl get application tinyolly -n argocd &>/dev/null; then
             \"valuesObject\": {
               \"ui\": {
                 \"image\": {
-                  \"repository\": \"$INTERNAL_REGISTRY/tinyolly/ui\",
+                  \"repository\": \"$INTERNAL_REGISTRY/tinyolly/tinyolly\",
                   \"tag\": \"$IMAGE_VERSION\"
-                }
+                },
+                \"env\": [
+                  {
+                    \"name\": \"MODE\",
+                    \"value\": \"ui\"
+                  }
+                ]
               },
               \"opampServer\": {
                 \"image\": {
@@ -94,9 +100,15 @@ if kubectl get application tinyolly -n argocd &>/dev/null; then
               },
               \"otlpReceiver\": {
                 \"image\": {
-                  \"repository\": \"$INTERNAL_REGISTRY/tinyolly/otlp-receiver\",
+                  \"repository\": \"$INTERNAL_REGISTRY/tinyolly/tinyolly\",
                   \"tag\": \"$IMAGE_VERSION\"
-                }
+                },
+                \"env\": [
+                  {
+                    \"name\": \"MODE\",
+                    \"value\": \"receiver\"
+                  }
+                ]
               },
               \"otelCollector\": {
                 \"enabled\": true
@@ -139,7 +151,7 @@ else
 fi
 
 echo "📋 Image versions being deployed:"
-echo "  • UI:            $INTERNAL_REGISTRY/tinyolly/ui:$IMAGE_VERSION"
+echo "  • UI:            $INTERNAL_REGISTRY/tinyolly/tinyolly:$IMAGE_VERSION (MODE=ui)"
 echo "  • OpAMP Server:  $INTERNAL_REGISTRY/tinyolly/opamp-server:$IMAGE_VERSION"
-echo "  • OTLP Receiver: $INTERNAL_REGISTRY/tinyolly/otlp-receiver:$IMAGE_VERSION"
+echo "  • OTLP Receiver: $INTERNAL_REGISTRY/tinyolly/tinyolly:$IMAGE_VERSION (MODE=receiver)"
 echo ""

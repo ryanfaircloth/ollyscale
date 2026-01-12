@@ -52,43 +52,19 @@ echo ""
 # Navigate to docker directory (build context)
 cd "$SCRIPT_DIR/../docker"
 
-echo "Step 1/4: Building python-base (includes tinyolly-common)"
+echo "Step 1/2: Building tinyolly (unified UI + OTLP receiver)"
 echo "-----------------------------------------------------------"
 $CONTAINER_CMD build \
-  -f dockerfiles/Dockerfile.tinyolly-python-base \
-  -t tinyolly/python-base:latest \
-  -t tinyolly/python-base:$VERSION \
+  -f dockerfiles/Dockerfile.tinyolly \
+  -t tinyolly/tinyolly:latest \
+  -t tinyolly/tinyolly:$VERSION \
+  -t $EXTERNAL_REGISTRY/tinyolly/tinyolly:latest \
+  -t $EXTERNAL_REGISTRY/tinyolly/tinyolly:$VERSION \
   .
-echo "✓ Base image built"
+echo "✓ TinyOlly image built"
 echo ""
 
-echo "Step 2/4: Building UI (uses local python-base)"
-echo "-----------------------------------------------------------"
-$CONTAINER_CMD build \
-  -f dockerfiles/Dockerfile.tinyolly-ui \
-  --build-arg APP_DIR=tinyolly-ui \
-  -t tinyolly/ui:latest \
-  -t tinyolly/ui:$VERSION \
-  -t $EXTERNAL_REGISTRY/tinyolly/ui:latest \
-  -t $EXTERNAL_REGISTRY/tinyolly/ui:$VERSION \
-  .
-echo "✓ UI image built"
-echo ""
-
-echo "Step 3/4: Building OTLP Receiver (uses local python-base)"
-echo "-----------------------------------------------------------"
-$CONTAINER_CMD build \
-  -f dockerfiles/Dockerfile.tinyolly-otlp-receiver \
-  --build-arg APP_DIR=tinyolly-otlp-receiver \
-  -t tinyolly/otlp-receiver:latest \
-  -t tinyolly/otlp-receiver:$VERSION \
-  -t $EXTERNAL_REGISTRY/tinyolly/otlp-receiver:latest \
-  -t $EXTERNAL_REGISTRY/tinyolly/otlp-receiver:$VERSION \
-  .
-echo "✓ OTLP Receiver image built"
-echo ""
-
-echo "Step 4/4: Building OpAMP Server"
+echo "Step 2/2: Building OpAMP Server"
 echo "-----------------------------------------------------------"
 $CONTAINER_CMD build \
   -f dockerfiles/Dockerfile.tinyolly-opamp-server \
@@ -105,16 +81,10 @@ echo "📤 Pushing Container Images to Registry"
 echo "=========================================="
 echo ""
 
-echo "Pushing UI..."
-$CONTAINER_CMD push $PUSH_FLAGS $EXTERNAL_REGISTRY/tinyolly/ui:latest
-$CONTAINER_CMD push $PUSH_FLAGS $EXTERNAL_REGISTRY/tinyolly/ui:$VERSION
-echo "✓ UI pushed"
-echo ""
-
-echo "Pushing OTLP Receiver..."
-$CONTAINER_CMD push $PUSH_FLAGS $EXTERNAL_REGISTRY/tinyolly/otlp-receiver:latest
-$CONTAINER_CMD push $PUSH_FLAGS $EXTERNAL_REGISTRY/tinyolly/otlp-receiver:$VERSION
-echo "✓ OTLP Receiver pushed"
+echo "Pushing TinyOlly (unified)..."
+$CONTAINER_CMD push $PUSH_FLAGS $EXTERNAL_REGISTRY/tinyolly/tinyolly:latest
+$CONTAINER_CMD push $PUSH_FLAGS $EXTERNAL_REGISTRY/tinyolly/tinyolly:$VERSION
+echo "✓ TinyOlly pushed"
 echo ""
 
 echo "Pushing OpAMP Server..."
@@ -170,8 +140,11 @@ cat > "$SCRIPT_DIR/values-local-dev.yaml" <<EOF
 
 ui:
   image:
-    repository: $INTERNAL_REGISTRY/tinyolly/ui
+    repository: $INTERNAL_REGISTRY/tinyolly/tinyolly
     tag: $VERSION
+  env:
+    - name: MODE
+      value: "ui"
 
 opampServer:
   image:
@@ -180,8 +153,11 @@ opampServer:
 
 otlpReceiver:
   image:
-    repository: $INTERNAL_REGISTRY/tinyolly/otlp-receiver
+    repository: $INTERNAL_REGISTRY/tinyolly/tinyolly
     tag: $VERSION
+  env:
+    - name: MODE
+      value: "receiver"
 
 otelCollector:
   enabled: true

@@ -53,9 +53,7 @@ echo ""
 
 # Push all core images
 IMAGES=(
-  "python-base"
-  "otlp-receiver"
-  "ui"
+  "tinyolly"
   "opamp-server"
 )
 
@@ -72,10 +70,8 @@ echo "✓ All core images pushed to container registry!"
 echo "=========================================="
 echo ""
 echo "Published images:"
-echo "  - $CONTAINER_REGISTRY/python-base:$VERSION"
-echo "  - $CONTAINER_REGISTRY/otlp-receiver:$VERSION"
-echo "  - $CONTAINER_REGISTRY/ui:$VERSION"
+echo "  - $CONTAINER_REGISTRY/tinyolly:$VERSION (unified UI + OTLP receiver)"
 echo "  - $CONTAINER_REGISTRY/opamp-server:$VERSION"
 echo ""
-echo "Verify: docker pull $CONTAINER_REGISTRY/ui:$VERSION"
+echo "Verify: docker pull $CONTAINER_REGISTRY/tinyolly:$VERSION"
 echo ""

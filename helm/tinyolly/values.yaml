@@ -247,8 +247,8 @@ ui:
   replicaCount: 1
   
   image:
-    # -- UI image repository
-    repository: ghcr.io/ryanfaircloth/tinyolly/ui
+    # -- UI image repository (unified tinyolly image)
+    repository: ghcr.io/ryanfaircloth/tinyolly/tinyolly
     # -- UI image tag
     tag: latest
     # -- UI image pull policy (overrides global)
@@ -339,6 +339,8 @@ ui:
   
   # -- Environment variables
   env:
+    - name: MODE
+      value: "ui"
     - name: DEPLOYMENT_ENV
       value: kubernetes
     - name: OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED
@@ -471,8 +473,8 @@ otlpReceiver:
   replicaCount: 1
   
   image:
-    # -- OTLP Receiver image repository
-    repository: ghcr.io/ryanfaircloth/tinyolly/otlp-receiver
+    # -- OTLP Receiver image repository (unified tinyolly image)
+    repository: ghcr.io/ryanfaircloth/tinyolly/tinyolly
     # -- OTLP Receiver image tag
     tag: latest
     # -- OTLP Receiver image pull policy (overrides global)
@@ -541,6 +543,8 @@ otlpReceiver:
   
   # -- Environment variables
   env:
+    - name: MODE
+      value: "receiver"
     - name: PORT
       value: "4343"
     - name: OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED
