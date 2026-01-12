@@ -38,7 +38,7 @@ setup(
     version="0.1.0",
     description="Shared utilities for TinyOlly observability platform",
     packages=find_packages(),
-    python_requires=">=3.12",
+    python_requires=">=3.14",
     install_requires=[
         "redis>=4.5.0,<6.0.0",
         "zstandard>=0.21.0,<1.0.0",
