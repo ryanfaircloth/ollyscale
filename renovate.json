@@ -13,7 +13,23 @@
     "docker-compose",
     "github-actions",
     "gomod",
-    "pip_requirements"
+    "pip_requirements",
+    "regex"
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "fileMatch": [
+        "^docker/apps/tinyolly-ui/templates/.*\\.html$"
+      ],
+      "matchStrings": [
+        "https://cdnjs\\.cloudflare\\.com/ajax/libs/(?<depName>[^/]+)/(?<currentValue>[^/]+)/[^\"]+",
+        "https://cdn\\.jsdelivr\\.net/npm/(?<depName>[^@]+)@(?<currentValue>[^/]+)/[^\"]+",
+        "https://unpkg\\.com/(?<depName>[^@]+)@(?<currentValue>[^/]+)/[^\"]+"
+      ],
+      "datasourceTemplate": "npm",
+      "versioningTemplate": "npm"
+    }
   ],
   "packageRules": [
     {
