@@ -3,7 +3,6 @@ apiVersion: opentelemetry.io/v1alpha1
 kind: Instrumentation
 metadata:
   name: {{ .Values.instrumentation.name | default "python-instrumentation" }}
-  namespace: {{ .Values.instrumentation.namespace | default .Release.Namespace }}
   labels:
     {{- include "tinyolly.labels" . | nindent 4 }}
     app.kubernetes.io/component: instrumentation
@@ -14,7 +13,7 @@ metadata:
 spec:
   # Collector endpoint where telemetry will be exported
   exporter:
-    endpoint: {{ .Values.instrumentation.exporter.endpoint | default (printf "http://agent-collector.%s.svc.cluster.local:4318" .Values.instrumentation.namespace) }}
+    endpoint: {{ .Values.instrumentation.exporter.endpoint }}
   
   # Propagators configuration
   propagators:
@@ -33,6 +32,7 @@ spec:
   {{- end }}
   
   # Python auto-instrumentation configuration
+  {{- if .Values.instrumentation.python }}
   python:
     {{- if .Values.instrumentation.python.image }}
     image: {{ .Values.instrumentation.python.image.repository }}:{{ .Values.instrumentation.python.image.tag }}
@@ -45,4 +45,21 @@ spec:
     resourceRequirements:
       {{- toYaml .Values.instrumentation.python.resources | nindent 6 }}
     {{- end }}
+  {{- end }}
+  
+  # Go auto-instrumentation configuration
+  {{- if .Values.instrumentation.go }}
+  go:
+    {{- if .Values.instrumentation.go.image }}
+    image: {{ .Values.instrumentation.go.image.repository }}:{{ .Values.instrumentation.go.image.tag }}
+    {{- end }}
+    {{- if .Values.instrumentation.go.env }}
+    env:
+      {{- toYaml .Values.instrumentation.go.env | nindent 6 }}
+    {{- end }}
+    {{- if .Values.instrumentation.go.resources }}
+    resourceRequirements:
+      {{- toYaml .Values.instrumentation.go.resources | nindent 6 }}
+    {{- end }}
+  {{- end }}
 {{- end }}

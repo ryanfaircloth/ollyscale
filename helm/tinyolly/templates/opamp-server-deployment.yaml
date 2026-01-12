@@ -17,7 +17,7 @@ spec:
     metadata:
       annotations:
         {{- if .Values.instrumentation.enabled }}
-        instrumentation.opentelemetry.io/inject-python: "{{ .Release.Namespace }}/{{ include "tinyolly.fullname" . }}-python"
+        instrumentation.opentelemetry.io/inject-go: "{{ .Release.Namespace }}/{{ .Values.instrumentation.name }}"
         {{- end }}
         {{- with .Values.opampServer.podAnnotations }}
         {{- toYaml . | nindent 8 }}

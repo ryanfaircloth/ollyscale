@@ -9,6 +9,12 @@ metadata:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: middleware
+  ignoreDifferences:
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      jqPathExpressions:
+        - .spec.conversion.webhook.clientConfig.service.port
+        - .spec.versions[].schema.openAPIV3Schema.properties.spec.properties.*.default
   source:
     repoURL: quay.io
     chart: strimzi-helm/strimzi-access-operator
@@ -25,3 +31,5 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      - ServerSideApply=true
+      - RespectIgnoreDifferences=true

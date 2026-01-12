@@ -11,7 +11,7 @@
 
 agentCollector:
   enabled: true
-  namespace: opentelemetry-operator-system
+  namespace: tinyolly
   config:
     receivers:
       otlp:
@@ -24,7 +24,7 @@ agentCollector:
         include:
           - /var/log/pods/*/*/*.log
         exclude:
-          - /var/log/pods/opentelemetry-operator-system_*/*/*.log
+          - /var/log/pods/tinyolly_*/*/*.log
           - /var/log/pods/flux-system_*/*/*.log
         start_at: end
         include_file_path: true
@@ -261,7 +261,7 @@ agentCollector:
       loadbalancing/gateway:
         resolver:
           dns:
-            hostname: gateway-collector-headless.opentelemetry-operator-system.svc.cluster.local
+            hostname: gateway-collector-headless.tinyolly.svc.cluster.local
             port: "4317"
         protocol:
           otlp:
@@ -307,7 +307,7 @@ agentCollector:
 
 gatewayCollector:
   enabled: true
-  namespace: opentelemetry-operator-system
+  namespace: tinyolly
   replicas: 1
   resources:
     limits:
@@ -492,9 +492,9 @@ gatewayCollector:
 instrumentation:
   enabled: true
   name: python-instrumentation
-  namespace: opentelemetry-operator-system
+  namespace: tinyolly
   exporter:
-    endpoint: http://agent-collector.opentelemetry-operator-system.svc.cluster.local:4318
+    endpoint: http://agent-collector.tinyolly.svc.cluster.local:4318
   propagators:
     - tracecontext
     - baggage
@@ -522,3 +522,15 @@ instrumentation:
         value: "content-.*,x-.*"
       - name: OTEL_PYTHON_EXCLUDED_URLS
         value: "/health,/metrics,ready"
+  go:
+    # Optional: override image version
+    # image:
+    #   repository: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-go
+    #   tag: v0.15.0-alpha
+    env:
+      - name: OTEL_GO_AUTO_TARGET_EXE
+        value: "/app/tinyolly-opamp-server"
+      - name: OTEL_SERVICE_NAME
+        value: "tinyolly-opamp-server"
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: "http://agent-collector.tinyolly.svc.cluster.local:4318"

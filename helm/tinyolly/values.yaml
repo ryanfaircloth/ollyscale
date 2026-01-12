@@ -38,15 +38,15 @@ otelCollector:
   enabled: false
   serviceName: gateway-collector
   port: 4318
-  # When enabled, the OTel Operator creates service: gateway-collector.opentelemetry-operator-system.svc.cluster.local
+  # When enabled, the OTel Operator creates service: gateway-collector.tinyolly.svc.cluster.local
 
 # Agent Collector configuration (daemonset for node-level log collection)
 agentCollector:
   # -- Enable Agent OpenTelemetryCollector Custom Resource
   enabled: false
   
-  # -- Namespace for agent collector (should match OpenTelemetry Operator namespace)
-  namespace: opentelemetry-operator-system
+  # -- Namespace for agent collector (defaults to release namespace)
+  namespace: tinyolly
   
   # -- Full collector configuration (receivers, processors, exporters, service)
   # This should be a complete OTel Collector config YAML structure
@@ -64,7 +64,7 @@ agentCollector:
   #     loadbalancing/gateway:
   #       resolver:
   #         dns:
-  #           hostname: gateway-collector-headless.opentelemetry-operator-system.svc.cluster.local
+  #           hostname: gateway-collector-headless.tinyolly.svc.cluster.local
   #           port: "4317"
   #   service:
   #     pipelines:
@@ -81,8 +81,8 @@ gatewayCollector:
   # -- Enable Gateway OpenTelemetryCollector Custom Resource
   enabled: false
   
-  # -- Namespace for gateway collector (should match OpenTelemetry Operator namespace)
-  namespace: opentelemetry-operator-system
+  # -- Namespace for gateway collector (defaults to release namespace)
+  namespace: tinyolly
   
   # -- Number of replicas for gateway deployment
   replicas: 1
@@ -131,13 +131,10 @@ instrumentation:
   # -- Name of the Instrumentation CR
   name: python-instrumentation
   
-  # -- Namespace for the Instrumentation CR (defaults to release namespace if not set)
-  namespace: opentelemetry-operator-system
-  
   # -- Exporter configuration
   exporter:
     # -- Endpoint for the collector (OTel Operator creates service as agent-collector)
-    endpoint: http://agent-collector.opentelemetry-operator-system.svc.cluster.local:4318
+    endpoint: http://agent-collector.tinyolly.svc.cluster.local:4318
   
   # -- Propagators for context propagation
   propagators:
@@ -174,9 +171,34 @@ instrumentation:
       - name: OTEL_INSTRUMENTATION_HTTP_CAPTURE_HEADERS_SERVER_RESPONSE
         value: "content-.*,x-.*"
       - name: OTEL_PYTHON_EXCLUDED_URLS
-        value: "/health,/metrics,ready"
+        value: "/health,/metrics,ready,PING"
     
     # -- Resource limits and requests for instrumentation init container
+    resources:
+      limits:
+        cpu: 500m
+        memory: 256Mi
+      requests:
+        cpu: 50m
+        memory: 64Mi
+  
+  # Go auto-instrumentation configuration
+  go:
+    # Image for Go auto-instrumentation
+    image:
+      repository: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-go
+      tag: v0.15.0-alpha
+    
+    # -- Environment variables for Go instrumentation
+    env:
+      - name: OTEL_GO_AUTO_TARGET_EXE
+        value: "/app/tinyolly-opamp-server"
+      - name: OTEL_SERVICE_NAME
+        value: "tinyolly-opamp-server"
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: "http://agent-collector.tinyolly.svc.cluster.local:4318"
+    
+    # -- Resource limits and requests for Go instrumentation init container
     resources:
       limits:
         cpu: 500m

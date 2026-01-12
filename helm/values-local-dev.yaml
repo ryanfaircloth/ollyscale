@@ -1,22 +1,22 @@
 # Auto-generated local development values
-# Generated: Sun Jan 11 22:18:30 CST 2026
-# Version: v2.1.22-ot2
+# Generated: Mon Jan 12 09:55:56 CST 2026
+# Version: v2.1.23-namespace-fix
 # Uses INTERNAL registry for cluster access
 
 ui:
   image:
     repository: docker-registry.registry.svc.cluster.local:5000/tinyolly/ui
-    tag: v2.1.22-ot2
+    tag: v2.1.23-namespace-fix
 
 opampServer:
   image:
     repository: docker-registry.registry.svc.cluster.local:5000/tinyolly/opamp-server
-    tag: v2.1.22-ot2
+    tag: v2.1.23-namespace-fix
 
 otlpReceiver:
   image:
     repository: docker-registry.registry.svc.cluster.local:5000/tinyolly/otlp-receiver
-    tag: v2.1.22-ot2
+    tag: v2.1.23-namespace-fix
 
 otelCollector:
   enabled: true
