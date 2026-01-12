@@ -5,8 +5,9 @@
     ":dependencyDashboard"
   ],
   "timezone": "America/New_York",
-  "schedule": ["before 5am on Monday"],
-  
+  "schedule": [
+    "before 5am on Monday"
+  ],
   "enabledManagers": [
     "dockerfile",
     "docker-compose",
@@ -14,79 +15,126 @@
     "gomod",
     "pip_requirements"
   ],
-  
   "packageRules": [
     {
       "description": "Group Python packages by app",
-      "matchManagers": ["pip_requirements"],
-      "matchPaths": ["docker/apps/tinyolly-ui/**"],
+      "matchManagers": [
+        "pip_requirements"
+      ],
+      "matchFileNames": [
+        "docker/apps/tinyolly-ui/**"
+      ],
       "groupName": "tinyolly-ui Python dependencies"
     },
     {
-      "matchManagers": ["pip_requirements"],
-      "matchPaths": ["docker/apps/tinyolly-otlp-receiver/**"],
+      "matchManagers": [
+        "pip_requirements"
+      ],
+      "matchFileNames": [
+        "docker/apps/tinyolly-otlp-receiver/**"
+      ],
       "groupName": "tinyolly-otlp-receiver Python dependencies"
     },
     {
-      "matchManagers": ["pip_requirements"],
-      "matchPaths": ["docker/apps/tinyolly-common/**"],
+      "matchManagers": [
+        "pip_requirements"
+      ],
+      "matchFileNames": [
+        "docker/apps/tinyolly-common/**"
+      ],
       "groupName": "tinyolly-common Python dependencies"
     },
     {
       "description": "Group demo app dependencies separately",
-      "matchManagers": ["pip_requirements"],
-      "matchPaths": ["docker-demo/**", "docker-ai-agent-demo/**"],
+      "matchManagers": [
+        "pip_requirements"
+      ],
+      "matchFileNames": [
+        "docker-demo/**",
+        "docker-ai-agent-demo/**"
+      ],
       "groupName": "demo apps Python dependencies"
     },
     {
       "description": "Group documentation dependencies",
-      "matchManagers": ["pip_requirements"],
-      "matchPaths": ["docs/**"],
+      "matchManagers": [
+        "pip_requirements"
+      ],
+      "matchFileNames": [
+        "docs/**"
+      ],
       "groupName": "documentation dependencies"
     },
     {
       "description": "OpAMP server Go dependencies",
-      "matchManagers": ["gomod"],
-      "matchPaths": ["docker/apps/tinyolly-opamp-server/**"],
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchFileNames": [
+        "docker/apps/tinyolly-opamp-server/**"
+      ],
       "groupName": "opamp-server Go dependencies"
     },
     {
       "description": "Group all Docker base images",
-      "matchDatasources": ["docker"],
-      "matchUpdateTypes": ["minor", "patch"],
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
       "groupName": "Docker base images"
     },
     {
       "description": "Separate major Docker updates",
-      "matchDatasources": ["docker"],
-      "matchUpdateTypes": ["major"],
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
       "dependencyDashboardApproval": true
     },
     {
       "description": "Pin Redis version (critical for data)",
-      "matchPackageNames": ["redis"],
-      "matchDatasources": ["docker"],
+      "matchPackageNames": [
+        "redis"
+      ],
+      "matchDatasources": [
+        "docker"
+      ],
       "enabled": false
     },
     {
       "description": "Auto-merge non-major Python packages in dev apps",
-      "matchManagers": ["pip_requirements"],
-      "matchPaths": ["docker-demo/**", "docker-ai-agent-demo/**"],
-      "matchUpdateTypes": ["patch", "minor"],
+      "matchManagers": [
+        "pip_requirements"
+      ],
+      "matchFileNames": [
+        "docker-demo/**",
+        "docker-ai-agent-demo/**"
+      ],
+      "matchUpdateTypes": [
+        "patch",
+        "minor"
+      ],
       "automerge": true,
       "automergeType": "pr"
     }
   ],
-  
   "digest": {
     "enabled": true,
     "dependencyDashboardApproval": true
   },
-  
   "vulnerabilityAlerts": {
     "enabled": true,
-    "labels": ["security"]
+    "labels": [
+      "security"
+    ]
   },
-  
-  "labels": ["dependencies", "renovate"]
+  "labels": [
+    "dependencies",
+    "renovate"
+  ]
 }
