@@ -159,15 +159,35 @@ export async function loadServiceMap() {
         let graph = await response.json();
 
         // Filter out TinyOlly nodes and edges based on toggle state
-        if (graph.nodes) {
-            graph.nodes = graph.nodes.filter(filterTinyOllyData);
-        }
-        if (graph.edges && shouldHideTinyOlly()) {
-            graph.edges = graph.edges.filter(edge => {
-                // Filter edges where either source or target is a TinyOlly service
-                const tinyollyServices = ['tinyolly-ui', 'tinyolly-otlp-receiver', 'tinyolly-opamp-server'];
-                return !tinyollyServices.includes(edge.source) && !tinyollyServices.includes(edge.target);
-            });
+        if (shouldHideTinyOlly()) {
+            const tinyollyServices = ['tinyolly-ui', 'tinyolly-otlp-receiver', 'tinyolly-opamp-server'];
+            
+            // First, filter edges to remove TinyOlly connections
+            if (graph.edges) {
+                graph.edges = graph.edges.filter(edge => {
+                    return !tinyollyServices.includes(edge.source) && !tinyollyServices.includes(edge.target);
+                });
+            }
+            
+            // Then filter nodes: remove TinyOlly services AND nodes only connected to TinyOlly
+            if (graph.nodes) {
+                // Build set of nodes that have connections to non-TinyOlly services
+                const connectedNodes = new Set();
+                if (graph.edges) {
+                    graph.edges.forEach(edge => {
+                        connectedNodes.add(edge.source);
+                        connectedNodes.add(edge.target);
+                    });
+                }
+                
+                // Keep nodes that are:
+                // Not a TinyOlly service AND have connections in the filtered graph
+                graph.nodes = graph.nodes.filter(node => {
+                    const isTinyOlly = tinyollyServices.includes(node.id);
+                    const hasConnections = connectedNodes.has(node.id);
+                    return !isTinyOlly && hasConnections;
+                });
+            }
         }
 
         renderServiceMap(graph);

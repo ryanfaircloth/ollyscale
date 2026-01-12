@@ -106,6 +106,7 @@ export function shouldHideTinyOlly() {
  */
 function isTinyOllyService(serviceName) {
     if (!serviceName) return false;
+    // Only filter the core TinyOlly services, not infrastructure like Redis
     return serviceName === 'tinyolly-ui' || 
            serviceName === 'tinyolly-otlp-receiver' || 
            serviceName === 'tinyolly-opamp-server';
@@ -122,6 +123,7 @@ export function filterTinyOllyData(item) {
                        item.serviceName ||
                        item.service ||
                        item.name ||
+                       item.id ||  // For service map nodes
                        (item.attributes && (
                            item.attributes['service.name'] ||
                            item.attributes.service_name
