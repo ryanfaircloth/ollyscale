@@ -31,7 +31,7 @@
 """Shared dependencies for dependency injection"""
 
 from functools import lru_cache
-from tinyolly_common import Storage
+from common import Storage
 
 from .config import settings
 from .managers.websocket import ConnectionManager

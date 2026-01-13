@@ -35,7 +35,7 @@ from fastapi import APIRouter, Query, Depends
 
 from models import ServiceMap
 from ..dependencies import get_storage
-from tinyolly_common import Storage
+from common import Storage
 
 router = APIRouter(prefix="/api", tags=["Services"])
 

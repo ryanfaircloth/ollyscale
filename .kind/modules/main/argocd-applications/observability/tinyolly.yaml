@@ -20,7 +20,7 @@ spec:
   source:
     repoURL: 'docker-registry.registry.svc.cluster.local:5000/tinyolly/charts'
     chart: tinyolly
-    targetRevision: 0.1.1-v2.2.0
+    targetRevision: 0.1.1-v2.2.3
     helm:
       valuesObject:
         ui:

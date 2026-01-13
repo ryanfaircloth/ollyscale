@@ -42,7 +42,7 @@ from models import (
     MetricQueryResult
 )
 from ..dependencies import get_storage
-from tinyolly_common import Storage
+from common import Storage
 
 router = APIRouter(prefix="/api", tags=["Traces", "Spans", "Logs", "Metrics"])
 

@@ -37,7 +37,7 @@ from fastapi import APIRouter, Depends
 
 from models import AdminStatsResponse, AlertConfig, AlertRule
 from ..dependencies import get_storage, get_alert_manager
-from tinyolly_common import Storage
+from common import Storage
 from ..managers.alerts import AlertManager
 
 router = APIRouter(prefix="/admin", tags=["System"])

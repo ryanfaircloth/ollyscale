@@ -50,7 +50,7 @@ from opentelemetry.proto.collector.logs.v1 import logs_service_pb2
 from opentelemetry.proto.collector.metrics.v1 import metrics_service_pb2_grpc
 from opentelemetry.proto.collector.metrics.v1 import metrics_service_pb2
 
-from tinyolly_common import Storage
+from common import Storage
 
 # Configure logging
 logger = logging.getLogger(__name__)

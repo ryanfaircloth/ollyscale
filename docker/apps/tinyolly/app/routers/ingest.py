@@ -36,7 +36,7 @@ from fastapi import APIRouter, Request, HTTPException, status, Depends
 from models import IngestResponse, ErrorResponse
 from ..dependencies import get_storage, get_alert_manager
 from ..core.telemetry import get_metrics
-from tinyolly_common import Storage
+from common import Storage
 from ..managers.alerts import AlertManager
 
 router = APIRouter(prefix="/v1", tags=["Ingestion"])

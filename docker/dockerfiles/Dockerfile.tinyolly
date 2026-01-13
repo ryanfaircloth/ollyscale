@@ -6,34 +6,18 @@ FROM python:3.14-slim
 
 WORKDIR /app
 
-# Create non-root user
-RUN groupadd -g 1000 tinyolly && \
-    useradd -u 1000 -g tinyolly -m -s /bin/sh tinyolly && \
-    mkdir -p /app && \
-    chown -R tinyolly:tinyolly /app
-
-# Copy and install shared tinyolly-common package
-COPY apps/tinyolly-common /tmp/tinyolly-common
-RUN pip install --no-cache-dir -e /tmp/tinyolly-common && \
-    chown -R tinyolly:tinyolly /tmp/tinyolly-common
-
 # Install application dependencies
 COPY apps/tinyolly/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
-COPY apps/tinyolly/main.py .
-COPY apps/tinyolly/models.py .
-COPY apps/tinyolly/app/ app/
-COPY apps/tinyolly/receiver/ receiver/
-COPY apps/tinyolly/templates/ templates/
-COPY apps/tinyolly/static/ static/
-
-# Set ownership
-RUN chown -R tinyolly:tinyolly /app
-
-# Switch to non-root user
-USER tinyolly
+COPY --chown=1000:1000 apps/tinyolly/main.py .
+COPY --chown=1000:1000 apps/tinyolly/models.py .
+COPY --chown=1000:1000 apps/tinyolly/common/ common/
+COPY --chown=1000:1000 apps/tinyolly/app/ app/
+COPY --chown=1000:1000 apps/tinyolly/receiver/ receiver/
+COPY --chown=1000:1000 apps/tinyolly/templates/ templates/
+COPY --chown=1000:1000 apps/tinyolly/static/ static/
 
 # Expose ports (both UI and receiver)
 EXPOSE 5002

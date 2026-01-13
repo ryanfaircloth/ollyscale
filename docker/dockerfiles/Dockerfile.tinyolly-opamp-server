@@ -21,14 +21,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o /tinyolly-opamp-server .
 # Runtime stage
 FROM alpine:3.23
 
-# Create non-root user
-RUN addgroup -g 1000 tinyolly && \
-    adduser -u 1000 -G tinyolly -h /home/tinyolly -D -s /bin/sh tinyolly
-
-COPY --from=builder --chown=tinyolly:tinyolly /tinyolly-opamp-server /tinyolly-opamp-server
-
-# Switch to non-root user
-USER tinyolly
+COPY --from=builder /tinyolly-opamp-server /tinyolly-opamp-server
 
 # OpAMP port for collector connections
 EXPOSE 4320

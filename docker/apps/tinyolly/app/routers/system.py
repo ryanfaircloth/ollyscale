@@ -38,7 +38,7 @@ from fastapi.responses import HTMLResponse
 from models import HealthResponse
 from ..dependencies import get_storage, get_connection_manager
 from ..config import settings
-from tinyolly_common import Storage
+from common import Storage
 
 router = APIRouter(tags=["System", "UI"])
 
