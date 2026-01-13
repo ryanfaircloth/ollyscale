@@ -51,7 +51,7 @@ DELIVERABLE: OCI Container Images
 - `MODE=receiver` → gRPC OTLP receiver on port 4343
 
 **Built from**:
-- **Dockerfile**: `docker/dockerfiles/Dockerfile.tinyolly`
+- **Dockerfile**: `apps/tinyolly/Dockerfile`
 - **Base image**: `python:3.14-slim`
 - **Source files** (all from `apps/tinyolly/`):
   - `main.py` - Entry point that selects mode
@@ -67,14 +67,14 @@ DELIVERABLE: OCI Container Images
 ```bash
 # Production (multi-arch)
 docker buildx build --platform linux/amd64,linux/arm64 \
-  -f docker/dockerfiles/Dockerfile.tinyolly \
+  -f apps/tinyolly/Dockerfile \
   -t ghcr.io/ryanfaircloth/tinyolly/tinyolly:v2.1.8 \
-  --push docker/
+  --push apps/tinyolly/
 
 # Local dev (single-arch)
-podman build -f docker/dockerfiles/Dockerfile.tinyolly \
+podman build -f apps/tinyolly/Dockerfile \
   -t registry.tinyolly.test:49443/tinyolly/tinyolly:v2.1.x-feature \
-  docker/
+  apps/tinyolly/
 ```
 
 **Rebuild triggers**:
@@ -97,9 +97,9 @@ podman build -f docker/dockerfiles/Dockerfile.tinyolly \
 - REST API for config management on port 4321
 
 **Built from**:
-- **Dockerfile**: `docker/dockerfiles/Dockerfile.tinyolly-opamp-server`
+- **Dockerfile**: `apps/opamp-server/Dockerfile`
 - **Base image**: `golang:1.25-alpine` (build), `scratch` (runtime)
-- **Source files** (from `apps/tinyolly-opamp-server/`):
+- **Source files** (from `apps/opamp-server/`):
   - `main.go` - OpAMP server implementation
   - `go.mod` - Go module definition
 
@@ -107,14 +107,14 @@ podman build -f docker/dockerfiles/Dockerfile.tinyolly \
 ```bash
 # Production (multi-arch)
 docker buildx build --platform linux/amd64,linux/arm64 \
-  -f docker/dockerfiles/Dockerfile.tinyolly-opamp-server \
+  -f apps/opamp-server/Dockerfile \
   -t ghcr.io/ryanfaircloth/tinyolly/opamp-server:v2.1.8 \
-  --push docker/
+  --push apps/opamp-server/
 
 # Local dev (single-arch)
-podman build -f docker/dockerfiles/Dockerfile.tinyolly-opamp-server \
+podman build -f apps/opamp-server/Dockerfile \
   -t registry.tinyolly.test:49443/tinyolly/opamp-server:v2.1.x-feature \
-  docker/
+  apps/opamp-server/
 ```
 
 **Rebuild triggers**:
@@ -137,7 +137,7 @@ podman build -f docker/dockerfiles/Dockerfile.tinyolly-opamp-server \
 - Can run as frontend or backend via `MODE` env var
 
 **Built from**:
-- **Dockerfile**: `docker/dockerfiles/Dockerfile.demo`
+- **Dockerfile**: `apps/demo/Dockerfile`
 - **Base image**: `python:3.12-slim`
 - **Source files** (from `apps/demo/`):
   - `frontend.py` - Demo frontend service
@@ -148,12 +148,12 @@ podman build -f docker/dockerfiles/Dockerfile.tinyolly-opamp-server \
 ```bash
 # Production (multi-arch)
 docker buildx build --platform linux/amd64,linux/arm64 \
-  -f docker/dockerfiles/Dockerfile.demo \
+  -f apps/demo/Dockerfile \
   -t ghcr.io/ryanfaircloth/tinyolly/demo:v2.1.8 \
   --push apps/demo/
 
 # Local dev (single-arch)
-podman build -f docker/dockerfiles/Dockerfile.demo \
+podman build -f apps/demo/Dockerfile \
   -t registry.tinyolly.test:49443/tinyolly/demo:v2.1.x-feature \
   apps/demo/
 ```
@@ -215,7 +215,7 @@ DELIVERABLE: Helm Charts (OCI format)
 **Build command**:
 ```bash
 # Package chart
-helm package charts/tinyolly/ -d helm/
+helm package charts/tinyolly/ -d charts/
 
 # Push to OCI registry
 helm push charts/tinyolly-0.1.1-v2.1.x-feature.tgz \
@@ -265,7 +265,7 @@ helm push charts/tinyolly-0.1.1-v2.1.x-feature.tgz \
 **Build command**:
 ```bash
 # Package chart
-helm package charts/tinyolly-demos/ -d helm/
+helm package charts/tinyolly-demos/ -d charts/
 
 # Push to OCI registry
 helm push charts/tinyolly-demos-0.1.5.tgz \
@@ -311,12 +311,11 @@ helm push charts/tinyolly-demos-0.1.5.tgz \
                │                                     │
                ▼                                     ▼
      ┌─────────────────────┐            ┌─────────────────────┐
-     │  Dockerfile.tinyolly│            │ Chart.yaml          │
-     │       +             │            │ values.yaml         │
-     │  docker/apps/       │            │ templates/*.yaml    │
-     │  tinyolly/          │            └─────────────────────┘
-     │  ├─ main.py         │                     ▲
-     │  ├─ models.py       │                     │
+     │  apps/tinyolly/     │            │ Chart.yaml          │
+     │  Dockerfile         │            │ values.yaml         │
+     │       +             │            │ templates/*.yaml    │
+     │  ├─ main.py         │            └─────────────────────┘
+     │  ├─ models.py       │                     ▲
      │  ├─ requirements.txt│                     │
      │  ├─ app/            │                     │
      │  ├─ receiver/       │            (Helm charts reference)
@@ -370,7 +369,7 @@ cd charts
 
 ### Local Development Builds → Local Registry (Single-platform)
 
-**Location**: `helm/`  
+**Location**: `charts/`  
 **Registry**: `registry.tinyolly.test:49443/tinyolly/*`  
 **Platforms**: Native only (faster builds)
 
@@ -383,14 +382,17 @@ cd charts
 # Example: ./build-and-push-local.sh v2.1.x-tail-sampling
 
 # Step 1: Build images
-podman build -f docker/dockerfiles/Dockerfile.tinyolly \
-  -t registry.tinyolly.test:49443/tinyolly/tinyolly:v2.1.x-tail-sampling
+podman build -f apps/tinyolly/Dockerfile \
+  -t registry.tinyolly.test:49443/tinyolly/tinyolly:v2.1.x-tail-sampling \
+  apps/tinyolly/
 
-podman build -f docker/dockerfiles/Dockerfile.tinyolly-opamp-server \
-  -t registry.tinyolly.test:49443/tinyolly/opamp-server:v2.1.x-tail-sampling
+podman build -f apps/opamp-server/Dockerfile \
+  -t registry.tinyolly.test:49443/tinyolly/opamp-server:v2.1.x-tail-sampling \
+  apps/opamp-server/
 
-podman build -f docker/dockerfiles/Dockerfile.demo \
-  -t registry.tinyolly.test:49443/tinyolly/demo:v2.1.x-tail-sampling
+podman build -f apps/demo/Dockerfile \
+  -t registry.tinyolly.test:49443/tinyolly/demo:v2.1.x-tail-sampling \
+  apps/demo/
 
 # Step 2: Push images to local registry (external endpoint)
 podman push --tls-verify=false registry.tinyolly.test:49443/tinyolly/tinyolly:v2.1.x-tail-sampling
@@ -409,7 +411,7 @@ ui:
 EOF
 
 # Step 5: Package chart
-helm package charts/tinyolly/ -d helm/
+helm package charts/tinyolly/ -d charts/
 
 # Step 6: Push chart to OCI registry
 helm push charts/tinyolly-0.1.1-v2.1.x-tail-sampling.tgz \
@@ -429,11 +431,11 @@ terraform apply -replace='kubectl_manifest.observability_applications["observabi
 
 | Location | Script | Status | Replacement |
 |----------|--------|--------|-------------|
-| `docker/` | `01-start-core*.sh` | ⚠️ Deprecated | Kubernetes deployment via ArgoCD |
-| `docker/` | `04-rebuild-ui.sh` | ⚠️ Deprecated | `charts/build-and-push-local.sh` |
-| `k8s/` | `05-rebuild-local-changes.sh` | 🗑️ Obsolete | `charts/build-and-push-local.sh` |
-| `k8s/` | `06-rebuild-all-local.sh` | 🗑️ Obsolete | `charts/build-and-push-local.sh` |
-| `k8s/` | `07-deploy-local-images.sh` | 🗑️ Obsolete | ArgoCD + Terraform pattern |
+| `scripts/docker/` | `01-start-core*.sh` | ⚠️ Deprecated | Kubernetes deployment via ArgoCD |
+| `scripts/docker/` | `04-rebuild-ui.sh` | ⚠️ Deprecated | `charts/build-and-push-local.sh` |
+| (removed) | `05-rebuild-local-changes.sh` | 🗑️ Removed | `charts/build-and-push-local.sh` |
+| (removed) | `06-rebuild-all-local.sh` | 🗑️ Removed | `charts/build-and-push-local.sh` |
+| (removed) | `07-deploy-local-images.sh` | 🗑️ Removed | ArgoCD + Terraform pattern |
 
 
 ---
@@ -509,13 +511,13 @@ ui:
 | `apps/tinyolly/static/` | `tinyolly:VERSION` image | Rebuild image → Update chart → Deploy |
 | `apps/tinyolly/templates/` | `tinyolly:VERSION` image | Rebuild image → Update chart → Deploy |
 | `apps/tinyolly/requirements.txt` | `tinyolly:VERSION` image | Rebuild image → Update chart → Deploy |
-| `apps/tinyolly-opamp-server/` | `opamp-server:VERSION` image | Rebuild image → Update chart → Deploy |
+| `apps/opamp-server/` | `opamp-server:VERSION` image | Rebuild image → Update chart → Deploy |
 | `apps/demo/frontend.py` | `demo:VERSION` image | Rebuild image → Update demos chart → Deploy |
 | `apps/demo/backend.py` | `demo:VERSION` image | Rebuild image → Update demos chart → Deploy |
 | **Dockerfiles** | | |
-| `docker/dockerfiles/Dockerfile.tinyolly` | `tinyolly:VERSION` image | Rebuild image → Update chart → Deploy |
-| `docker/dockerfiles/Dockerfile.tinyolly-opamp-server` | `opamp-server:VERSION` image | Rebuild image → Update chart → Deploy |
-| `docker/dockerfiles/Dockerfile.demo` | `demo:VERSION` image | Rebuild image → Update demos chart → Deploy |
+| `apps/tinyolly/Dockerfile` | `tinyolly:VERSION` image | Rebuild image → Update chart → Deploy |
+| `apps/opamp-server/Dockerfile` | `opamp-server:VERSION` image | Rebuild image → Update chart → Deploy |
+| `apps/demo/Dockerfile` | `demo:VERSION` image | Rebuild image → Update demos chart → Deploy |
 | **Helm Charts** | | |
 | `charts/tinyolly/templates/` | `tinyolly` chart | Package chart → Deploy |
 | `charts/tinyolly/values.yaml` | `tinyolly` chart | Package chart → Deploy |

@@ -73,6 +73,7 @@ nav:
       - REST API & Examples: api.md
   - Advanced:
       - Architecture: technical.md
+      - Build System: build-system.md
       - Cardinality Protection: CARDINALITY-PROTECTION.md
   - Licensing: licensing.md
 
