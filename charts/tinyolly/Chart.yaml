@@ -2,7 +2,7 @@ apiVersion: v2
 name: tinyolly
 description: A lightweight, desktop-first OpenTelemetry observability platform for local development
 type: application
-version: 0.1.1-v2.2.0-verify
+version: 0.1.1-v2.2.0-ebpf-runasroot
 appVersion: "latest"
 keywords:
   - observability
@@ -11,6 +11,8 @@ keywords:
   - metrics
   - logs
   - otlp
+  - ebpf
+  - zero-code-instrumentation
 home: https://github.com/tinyolly/tinyolly
 sources:
   - https://github.com/tinyolly/tinyolly
@@ -35,3 +37,5 @@ annotations:
   artifacthub.io/changes: |
     - kind: added
       description: Initial Helm chart release
+    - kind: added
+      description: OpenTelemetry eBPF agent support for zero-code instrumentation

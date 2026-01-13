@@ -2,6 +2,24 @@
 
 This demo showcases **OpenTelemetry eBPF Instrumentation (OBI)** - automatic trace capture at the kernel level without any code changes to your application.
 
+## ⚠️ Platform Requirements
+
+**Important:** eBPF instrumentation requires a **real Linux kernel** and will **NOT work** in virtualized or emulated environments:
+
+**✅ Supported Platforms:**
+- Native Linux Kubernetes clusters (GKE, EKS, AKS, bare-metal)
+- Linux kernel 5.11 or newer
+- Real hardware or KVM-based VMs
+
+**❌ Unsupported Platforms (will fail with memlock errors):**
+- KIND clusters on macOS/Windows
+- Docker Desktop on macOS/Windows
+- Podman on macOS
+- Minikube with Docker driver on macOS/Windows
+- Any Docker-in-Docker or VM-based Kubernetes
+
+**For Local Development:** Use the [OpenTelemetry Operator auto-instrumentation](../README.md#auto-instrumentation) feature instead, which works on all platforms by injecting SDK instrumentation at runtime.
+
 ## What is OBI?
 
 [OpenTelemetry eBPF Instrumentation](https://opentelemetry.io/docs/zero-code/obi/) (formerly Grafana Beyla) uses eBPF to automatically capture HTTP/gRPC traces by inspecting system calls and network traffic at the Linux kernel level.
@@ -170,6 +188,57 @@ otel-ebpf-agent:
 ```
 
 ### Kubernetes
+
+#### Using the TinyOlly Helm Chart (Recommended)
+
+The easiest way to deploy the eBPF agent in Kubernetes is using the TinyOlly Helm chart:
+
+```bash
+# Install TinyOlly with eBPF agent enabled
+helm install tinyolly ./charts/tinyolly \
+  --namespace tinyolly \
+  --create-namespace \
+  --set ebpfAgent.enabled=true \
+  --set ebpfAgent.config.openPorts="5000,8080,3000"
+```
+
+Or create a custom `values.yaml`:
+
+```yaml
+# values-with-ebpf.yaml
+ebpfAgent:
+  enabled: true
+  config:
+    # Ports to instrument (comma-separated)
+    openPorts: "5000,8080,3000"
+    # Service name prefix
+    serviceName: "my-app"
+    # Collector endpoint
+    otlpEndpoint: "http://gateway-collector.tinyolly.svc.cluster.local:4317"
+  resources:
+    limits:
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+```
+
+Then install:
+
+```bash
+helm install tinyolly ./charts/tinyolly \
+  --namespace tinyolly \
+  --create-namespace \
+  --values values-with-ebpf.yaml
+```
+
+The Helm chart automatically creates:
+- DaemonSet for eBPF agent (one pod per node)
+- ServiceAccount with proper permissions
+- ClusterRole/ClusterRoleBinding for node and pod access
+- Integration with TinyOlly's gateway collector
+
+#### Manual Kubernetes Deployment
 
 In Kubernetes, the eBPF agent runs as a DaemonSet to instrument all pods on each node:
 

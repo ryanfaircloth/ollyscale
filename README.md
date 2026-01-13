@@ -217,6 +217,17 @@ cd charts
 ```
 UI available at: `http://tinyolly.test`
 
+**Enable eBPF agent for zero-code instrumentation:**
+```bash
+helm install tinyolly ./charts/tinyolly \
+  --namespace tinyolly \
+  --create-namespace \
+  --set ebpfAgent.enabled=true \
+  --set ebpfAgent.config.openPorts="5000,8080,3000"
+```
+
+The eBPF agent runs as a DaemonSet and automatically captures HTTP/gRPC traces from applications on specified ports without any code changes. See the [Helm Chart README](charts/tinyolly/README.md#ebpf-zero-code-instrumentation) for full configuration options.
+
 **Cleanup:** 
 ```bash
 helm uninstall tinyolly -n tinyolly

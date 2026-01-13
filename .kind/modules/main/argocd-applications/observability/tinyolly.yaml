@@ -20,7 +20,7 @@ spec:
   source:
     repoURL: 'docker-registry.registry.svc.cluster.local:5000/tinyolly/charts'
     chart: tinyolly
-    targetRevision: 0.1.1-v2.2.0-verify
+    targetRevision: 0.1.1-v2.2.0-ebpf-runasroot
     helm:
       valuesObject:
         ui:
@@ -61,6 +61,17 @@ spec:
         redis:
           host: tinyolly-redis
           port: 6379
+        
+        # eBPF agent disabled by default - requires real Linux kernel
+        # Will NOT work on KIND/macOS/Docker Desktop environments  
+        # For local development, use OpenTelemetry Operator auto-instrumentation instead
+        # ebpfAgent:
+        #   enabled: false
+        #   config:
+        #     # Instrument common development ports
+        #     openPorts: "5000,8080,3000,8081"
+        #     serviceName: "ebpf-demo"
+        #     otlpEndpoint: "http://gateway-collector.tinyolly.svc.cluster.local:4317"
         
         otelCollector:
           endpoint: http://otel-collector:4318

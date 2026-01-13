@@ -294,6 +294,97 @@ instrumentation:
         cpu: 50m
         memory: 64Mi
 
+# OpenTelemetry eBPF Agent configuration (OpenTelemetry eBPF Instrumentation - OBI)
+# Provides kernel-level automatic tracing for applications without code changes
+#
+# PLATFORM REQUIREMENTS:
+#   - Requires real Linux kernel with eBPF support (kernel 5.11+)
+#   - Will NOT work on: KIND/macOS, Docker Desktop, Podman on macOS
+#   - For local development, use OpenTelemetry Operator auto-instrumentation instead
+#
+# Use cases:
+#   - Legacy applications without OTel SDK
+#   - Quick tracing during development (on Linux clusters)
+#   - Multi-language microservices (no per-language SDK needed)
+# Note: eBPF provides network-level spans but lacks application-level context
+#       compared to SDK instrumentation (e.g., no route names, user IDs)
+ebpfAgent:
+  # -- Enable eBPF agent DaemonSet for zero-code instrumentation
+  enabled: false
+  
+  # -- Namespace for eBPF agent (defaults to release namespace)
+  namespace: tinyolly
+  
+  image:
+    # -- eBPF agent image repository
+    repository: docker.io/otel/ebpf-instrument
+    # -- eBPF agent image tag
+    tag: v0.4.1
+    # -- eBPF agent image pull policy
+    pullPolicy: Always
+  
+  # -- Pod annotations
+  podAnnotations: {}
+  
+  # -- Pod security context (requires privileged mode for eBPF)
+  podSecurityContext:
+    hostPID: true
+  
+  # -- Container security context (privileged required for eBPF)
+  securityContext:
+    privileged: true
+    runAsUser: 0
+    readOnlyRootFilesystem: false
+  
+  # -- Resource limits and requests
+  resources:
+    limits:
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+  
+  # -- eBPF agent configuration
+  config:
+    # -- OTLP exporter endpoint (defaults to gateway collector)
+    otlpEndpoint: "http://gateway-collector.tinyolly.svc.cluster.local:4317"
+    # -- Ports to instrument (comma-separated list)
+    # Examples: 
+    #   "5000" - Flask default port
+    #   "8080,8081" - Multiple ports
+    #   "5000,8080,3000,8081" - Common development ports
+    openPorts: "5000"
+    # -- Service name prefix for instrumented services
+    serviceName: "ebpf-demo"
+  
+  # -- Node selector
+  # Example: Only run on specific nodes
+  # nodeSelector:
+  #   kubernetes.io/os: linux
+  nodeSelector: {}
+  
+  # -- Tolerations
+  # Example: Allow running on tainted nodes
+  # tolerations:
+  #   - key: "node-role.kubernetes.io/control-plane"
+  #     operator: "Exists"
+  #     effect: "NoSchedule"
+  tolerations: []
+  
+  # -- Affinity
+  # Example: Prefer nodes with specific labels
+  # affinity:
+  #   nodeAffinity:
+  #     preferredDuringSchedulingIgnoredDuringExecution:
+  #       - weight: 100
+  #         preference:
+  #           matchExpressions:
+  #             - key: workload-type
+  #               operator: In
+  #               values:
+  #                 - application
+  affinity: {}
+
 # TinyOlly UI component
 ui:
   # -- Number of replicas for UI
