@@ -43,34 +43,34 @@
       "component": "demo",
       "package-name": "demo",
       "release-type": "python",
-      "include-compo,
-        {
-          "type": "generic",
-          "path": "../.kind/modules/tinyolly/argocd-applications/observability/tinyolly-demos.yaml",
-          "glob": false
-        }nent-in-tag": true,
+      "include-component-in-tag": true,
       "changelog-path": "CHANGELOG.md",
       "extra-files": [
         "__init__.py",
         "VERSION",
-        "Dockerfile"
+        "Dockerfile",
+        {
+          "type": "generic",
+          "path": "../.kind/modules/tinyolly/argocd-applications/observability/tinyolly-demos.yaml",
+          "glob": false
+        }
       ]
     },
     "apps/demo-otel-agent": {
       "component": "demo-otel-agent",
       "package-name": "demo-otel-agent",
       "release-type": "python",
-      "include-compo,
-        {
-          "type": "generic",
-          "path": "../.kind/modules/tinyolly/argocd-applications/observability/tinyolly-demo-otel-agent.yaml",
-          "glob": false
-        }nent-in-tag": true,
+      "include-component-in-tag": true,
       "changelog-path": "CHANGELOG.md",
       "extra-files": [
         "__init__.py",
         "VERSION",
-        "Dockerfile"
+        "Dockerfile",
+        {
+          "type": "generic",
+          "path": "../.kind/modules/tinyolly/argocd-applications/observability/tinyolly-demo-otel-agent.yaml",
+          "glob": false
+        }
       ]
     },
     "charts/tinyolly": {
