@@ -4,6 +4,11 @@ on:
   push:
     branches:
       - main
+    tags:
+      - "v*.*.*"
+      - "opamp-server-v*.*.*"
+      - "demo-v*.*.*"
+      - "demo-otel-agent-v*.*.*"
 
 permissions:
   contents: write
@@ -13,9 +18,11 @@ permissions:
 jobs:
   # Run tests and checks before creating releases
   tests:
+    if: github.ref_type == 'branch'
     uses: ./.github/workflows/test.yml
 
   release-please:
+    if: github.ref_type == 'branch'
     needs: tests
     runs-on: ubuntu-latest
     outputs:
@@ -32,7 +39,7 @@ jobs:
   # Build and push container images for released components
   build-containers:
     needs: release-please
-    if: needs.release-please.outputs.releases_created == 'true'
+    if: always() && (needs.release-please.outputs.releases_created == 'true' || github.ref_type == 'tag')
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -59,7 +66,27 @@ jobs:
       - name: Check if component was released
         id: check
         run: |
-          if echo '${{ needs.release-please.outputs.paths_released }}' | jq -e '.[] | select(. == "${{ matrix.path }}")' > /dev/null; then
+          # Tag push: match tag pattern to component
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            TAG_NAME="${GITHUB_REF#refs/tags/}"
+            PATTERN="^v[0-9]+\.[0-9]+\.[0-9]+$"
+            if [ "${{ matrix.component }}" = "opamp-server" ]; then
+              PATTERN="^opamp-server-v[0-9]+\.[0-9]+\.[0-9]+$"
+            elif [ "${{ matrix.component }}" = "demo" ]; then
+              PATTERN="^demo-v[0-9]+\.[0-9]+\.[0-9]+$"
+            elif [ "${{ matrix.component }}" = "demo-otel-agent" ]; then
+              PATTERN="^demo-otel-agent-v[0-9]+\.[0-9]+\.[0-9]+$"
+            fi
+
+            if echo "${TAG_NAME}" | grep -E "${PATTERN}" > /dev/null; then
+              echo "released=true" >> $GITHUB_OUTPUT
+              VERSION=$(echo "${TAG_NAME}" | sed 's/.*-v//' | sed 's/^v//')
+              echo "version=${VERSION}" >> $GITHUB_OUTPUT
+            else
+              echo "released=false" >> $GITHUB_OUTPUT
+            fi
+          # Release-please: check if component was released
+          elif echo '${{ needs.release-please.outputs.paths_released }}' | jq -e '.[] | select(. == "${{ matrix.path }}")' > /dev/null; then
             echo "released=true" >> $GITHUB_OUTPUT
             VERSION=$(cat ${{ matrix.path }}/VERSION)
             echo "version=${VERSION}" >> $GITHUB_OUTPUT
@@ -100,7 +127,7 @@ jobs:
   # Package and push Helm charts for released components
   release-helm-charts:
     needs: [release-please, build-containers]
-    if: needs.release-please.outputs.releases_created == 'true'
+    if: always() && needs.release-please.outputs.releases_created == 'true'
     runs-on: ubuntu-latest
     strategy:
       matrix:
