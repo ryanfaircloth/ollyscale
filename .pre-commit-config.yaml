@@ -83,7 +83,7 @@ repos:
     hooks:
       - id: markdownlint
         args: [--fix]
-        exclude: ^(.github/copilot-instructions\.md|docs/(licensing|ai-agent|ebpf|metrics|quickstart|kubernetes|otel-collector|build-system|demos/(index|otel-demo|custom-demo)|precommit|index|api|release-process|semantic-release-proposal)\.md|scripts/build/README\.md|CONTRIBUTING\.md|RELEASE-PLEASE-SETUP\.md|README\.md)
+        exclude: ^(CHANGELOG\.md|.*/CHANGELOG\.md|.github/copilot-instructions\.md|docs/(licensing|ai-agent|ebpf|metrics|quickstart|kubernetes|otel-collector|build-system|demos/(index|otel-demo|custom-demo)|precommit|index|api|release-process|semantic-release-proposal)\.md|scripts/build/README\.md|CONTRIBUTING\.md|RELEASE-PLEASE-SETUP\.md|README\.md)
 
   # Go formatting and linting
   # Note: golangci-lint pre-commit hook disabled on macOS ARM64
