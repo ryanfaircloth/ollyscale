@@ -52,6 +52,12 @@ jobs:
         with:
           terraform_version: "1.7.0"
 
+      - name: Install hadolint
+        run: |
+          wget -O /usr/local/bin/hadolint https://github.com/hadolint/hadolint/releases/latest/download/hadolint-Linux-x86_64
+          chmod +x /usr/local/bin/hadolint
+        shell: bash
+
       - name: Run pre-commit
         run: pre-commit run --all-files --show-diff-on-failure --color=always
 
