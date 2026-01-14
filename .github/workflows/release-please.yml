@@ -5,10 +5,10 @@ on:
     branches:
       - main
     tags:
-      - "v*.*.*"
-      - "opamp-server-v*.*.*"
-      - "demo-v*.*.*"
-      - "demo-otel-agent-v*.*.*"
+      - "v*"
+      - "opamp-server-v*"
+      - "demo-v*"
+      - "demo-otel-agent-v*"
 
 permissions:
   contents: write
