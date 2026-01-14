@@ -130,7 +130,7 @@ jobs:
         run: |
           # Update image tags in values.yaml to match released container versions
           cd charts/${{ matrix.chart }}
-          
+
           # For tinyolly chart, update both tinyolly and opamp-server image tags
           if [ "${{ matrix.chart }}" = "tinyolly" ]; then
             if [ -f "../../apps/tinyolly/VERSION" ]; then
@@ -142,7 +142,7 @@ jobs:
               yq eval -i ".opampServer.image.tag = \"v${OPAMP_VERSION}\"" values.yaml
             fi
           fi
-          
+
           # For demos chart, update demo image tag
           if [ "${{ matrix.chart }}" = "tinyolly-demos" ]; then
             if [ -f "../../apps/demo/VERSION" ]; then
@@ -150,7 +150,7 @@ jobs:
               yq eval -i ".demo.image.tag = \"v${DEMO_VERSION}\"" values.yaml
             fi
           fi
-          
+
           # For demo-otel-agent chart, update demo-otel-agent image tag
           if [ "${{ matrix.chart }}" = "tinyolly-demo-otel-agent" ]; then
             if [ -f "../../apps/demo-otel-agent/VERSION" ]; then
@@ -170,3 +170,104 @@ jobs:
         run: |
           cd charts
           helm push ${{ matrix.chart }}-${{ steps.check.outputs.version }}.tgz oci://ghcr.io/tinyolly/charts
+
+  # Update ArgoCD Applications with released chart versions
+  update-argocd-apps:
+    needs: [release-please, release-helm-charts]
+    if: needs.release-please.outputs.releases_created == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Update ArgoCD Application manifests
+        run: |
+          # Update tinyolly main chart
+          if echo '${{ needs.release-please.outputs.paths_released }}' | jq -e '.[] | select(. == "charts/tinyolly")' > /dev/null; then
+            CHART_VERSION=$(cat charts/tinyolly/Chart.yaml | grep '^version:' | awk '{print $2}')
+            TINYOLLY_VERSION=$(cat apps/tinyolly/VERSION)
+            OPAMP_VERSION=$(cat apps/opamp-server/VERSION)
+            
+            ARGOCD_APP=".kind/modules/main/argocd-applications/observability/tinyolly.yaml"
+            
+            # Update chart version and registry to GHCR
+            yq eval -i ".spec.source.repoURL = \"oci://ghcr.io/tinyolly/charts\"" "$ARGOCD_APP"
+            yq eval -i ".spec.source.targetRevision = \"${CHART_VERSION}\"" "$ARGOCD_APP"
+            
+            # Update image repositories to GHCR with proper paths
+            yq eval -i ".spec.source.helm.valuesObject.ui.image.repository = \"ghcr.io/tinyolly/tinyolly\"" "$ARGOCD_APP"
+            yq eval -i ".spec.source.helm.valuesObject.ui.image.tag = \"v${TINYOLLY_VERSION}\"" "$ARGOCD_APP"
+            yq eval -i ".spec.source.helm.valuesObject.opampServer.image.repository = \"ghcr.io/tinyolly/opamp-server\"" "$ARGOCD_APP"
+            yq eval -i ".spec.source.helm.valuesObject.opampServer.image.tag = \"v${OPAMP_VERSION}\"" "$ARGOCD_APP"
+            
+            echo "Updated tinyolly ArgoCD app to chart v${CHART_VERSION}"
+          fi
+          
+          # Update tinyolly-demos chart
+          if echo '${{ needs.release-please.outputs.paths_released }}' | jq -e '.[] | select(. == "charts/tinyolly-demos")' > /dev/null; then
+            CHART_VERSION=$(cat charts/tinyolly-demos/Chart.yaml | grep '^version:' | awk '{print $2}')
+            DEMO_VERSION=$(cat apps/demo/VERSION)
+            
+            ARGOCD_APP=".kind/modules/tinyolly/argocd-applications/observability/tinyolly-demos.yaml"
+            
+            # Update chart version and registry to GHCR
+            yq eval -i ".spec.source.repoURL = \"oci://ghcr.io/tinyolly/charts\"" "$ARGOCD_APP"
+            yq eval -i ".spec.source.targetRevision = \"${CHART_VERSION}\"" "$ARGOCD_APP"
+            
+            # Update demo image to GHCR
+            yq eval -i ".spec.source.helm.valuesObject.frontend.image.repository = \"ghcr.io/tinyolly/demo\"" "$ARGOCD_APP"
+            yq eval -i ".spec.source.helm.valuesObject.frontend.image.tag = \"v${DEMO_VERSION}\"" "$ARGOCD_APP"
+            yq eval -i ".spec.source.helm.valuesObject.backend.image.repository = \"ghcr.io/tinyolly/demo\"" "$ARGOCD_APP"
+            yq eval -i ".spec.source.helm.valuesObject.backend.image.tag = \"v${DEMO_VERSION}\"" "$ARGOCD_APP"
+            
+            echo "Updated tinyolly-demos ArgoCD app to chart v${CHART_VERSION}"
+          fi
+          
+          # Update tinyolly-demo-otel-agent chart (renamed from ai-agent)
+          if echo '${{ needs.release-please.outputs.paths_released }}' | jq -e '.[] | select(. == "charts/tinyolly-demo-otel-agent")' > /dev/null; then
+            CHART_VERSION=$(cat charts/tinyolly-demo-otel-agent/Chart.yaml | grep '^version:' | awk '{print $2}')
+            AGENT_VERSION=$(cat apps/demo-otel-agent/VERSION)
+            
+            # Check if old file exists and rename it
+            OLD_ARGOCD_APP=".kind/modules/tinyolly/argocd-applications/observability/tinyolly-ai-agent.yaml"
+            NEW_ARGOCD_APP=".kind/modules/tinyolly/argocd-applications/observability/tinyolly-demo-otel-agent.yaml"
+            
+            if [ -f "$OLD_ARGOCD_APP" ]; then
+              mv "$OLD_ARGOCD_APP" "$NEW_ARGOCD_APP"
+              echo "Renamed ArgoCD app file to tinyolly-demo-otel-agent.yaml"
+            fi
+            
+            # Update chart name and version
+            yq eval -i ".metadata.name = \"tinyolly-demo-otel-agent\"" "$NEW_ARGOCD_APP"
+            yq eval -i ".spec.source.repoURL = \"oci://ghcr.io/tinyolly/charts\"" "$NEW_ARGOCD_APP"
+            yq eval -i ".spec.source.chart = \"tinyolly-demo-otel-agent\"" "$NEW_ARGOCD_APP"
+            yq eval -i ".spec.source.targetRevision = \"${CHART_VERSION}\"" "$NEW_ARGOCD_APP"
+            
+            # Update image to GHCR
+            yq eval -i ".spec.source.helm.valuesObject.agent.image.repository = \"ghcr.io/tinyolly/demo-otel-agent\"" "$NEW_ARGOCD_APP"
+            yq eval -i ".spec.source.helm.valuesObject.agent.image.tag = \"v${AGENT_VERSION}\"" "$NEW_ARGOCD_APP"
+            
+            # Update namespace references
+            yq eval -i ".spec.source.helm.valuesObject.global.namespace = \"tinyolly-demo-otel-agent\"" "$NEW_ARGOCD_APP"
+            yq eval -i ".spec.destination.namespace = \"tinyolly-demo-otel-agent\"" "$NEW_ARGOCD_APP"
+            
+            echo "Updated tinyolly-demo-otel-agent ArgoCD app to chart v${CHART_VERSION}"
+          fi
+
+      - name: Commit and push ArgoCD Application updates
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          git add .kind/modules/main/argocd-applications/observability/*.yaml
+          git add .kind/modules/tinyolly/argocd-applications/observability/*.yaml
+          
+          if git diff --staged --quiet; then
+            echo "No ArgoCD Application changes to commit"
+          else
+            git commit -m "chore: update ArgoCD applications with released chart versions [skip ci]"
+            git push origin HEAD:main
+            echo "✅ Committed and pushed ArgoCD Application updates"
+          fi
