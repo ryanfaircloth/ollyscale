@@ -1,6 +1,13 @@
 {
   "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
   "packages": {
+    ".": {
+      "component": "tinyolly-monorepo",
+      "package-name": "tinyolly-monorepo",
+      "release-type": "simple",
+      "include-component-in-tag": false,
+      "changelog-path": "CHANGELOG.md"
+    },
     "apps/tinyolly": {
       "component": "tinyolly",
       "package-name": "tinyolly",

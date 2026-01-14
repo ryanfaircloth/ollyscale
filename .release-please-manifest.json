@@ -1,4 +1,5 @@
 {
+  ".": "30.0.1",
   "apps/tinyolly": "30.0.1",
   "apps/opamp-server": "1.0.0",
   "apps/demo": "0.5.0",
