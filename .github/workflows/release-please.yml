@@ -40,19 +40,19 @@ jobs:
           - component: tinyolly
             path: apps/tinyolly
             dockerfile: apps/tinyolly/Dockerfile
-            image: ghcr.io/ryanfaircloth/tinyolly
+            image: ghcr.io/ryanfaircloth/tinyolly/tinyolly
           - component: opamp-server
             path: apps/opamp-server
             dockerfile: apps/opamp-server/Dockerfile
-            image: ghcr.io/ryanfaircloth/tinyolly-opamp-server
+            image: ghcr.io/ryanfaircloth/tinyolly/opamp-server
           - component: demo
             path: apps/demo
             dockerfile: apps/demo/Dockerfile
-            image: ghcr.io/ryanfaircloth/tinyolly-demo
+            image: ghcr.io/ryanfaircloth/tinyolly/demo
           - component: demo-otel-agent
             path: apps/demo-otel-agent
             dockerfile: apps/demo-otel-agent/Dockerfile
-            image: ghcr.io/ryanfaircloth/tinyolly-demo-otel-agent
+            image: ghcr.io/ryanfaircloth/tinyolly/demo-otel-agent
     steps:
       - uses: actions/checkout@v6
 
@@ -174,4 +174,4 @@ jobs:
         if: steps.check.outputs.released == 'true'
         run: |
           cd charts
-          helm push ${{ matrix.chart }}-${{ steps.check.outputs.version }}.tgz oci://ghcr.io/ryanfaircloth/charts
+          helm push ${{ matrix.chart }}-${{ steps.check.outputs.version }}.tgz oci://ghcr.io/ryanfaircloth/tinyolly/charts
