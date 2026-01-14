@@ -66,6 +66,9 @@ jobs:
       - name: Check if component was released
         id: check
         run: |
+          # Read version from manifest - single source of truth
+          VERSION=$(jq -r '."${{ matrix.path }}"' .release-please-manifest.json)
+
           # Tag push: match tag pattern to component
           if [ "${{ github.ref_type }}" = "tag" ]; then
             TAG_NAME="${GITHUB_REF#refs/tags/}"
@@ -80,7 +83,6 @@ jobs:
 
             if echo "${TAG_NAME}" | grep -E "${PATTERN}" > /dev/null; then
               echo "released=true" >> $GITHUB_OUTPUT
-              VERSION=$(echo "${TAG_NAME}" | sed 's/.*-v//' | sed 's/^v//')
               echo "version=${VERSION}" >> $GITHUB_OUTPUT
             else
               echo "released=false" >> $GITHUB_OUTPUT
@@ -88,7 +90,6 @@ jobs:
           # Release-please: check if component was released
           elif echo '${{ needs.release-please.outputs.paths_released }}' | jq -e '.[] | select(. == "${{ matrix.path }}")' > /dev/null; then
             echo "released=true" >> $GITHUB_OUTPUT
-            VERSION=$(cat ${{ matrix.path }}/VERSION)
             echo "version=${VERSION}" >> $GITHUB_OUTPUT
           else
             echo "released=false" >> $GITHUB_OUTPUT
