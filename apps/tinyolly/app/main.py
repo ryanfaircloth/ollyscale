@@ -30,21 +30,24 @@
 
 """Main FastAPI application factory"""
 
-import uvloop
 import asyncio
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+import uvloop
 from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from starlette.types import Scope
 
-from .core.logging import setup_logging
-from .core.telemetry import setup_telemetry
-from .core.middleware import setup_middleware
-from .routers import ingest, query, services, admin, system, opamp
-from .routers.system import set_templates
 from .config import settings
+from .core.logging import setup_logging
+from .core.middleware import setup_middleware
+from .core.telemetry import setup_telemetry
+from .routers import admin, ingest, opamp, query, services, system
+from .routers.system import set_templates
+
+if TYPE_CHECKING:
+    from starlette.types import Scope
 
 # Install uvloop policy for faster event loop
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
@@ -52,7 +55,7 @@ asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 class CachedStaticFiles(StaticFiles):
     """StaticFiles with proper cache-control headers for cache busting"""
-    
+
     async def __call__(self, scope: Scope, receive: Any, send: Any) -> None:
         """Add cache headers before serving static files"""
         if scope["type"] == "http":
@@ -64,9 +67,11 @@ class CachedStaticFiles(StaticFiles):
                     headers.append((b"cache-control", b"public, max-age=31536000, immutable"))
                     message["headers"] = headers
                 await send(message)
+
             await super().__call__(scope, receive, send_wrapper)
         else:
             await super().__call__(scope, receive, send)
+
 
 # Setup logging
 setup_logging()
@@ -112,39 +117,18 @@ compatibility with OTLP exporters and OpenTelemetry SDKs.
             "url": "https://www.apache.org/licenses/LICENSE-2.0.html",
         },
         openapi_tags=[
-            {
-                "name": "Ingestion",
-                "description": "OTLP endpoints for ingesting telemetry data (traces, logs, metrics)"
-            },
-            {
-                "name": "Traces",
-                "description": "Query and retrieve trace data"
-            },
-            {
-                "name": "Spans",
-                "description": "Query and retrieve individual span data"
-            },
-            {
-                "name": "Logs",
-                "description": "Query and retrieve log entries with trace correlation"
-            },
-            {
-                "name": "Metrics",
-                "description": "Query and retrieve time-series metrics data"
-            },
-            {
-                "name": "Services",
-                "description": "Service catalog, service map, and RED metrics"
-            },
-            {
-                "name": "System",
-                "description": "Health checks and system status"
-            },
+            {"name": "Ingestion", "description": "OTLP endpoints for ingesting telemetry data (traces, logs, metrics)"},
+            {"name": "Traces", "description": "Query and retrieve trace data"},
+            {"name": "Spans", "description": "Query and retrieve individual span data"},
+            {"name": "Logs", "description": "Query and retrieve log entries with trace correlation"},
+            {"name": "Metrics", "description": "Query and retrieve time-series metrics data"},
+            {"name": "Services", "description": "Service catalog, service map, and RED metrics"},
+            {"name": "System", "description": "Health checks and system status"},
             {
                 "name": "OpAMP",
-                "description": "OpenTelemetry Agent Management Protocol - manage collector configuration"
-            }
-        ]
+                "description": "OpenTelemetry Agent Management Protocol - manage collector configuration",
+            },
+        ],
     )
 
     # Setup middleware
@@ -155,15 +139,15 @@ compatibility with OTLP exporters and OpenTelemetry SDKs.
 
     # Setup templates with custom context
     templates = Jinja2Templates(directory="templates")
-    
+
     # Add static_url helper function to all templates
     def static_url(path: str) -> str:
         """Generate versioned static file URL for cache busting"""
         return f"/static/{path}?v={settings.static_version}"
-    
-    templates.env.globals['static_url'] = static_url
-    templates.env.globals['static_version'] = settings.static_version
-    
+
+    templates.env.globals["static_url"] = static_url
+    templates.env.globals["static_version"] = settings.static_version
+
     set_templates(templates)
 
     # Register routers

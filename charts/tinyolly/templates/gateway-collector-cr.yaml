@@ -15,17 +15,17 @@ spec:
   mode: deployment
   serviceAccount: gateway
   replicas: {{ .Values.gatewayCollector.replicas }}
-  
+
   {{- with .Values.gatewayCollector.resources }}
   resources:
     {{- toYaml . | nindent 4 }}
   {{- end }}
-  
+
   {{- with .Values.gatewayCollector.podAnnotations }}
   podAnnotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}
-  
+
   config:
     {{- toYaml .Values.gatewayCollector.config | nindent 4 }}
 {{- end }}

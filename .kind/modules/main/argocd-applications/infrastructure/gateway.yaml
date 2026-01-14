@@ -10,7 +10,7 @@ metadata:
 spec:
   project: infrastructure
   source:
-    repoURL: 'https://bedag.github.io/helm-charts/'
+    repoURL: "https://bedag.github.io/helm-charts/"
     chart: raw
     targetRevision: 2.0.2
     helm:
@@ -70,14 +70,14 @@ spec:
                             nodePort: ${mgmt_https_nodeport}
                             port: 49443
                             protocol: TCP
-                            targetPort: 49443      
+                            targetPort: 49443
               telemetry:
                 metrics:
                   sinks:
                     - type: OpenTelemetry
                       openTelemetry:
                         host: agent-collector.opentelemetry-operator-system.svc.cluster.local
-                        port: 4317          
+                        port: 4317
                 tracing:
                   samplingRate: 100
                   provider:
@@ -111,7 +111,7 @@ spec:
                           openTelemetry:
                             host: agent-collector.opentelemetry-operator-system.svc.cluster.local
                             port: 4317
-          - 
+          -
             apiVersion: gateway.networking.k8s.io/v1
             kind: GatewayClass
             metadata:
@@ -165,7 +165,7 @@ spec:
                   namespaces:
                     from: All
   destination:
-    server: 'https://kubernetes.default.svc'
+    server: "https://kubernetes.default.svc"
     namespace: envoy-gateway-system
   syncPolicy:
     automated:

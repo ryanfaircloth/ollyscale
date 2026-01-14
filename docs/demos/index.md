@@ -74,12 +74,12 @@ GenAI observability demo with LLM instrumentation:
 
 ## Quick Comparison
 
-| Demo | Complexity | Services | Languages | Resource Usage | Auto-Traffic |
-|------|------------|----------|-----------|----------------|--------------|
-| **Custom Demo** | Simple | 2 | Python | Low | ✅ |
-| **OTel Demo** | Complex | 11+ | 7+ | High | ✅ |
-| **eBPF Demo** | Medium | 2 | Go | Low | ❌ |
-| **AI Agent** | Simple | 1 | Python | Medium | ✅ |
+| Demo            | Complexity | Services | Languages | Resource Usage | Auto-Traffic |
+| --------------- | ---------- | -------- | --------- | -------------- | ------------ |
+| **Custom Demo** | Simple     | 2        | Python    | Low            | ✅           |
+| **OTel Demo**   | Complex    | 11+      | 7+        | High           | ✅           |
+| **eBPF Demo**   | Medium     | 2        | Go        | Low            | ❌           |
+| **AI Agent**    | Simple     | 1        | Python    | Medium         | ✅           |
 
 ## Deployment
 
@@ -131,18 +131,23 @@ All demos send telemetry to TinyOlly. Open the TinyOlly UI to explore:
 ## Choosing a Demo
 
 **For Learning/Development:**
+
 - Start with **Custom Demo** - simple, fast, easy to understand
 
 **For Demonstrations/Training:**
+
 - Use **OTel Demo** - comprehensive, production-realistic
 
 **For Polyglot Environments:**
+
 - Use **OTel Demo** - showcases multiple languages
 
 **For Legacy Applications:**
+
 - Try **eBPF Demo** - no code changes required
 
 **For AI/ML Workloads:**
+
 - Try **AI Agent** - GenAI-specific instrumentation
 
 ## Migration

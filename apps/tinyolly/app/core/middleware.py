@@ -38,15 +38,14 @@ from ..config import settings
 
 def setup_middleware(app):
     """Setup all middleware for the FastAPI app
-    
+
     Note: HTTP request/response metrics and tracing are handled automatically
     by OpenTelemetry auto-instrumentation (opentelemetry-instrumentation-fastapi).
     No manual instrumentation needed.
     """
-    
+
     # Add CORS middleware
     # Default to localhost only for security, can be customized via environment variable
-    # Example: CORS_ORIGINS="http://localhost:*,http://127.0.0.1:*,https://example.com"
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.allowed_origins,
@@ -54,6 +53,6 @@ def setup_middleware(app):
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    
+
     # Add GZip compression middleware
     app.add_middleware(GZipMiddleware, minimum_size=1000)

@@ -14,17 +14,17 @@ spec:
   # Collector endpoint where telemetry will be exported
   exporter:
     endpoint: {{ .Values.instrumentation.exporter.endpoint }}
-  
+
   # Propagators configuration
   propagators:
     {{- toYaml .Values.instrumentation.propagators | nindent 4 }}
-  
+
   # Sampler configuration - always sample at SDK level, let gateway do tail_sampling
   {{- if .Values.instrumentation.sampler }}
   sampler:
     {{- toYaml .Values.instrumentation.sampler | nindent 4 }}
   {{- end }}
-  
+
   # Resource attributes applied to all telemetry
   {{- if .Values.instrumentation.resource }}
   resource:
@@ -36,7 +36,7 @@ spec:
       {{- toYaml .Values.instrumentation.resource.attributes | nindent 6 }}
     {{- end }}
   {{- end }}
-  
+
   # Python auto-instrumentation configuration
   {{- if .Values.instrumentation.python }}
   python:
@@ -52,7 +52,7 @@ spec:
       {{- toYaml .Values.instrumentation.python.resources | nindent 6 }}
     {{- end }}
   {{- end }}
-  
+
   # Go auto-instrumentation configuration
   {{- if .Values.instrumentation.go }}
   go:

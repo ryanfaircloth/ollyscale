@@ -1,0 +1,26 @@
+# Hadolint configuration for Docker linting
+# https://github.com/hadolint/hadolint
+
+ignored:
+  # DL3008: Pin versions in apt-get install
+  # Reason: Base images handle security updates
+  - DL3008
+  # DL3013: Pin versions in pip
+  # Reason: requirements.txt handles versioning
+  - DL3013
+  # DL3018: Pin versions in apk add
+  # Reason: Base images handle security updates
+  - DL3018
+  # DL3059: Multiple consecutive RUN instructions
+  # Reason: Layer caching optimization is case-by-case
+  - DL3059
+
+trustedRegistries:
+  - docker.io
+  - ghcr.io
+  - gcr.io
+  - registry.k8s.io
+  - quay.io
+
+# Fail on warnings
+failure-threshold: warning

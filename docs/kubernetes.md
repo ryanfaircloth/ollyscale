@@ -10,6 +10,7 @@ Deploy TinyOlly on Kubernetes (Minikube) for local development!
 ---
 
 All examples are launched from the repo - clone it first or download the current GitHub release archive:
+
 ```bash
 git clone https://github.com/tinyolly/tinyolly
 ```
@@ -21,29 +22,30 @@ git clone https://github.com/tinyolly/tinyolly
 
 ## 1. Deploy TinyOlly Core
 
-1.  **Start Minikube:**
+1. **Start Minikube:**
 
     ```bash
     minikube start
     ```
 
-2.  **Deploy TinyOlly:**
+2. **Deploy TinyOlly:**
 
-    Deploy using Helm (images will be pulled from Docker Hub automatically):
+        Deploy using Helm (images will be pulled from Docker Hub automatically):
 
-    ```bash
-    cd charts
-    ./install.sh
-    ```
-
-    !!! note "Local Development Build (Optional)"
-        To build and deploy custom images for local development:
         ```bash
         cd charts
-        ./build-and-push-local.sh <version>
+        ./install.sh
         ```
 
-3.  **Access the UI:**
+        !!! note "Local Development Build (Optional)"
+        To build and deploy custom images for local development:
+        `bash
+
+    cd charts
+    ./build-and-push-local.sh <version>
+    `
+
+3. **Access the UI:**
 
     To access the TinyOlly UI (Service Type: LoadBalancer) on macOS with Minikube, you need to use `minikube tunnel`.
 
@@ -59,7 +61,7 @@ git clone https://github.com/tinyolly/tinyolly
 
     **OpenTelemetry Collector + OpAMP Config Page:** Navigate to the "OpenTelemetry Collector + OpAMP Config" tab in the UI to view and manage collector configurations remotely. See the [OpAMP Configuration](#opamp-configuration-optional) section below for setup instructions.
 
-4.  **Send Telemetry from Host Apps:**
+4. **Send Telemetry from Host Apps:**
 
     To send telemetry from applications running on your host machine (outside Kubernetes), use `kubectl port-forward` to expose the OTel Collector ports:
 
@@ -69,21 +71,22 @@ git clone https://github.com/tinyolly/tinyolly
     kubectl port-forward service/otel-collector 4317:4317 4318:4318
     ```
 
-    Keep this terminal open. Now point your application's OpenTelemetry exporter to:  
-    - **gRPC**: `http://localhost:4317`  
-    - **HTTP**: `http://localhost:4318`  
+    Keep this terminal open. Now point your application's OpenTelemetry exporter to:
+    - **gRPC**: `http://localhost:4317`
+    - **HTTP**: `http://localhost:4318`
 
     **Example environment variables:**
+
     ```bash
     export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
     ```
 
     **For apps running inside the Kubernetes cluster:**  
-    Use the Kubernetes service name:  
-    - **gRPC**: `http://otel-collector:4317`  
-    - **HTTP**: `http://otel-collector:4318`  
+    Use the Kubernetes service name:
+    - **gRPC**: `http://otel-collector:4317`
+    - **HTTP**: `http://otel-collector:4318`
 
-5.  **Clean Up:**
+5. **Clean Up:**
 
     Uninstall TinyOlly using Helm:
 
@@ -93,11 +96,13 @@ git clone https://github.com/tinyolly/tinyolly
     ```
 
     Shut down Minikube:
+
     ```bash
     minikube stop
     ```
-    
+
     Minikube may be more stable if you delete it:
+
     ```bash
     minikube delete
     ```
@@ -116,6 +121,7 @@ cd k8s-demo
 The deploy script pulls demo images from Docker Hub by default. For local development, you can build images locally when prompted.
 
 To clean up the demo:
+
 ```bash
 ./03-cleanup.sh
 ```
@@ -128,12 +134,14 @@ The demo includes two microservices that automatically generate traffic, showcas
 
 To deploy the full [OpenTelemetry Demo](https://opentelemetry.io/docs/demo/) with ~20 microservices:
 
-**Prerequisites:**  
-- TinyOlly must be deployed first (see Setup above)  
-- [Helm](https://helm.sh/docs/intro/install/) installed  
-- Sufficient cluster resources (demo is resource-intensive)  
+**Prerequisites:**
+
+- TinyOlly must be deployed first (see Setup above)
+- [Helm](https://helm.sh/docs/intro/install/) installed
+- Sufficient cluster resources (demo is resource-intensive)
 
 **Deploy:**
+
 ```bash
 cd k8s-otel-demo
 ./01-deploy-otel-demo-helm.sh
@@ -142,6 +150,7 @@ cd k8s-otel-demo
 This deploys all OpenTelemetry Demo services configured to send telemetry to TinyOlly's collector via HTTP on port 4318. Built-in observability tools (Jaeger, Grafana, Prometheus) are disabled.
 
 **Cleanup:**
+
 ```bash
 cd k8s-otel-demo
 ./02-cleanup-otel-demo-helm.sh
@@ -153,31 +162,34 @@ This removes the OpenTelemetry Demo but leaves TinyOlly running.
 
 To deploy TinyOlly without the bundled OTel Collector (e.g., if you have an existing collector daemonset). Includes OpAMP server for optional remote collector configuration management:
 
-1.  **Deploy Core:**
-    ```bash
-    cd k8s-core-only
-    ./01-deploy.sh
-    ```
+1. **Deploy Core:**
 
-2.  **Access UI:**
-    Run `minikube tunnel` and access `http://localhost:5002`.
+   ```bash
+   cd k8s-core-only
+   ./01-deploy.sh
+   ```
 
-3.  **Cleanup:**
-    ```bash
-    ./02-cleanup.sh
-    ```
+2. **Access UI:**
+   Run `minikube tunnel` and access `http://localhost:5002`.
+
+3. **Cleanup:**
+
+   ```bash
+   ./02-cleanup.sh
+   ```
 
 ### Use TinyOlly with Any OpenTelemetry Collector
 
 Swap out the included Otel Collector for any distro of Otel Collector.
 
 **Point your OpenTelemetry exporters to tinyolly-otlp-receiver:4343:**
-i.e.  
+i.e.
+
 ```yaml
 exporters:
   debug:
     verbosity: detailed
-  
+
   otlp:
     endpoint: "tinyolly-otlp-receiver:4343"
     tls:
@@ -189,12 +201,12 @@ service:
       receivers: [otlp]
       processors: [batch]
       exporters: [debug, otlp, spanmetrics]
-    
+
     metrics:
-      receivers: [otlp,spanmetrics]
+      receivers: [otlp, spanmetrics]
       processors: [batch]
       exporters: [debug, otlp]
-    
+
     logs:
       receivers: [otlp]
       processors: [batch]
@@ -227,4 +239,3 @@ The default configuration template (included as a ConfigMap in `k8s-core-only/ti
 By default, deployment scripts pull pre-built images from GitHub Container Registry (GHCR). For building images locally (Minikube) or publishing to GHCR, see [build/README.md](https://github.com/tinyolly/tinyolly/blob/main/build/README.md).
 
 ---
-

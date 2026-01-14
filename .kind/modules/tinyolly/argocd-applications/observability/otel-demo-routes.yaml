@@ -10,7 +10,7 @@ metadata:
 spec:
   project: observability
   source:
-    repoURL: 'https://github.com/tinyolly/tinyolly.git'
+    repoURL: "https://github.com/tinyolly/tinyolly.git"
     path: .kind/modules/tinyolly/k8s-manifests/otel-demo
     targetRevision: main
   destination:

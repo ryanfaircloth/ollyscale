@@ -193,17 +193,18 @@ GitHub Container Registry authentication is automatic in GitHub Actions using th
 
 For local manual pushes, create a Personal Access Token (PAT):
 
-1. Go to https://github.com/settings/tokens
+1. Go to <https://github.com/settings/tokens>
 2. Click "Generate new token" → "Generate new token (classic)"
 3. Select scopes: `write:packages`, `read:packages`, `delete:packages`
 4. Use the token for login:
+
    ```bash
    echo $GITHUB_TOKEN | docker login ghcr.io -u YOUR_USERNAME --password-stdin
    ```
 
 ### Creating a Docker Hub Access Token (Legacy)
 
-1. Go to https://hub.docker.com/settings/security
+1. Go to <https://hub.docker.com/settings/security>
 2. Click "New Access Token"
 3. Name it `tinyolly-ci` with Read & Write permissions
 4. Add as repository secret

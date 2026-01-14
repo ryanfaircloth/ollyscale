@@ -38,7 +38,7 @@ connectors:
 exporters:
   debug:
     verbosity: detailed
-  
+
   otlp:
     endpoint: "tinyolly-otlp-receiver:4343"
     tls:
@@ -51,14 +51,13 @@ service:
       receivers: [otlp]
       processors: [batch]
       exporters: [debug, otlp, spanmetrics]
-    
+
     metrics:
       receivers: [otlp, spanmetrics]
       processors: [batch]
       exporters: [debug, otlp]
-    
+
     logs:
       receivers: [otlp]
       processors: [batch]
       exporters: [debug, otlp]
-

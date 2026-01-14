@@ -7,6 +7,7 @@ This proposal outlines a comprehensive semantic release strategy for TinyOlly's 
 ## Current State
 
 ### Components
+
 - **Container Images:**
   - `tinyolly` (unified UI + OTLP receiver) - Core platform
   - `opamp-server` (Go) - Agent management server
@@ -19,6 +20,7 @@ This proposal outlines a comprehensive semantic release strategy for TinyOlly's 
   - `tinyolly-ai-agent` - AI agent chart (depends on ai-agent-demo image)
 
 ### Current Issues
+
 - Manual versioning across all components
 - No automated changelog generation
 - Helm charts don't track their dependency versions properly
@@ -79,6 +81,7 @@ Helm charts have **two version fields**:
    - Auto-bumps when: ai-agent-demo image changes OR chart files change
 
 **Example Flow:**
+
 ```
 # Scenario: tinyolly gets feat commit, opamp-server gets fix commit
 
@@ -152,6 +155,7 @@ Helm charts have **two version fields**:
 **Required format**: `<type>(<scope>): <subject>`
 
 **Types** (determines version bump):
+
 - `feat`: Minor version bump (new feature)
 - `fix`: Patch version bump (bug fix)
 - `perf`: Patch version bump (performance improvement)
@@ -159,6 +163,7 @@ Helm charts have **two version fields**:
 - `docs`, `style`, `refactor`, `test`, `chore`: No version bump
 
 **Scopes** (determines which components release):
+
 - `tinyolly`: Changes to apps/tinyolly
 - `opamp`: Changes to apps/opamp-server
 - `demo`: Changes to apps/demo
@@ -168,6 +173,7 @@ Helm charts have **two version fields**:
 - `helm/ai-agent`: Changes to charts/tinyolly-ai-agent
 
 **Examples:**
+
 ```bash
 # Releases tinyolly container v2.4.0, triggers tinyolly chart release
 feat(tinyolly): add GenAI span filtering
@@ -218,8 +224,8 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          fetch-depth: 0  # Full history for semantic-release
-      
+          fetch-depth: 0 # Full history for semantic-release
+
       - name: Detect changed paths
         id: changes
         uses: dorny/paths-filter@v3
@@ -289,38 +295,38 @@ jobs:
   release-chart-tinyolly:
     needs: [release-tinyolly, release-opamp]
     if: |
-      always() && 
+      always() &&
       (needs.analyze.outputs.tinyolly_changed == 'true' ||
        needs.analyze.outputs.opamp_changed == 'true' ||
        needs.analyze.outputs.chart_tinyolly_changed == 'true')
     uses: ./.github/workflows/release-helm-chart.yml
     with:
       chart: tinyolly
-      depends_on: 'tinyolly,opamp-server'
+      depends_on: "tinyolly,opamp-server"
     secrets: inherit
 
   release-chart-demos:
     needs: [release-demo]
     if: |
-      always() && 
+      always() &&
       (needs.analyze.outputs.demo_changed == 'true' ||
        needs.analyze.outputs.chart_demos_changed == 'true')
     uses: ./.github/workflows/release-helm-chart.yml
     with:
       chart: tinyolly-demos
-      depends_on: 'demo'
+      depends_on: "demo"
     secrets: inherit
 
   release-chart-ai-agent:
     needs: [release-ai-agent]
     if: |
-      always() && 
+      always() &&
       (needs.analyze.outputs.ai_agent_changed == 'true' ||
        needs.analyze.outputs.chart_ai_agent_changed == 'true')
     uses: ./.github/workflows/release-helm-chart.yml
     with:
       chart: tinyolly-ai-agent
-      depends_on: 'ai-agent-demo'
+      depends_on: "ai-agent-demo"
     secrets: inherit
 ```
 
@@ -428,7 +434,7 @@ on:
         type: string
       depends_on:
         required: true
-        type: string  # Comma-separated list of container components
+        type: string # Comma-separated list of container components
 
 jobs:
   release:
@@ -480,13 +486,13 @@ jobs:
       - name: Package and push Helm chart
         run: |
           VERSION=$(cat charts/${{ inputs.chart }}/Chart.yaml | grep '^version:' | awk '{print $2}')
-          
+
           cd charts
           helm package ${{ inputs.chart }}
-          
+
           echo ${{ secrets.GITHUB_TOKEN }} | helm registry login ghcr.io \
             -u ${{ github.actor }} --password-stdin
-          
+
           helm push ${{ inputs.chart }}-${VERSION}.tgz \
             oci://ghcr.io/tinyolly/charts
 ```
@@ -499,52 +505,52 @@ Example for `apps/tinyolly/.releaserc.js`:
 
 ```javascript
 module.exports = {
-  branches: ['main'],
-  tagFormat: 'tinyolly-v${version}',
+  branches: ["main"],
+  tagFormat: "tinyolly-v${version}",
   plugins: [
     [
-      '@semantic-release/commit-analyzer',
+      "@semantic-release/commit-analyzer",
       {
-        preset: 'conventionalcommits',
+        preset: "conventionalcommits",
         releaseRules: [
-          { type: 'feat', release: 'minor' },
-          { type: 'fix', release: 'patch' },
-          { type: 'perf', release: 'patch' },
-          { type: 'refactor', scope: 'tinyolly', release: 'patch' },
+          { type: "feat", release: "minor" },
+          { type: "fix", release: "patch" },
+          { type: "perf", release: "patch" },
+          { type: "refactor", scope: "tinyolly", release: "patch" },
         ],
       },
     ],
     [
-      '@semantic-release/release-notes-generator',
+      "@semantic-release/release-notes-generator",
       {
-        preset: 'conventionalcommits',
+        preset: "conventionalcommits",
         presetConfig: {
           types: [
-            { type: 'feat', section: 'Features' },
-            { type: 'fix', section: 'Bug Fixes' },
-            { type: 'perf', section: 'Performance' },
-            { type: 'refactor', section: 'Refactoring', hidden: false },
-            { type: 'docs', section: 'Documentation', hidden: false },
+            { type: "feat", section: "Features" },
+            { type: "fix", section: "Bug Fixes" },
+            { type: "perf", section: "Performance" },
+            { type: "refactor", section: "Refactoring", hidden: false },
+            { type: "docs", section: "Documentation", hidden: false },
           ],
         },
       },
     ],
-    '@semantic-release/changelog',
+    "@semantic-release/changelog",
     [
-      '@semantic-release/npm',
+      "@semantic-release/npm",
       {
-        npmPublish: false,  // We only use package.json for version tracking
+        npmPublish: false, // We only use package.json for version tracking
       },
     ],
     [
-      '@semantic-release/git',
+      "@semantic-release/git",
       {
-        assets: ['package.json', 'CHANGELOG.md'],
-        message: 'chore(release): tinyolly ${nextRelease.version}\n\n${nextRelease.notes}',
+        assets: ["package.json", "CHANGELOG.md"],
+        message: "chore(release): tinyolly ${nextRelease.version}\n\n${nextRelease.notes}",
       },
     ],
     [
-      '@semantic-release/github',
+      "@semantic-release/github",
       {
         successComment: false,
         releasedLabels: false,
@@ -560,44 +566,44 @@ Example for `charts/tinyolly/.releaserc.js`:
 
 ```javascript
 module.exports = {
-  branches: ['main'],
-  tagFormat: 'helm-tinyolly-v${version}',
+  branches: ["main"],
+  tagFormat: "helm-tinyolly-v${version}",
   plugins: [
     [
-      '@semantic-release/commit-analyzer',
+      "@semantic-release/commit-analyzer",
       {
-        preset: 'conventionalcommits',
+        preset: "conventionalcommits",
         releaseRules: [
           // Trigger release on dependency updates (handled by update-chart-versions.js)
-          { message: '*deps(helm/tinyolly)*', release: 'minor' },
-          { type: 'feat', scope: 'helm/tinyolly', release: 'minor' },
-          { type: 'fix', scope: 'helm/tinyolly', release: 'patch' },
+          { message: "*deps(helm/tinyolly)*", release: "minor" },
+          { type: "feat", scope: "helm/tinyolly", release: "minor" },
+          { type: "fix", scope: "helm/tinyolly", release: "patch" },
         ],
       },
     ],
-    '@semantic-release/release-notes-generator',
-    '@semantic-release/changelog',
+    "@semantic-release/release-notes-generator",
+    "@semantic-release/changelog",
     [
-      '@semantic-release/exec',
+      "@semantic-release/exec",
       {
-        prepareCmd: 'node ../../scripts/release/sync-chart-version.js ${nextRelease.version}',
+        prepareCmd: "node ../../scripts/release/sync-chart-version.js ${nextRelease.version}",
       },
     ],
     [
-      '@semantic-release/npm',
+      "@semantic-release/npm",
       {
         npmPublish: false,
       },
     ],
     [
-      '@semantic-release/git',
+      "@semantic-release/git",
       {
-        assets: ['package.json', 'Chart.yaml', 'values.yaml', 'CHANGELOG.md'],
-        message: 'chore(release): helm/tinyolly ${nextRelease.version}\n\n${nextRelease.notes}',
+        assets: ["package.json", "Chart.yaml", "values.yaml", "CHANGELOG.md"],
+        message: "chore(release): helm/tinyolly ${nextRelease.version}\n\n${nextRelease.notes}",
       },
     ],
     [
-      '@semantic-release/github',
+      "@semantic-release/github",
       {
         successComment: false,
       },
@@ -612,15 +618,15 @@ module.exports = {
 
 ```javascript
 #!/usr/bin/env node
-const fs = require('fs');
-const yaml = require('js-yaml');
+const fs = require("fs");
+const yaml = require("js-yaml");
 
 // Read dependency versions and update Chart.yaml + values.yaml
 // Usage: node update-chart-versions.js --chart=tinyolly --versions='{"tinyolly":"v2.4.0","opamp-server":"v1.2.2"}'
 
 const args = process.argv.slice(2).reduce((acc, arg) => {
-  const [key, value] = arg.split('=');
-  acc[key.replace('--', '')] = value;
+  const [key, value] = arg.split("=");
+  acc[key.replace("--", "")] = value;
   return acc;
 }, {});
 
@@ -628,18 +634,18 @@ const chartPath = `charts/${args.chart}`;
 const versions = JSON.parse(args.versions);
 
 // Update Chart.yaml appVersion
-const chartYaml = yaml.load(fs.readFileSync(`${chartPath}/Chart.yaml`, 'utf8'));
+const chartYaml = yaml.load(fs.readFileSync(`${chartPath}/Chart.yaml`, "utf8"));
 const primaryComponent = Object.keys(versions)[0];
 chartYaml.appVersion = versions[primaryComponent];
 fs.writeFileSync(`${chartPath}/Chart.yaml`, yaml.dump(chartYaml));
 
 // Update values.yaml image tags
-let valuesYaml = fs.readFileSync(`${chartPath}/values.yaml`, 'utf8');
+let valuesYaml = fs.readFileSync(`${chartPath}/values.yaml`, "utf8");
 for (const [component, version] of Object.entries(versions)) {
   // Update image tags for each component
-  const componentKey = component.replace('-', '_');
+  const componentKey = component.replace("-", "_");
   valuesYaml = valuesYaml.replace(
-    new RegExp(`(${componentKey}:\\s*\\n\\s*image:\\s*\\n.*?tag:\\s*).*`, 'g'),
+    new RegExp(`(${componentKey}:\\s*\\n\\s*image:\\s*\\n.*?tag:\\s*).*`, "g"),
     `$1"${version}"`
   );
 }
@@ -663,6 +669,7 @@ cd scripts/build
 ```
 
 Local builds:
+
 - Use `local-` prefix or custom tags
 - Push to local registry only
 - Do NOT trigger semantic-release or update version files
@@ -671,6 +678,7 @@ Local builds:
 ### Migration Plan
 
 #### Phase 1: Setup (Week 1)
+
 1. Add `package.json` to all component directories (containers + charts)
 2. Create `.releaserc.js` for each component
 3. Add helper scripts in `scripts/release/`
@@ -678,18 +686,21 @@ Local builds:
 5. Add `commitlint` config for commit message validation
 
 #### Phase 2: Documentation (Week 1)
+
 1. Update `CONTRIBUTING.md` with semantic commit guidelines
 2. Document release process in `docs/release-process.md`
 3. Add commit message examples and tooling recommendations
 4. Set up pre-commit hooks for commit message validation
 
 #### Phase 3: Dry Run (Week 2)
+
 1. Run semantic-release with `--dry-run` flag
 2. Verify version bumps and changelogs
 3. Test container builds and Helm chart packaging
 4. Validate dependency resolution logic
 
 #### Phase 4: Gradual Rollout (Week 2-3)
+
 1. Enable for `tinyolly` container first
 2. Enable for `opamp-server` container
 3. Enable for demo containers
@@ -697,6 +708,7 @@ Local builds:
 5. Deprecate manual release workflow
 
 #### Phase 5: Enforcement (Week 4)
+
 1. Make semantic commits required via GitHub branch protection
 2. Archive old build scripts (keep for reference)
 3. Update all documentation to reference new process

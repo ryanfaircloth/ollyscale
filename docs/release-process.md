@@ -37,17 +37,20 @@ TinyOlly uses [release-please](https://github.com/googleapis/release-please) for
 ### Scopes (optional but recommended)
 
 **Container Components:**
+
 - `tinyolly` - Core platform (apps/tinyolly)
 - `opamp` - OpAMP server (apps/opamp-server)
 - `demo` - Demo application (apps/demo)
 - `ai-agent` - AI agent demo (apps/ai-agent-demo)
 
 **Helm Charts:**
+
 - `helm/tinyolly` - Main platform chart
 - `helm/demos` - Demos chart
 - `helm/ai-agent` - AI agent chart
 
 **General:**
+
 - `deps` - Dependency updates
 - `*` - Multiple components (use sparingly)
 
@@ -179,6 +182,7 @@ Charts have two version fields:
 - **`appVersion`**: Version of primary application
 
 **Release triggers:**
+
 - Direct changes to chart files
 - Dependency container version bumps
 - Manual version bump in manifest
@@ -198,6 +202,7 @@ cd scripts/build
 ```
 
 Local builds:
+
 - Use custom version tags (e.g., `local-`, feature names)
 - Push only to local registry
 - Don't update VERSION files
@@ -241,6 +246,7 @@ feat(opamp): add TLS configuration endpoint
 ```
 
 Release-please automatically:
+
 - Bumps both containers
 - Bumps helm chart once (not twice)
 - Updates chart's values.yaml with both new image versions

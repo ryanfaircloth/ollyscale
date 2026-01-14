@@ -1,0 +1,34 @@
+# Markdownlint configuration
+# https://github.com/DavidAnson/markdownlint
+
+# Default state for all rules
+default: true
+
+# MD013/line-length - Line length
+MD013:
+  line_length: 120
+  heading_line_length: 120
+  code_block_line_length: 120
+  code_blocks: false
+  tables: true # Allow long lines in tables
+  headings: true
+  strict: false
+  stern: false
+
+# MD024/no-duplicate-heading - Multiple headings with the same content
+MD024:
+  siblings_only: true
+
+# MD033/no-inline-html - Inline HTML
+MD033:
+  allowed_elements: [br, sub, sup, details, summary, table, tr, td, th, thead, tbody, div, p, a, img, em, strong]
+
+# MD041/first-line-heading - First line in file should be a top level heading
+MD041: false
+
+# MD045/no-alt-text - Images should have alternate text
+MD045: false
+
+# MD046/code-block-style - Code block style
+MD046:
+  style: fenced

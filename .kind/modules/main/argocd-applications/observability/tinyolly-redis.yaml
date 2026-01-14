@@ -10,7 +10,7 @@ metadata:
 spec:
   project: observability
   source:
-    repoURL: 'ghcr.io/ot-container-kit/charts'
+    repoURL: "ghcr.io/ot-container-kit/charts"
     chart: redis
     targetRevision: 0.16.8
     helm:
@@ -48,7 +48,7 @@ spec:
                 requests:
                   storage: 1Gi
   destination:
-    server: 'https://kubernetes.default.svc'
+    server: "https://kubernetes.default.svc"
     namespace: tinyolly
   syncPolicy:
     automated:

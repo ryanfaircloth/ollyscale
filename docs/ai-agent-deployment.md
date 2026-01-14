@@ -7,12 +7,14 @@ The TinyOlly AI Agent demo has been refactored to use Helm charts with OTel oper
 ## What Changed
 
 ### Before (Old Approach)
+
 - Manual Kubernetes YAML files in `scripts/k8s/ai-agent-demo/`
 - Manual OTLP configuration via environment variables
 - Separate deployment and cleanup scripts
 - No GitOps integration
 
 ### After (New Approach)
+
 - Helm chart in `charts/tinyolly-ai-agent/`
 - OTel operator auto-instrumentation (zero-code)
 - ArgoCD GitOps deployment
@@ -52,6 +54,7 @@ make up
 ```
 
 This will:
+
 1. Create the KIND cluster
 2. Install ArgoCD
 3. Deploy infrastructure (including OTel operator)
@@ -94,6 +97,7 @@ terraform apply -auto-approve
 See [`charts/tinyolly-ai-agent/values.yaml`](../charts/tinyolly-ai-agent/values.yaml) for all configuration options.
 
 Key defaults:
+
 - **Namespace**: `tinyolly-ai-agent`
 - **Ollama model**: `tinyllama`
 - **Ollama storage**: 10Gi persistent volume
@@ -111,15 +115,15 @@ spec:
     helm:
       valuesObject:
         ollama:
-          model: llama2  # Use different model
+          model: llama2 # Use different model
           resources:
             limits:
               cpu: "4000m"
               memory: "8Gi"
-        
+
         agent:
           httpRoute:
-            enabled: true  # Enable external access
+            enabled: true # Enable external access
 ```
 
 ## Verification
@@ -164,11 +168,12 @@ kubectl get pod -n tinyolly-ai-agent -l app=ai-agent \
 ### Check Traces in TinyOlly UI
 
 1. Port-forward to TinyOlly UI:
+
    ```bash
    kubectl port-forward -n tinyolly svc/tinyolly-ui 5002:5002
    ```
 
-2. Open browser: http://localhost:5002
+2. Open browser: <http://localhost:5002>
 
 3. Filter for service: `ai-agent`
 

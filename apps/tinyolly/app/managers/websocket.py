@@ -31,8 +31,10 @@
 """WebSocket connection manager"""
 
 import logging
-from typing import Set
-from fastapi import WebSocket
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from fastapi import WebSocket
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +48,7 @@ class ConnectionManager:
 
     def __init__(self):
         """Initialize connection manager with empty connections set."""
-        self.active_connections: Set[WebSocket] = set()
+        self.active_connections: set[WebSocket] = set()
 
     async def connect(self, websocket: WebSocket):
         """Accept and register a new WebSocket connection.

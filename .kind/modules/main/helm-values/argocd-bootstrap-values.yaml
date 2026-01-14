@@ -83,10 +83,10 @@ configs:
     server.insecure: true
     # Enable exec provider for kubectl authentication
     server.rbac.log.enforce.enable: false
-  
+
   # Repository credentials templates
   credentialTemplates: {}
-  
+
   # Default repositories
   repositories: {}
 

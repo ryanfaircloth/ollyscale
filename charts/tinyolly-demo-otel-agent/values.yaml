@@ -11,7 +11,7 @@ global:
 ollama:
   # -- Number of replicas (should be 1 for stateful LLM server)
   replicaCount: 1
-  
+
   image:
     # -- Image repository
     repository: ollama/ollama
@@ -19,16 +19,16 @@ ollama:
     tag: latest
     # -- Image pull policy
     pullPolicy: IfNotPresent
-  
+
   service:
     # -- Service type
     type: ClusterIP
     # -- Service port
     port: 11434
-  
+
   # -- Model to pull on startup
   model: tinyllama
-  
+
   # -- Persistent volume configuration
   persistence:
     # -- Enable persistent storage for models
@@ -39,23 +39,23 @@ ollama:
     size: 10Gi
     # -- Access mode
     accessMode: ReadWriteOnce
-  
+
   # -- Resource limits and requests
   resources:
     limits:
-      cpu: "2000m"      # 2 CPU cores
-      memory: "4Gi"     # 4GB RAM
+      cpu: "2000m" # 2 CPU cores
+      memory: "4Gi" # 4GB RAM
     requests:
-      cpu: "500m"       # 0.5 CPU cores minimum
-      memory: "1Gi"     # 1GB RAM minimum
-  
+      cpu: "500m" # 0.5 CPU cores minimum
+      memory: "1Gi" # 1GB RAM minimum
+
   # -- Liveness probe configuration
   livenessProbe:
     initialDelaySeconds: 120
     periodSeconds: 15
     timeoutSeconds: 10
     failureThreshold: 3
-  
+
   # -- Readiness probe configuration
   readinessProbe:
     initialDelaySeconds: 120
@@ -67,7 +67,7 @@ ollama:
 agent:
   # -- Number of replicas
   replicaCount: 1
-  
+
   image:
     # -- Image repository
     repository: docker-registry.registry.svc.cluster.local:5000/tinyolly/ai-agent-demo
@@ -75,27 +75,27 @@ agent:
     tag: latest
     # -- Image pull policy
     pullPolicy: Always
-  
+
   service:
     # -- Service type
     type: ClusterIP
     # -- Service port
     port: 8000
-  
+
   # -- Environment variables
   env:
     # -- Ollama host URL (will default to ollama service)
     ollamaHost: ""
-  
+
   # -- Resource limits and requests
   resources:
     limits:
-      cpu: "500m"       # 0.5 CPU cores
-      memory: "512Mi"   # 512MB RAM
+      cpu: "500m" # 0.5 CPU cores
+      memory: "512Mi" # 512MB RAM
     requests:
-      cpu: "100m"       # 0.1 CPU cores minimum
-      memory: "128Mi"   # 128MB RAM minimum
-  
+      cpu: "100m" # 0.1 CPU cores minimum
+      memory: "128Mi" # 128MB RAM minimum
+
   # HTTPRoute configuration
   httpRoute:
     # -- Enable HTTPRoute

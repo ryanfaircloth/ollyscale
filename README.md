@@ -1,24 +1,25 @@
 <div align="center">
   <img src="docs/images/tinyollytitle.png" alt="TinyOlly" width="500">
-  
-  **The World's First Desktop Observability Platform**
+
+**The World's First Desktop Observability Platform**
+
 </div>
 
 ---
+
 ## Documentation
 
-Docs are here: [https://tinyolly.github.io/tinyolly/](https://tinyolly.github.io/tinyolly/)  
+Docs are here: [https://tinyolly.github.io/tinyolly/](https://tinyolly.github.io/tinyolly/)
 
-    
+## What is TinyOlly?
 
-## What is TinyOlly?  
-
-Why send telemetry to a cloud observabilty platform while coding? Why not have one on your desktop?  
+Why send telemetry to a cloud observabilty platform while coding? Why not have one on your desktop?
 
 TinyOlly is <i>the world's first desktop observability platform</i>: a **lightweight OpenTelemetry-native observability platform** for local development.  
-Visualize and correlate logs, metrics, and traces without sending data to the cloud.  
+Visualize and correlate logs, metrics, and traces without sending data to the cloud.
 
 **Key Features:**
+
 - Full OpenTelemetry Protocol (OTLP) support with gRPC and HTTP ingestion
 - REST API with OpenAPI documentation
 - Service catalog, dependency maps, and distributed tracing
@@ -70,10 +71,11 @@ Visualize and correlate logs, metrics, and traces without sending data to the cl
 
 ## Quick Start
 
-All examples are launched from the repo- clone it first:  
+All examples are launched from the repo- clone it first:
+
 ```bash
 git clone https://github.com/tinyolly/tinyolly
-```  
+```
 
 ## Docker Deployment
 
@@ -89,6 +91,7 @@ cd docker
 **Deployment time:** ~30 seconds (pulls images from Docker Hub)
 
 **Services:**
+
 - **OTLP Receiver**: `localhost:4343` (gRPC)
 - **OpAMP Server**: `ws://localhost:4320/v1/opamp` (WebSocket), `localhost:4321` (HTTP REST API)
 - **UI**: `http://localhost:5005`
@@ -125,6 +128,7 @@ cd docker-demo-ebpf
 **Deployment time:** ~30 seconds (pulls pre-built images from Docker Hub)
 
 This demonstrates:
+
 - **eBPF Agent** captures HTTP traces automatically at kernel level
 - **No tracing SDK** in application code - traces come from eBPF
 - **Logs & Metrics** still use OTel SDK (shows hybrid approach)
@@ -145,6 +149,7 @@ cd docker-ai-agent-demo
 ```
 
 This starts:
+
 - **Ollama** with TinyLlama model for local LLM inference
 - **AI Agent** with automatic GenAI span instrumentation via `opentelemetry-instrumentation-ollama`
 
@@ -165,6 +170,7 @@ Clone and configure the [OpenTelemetry Demo](https://github.com/open-telemetry/o
 ### 7. Use TinyOlly with Your Own Apps
 
 Point your OpenTelemetry exporter to:
+
 - **gRPC**: `http://otel-collector:4317`
 - **HTTP**: `http://otel-collector:4318`
 
@@ -176,6 +182,7 @@ cd docker-core-only
 ```
 
 Deploys TinyOlly without the bundled OTel Collector. Includes:
+
 - **OTLP Receiver**: `localhost:4343` (gRPC only)
 - **OpAMP Server**: `ws://localhost:4320/v1/opamp` (WebSocket), `localhost:4321` (HTTP REST API)
 - **UI**: `http://localhost:5005`
@@ -212,12 +219,15 @@ cd charts
 ```
 
 **Access UI:**
+
 ```bash
 # UI exposed via Envoy Gateway on localhost
 ```
+
 UI available at: `http://tinyolly.test`
 
 **Enable eBPF agent for zero-code instrumentation:**
+
 ```bash
 helm install tinyolly ./charts/tinyolly \
   --namespace tinyolly \
@@ -228,7 +238,8 @@ helm install tinyolly ./charts/tinyolly \
 
 The eBPF agent runs as a DaemonSet and automatically captures HTTP/gRPC traces from applications on specified ports without any code changes. See the [Helm Chart README](charts/tinyolly/README.md#ebpf-zero-code-instrumentation) for full configuration options.
 
-**Cleanup:** 
+**Cleanup:**
+
 ```bash
 helm uninstall tinyolly -n tinyolly
 kubectl delete namespace tinyolly
@@ -279,6 +290,7 @@ For building and publishing Docker images, see [build/README.md](build/README.md
 ## Features
 
 ### UI
+
 - Auto-refresh every 5 seconds (pausable)
 - Export JSON with one click
 - Service catalog with RED metrics
@@ -289,6 +301,7 @@ For building and publishing Docker images, see [build/README.md](build/README.md
 - AI Agents tab for GenAI observability
 
 ### AI Agents
+
 - View LLM calls with prompts, responses, and token usage
 - Zero-code auto-instrumentation via OpenTelemetry GenAI semantic conventions
 - Token tracking (input/output) with visual indicators
@@ -296,34 +309,38 @@ For building and publishing Docker images, see [build/README.md](build/README.md
 - Click-to-expand JSON span details
 - Supports any OpenTelemetry-instrumented LLM (Ollama, OpenAI, etc.)
 
-
 ### Metrics
+
 - Dense, aligned table layout with "Chart" buttons
 - Inline "Cardinality" column showing label dimensions and series count
 - **Cardinality Explorer**:
-    - Deep-dive into metric attributes
-    - **Label Analysis**: View high-cardinality labels and their top values (expandable)
-    - **Raw Series**: Scrollable view of all active series in PromQL-like syntax
-    - **Export**: Copy PromQL or Download JSON for offline analysis
+  - Deep-dive into metric attributes
+  - **Label Analysis**: View high-cardinality labels and their top values (expandable)
+  - **Raw Series**: Scrollable view of all active series in PromQL-like syntax
+  - **Export**: Copy PromQL or Download JSON for offline analysis
 
 ### Service Catalog
+
 - RED metrics (Rate, Errors, Duration) with P50/P95 latencies
 - Inline metric visualization
 - Sortable columns with persistent filters
 - Color-coded error rates
 
 ### Service Map
+
 - Auto-detected node types (Client, Server, Database, Messaging)
 - Interactive graph with zoom/pan
 - Call counts between services
 - Real-time topology updates
 
 ### Cardinality Protection
+
 - Hard limit of 1000 unique metric names (configurable via `MAX_METRIC_CARDINALITY`)
 - Visual warnings at 70% and 90%
 - Drops metrics exceeding limit with tracking
 
 ### OpenTelemetry Collector + OpAMP Config
+
 - View and manage OpenTelemetry Collector configuration via the OpAMP protocol
 - Real-time validation of collector configurations before applying
 - Configuration templates for common use cases (default, prometheus-remote-write, etc.)
@@ -336,11 +353,13 @@ For building and publishing Docker images, see [build/README.md](build/README.md
 ## REST API & OpenAPI
 
 Full REST API with OpenAPI 3.0 documentation:
+
 - **Swagger UI**: `http://localhost:5005/docs`
 - **ReDoc**: `http://localhost:5005/redoc`
 - **OpenAPI Spec**: `http://localhost:5005/openapi.json`
 
 Generate clients in any language:
+
 ```bash
 curl http://localhost:5005/openapi.json > openapi.json
 openapi-generator-cli generate -i openapi.json -g python -o ./tinyolly-client
@@ -351,6 +370,7 @@ All responses return OpenTelemetry-native JSON with full trace/span context.
 ## Technical Details
 
 ### Stack
+
 - **Backend**: FastAPI (async), Redis with ZSTD compression + msgpack
 - **Frontend**: Vanilla JavaScript, HTML, CSS
 - **Ingestion**: OTLP/gRPC and OTLP/HTTP
@@ -358,6 +378,7 @@ All responses return OpenTelemetry-native JSON with full trace/span context.
 - **Correlation**: Native trace/span/log linking
 
 ### OTLP Support
+
 - Full OpenTelemetry Protocol compliance
 - ResourceSpans, ResourceLogs, ResourceMetrics
 - Spanmetrics integration for RED metrics
@@ -366,7 +387,37 @@ All responses return OpenTelemetry-native JSON with full trace/span context.
 
 ---
 
+### Development
+
+#### Pre-commit Hooks
+
+TinyOlly uses [pre-commit](https://pre-commit.com/) to maintain code quality:
+
+```bash
+# Setup (first time)
+make precommit-setup
+
+# Run checks manually
+make lint
+
+# Run with auto-fix
+make lint-fix
+```
+
+**Checks include:**
+
+- Python: ruff (lint + format)
+- YAML/JSON: validation + formatting
+- Shell: shellcheck
+- Docker: hadolint
+- Helm: helm lint
+- Go: golangci-lint
+- Markdown: markdownlint
+
+See [docs/precommit.md](docs/precommit.md) for details.
+
 ### Admin Endpoints
+
 - `GET /admin/stats` - Redis memory, cardinality, uptime
 - `GET/POST/DELETE /admin/alerts` - Alert management
 - `GET /health` - Connectivity status

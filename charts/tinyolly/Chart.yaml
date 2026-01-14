@@ -3,7 +3,7 @@ name: tinyolly
 description: A lightweight, desktop-first OpenTelemetry observability platform
   for local development
 type: application
-version: 0.2.0
+version: 0.2.0-v2.2.1-precommit
 appVersion: "v30.0.1"
 keywords:
   - observability

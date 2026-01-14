@@ -73,7 +73,7 @@ export function setTheme(theme) {
     }
 
     // Re-render charts if they exist (to update colors)
-    // We need to import currentTab from somewhere or pass it in, 
+    // We need to import currentTab from somewhere or pass it in,
     // but for now let's rely on the global currentTab if possible or just re-render active tab
     const activeTab = localStorage.getItem('tinyolly-active-tab');
     if (activeTab === 'map') {

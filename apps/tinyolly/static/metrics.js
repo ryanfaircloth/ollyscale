@@ -126,13 +126,13 @@ export async function renderMetrics(metricsData) {
 
     const countHeader = document.createElement('div');
     countHeader.style.cssText = `
-        display: flex; 
-        justify-content: space-between; 
-        align-items: center; 
-        padding: 12px 16px; 
-        background: var(--bg-card); 
-        border: 1px solid var(--border-color); 
-        border-radius: 8px; 
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 16px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
         margin-bottom: 15px;
         box-shadow: var(--shadow);
     `;
@@ -1713,7 +1713,7 @@ window.showMetricAttributes = async (metricName, totalSeriesCount) => {
                     const remaining = values.slice(5).join(', ');
                     valueDisplay = `
                         <span>${firstFive}, </span>
-                        <a style="cursor: pointer; color: var(--primary); font-weight: 600; text-decoration: none;" 
+                        <a style="cursor: pointer; color: var(--primary); font-weight: 600; text-decoration: none;"
                            onclick="this.style.display='none'; this.nextElementSibling.style.display='inline'">...</a>
                         <span style="display: none">${remaining}</span>
                     `;

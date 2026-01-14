@@ -53,24 +53,24 @@ helm install tinyolly ./tinyolly \
 
 ### Key Configuration Options
 
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `replicaCount` | Number of replicas for each component | `1` |
-| `redis.host` | Redis hostname | `tinyolly-redis` |
-| `redis.port` | Redis port | `6379` |
-| `ui.enabled` | Enable UI component | `true` |
-| `ui.service.type` | UI service type | `LoadBalancer` |
-| `ui.service.port` | UI service port | `5002` |
-| `ui.image.repository` | UI image repository | `ghcr.io/ryanfaircloth/ui` |
-| `ui.image.tag` | UI image tag | `latest` |
-| `opampServer.enabled` | Enable OpAMP Server | `true` |
-| `opampServer.service.type` | OpAMP service type | `ClusterIP` |
-| `opampServer.service.websocketPort` | OpAMP WebSocket port | `4320` |
-| `opampServer.service.httpPort` | OpAMP HTTP port | `4321` |
-| `otlpReceiver.enabled` | Enable OTLP Receiver | `true` |
-| `otlpReceiver.service.type` | OTLP service type | `ClusterIP` |
-| `otlpReceiver.service.port` | OTLP service port | `4343` |
-| `otelCollector.endpoint` | OTel Collector endpoint | `http://otel-collector:4318` |
+| Parameter                           | Description                           | Default                      |
+| ----------------------------------- | ------------------------------------- | ---------------------------- |
+| `replicaCount`                      | Number of replicas for each component | `1`                          |
+| `redis.host`                        | Redis hostname                        | `tinyolly-redis`             |
+| `redis.port`                        | Redis port                            | `6379`                       |
+| `ui.enabled`                        | Enable UI component                   | `true`                       |
+| `ui.service.type`                   | UI service type                       | `LoadBalancer`               |
+| `ui.service.port`                   | UI service port                       | `5002`                       |
+| `ui.image.repository`               | UI image repository                   | `ghcr.io/ryanfaircloth/ui`   |
+| `ui.image.tag`                      | UI image tag                          | `latest`                     |
+| `opampServer.enabled`               | Enable OpAMP Server                   | `true`                       |
+| `opampServer.service.type`          | OpAMP service type                    | `ClusterIP`                  |
+| `opampServer.service.websocketPort` | OpAMP WebSocket port                  | `4320`                       |
+| `opampServer.service.httpPort`      | OpAMP HTTP port                       | `4321`                       |
+| `otlpReceiver.enabled`              | Enable OTLP Receiver                  | `true`                       |
+| `otlpReceiver.service.type`         | OTLP service type                     | `ClusterIP`                  |
+| `otlpReceiver.service.port`         | OTLP service port                     | `4343`                       |
+| `otelCollector.endpoint`            | OTel Collector endpoint               | `http://otel-collector:4318` |
 
 ### Example Custom Values
 
@@ -113,6 +113,7 @@ cd charts
 ```
 
 This will:
+
 1. Lint the chart
 2. Package it into a `.tgz` file
 3. Prepare it for OCI registry push
@@ -259,6 +260,6 @@ Apache 2.0 - See LICENSE file for details
 
 ## Support
 
-- Documentation: https://tinyolly.io/docs
-- GitHub Issues: https://github.com/tinyolly/tinyolly/issues
-- Discussions: https://github.com/tinyolly/tinyolly/discussions
+- Documentation: <https://tinyolly.io/docs>
+- GitHub Issues: <https://github.com/tinyolly/tinyolly/issues>
+- Discussions: <https://github.com/tinyolly/tinyolly/discussions>

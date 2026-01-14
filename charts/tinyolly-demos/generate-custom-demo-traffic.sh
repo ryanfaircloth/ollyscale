@@ -70,7 +70,7 @@ REQUEST_COUNT=0
 while true; do
     # Randomly choose an endpoint
     RAND=$((RANDOM % 100))
-    
+
     if [ $RAND -lt 10 ]; then
         # 10% - Error endpoint
         ENDPOINT="/error"
@@ -91,7 +91,7 @@ while true; do
         ENDPOINT="/process-order"
         echo -e "${CYAN}[$REQUEST_COUNT] Calling ${ENDPOINT} (distributed trace)${NC}"
         RESPONSE=$(curl -s -k "$FRONTEND_URL$ENDPOINT")
-        
+
         # Show order status
         if echo "$RESPONSE" | grep -q '"status":"success"'; then
             ORDER_ID=$(echo "$RESPONSE" | grep -o '"order_id":[0-9]*' | cut -d':' -f2)
@@ -100,9 +100,9 @@ while true; do
             echo -e "  ${YELLOW}⚠ Order failed${NC}"
         fi
     fi
-    
+
     REQUEST_COUNT=$((REQUEST_COUNT + 1))
-    
+
     # Random delay between requests
     DELAY=$(awk -v min=0.5 -v max=2.0 'BEGIN{srand(); print min+rand()*(max-min)}')
     sleep $DELAY

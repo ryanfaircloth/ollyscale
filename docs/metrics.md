@@ -27,19 +27,22 @@ Click the **Chart** button to visualize metric data over time:
 Clicking on the blue **Cardinality** link for any metric opens the **Cardinality Explorer**. This tool is essential for understanding "high cardinality" issues and exploring your data's dimensions.
 
 ### 1. Header Stats
+
 - **Total Series (Historic)**: The total number of unique time series seen for this metric since startup (persisted in Redis).
 - **Active Series (1h)**: The count of series seen in the last hour.
 - **Label Dimensions**: The number of unique label keys (e.g., `http.method`, `http.status_code`).
 
 ### 2. Label Analysis Table
+
 This table helps you identify which labels are contributing most to your cardinality.
 
 - **Label Name**: The key of the label.
 - **Cardinality**: The number of unique values for this label.
 - **Values (Top 5)**: A preview of the most common values.
-    - If there are more than 5 values, a clickable **`...`** link expands the list to show all values inline.
+  - If there are more than 5 values, a clickable **`...`** link expands the list to show all values inline.
 
 ### 3. Raw Active Series
+
 A scrollable view of all active series in a PromQL-like syntax:
 
 ```promql
@@ -48,6 +51,7 @@ A scrollable view of all active series in a PromQL-like syntax:
 ```
 
 ### Export Actions
+
 Use the buttons in the "Raw Active Series" section to export data for offline analysis:
 
 - **Copy PromQL**: Copies the visible series list to your clipboard.
@@ -60,9 +64,9 @@ Use the buttons in the "Raw Active Series" section to export data for offline an
 TinyOlly includes built-in protection against cardinality explosions to prevent memory exhaustion during local development.
 
 - **Hard Limit**: 1000 unique metric names (configurable).
-- **Visual Warnings**: 
-    - ⚠️ **Yellow**: > 70% capacity
-    - 🔴 **Red**: > 90% capacity
+- **Visual Warnings**:
+  - ⚠️ **Yellow**: > 70% capacity
+  - 🔴 **Red**: > 90% capacity
 - **Behavior**: Metrics exceeding the limit are dropped, and a system alert is triggered.
 
 See [Cardinality Protection](CARDINALITY-PROTECTION.md) for more details.

@@ -31,13 +31,18 @@
 """OTLP ingestion endpoints"""
 
 import json
-from fastapi import APIRouter, Request, HTTPException, status, Depends
+from typing import TYPE_CHECKING
 
-from models import IngestResponse, ErrorResponse
-from ..dependencies import get_storage, get_alert_manager
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from models import ErrorResponse, IngestResponse
+
 from ..core.telemetry import get_metrics
-from common import Storage
-from ..managers.alerts import AlertManager
+from ..dependencies import get_alert_manager, get_storage
+
+if TYPE_CHECKING:
+    from common import Storage
+
+    from ..managers.alerts import AlertManager
 
 router = APIRouter(prefix="/v1", tags=["Ingestion"])
 
@@ -54,7 +59,7 @@ def get_ingestion_metrics():
 
 
 @router.post(
-    '/traces',
+    "/traces",
     response_model=IngestResponse,
     status_code=status.HTTP_200_OK,
     operation_id="ingest_traces",
@@ -62,20 +67,18 @@ def get_ingestion_metrics():
     responses={
         200: {"description": "Traces successfully ingested"},
         400: {"model": ErrorResponse, "description": "Invalid JSON payload"},
-        413: {"model": ErrorResponse, "description": "Payload too large (max 5MB)"}
-    }
+        413: {"model": ErrorResponse, "description": "Payload too large (max 5MB)"},
+    },
 )
 async def ingest_traces(
-    request: Request,
-    storage: Storage = Depends(get_storage),
-    alert_manager: AlertManager = Depends(get_alert_manager)
+    request: Request, storage: Storage = Depends(get_storage), alert_manager: AlertManager = Depends(get_alert_manager)
 ):
     """
     Accept traces in OTLP JSON format (OpenTelemetry Protocol).
-    
+
     Supports both full OTLP format with `resourceSpans` or simplified format with `spans` array.
     Maximum payload size is 5MB.
-    
+
     **OTLP Format Example:**
     ```json
     {
@@ -92,33 +95,33 @@ async def ingest_traces(
     ```
     """
     metrics = get_ingestion_metrics()
-    
+
     # Check content length
-    content_length = request.headers.get('content-length')
+    content_length = request.headers.get("content-length")
     if content_length and int(content_length) > 5 * 1024 * 1024:
-        raise HTTPException(status_code=413, detail='Payload too large')
+        raise HTTPException(status_code=413, detail="Payload too large")
 
     try:
         data = await request.json()
         if not data:
-            raise HTTPException(status_code=400, detail='Invalid JSON')
+            raise HTTPException(status_code=400, detail="Invalid JSON")
     except json.JSONDecodeError as e:
-        raise HTTPException(status_code=400, detail=f'Invalid JSON: {str(e)}')
+        raise HTTPException(status_code=400, detail=f"Invalid JSON: {e!s}")
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=f'Invalid request body: {str(e)}')
+        raise HTTPException(status_code=400, detail=f"Invalid request body: {e!s}")
 
     spans_to_store = []
-    
-    if 'resourceSpans' in data:
-        for resource_span in data['resourceSpans']:
-            for scope_span in resource_span.get('scopeSpans', []):
-                for span in scope_span.get('spans', []):
+
+    if "resourceSpans" in data:
+        for resource_span in data["resourceSpans"]:
+            for scope_span in resource_span.get("scopeSpans", []):
+                for span in scope_span.get("spans", []):
                     spans_to_store.append(span)
-    elif 'spans' in data:
-        spans_to_store = data['spans']
+    elif "spans" in data:
+        spans_to_store = data["spans"]
     else:
         spans_to_store = [data]
-    
+
     if spans_to_store:
         await storage.store_spans(spans_to_store)
 
@@ -130,11 +133,11 @@ async def ingest_traces(
         for span in spans_to_store:
             await alert_manager.check_span_error(span)
 
-    return {'status': 'ok'}
+    return {"status": "ok"}
 
 
 @router.post(
-    '/logs',
+    "/logs",
     response_model=IngestResponse,
     status_code=status.HTTP_200_OK,
     operation_id="ingest_logs",
@@ -142,19 +145,16 @@ async def ingest_traces(
     responses={
         200: {"description": "Logs successfully ingested"},
         400: {"model": ErrorResponse, "description": "Invalid JSON payload"},
-        413: {"model": ErrorResponse, "description": "Payload too large (max 5MB)"}
-    }
+        413: {"model": ErrorResponse, "description": "Payload too large (max 5MB)"},
+    },
 )
-async def ingest_logs(
-    request: Request,
-    storage: Storage = Depends(get_storage)
-):
+async def ingest_logs(request: Request, storage: Storage = Depends(get_storage)):
     """
     Accept logs in OTLP JSON format (OpenTelemetry Protocol).
-    
+
     Supports both array of logs or single log entry.
     Maximum payload size is 5MB.
-    
+
     **Example:**
     ```json
     [{
@@ -168,23 +168,23 @@ async def ingest_logs(
     ```
     """
     metrics = get_ingestion_metrics()
-    
-    content_length = request.headers.get('content-length')
+
+    content_length = request.headers.get("content-length")
     if content_length and int(content_length) > 5 * 1024 * 1024:
-        raise HTTPException(status_code=413, detail='Payload too large')
+        raise HTTPException(status_code=413, detail="Payload too large")
 
     try:
         data = await request.json()
         if not data:
-            raise HTTPException(status_code=400, detail='Invalid JSON')
+            raise HTTPException(status_code=400, detail="Invalid JSON")
     except json.JSONDecodeError as e:
-        raise HTTPException(status_code=400, detail=f'Invalid JSON: {str(e)}')
+        raise HTTPException(status_code=400, detail=f"Invalid JSON: {e!s}")
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=f'Invalid request body: {str(e)}')
+        raise HTTPException(status_code=400, detail=f"Invalid request body: {e!s}")
 
     # Handle array or single log
     logs = data if isinstance(data, list) else [data]
-    
+
     # Filter valid logs
     valid_logs = [log for log in logs if isinstance(log, dict)]
 
@@ -195,11 +195,11 @@ async def ingest_logs(
         metrics["ingestion_counter"].add(len(valid_logs), {"type": "logs"})
         metrics["storage_operations_counter"].add(1, {"operation": "store_logs", "count": len(valid_logs)})
 
-    return {'status': 'ok'}
+    return {"status": "ok"}
 
 
 @router.post(
-    '/metrics',
+    "/metrics",
     response_model=IngestResponse,
     status_code=status.HTTP_200_OK,
     operation_id="ingest_metrics",
@@ -207,19 +207,16 @@ async def ingest_logs(
     responses={
         200: {"description": "Metrics successfully ingested"},
         400: {"model": ErrorResponse, "description": "Invalid JSON payload"},
-        413: {"model": ErrorResponse, "description": "Payload too large (max 5MB)"}
-    }
+        413: {"model": ErrorResponse, "description": "Payload too large (max 5MB)"},
+    },
 )
-async def ingest_metrics(
-    request: Request,
-    storage: Storage = Depends(get_storage)
-):
+async def ingest_metrics(request: Request, storage: Storage = Depends(get_storage)):
     """
     Accept metrics in OTLP JSON format (OpenTelemetry Protocol).
-    
+
     Supports both full OTLP format with `resourceMetrics` or simplified legacy format.
     Maximum payload size is 5MB.
-    
+
     **OTLP Format Example:**
     ```json
     {
@@ -236,31 +233,31 @@ async def ingest_metrics(
     ```
     """
     metrics = get_ingestion_metrics()
-    
+
     # Validate payload size (limit to 5MB)
-    content_length = request.headers.get('content-length')
+    content_length = request.headers.get("content-length")
     if content_length and int(content_length) > 5 * 1024 * 1024:
-        raise HTTPException(status_code=413, detail='Payload too large')
+        raise HTTPException(status_code=413, detail="Payload too large")
 
     try:
         data = await request.json()
         if not data:
-            raise HTTPException(status_code=400, detail='Invalid JSON')
+            raise HTTPException(status_code=400, detail="Invalid JSON")
     except json.JSONDecodeError as e:
-        raise HTTPException(status_code=400, detail=f'Invalid JSON: {str(e)}')
+        raise HTTPException(status_code=400, detail=f"Invalid JSON: {e!s}")
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=f'Invalid request body: {str(e)}')
+        raise HTTPException(status_code=400, detail=f"Invalid request body: {e!s}")
 
     # Check if this is OTLP format
-    if isinstance(data, dict) and 'resourceMetrics' in data:
+    if isinstance(data, dict) and "resourceMetrics" in data:
         # OTLP format - store directly
         await storage.store_metrics(data)
 
         # Count metrics in OTLP format
         metric_count = 0
-        for resource_metric in data.get('resourceMetrics', []):
-            for scope_metric in resource_metric.get('scopeMetrics', []):
-                metric_count += len(scope_metric.get('metrics', []))
+        for resource_metric in data.get("resourceMetrics", []):
+            for scope_metric in resource_metric.get("scopeMetrics", []):
+                metric_count += len(scope_metric.get("metrics", []))
 
         # Track ingestion metrics
         metrics["ingestion_counter"].add(metric_count, {"type": "metrics"})
@@ -270,7 +267,7 @@ async def ingest_metrics(
         metrics_data = data if isinstance(data, list) else [data]
 
         # Filter valid metrics
-        valid_metrics = [m for m in metrics_data if isinstance(m, dict) and 'name' in m]
+        valid_metrics = [m for m in metrics_data if isinstance(m, dict) and "name" in m]
 
         if valid_metrics:
             await storage.store_metrics(valid_metrics)
@@ -279,4 +276,4 @@ async def ingest_metrics(
             metrics["ingestion_counter"].add(len(valid_metrics), {"type": "metrics"})
             metrics["storage_operations_counter"].add(1, {"operation": "store_metrics", "count": len(valid_metrics)})
 
-    return {'status': 'ok'}
+    return {"status": "ok"}

@@ -443,7 +443,7 @@ function showSpanJson(spanIndex) {
     `;
 
     const title = `
-        Span: ${span.name} 
+        Span: ${span.name}
         <span style="font-weight: normal; color: var(--text-muted); font-size: 0.9em; margin-left: 8px; font-family: 'JetBrains Mono', monospace;">
             (spanId: ${span.spanId || span.span_id})
         </span>
@@ -497,4 +497,3 @@ window.closeAllTraceDetails = () => {
         callbacks: [() => { selectedSpanIndex = null; }]
     });
 };
-

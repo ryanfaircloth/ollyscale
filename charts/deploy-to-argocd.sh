@@ -50,7 +50,7 @@ fi
 # Update the targetRevision in the ArgoCD Application
 if [ -f "$ARGOCD_APP_FILE" ]; then
     echo "📝 Updating targetRevision in ArgoCD Application manifest..."
-    
+
     # Use sed to update the targetRevision
     if [[ "$OSTYPE" == "darwin"* ]]; then
         # macOS
@@ -59,10 +59,10 @@ if [ -f "$ARGOCD_APP_FILE" ]; then
         # Linux
         sed -i "s/targetRevision: .*/targetRevision: $CHART_VERSION/" "$ARGOCD_APP_FILE"
     fi
-    
+
     echo "✓ Updated targetRevision to $CHART_VERSION"
     echo ""
-    
+
     # Show the change
     echo "Updated section:"
     grep -A 2 -B 2 "targetRevision:" "$ARGOCD_APP_FILE"
@@ -72,7 +72,7 @@ fi
 # Check if the Application is managed by ArgoCD
 if kubectl get application tinyolly -n argocd &>/dev/null; then
     echo "🔄 Updating ArgoCD Application with image tags and chart version..."
-    
+
     # Patch the Application with both chart version and image tags
     kubectl patch application tinyolly -n argocd --type=merge -p "{
       \"spec\": {
@@ -121,17 +121,17 @@ if kubectl get application tinyolly -n argocd &>/dev/null; then
         }
       }
     }"
-    
+
     echo "✓ Patched ArgoCD Application"
     echo ""
-    
+
     # Trigger a hard refresh and sync
     echo "🔄 Triggering ArgoCD sync..."
     argocd app sync tinyolly --force --async 2>/dev/null || {
         echo "⚠️  argocd CLI not available, using kubectl instead"
         kubectl patch application tinyolly -n argocd --type=merge -p '{"metadata":{"annotations":{"argocd.argoproj.io/refresh":"hard"}}}'
     }
-    
+
     echo ""
     echo "✅ Deployment initiated!"
     echo ""

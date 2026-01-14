@@ -44,10 +44,10 @@ otelCollector:
 agentCollector:
   # -- Enable Agent OpenTelemetryCollector Custom Resource
   enabled: true
-  
+
   # -- Namespace for agent collector (defaults to release namespace)
   namespace: tinyolly
-  
+
   # -- Full collector configuration (receivers, processors, exporters, service)
   config:
     receivers:
@@ -93,25 +93,24 @@ agentCollector:
 gatewayCollector:
   # -- Enable Gateway OpenTelemetryCollector Custom Resource
   enabled: true
-  
+
   # -- Namespace for gateway collector (defaults to release namespace)
   namespace: tinyolly
-  
+
   # -- Number of replicas for gateway deployment
   replicas: 1
-  
+
   # -- Pod annotations
   podAnnotations: {}
-  
+
   # -- Resource limits and requests for the gateway collector
   resources:
     limits:
-
       memory: 1Gi
     requests:
       cpu: 200m
       memory: 512Mi
-  
+
   # -- Full collector configuration
   config:
     receivers:
@@ -217,29 +216,29 @@ gatewayCollector:
 instrumentation:
   # -- Enable TinyOlly Instrumentation Custom Resource (managed by OpenTelemetry Operator)
   enabled: true
-  
+
   # -- Enable self-observability: instrument TinyOlly UI and OTLP receiver
   # Use sampling configuration to control overhead while maintaining error visibility
   selfObservability: true
-  
+
   # -- Name of the Instrumentation CR
   name: python-instrumentation
-  
+
   # -- Exporter configuration
   exporter:
     # -- Endpoint for the collector (OTel Operator creates service as agent-collector)
     endpoint: http://agent-collector.tinyolly.svc.cluster.local:4318
-  
+
   # -- Propagators for context propagation
   propagators:
     - tracecontext
     - baggage
-  
+
   # -- Sampler configuration - always sample at SDK, let gateway do tail_sampling
   sampler:
     # Always on sampler - create all traces, gateway collector does tail_sampling
     type: always_on
-  
+
   # -- Resource attributes configuration
   resource:
     # -- Add Kubernetes UID attributes
@@ -247,14 +246,14 @@ instrumentation:
     # -- Additional resource attributes
     attributes:
       deployment.environment: "development"
-  
+
   # Python auto-instrumentation configuration
   python:
     # Image for Python auto-instrumentation
     image:
       repository: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python
       tag: 0.60b0
-    
+
     # -- Environment variables for Python instrumentation
     env:
       - name: OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED
@@ -271,7 +270,7 @@ instrumentation:
         value: "content-.*,x-.*"
       - name: OTEL_PYTHON_EXCLUDED_URLS
         value: "/health,/metrics,ready,PING"
-    
+
     # -- Resource limits and requests for instrumentation init container
     resources:
       limits:
@@ -280,14 +279,14 @@ instrumentation:
       requests:
         cpu: 50m
         memory: 64Mi
-  
+
   # Go auto-instrumentation configuration
   go:
     # Image for Go auto-instrumentation
     image:
       repository: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-go
       tag: v0.15.0-alpha
-    
+
     # -- Environment variables for Go instrumentation
     env:
       - name: OTEL_GO_AUTO_TARGET_EXE
@@ -296,7 +295,7 @@ instrumentation:
         value: "tinyolly-opamp-server"
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
         value: "http://agent-collector.tinyolly.svc.cluster.local:4318"
-    
+
     # -- Resource limits and requests for Go instrumentation init container
     resources:
       limits:
@@ -323,10 +322,10 @@ instrumentation:
 ebpfAgent:
   # -- Enable eBPF agent DaemonSet for zero-code instrumentation
   enabled: false
-  
+
   # -- Namespace for eBPF agent (defaults to release namespace)
   namespace: tinyolly
-  
+
   image:
     # -- eBPF agent image repository
     repository: docker.io/otel/ebpf-instrument
@@ -334,20 +333,20 @@ ebpfAgent:
     tag: v0.4.1
     # -- eBPF agent image pull policy
     pullPolicy: Always
-  
+
   # -- Pod annotations
   podAnnotations: {}
-  
+
   # -- Pod security context (requires privileged mode for eBPF)
   podSecurityContext:
     hostPID: true
-  
+
   # -- Container security context (privileged required for eBPF)
   securityContext:
     privileged: true
     runAsUser: 0
     readOnlyRootFilesystem: false
-  
+
   # -- Resource limits and requests
   resources:
     limits:
@@ -355,26 +354,26 @@ ebpfAgent:
     requests:
       cpu: 100m
       memory: 256Mi
-  
+
   # -- eBPF agent configuration
   config:
     # -- OTLP exporter endpoint (defaults to gateway collector)
     otlpEndpoint: "http://gateway-collector.tinyolly.svc.cluster.local:4317"
     # -- Ports to instrument (comma-separated list)
-    # Examples: 
+    # Examples:
     #   "5000" - Flask default port
     #   "8080,8081" - Multiple ports
     #   "5000,8080,3000,8081" - Common development ports
     openPorts: "5000"
     # -- Service name prefix for instrumented services
     serviceName: "ebpf-demo"
-  
+
   # -- Node selector
   # Example: Only run on specific nodes
   # nodeSelector:
   #   kubernetes.io/os: linux
   nodeSelector: {}
-  
+
   # -- Tolerations
   # Example: Allow running on tainted nodes
   # tolerations:
@@ -382,7 +381,7 @@ ebpfAgent:
   #     operator: "Exists"
   #     effect: "NoSchedule"
   tolerations: []
-  
+
   # -- Affinity
   # Example: Prefer nodes with specific labels
   # affinity:
@@ -401,7 +400,7 @@ ebpfAgent:
 ui:
   # -- Number of replicas for UI
   replicaCount: 1
-  
+
   image:
     # -- UI image repository (unified tinyolly image)
     repository: ghcr.io/ryanfaircloth/tinyolly/tinyolly
@@ -409,7 +408,7 @@ ui:
     tag: latest
     # -- UI image pull policy (overrides global)
     pullPolicy: ""
-  
+
   # -- Service account settings
   serviceAccount:
     # -- Create service account for UI
@@ -418,24 +417,24 @@ ui:
     name: ""
     # -- Annotations for service account
     annotations: {}
-  
+
   # -- Pod annotations
   podAnnotations: {}
-  
+
   # -- Pod security context
   podSecurityContext:
     runAsNonRoot: true
     runAsUser: 1000
     fsGroup: 1000
-  
+
   # -- Container security context
   securityContext:
     allowPrivilegeEscalation: false
     capabilities:
       drop:
-      - ALL
+        - ALL
     readOnlyRootFilesystem: false
-  
+
   service:
     # -- Service type
     type: ClusterIP
@@ -447,7 +446,7 @@ ui:
     nodePort: null
     # -- Service annotations
     annotations: {}
-  
+
   # -- HTTPRoute configuration (Gateway API)
   httpRoute:
     # -- Enable HTTPRoute for UI
@@ -463,7 +462,7 @@ ui:
       - host: tinyolly.local.gd
         path: /
         pathType: PathPrefix
-  
+
   # -- Resource limits and requests
   resources:
     limits:
@@ -471,7 +470,7 @@ ui:
     requests:
       cpu: 200m
       memory: 256Mi
-  
+
   # -- Liveness probe configuration
   livenessProbe:
     httpGet:
@@ -481,7 +480,7 @@ ui:
     periodSeconds: 10
     timeoutSeconds: 5
     failureThreshold: 3
-  
+
   # -- Readiness probe configuration
   readinessProbe:
     httpGet:
@@ -491,7 +490,7 @@ ui:
     periodSeconds: 5
     timeoutSeconds: 3
     failureThreshold: 3
-  
+
   # -- Environment variables
   env:
     - name: MODE
@@ -500,22 +499,22 @@ ui:
       value: kubernetes
     - name: OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED
       value: "true"
-  
+
   # -- Additional environment variables (key-value pairs)
   extraEnv: {}
-  
+
   # -- Additional volume mounts (core mounts are defined in template)
   volumeMounts: []
-  
+
   # -- Additional volumes (core volumes are defined in template)
   volumes: []
-  
+
   # -- Node selector
   nodeSelector: {}
-  
+
   # -- Tolerations
   tolerations: []
-  
+
   # -- Affinity
   affinity: {}
 
@@ -523,7 +522,7 @@ ui:
 opampServer:
   # -- Number of replicas for OpAMP Server
   replicaCount: 1
-  
+
   image:
     # -- OpAMP Server image repository
     repository: ghcr.io/ryanfaircloth/tinyolly/opamp-server
@@ -531,7 +530,7 @@ opampServer:
     tag: latest
     # -- OpAMP Server image pull policy (overrides global)
     pullPolicy: ""
-  
+
   # -- Service account settings
   serviceAccount:
     # -- Create service account for OpAMP Server
@@ -540,24 +539,24 @@ opampServer:
     name: ""
     # -- Annotations for service account
     annotations: {}
-  
+
   # -- Pod annotations
   podAnnotations: {}
-  
+
   # -- Pod security context
   podSecurityContext:
     runAsNonRoot: true
     runAsUser: 1000
     fsGroup: 1000
-  
+
   # -- Container security context
   securityContext:
     allowPrivilegeEscalation: false
     capabilities:
       drop:
-      - ALL
+        - ALL
     readOnlyRootFilesystem: false
-  
+
   service:
     # -- Service type
     type: ClusterIP
@@ -567,14 +566,14 @@ opampServer:
     httpPort: 4321
     # -- Service annotations
     annotations: {}
-  
+
   # -- Resource limits and requests
   resources:
     limits: {}
     requests:
       cpu: 50m
       memory: 128Mi
-  
+
   # -- Liveness probe configuration
   livenessProbe:
     httpGet:
@@ -584,7 +583,7 @@ opampServer:
     periodSeconds: 10
     timeoutSeconds: 5
     failureThreshold: 3
-  
+
   # -- Readiness probe configuration
   readinessProbe:
     httpGet:
@@ -594,7 +593,7 @@ opampServer:
     periodSeconds: 5
     timeoutSeconds: 3
     failureThreshold: 3
-  
+
   # -- Environment variables
   env:
     - name: OPAMP_PORT
@@ -603,22 +602,22 @@ opampServer:
       value: "4321"
     - name: COLLECTOR_CONFIG_PATH
       value: /etc/otel-collector-config.yaml
-  
+
   # -- Additional environment variables
   extraEnv: {}
-  
+
   # -- Additional volume mounts (core mounts are defined in template)
   volumeMounts: []
-  
+
   # -- Additional volumes (core volumes are defined in template)
   volumes: []
-  
+
   # -- Node selector
   nodeSelector: {}
-  
+
   # -- Tolerations
   tolerations: []
-  
+
   # -- Affinity
   affinity: {}
 
@@ -626,7 +625,7 @@ opampServer:
 otlpReceiver:
   # -- Number of replicas for OTLP Receiver
   replicaCount: 1
-  
+
   image:
     # -- OTLP Receiver image repository (unified tinyolly image)
     repository: ghcr.io/ryanfaircloth/tinyolly/tinyolly
@@ -634,7 +633,7 @@ otlpReceiver:
     tag: latest
     # -- OTLP Receiver image pull policy (overrides global)
     pullPolicy: ""
-  
+
   # -- Service account settings
   serviceAccount:
     # -- Create service account for OTLP Receiver
@@ -643,24 +642,24 @@ otlpReceiver:
     name: ""
     # -- Annotations for service account
     annotations: {}
-  
+
   # -- Pod annotations
   podAnnotations: {}
-  
+
   # -- Pod security context
   podSecurityContext:
     runAsNonRoot: true
     runAsUser: 1000
     fsGroup: 1000
-  
+
   # -- Container security context
   securityContext:
     allowPrivilegeEscalation: false
     capabilities:
       drop:
-      - ALL
+        - ALL
     readOnlyRootFilesystem: false
-  
+
   service:
     # -- Service type
     type: ClusterIP
@@ -670,7 +669,7 @@ otlpReceiver:
     targetPort: 4343
     # -- Service annotations
     annotations: {}
-  
+
   # -- Resource limits and requests
   resources:
     limits:
@@ -678,7 +677,7 @@ otlpReceiver:
     requests:
       cpu: 200m
       memory: 256Mi
-  
+
   # -- Liveness probe configuration
   livenessProbe:
     tcpSocket:
@@ -687,7 +686,7 @@ otlpReceiver:
     periodSeconds: 10
     timeoutSeconds: 5
     failureThreshold: 3
-  
+
   # -- Readiness probe configuration
   readinessProbe:
     tcpSocket:
@@ -696,7 +695,7 @@ otlpReceiver:
     periodSeconds: 5
     timeoutSeconds: 3
     failureThreshold: 3
-  
+
   # -- Environment variables
   env:
     - name: MODE
@@ -705,15 +704,15 @@ otlpReceiver:
       value: "4343"
     - name: OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED
       value: "true"
-  
+
   # -- Additional environment variables
   extraEnv: {}
-  
+
   # -- Node selector
   nodeSelector: {}
-  
+
   # -- Tolerations
   tolerations: []
-  
+
   # -- Affinity
   affinity: {}

@@ -34,30 +34,37 @@ Both applications feature **automatic traffic generation** - they create distrib
 ## Frontend Endpoints
 
 ### `/` - Home
+
 Returns service information and available endpoints.
 
 **Example:**
+
 ```bash
 curl https://demo-frontend.tinyolly.test:49443/
 ```
 
 ### `/hello` - Simple Request
+
 Basic endpoint that returns a greeting. Generates simple traces.
 
 **Example:**
+
 ```bash
 curl https://demo-frontend.tinyolly.test:49443/hello
 ```
 
 ### `/calculate` - Backend Interaction
+
 Calls the backend to perform a calculation. Demonstrates service-to-service tracing.
 
 **Example:**
+
 ```bash
 curl https://demo-frontend.tinyolly.test:49443/calculate
 ```
 
 **Response:**
+
 ```json
 {
   "operation": "add",
@@ -68,14 +75,17 @@ curl https://demo-frontend.tinyolly.test:49443/calculate
 ```
 
 ### `/error` - Error Scenario
+
 Intentionally triggers an exception to demonstrate error tracking.
 
 **Example:**
+
 ```bash
 curl https://demo-frontend.tinyolly.test:49443/error
 ```
 
 ### `/process-order` - Complex Distributed Trace
+
 Creates a multi-span distributed trace across frontend and backend:
 
 1. Frontend receives order request
@@ -85,11 +95,13 @@ Creates a multi-span distributed trace across frontend and backend:
 5. Order completion
 
 **Example:**
+
 ```bash
 curl https://demo-frontend.tinyolly.test:49443/process-order
 ```
 
 **Response:**
+
 ```json
 {
   "status": "success",
@@ -105,12 +117,15 @@ curl https://demo-frontend.tinyolly.test:49443/process-order
 ## Backend Endpoints
 
 ### `/health` - Health Check
+
 Kubernetes liveness/readiness probe endpoint.
 
 ### `/calculate` - Math Operations
+
 Performs simple calculations with span attributes showing operands and results.
 
 ### `/process` - Order Processing
+
 Handles order processing with multiple sub-operations (validation, payment, inventory).
 
 ## Observability Features
@@ -178,17 +193,17 @@ terraform apply -var="custom_demo_enabled=true"
 
 ```yaml
 customDemo:
-  enabled: true  # Set to false to disable
-  
+  enabled: true # Set to false to disable
+
   frontend:
     image:
       repository: ghcr.io/ryanfaircloth/demo-frontend
       tag: latest
-    
+
     env:
       otelExporterOtlpEndpoint: "http://gateway-collector.tinyolly.svc.cluster.local:4317"
       otelServiceName: "demo-frontend"
-  
+
   backend:
     image:
       repository: ghcr.io/ryanfaircloth/demo-backend
@@ -262,16 +277,19 @@ kubectl logs -n tinyolly-demos -l app.kubernetes.io/name=demo-frontend
 ### No telemetry in TinyOlly
 
 1. Verify OTel Collector is running:
+
    ```bash
    kubectl get pods -n tinyolly -l app.kubernetes.io/name=opentelemetry-collector
    ```
 
 2. Check demo environment variables:
+
    ```bash
    kubectl get deployment demo-frontend -n tinyolly-demos -o yaml | grep OTEL_
    ```
 
 3. Test collector connectivity:
+
    ```bash
    kubectl exec -n tinyolly-demos deployment/demo-frontend -- \
      curl -v gateway-collector.tinyolly.svc.cluster.local:4317
@@ -300,6 +318,7 @@ cd charts/tinyolly-demos
 ```
 
 The script:
+
 - Sends requests to `https://demo-frontend.tinyolly.test:49443` (no port-forward needed)
 - Generates realistic traffic patterns:
   - **50%**: `/process-order` - Complex distributed traces

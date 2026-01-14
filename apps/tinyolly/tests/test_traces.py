@@ -38,6 +38,7 @@ These tests verify:
 - Trace search functionality
 - Unicode and special character handling
 """
+
 import pytest
 
 

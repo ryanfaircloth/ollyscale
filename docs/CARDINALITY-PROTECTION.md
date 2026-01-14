@@ -13,10 +13,10 @@ TinyOlly includes built-in protection against metric cardinality explosion with 
 
 ### Environment Variables
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `MAX_METRIC_CARDINALITY` | 1000 | Maximum unique metric names |
-| `REDIS_TTL` | 1800 | Metric retention (seconds) |
+| Variable                 | Default | Description                 |
+| ------------------------ | ------- | --------------------------- |
+| `MAX_METRIC_CARDINALITY` | 1000    | Maximum unique metric names |
+| `REDIS_TTL`              | 1800    | Metric retention (seconds)  |
 
 ### Kubernetes Deployment
 
@@ -25,11 +25,12 @@ Update Helm values in `charts/tinyolly/values.yaml`:
 ```yaml
 otlpReceiver:
   env:
-    MAX_METRIC_CARDINALITY: "2000"  # Increase limit
-    REDIS_TTL: "3600"  # 1 hour retention
+    MAX_METRIC_CARDINALITY: "2000" # Increase limit
+    REDIS_TTL: "3600" # 1 hour retention
 ```
 
 Then upgrade the deployment:
+
 ```bash
 cd charts
 helm upgrade tinyolly ./tinyolly -n tinyolly
@@ -48,6 +49,7 @@ environment:
 ## Monitoring
 
 The UI displays cardinality warnings when approaching the limit:
+
 - **Yellow Warning:** 70-90% of limit reached
 - **Red Alert:** 90%+ of limit reached
 
@@ -58,6 +60,7 @@ curl http://localhost:5005/api/stats
 ```
 
 Response:
+
 ```json
 {
   "traces": 145,

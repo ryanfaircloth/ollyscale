@@ -23,7 +23,7 @@ spec:
       valuesObject:
         watchAnyNamespace: true
   destination:
-    server: 'https://kubernetes.default.svc'
+    server: "https://kubernetes.default.svc"
     namespace: strimzi-operator
   syncPolicy:
     automated:

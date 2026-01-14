@@ -74,7 +74,7 @@ helm upgrade tinyolly-demos ./tinyolly-demos \
 ```yaml
 customDemo:
   enabled: true
-  
+
   frontend:
     image:
       repository: ghcr.io/ryanfaircloth/demo-frontend
@@ -82,7 +82,7 @@ customDemo:
     httpRoute:
       enabled: true
       hostname: demo-frontend.tinyolly.test
-  
+
   backend:
     image:
       repository: ghcr.io/ryanfaircloth/demo-backend
@@ -109,9 +109,9 @@ opentelemetry-demo:
 
 After deployment:
 
-- **Custom Demo**: https://demo-frontend.tinyolly.test:49443
-- **OTel Demo**: https://otel-demo.tinyolly.test:49443
-- **TinyOlly UI**: https://tinyolly.tinyolly.test:49443
+- **Custom Demo**: <https://demo-frontend.tinyolly.test:49443>
+- **OTel Demo**: <https://otel-demo.tinyolly.test:49443>
+- **TinyOlly UI**: <https://tinyolly.tinyolly.test:49443>
 
 ## Traffic Generation
 
@@ -123,6 +123,7 @@ For the custom demo, a traffic generation script is included to create realistic
 ```
 
 The script sends continuous requests to the demo-frontend using the FQDN (no port-forwarding required), generating:
+
 - 50% complex distributed traces (`/process-order`)
 - 20% service-to-service calls (`/calculate`)
 - 20% simple requests (`/hello`)

@@ -1,0 +1,43 @@
+# Prettier ignore patterns
+
+# Dependencies
+node_modules/
+vendor/
+
+# Build outputs
+dist/
+build/
+*.min.js
+*.min.css
+
+# Generated files
+*.lock
+package-lock.json
+yarn.lock
+poetry.lock
+
+# Templates (Helm, Jinja)
+charts/*/templates/
+config/otelcol/templates/
+templates/
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Documentation overrides
+docs/overrides/
+
+# Git
+.git/
+
+# IDE
+.vscode/
+.idea/

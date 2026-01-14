@@ -10,7 +10,7 @@ metadata:
 spec:
   project: infrastructure
   source:
-    repoURL: 'https://bedag.github.io/helm-charts/'
+    repoURL: "https://bedag.github.io/helm-charts/"
     chart: raw
     targetRevision: 2.0.2
     helm:
@@ -38,7 +38,7 @@ spec:
                     - name: docker-registry
                       port: 5000
   destination:
-    server: 'https://kubernetes.default.svc'
+    server: "https://kubernetes.default.svc"
   syncPolicy:
     automated:
       prune: true

@@ -31,10 +31,11 @@
 # AI Agent Demo - Standalone Script with Manual Tracing
 # Creates root spans since there's no incoming HTTP requests
 
-import time
-import random
-import os
 import logging
+import os
+import random
+import time
+
 from ollama import Client
 from opentelemetry import trace
 
@@ -65,10 +66,7 @@ def run_agent_workflow():
         logger.info(f"Calling Ollama with prompt: {prompt_text}")
 
         # This call is AUTO-INSTRUMENTED - child span created automatically
-        response = client.chat(
-            model="tinyllama",
-            messages=[{"role": "user", "content": prompt_text}]
-        )
+        response = client.chat(model="tinyllama", messages=[{"role": "user", "content": prompt_text}])
 
         content = response["message"]["content"]
         span.set_attribute("response_length", len(content))

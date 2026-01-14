@@ -1,13 +1,13 @@
 <div align="center">
   <img src="images/tinyollytitle.png" alt="TinyOlly" width="500"><br>
   <b>The World's First Desktop Observability Platform</b>
-</div>  
+</div>
 
 ---
 
 ## Introducing TinyOlly - RF Fork
 
-This is a project fork of TinyOlly. 
+This is a project fork of TinyOlly.
 
 **Repository:** [https://github.com/tinyolly/tinyolly](https://github.com/tinyolly/tinyolly)
 
@@ -36,7 +36,7 @@ TinyOlly is a **lightweight OpenTelemetry-native observability platform** built 
 - **Zero vendor lock-in** - Works with any OTel Collector distribution
 
 !!! note "Local Development Only"
-    TinyOlly is *not* designed to compete with production observability platforms! It's for local development only and is not focused on infrastructure monitoring at this time.
+TinyOlly is _not_ designed to compete with production observability platforms! It's for local development only and is not focused on infrastructure monitoring at this time.
 
 ### Platform Support
 
@@ -96,4 +96,3 @@ Ready to try TinyOlly? Check out the [Quick Start Guide](quickstart.md) to get r
     <a href="https://github.com/tinyolly/tinyolly/issues">Issues</a>
   </p>
 </div>
-
