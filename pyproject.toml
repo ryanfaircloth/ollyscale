@@ -69,6 +69,9 @@ ignore = [
     "ERA001", # Commented-out code (intentional documentation/TODOs)
     "PLW1508", # Invalid type for env var default (int defaults are intentional)
     "RUF012", # Mutable class attributes in Pydantic Config
+    "TCH001", # Move import into type-checking block - conflicts with Python 3.14 + FastAPI
+    "TCH002", # Move import into type-checking block - conflicts with Python 3.14 + FastAPI
+    "TCH003", # Move import into type-checking block - conflicts with Python 3.14 + FastAPI
 ]
 
 # Allow fix for all enabled rules (when `--fix` is provided)
