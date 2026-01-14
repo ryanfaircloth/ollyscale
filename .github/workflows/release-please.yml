@@ -49,7 +49,7 @@ jobs:
             dockerfile: apps/demo-otel-agent/Dockerfile
             image: ghcr.io/ryanfaircloth/demo-otel-agent
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Check if component was released
         id: check
@@ -101,7 +101,7 @@ jobs:
       matrix:
         chart: [tinyolly, tinyolly-demos, tinyolly-demo-otel-agent]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Check if chart was released
         id: check
