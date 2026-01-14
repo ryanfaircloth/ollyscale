@@ -32,9 +32,5 @@ helm/values-local-dev.yaml
 # MkDocs generated site
 site/
 
-# CHANGELOG files - managed by GitHub Releases only
-CHANGELOG.md
-**/CHANGELOG.md
-
 # Node modules and cache
 node_modules/
