@@ -7,6 +7,12 @@ on:
       - "opamp-server-v*.*.*"
       - "demo-v*.*.*"
       - "demo-otel-agent-v*.*.*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to build (e.g., v34.0.0)"
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -41,12 +47,16 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ github.ref }}
+          ref: ${{ inputs.tag || github.ref }}
 
       - name: Check if this tag matches component
         id: check
         run: |
-          TAG_NAME="${GITHUB_REF#refs/tags/}"
+          if [ -n "${{ inputs.tag }}" ]; then
+            TAG_NAME="${{ inputs.tag }}"
+          else
+            TAG_NAME="${GITHUB_REF#refs/tags/}"
+          fi
           echo "tag_name=${TAG_NAME}" >> $GITHUB_OUTPUT
 
           if echo "${TAG_NAME}" | grep -E '${{ matrix.tag_pattern }}' > /dev/null; then
