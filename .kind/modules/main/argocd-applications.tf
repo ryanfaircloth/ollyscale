@@ -15,6 +15,7 @@ locals {
     chart_registry      = var.chart_registry
     tinyolly_tag        = var.tinyolly_tag
     opamp_tag           = var.opamp_tag
+    tinyolly_chart_tag  = var.tinyolly_chart_tag
   }
 }
 

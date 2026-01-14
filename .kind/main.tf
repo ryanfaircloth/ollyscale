@@ -21,6 +21,7 @@ module "main" {
   chart_registry         = local.chart_registry
   tinyolly_tag           = local.tinyolly_tag
   opamp_tag              = local.opamp_tag
+  tinyolly_chart_tag     = var.tinyolly_chart_tag
 }
 
 module "tinyolly" {

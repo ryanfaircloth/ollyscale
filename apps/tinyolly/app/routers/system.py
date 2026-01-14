@@ -32,17 +32,15 @@
 
 import asyncio
 import logging
-from typing import TYPE_CHECKING
 
 from fastapi import APIRouter, Depends, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 from models import HealthResponse
 
+from common import Storage
+
 from ..config import settings
 from ..dependencies import get_connection_manager, get_storage
-
-if TYPE_CHECKING:
-    from common import Storage
 
 router = APIRouter(tags=["System", "UI"])
 

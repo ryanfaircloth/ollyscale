@@ -32,18 +32,15 @@
 
 import datetime
 import time
-from typing import TYPE_CHECKING
 
 import psutil
 from fastapi import APIRouter, Depends
 from models import AdminStatsResponse, AlertConfig, AlertRule
 
+from common import Storage
+
 from ..dependencies import get_alert_manager, get_storage
-
-if TYPE_CHECKING:
-    from common import Storage
-
-    from ..managers.alerts import AlertManager
+from ..managers.alerts import AlertManager
 
 router = APIRouter(prefix="/admin", tags=["System"])
 

@@ -34,16 +34,15 @@ import asyncio
 import json
 import logging
 import time
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 from models import ErrorResponse, MetricDetail, MetricMetadata, MetricQueryResult, TraceDetail
 
-from ..dependencies import get_storage
+from common import Storage
 
-if TYPE_CHECKING:
-    from common import Storage
+from ..dependencies import get_storage
 
 router = APIRouter(prefix="/api", tags=["Traces", "Spans", "Logs", "Metrics"])
 

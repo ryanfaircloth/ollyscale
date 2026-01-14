@@ -74,3 +74,8 @@ variable "opamp_tag" {
   description = "OpAMP server image tag"
   type        = string
 }
+
+variable "tinyolly_chart_tag" {
+  description = "Version of the TinyOlly Helm chart to deploy"
+  type        = string
+}

@@ -20,7 +20,7 @@ spec:
   source:
     repoURL: "${chart_registry}"
     chart: tinyolly
-    targetRevision: 0.2.0-0.0.1768397129
+    targetRevision: ${tinyolly_chart_tag}
     helm:
       valuesObject:
         ui:

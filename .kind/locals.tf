@@ -12,7 +12,7 @@ locals {
   # Chart registry configuration
   # When use_local_registry=true:  oci://docker-registry.registry.svc.cluster.local:5000/tinyolly/charts
   # When use_local_registry=false: oci://ghcr.io/ryanfaircloth/tinyolly/charts
-  chart_registry = local.use_local_registry ? "oci://docker-registry.registry.svc.cluster.local:5000/tinyolly/charts" : "oci://ghcr.io/ryanfaircloth/tinyolly/charts"
+  chart_registry = local.use_local_registry ? "docker-registry.registry.svc.cluster.local:5000/tinyolly/charts" : "oci://ghcr.io/ryanfaircloth/tinyolly/charts"
 
   # Image tags
   tinyolly_tag   = var.tinyolly_tag

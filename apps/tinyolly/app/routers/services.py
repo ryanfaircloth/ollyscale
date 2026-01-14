@@ -30,15 +30,14 @@
 
 """Service-related endpoints"""
 
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from fastapi import APIRouter, Depends, Query
 from models import ServiceMap
 
-from ..dependencies import get_storage
+from common import Storage
 
-if TYPE_CHECKING:
-    from common import Storage
+from ..dependencies import get_storage
 
 router = APIRouter(prefix="/api", tags=["Services"])
 

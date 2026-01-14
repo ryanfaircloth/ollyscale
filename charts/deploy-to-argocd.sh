@@ -49,23 +49,16 @@ fi
 
 # Update the targetRevision in the ArgoCD Application
 if [ -f "$ARGOCD_APP_FILE" ]; then
-    echo "📝 Updating targetRevision in ArgoCD Application manifest..."
+    echo "📝 Verifying targetRevision uses terraform variable..."
 
-    # Use sed to update the targetRevision
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        # macOS
-        sed -i '' "s/targetRevision: .*/targetRevision: $CHART_VERSION/" "$ARGOCD_APP_FILE"
+    # Check if targetRevision uses the variable
+    if grep -q 'targetRevision: \${tinyolly_chart_tag}' "$ARGOCD_APP_FILE"; then
+        echo "✓ targetRevision correctly uses \${tinyolly_chart_tag} variable"
     else
-        # Linux
-        sed -i "s/targetRevision: .*/targetRevision: $CHART_VERSION/" "$ARGOCD_APP_FILE"
+        echo "⚠️  WARNING: targetRevision should use \${tinyolly_chart_tag} variable"
+        echo "   Current value:"
+        grep "targetRevision:" "$ARGOCD_APP_FILE"
     fi
-
-    echo "✓ Updated targetRevision to $CHART_VERSION"
-    echo ""
-
-    # Show the change
-    echo "Updated section:"
-    grep -A 2 -B 2 "targetRevision:" "$ARGOCD_APP_FILE"
     echo ""
 fi
 

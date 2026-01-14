@@ -1,5 +1,11 @@
 # TinyOlly AI Agent Instructions
 
+## CRITICAL: This is a FORK
+
+**Repository**: `ryanfaircloth/tinyolly` (forked from `tinyolly/tinyolly`)
+**Container Registry**: `ghcr.io/ryanfaircloth/tinyolly` - ALWAYS use the fork registry, NEVER `ghcr.io/tinyolly`
+**Helm Chart Registry**: `ghcr.io/ryanfaircloth/tinyolly/charts` - ALWAYS use the fork registry, NEVER `ghcr.io/tinyolly/charts`
+
 ## Project Overview
 
 **TinyOlly** is a lightweight, desktop-first OpenTelemetry observability platform for local development. It ingests traces, logs, and metrics via OTLP, stores them in Redis with 30-minute TTL, and provides real-time visualization through a web UI.

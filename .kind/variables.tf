@@ -13,20 +13,26 @@ variable "bootstrap" {
 variable "use_local_registry" {
   description = "Use local registry (docker-registry.registry.svc.cluster.local:5000) instead of remote (ghcr.io)"
   type        = bool
-  default     = false
+  default     = true
 }
 
-# TinyOlly image versions from release-please manifest
+# TinyOlly image versions - use "latest" for local builds
 variable "tinyolly_tag" {
   description = "TinyOlly image tag"
   type        = string
-  default     = "v36.0.0"
+  default     = "latest"
 }
 
 variable "opamp_tag" {
   description = "OpAMP server image tag"
   type        = string
-  default     = "v3.0.0"
+  default     = "latest"
+}
+
+variable "tinyolly_chart_tag" {
+  description = "Version of the TinyOlly Helm chart to deploy (use current Chart.yaml version for local builds)"
+  type        = string
+  default     = "0.3.0"
 }
 
 variable "demo_tag" {

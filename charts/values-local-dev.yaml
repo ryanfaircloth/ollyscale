@@ -1,0 +1,31 @@
+# Auto-generated local development values
+# Generated: Wed Jan 14 15:53:52 CST 2026
+# Version: 0.0.1768427627
+# Uses INTERNAL registry for cluster access
+
+ui:
+  image:
+    repository: docker-registry.registry.svc.cluster.local:5000/tinyolly/tinyolly
+    tag: 0.0.1768427627
+  env:
+    - name: MODE
+      value: "ui"
+
+opampServer:
+  image:
+    repository: docker-registry.registry.svc.cluster.local:5000/tinyolly/opamp-server
+    tag: 0.0.1768427627
+
+otlpReceiver:
+  image:
+    repository: docker-registry.registry.svc.cluster.local:5000/tinyolly/tinyolly
+    tag: 0.0.1768427627
+  env:
+    - name: MODE
+      value: "receiver"
+
+otelCollector:
+  enabled: true
+
+instrumentation:
+  enabled: true

@@ -31,18 +31,15 @@
 """OTLP ingestion endpoints"""
 
 import json
-from typing import TYPE_CHECKING
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from models import ErrorResponse, IngestResponse
 
+from common import Storage
+
 from ..core.telemetry import get_metrics
 from ..dependencies import get_alert_manager, get_storage
-
-if TYPE_CHECKING:
-    from common import Storage
-
-    from ..managers.alerts import AlertManager
+from ..managers.alerts import AlertManager
 
 router = APIRouter(prefix="/v1", tags=["Ingestion"])
 
