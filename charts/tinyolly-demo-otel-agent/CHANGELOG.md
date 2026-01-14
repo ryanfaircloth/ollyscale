@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.2](https://github.com/ryanfaircloth/tinyolly/compare/helm-demo-otel-agent-v0.1.1...helm-demo-otel-agent-v0.1.2) (2026-01-14)
+
+
+### Bug Fixes
+
+* consolidate CI workflows and resolve all linting errors ([1ea8973](https://github.com/ryanfaircloth/tinyolly/commit/1ea8973de8c46c6eb8ff31b4aa91e3790f65a562))
+* remove ai-agent-demo from build script + add noqa for telemetry ([17f3b2b](https://github.com/ryanfaircloth/tinyolly/commit/17f3b2b43cba70ff68df818ed67f2df538892d09))
+
 ## [0.1.1](https://github.com/ryanfaircloth/tinyolly/compare/helm-demo-otel-agent-v0.1.0...helm-demo-otel-agent-v0.1.1) (2026-01-14)
 
 ### Code Refactoring

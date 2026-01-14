@@ -1,10 +1,10 @@
 {
-  ".": "31.0.2",
-  "apps/tinyolly": "31.0.1",
-  "apps/opamp-server": "2.0.1",
-  "apps/demo": "1.0.0",
-  "apps/demo-otel-agent": "0.3.1",
-  "charts/tinyolly": "0.2.0",
-  "charts/tinyolly-demos": "1.0.0",
-  "charts/tinyolly-demo-otel-agent": "0.1.1"
+  ".": "31.1.0",
+  "apps/tinyolly": "31.0.2",
+  "apps/opamp-server": "2.0.2",
+  "apps/demo": "1.0.1",
+  "apps/demo-otel-agent": "0.3.2",
+  "charts/tinyolly": "0.2.1",
+  "charts/tinyolly-demos": "1.0.1",
+  "charts/tinyolly-demo-otel-agent": "0.1.2"
 }
