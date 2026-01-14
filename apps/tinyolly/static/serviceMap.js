@@ -312,16 +312,16 @@ export function renderServiceMap(graph) {
         html += `
             <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #f1f5f9; display: flex; flex-direction: column; gap: 8px;">
                 <div style="display: flex; gap: 8px;">
-                    <button onclick="window.viewServiceSpans('${safeLabel}');" 
+                    <button onclick="window.viewServiceSpans('${safeLabel}');"
                         style="flex: 1; padding: 6px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 4px; transition: all 0.2s;">
                         <span>Spans</span>
                     </button>
-                    <button onclick="window.viewServiceLogs('${safeLabel}');" 
+                    <button onclick="window.viewServiceLogs('${safeLabel}');"
                         style="flex: 1; padding: 6px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 4px; transition: all 0.2s;">
                         <span>Logs</span>
                     </button>
                 </div>
-                <button onclick="window.viewMetricsForService('${safeLabel}');" 
+                <button onclick="window.viewMetricsForService('${safeLabel}');"
                     style="width: 100%; padding: 6px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 500; transition: all 0.2s;">
                     <span>Metrics</span>
                 </button>

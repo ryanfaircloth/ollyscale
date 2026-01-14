@@ -58,14 +58,16 @@ agentCollector:
 **⚠️ Platform Requirements:**
 
 The eBPF agent requires a **real Linux kernel** with eBPF support (kernel 5.11+). It will **NOT work** on:
+
 - ❌ KIND clusters on macOS/Windows
-- ❌ Docker Desktop on macOS/Windows  
+- ❌ Docker Desktop on macOS/Windows
 - ❌ Podman on macOS
 - ❌ Any Docker-in-Docker or VM-based Kubernetes
 
 **For local development** on macOS/Windows, use the [OpenTelemetry Operator auto-instrumentation](#auto-instrumentation) feature instead.
 
 **Supported platforms:**
+
 - ✅ Native Linux Kubernetes clusters (GKE, EKS, AKS, bare-metal)
 - ✅ Real hardware or KVM-based VMs with Linux kernel 5.11+
 
@@ -86,12 +88,14 @@ ebpfAgent:
 ```
 
 **eBPF Features:**
+
 - **Zero code changes**: Works with any language (Python, Go, Java, Node.js, etc.)
 - **Automatic HTTP/gRPC tracing**: Captures network calls at kernel level
 - **DaemonSet deployment**: Instruments all pods on each node
 - **Requires privileged mode**: Needs access to kernel debug filesystem
 
 **Use cases:**
+
 - Legacy applications without OTel SDK
 - Quick tracing during development
 - Multi-language microservices (no per-language SDK needed)
@@ -118,15 +122,15 @@ Enable automatic instrumentation for Python and Go applications:
 
 instrumentation:
   enabled: true
-  selfObservability: true  # Instrument TinyOlly itself
-  
+  selfObservability: true # Instrument TinyOlly itself
+
   python:
     image:
       tag: 0.60b0
     env:
       - name: OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED
         value: "true"
-  
+
   go:
     image:
       tag: v0.15.0-alpha
@@ -221,16 +225,16 @@ See [values.yaml](./values.yaml) for full configuration options.
 
 ### Key Configuration Sections
 
-| Section | Description |
-|---------|-------------|
+| Section            | Description                                    |
+| ------------------ | ---------------------------------------------- |
 | `gatewayCollector` | Central processing pipeline with tail sampling |
-| `agentCollector` | Node-level DaemonSet for log collection |
-| `ebpfAgent` | Zero-code eBPF instrumentation (optional) |
-| `instrumentation` | Python/Go auto-instrumentation |
-| `ui` | Web interface deployment |
-| `otlpReceiver` | OTLP ingestion endpoint |
-| `opampServer` | Remote collector configuration |
-| `redis` | Storage backend settings |
+| `agentCollector`   | Node-level DaemonSet for log collection        |
+| `ebpfAgent`        | Zero-code eBPF instrumentation (optional)      |
+| `instrumentation`  | Python/Go auto-instrumentation                 |
+| `ui`               | Web interface deployment                       |
+| `otlpReceiver`     | OTLP ingestion endpoint                        |
+| `opampServer`      | Remote collector configuration                 |
+| `redis`            | Storage backend settings                       |
 
 ## Upgrading
 

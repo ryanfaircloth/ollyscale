@@ -38,6 +38,7 @@ These tests verify:
 - Span kinds and status codes
 - Parent-child relationships
 """
+
 import pytest
 
 

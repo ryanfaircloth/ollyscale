@@ -7,11 +7,13 @@ This demo showcases **OpenTelemetry eBPF Instrumentation (OBI)** - automatic tra
 **Important:** eBPF instrumentation requires a **real Linux kernel** and will **NOT work** in virtualized or emulated environments:
 
 **✅ Supported Platforms:**
+
 - Native Linux Kubernetes clusters (GKE, EKS, AKS, bare-metal)
 - Linux kernel 5.11 or newer
 - Real hardware or KVM-based VMs
 
 **❌ Unsupported Platforms (will fail with memlock errors):**
+
 - KIND clusters on macOS/Windows
 - Docker Desktop on macOS/Windows
 - Podman on macOS
@@ -25,6 +27,7 @@ This demo showcases **OpenTelemetry eBPF Instrumentation (OBI)** - automatic tra
 [OpenTelemetry eBPF Instrumentation](https://opentelemetry.io/docs/zero-code/obi/) (formerly Grafana Beyla) uses eBPF to automatically capture HTTP/gRPC traces by inspecting system calls and network traffic at the Linux kernel level.
 
 **Key Benefits:**
+
 - **Zero code changes** - no SDK, no agent, no restarts
 - **Language agnostic** - works with Python, Go, Java, Node.js, Rust, C, PHP, and more
 - **Protocol-level instrumentation** - captures any HTTP/gRPC traffic
@@ -63,6 +66,7 @@ Run `minikube tunnel` in a separate terminal, then access the UI at `http://loca
 ### Docker Hub Images
 
 The eBPF demo uses pre-built images from Docker Hub:
+
 - `ghcr.io/ryanfaircloth/ebpf-frontend:latest` - Frontend with OTel SDK for metrics/logs
 - `ghcr.io/ryanfaircloth/ebpf-backend:latest` - Pure Flask backend (no OTel SDK)
 
@@ -72,14 +76,15 @@ For local development, use the build scripts in each demo folder.
 
 ### Traces
 
-| Aspect | SDK Instrumentation | eBPF Instrumentation |
-|--------|---------------------|----------------------|
-| **Span names** | Route names (`GET /hello`, `POST /api/users`) | Generic (`in queue`, `CONNECT`, `HTTP`) |
-| **Span attributes** | Rich application context (user IDs, request params) | Network-level only (host, port, method) |
-| **Distributed tracing** | Full trace propagation via headers | Limited - eBPF sees connections, not header context |
-| **Setup** | Code changes or auto-instrumentation wrapper | Deploy eBPF agent alongside app |
+| Aspect                  | SDK Instrumentation                                 | eBPF Instrumentation                                |
+| ----------------------- | --------------------------------------------------- | --------------------------------------------------- |
+| **Span names**          | Route names (`GET /hello`, `POST /api/users`)       | Generic (`in queue`, `CONNECT`, `HTTP`)             |
+| **Span attributes**     | Rich application context (user IDs, request params) | Network-level only (host, port, method)             |
+| **Distributed tracing** | Full trace propagation via headers                  | Limited - eBPF sees connections, not header context |
+| **Setup**               | Code changes or auto-instrumentation wrapper        | Deploy eBPF agent alongside app                     |
 
 **Example - SDK trace:**
+
 ```json
 {
   "trace_id": "abc123...",
@@ -95,6 +100,7 @@ For local development, use the build scripts in each demo folder.
 ```
 
 **Example - eBPF trace:**
+
 ```json
 {
   "trace_id": "def456...",
@@ -137,17 +143,20 @@ Metrics work the same way in both approaches - they're exported via the OTel SDK
 ## Components
 
 ### Frontend (`ebpf-frontend`)
+
 - Flask application with auto-traffic generation
 - **Metrics**: Exported via OTel SDK (`OTLPMetricExporter`)
 - **Logs**: Exported via OTel SDK (`OTLPLogExporter`)
 - **Traces**: None from SDK - captured by eBPF agent
 
 ### Backend (`ebpf-backend`)
+
 - Pure Flask application - **no OTel SDK at all**
 - Demonstrates that eBPF can trace completely uninstrumented apps
 - Logs go to stdout only (not exported to OTel)
 
 ### eBPF Agent (`otel-ebpf-agent`)
+
 - Runs with `privileged: true` and `pid: host`
 - Monitors port 5000 for HTTP traffic
 - Sends traces to OTel Collector
@@ -155,17 +164,20 @@ Metrics work the same way in both approaches - they're exported via the OTel SDK
 ## When to Use eBPF vs SDK
 
 **Use eBPF when:**
+
 - You can't modify application code (legacy apps, third-party binaries)
 - You want basic HTTP observability with zero effort
 - You're instrumenting many polyglot services quickly
 
 **Use SDK when:**
+
 - You need rich application-level context in traces
 - You need log-trace correlation
 - You need custom spans for business logic
 - You need full distributed tracing with context propagation
 
 **Hybrid approach (this demo):**
+
 - Use eBPF for traces (zero-code)
 - Use SDK for metrics and logs (richer data)
 
@@ -233,6 +245,7 @@ helm install tinyolly ./charts/tinyolly \
 ```
 
 The Helm chart automatically creates:
+
 - DaemonSet for eBPF agent (one pod per node)
 - ServiceAccount with proper permissions
 - ClusterRole/ClusterRoleBinding for node and pod access
@@ -252,22 +265,22 @@ spec:
     spec:
       hostPID: true
       containers:
-      - name: ebpf-agent
-        image: docker.io/otel/ebpf-instrument:main
-        securityContext:
-          privileged: true
-        env:
-        - name: OTEL_EXPORTER_OTLP_ENDPOINT
-          value: "http://otel-collector:4317"
-        - name: OTEL_EBPF_OPEN_PORT
-          value: "5000"
-        volumeMounts:
-        - name: sys-kernel-debug
-          mountPath: /sys/kernel/debug
+        - name: ebpf-agent
+          image: docker.io/otel/ebpf-instrument:main
+          securityContext:
+            privileged: true
+          env:
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://otel-collector:4317"
+            - name: OTEL_EBPF_OPEN_PORT
+              value: "5000"
+          volumeMounts:
+            - name: sys-kernel-debug
+              mountPath: /sys/kernel/debug
       volumes:
-      - name: sys-kernel-debug
-        hostPath:
-          path: /sys/kernel/debug
+        - name: sys-kernel-debug
+          hostPath:
+            path: /sys/kernel/debug
 ```
 
 ### Key Settings
@@ -279,15 +292,18 @@ spec:
 ## Troubleshooting
 
 **No traces appearing?**
+
 - Ensure TinyOlly core is running (`docker ps | grep otel-collector`)
 - Check eBPF agent logs: `docker logs otel-ebpf-instrumentation`
 - Verify the agent can access `/sys/kernel/debug`
 
 **Traces have wrong service name?**
+
 - OBI discovers service names from process info
 - Set `OTEL_EBPF_SERVICE_NAME` for explicit naming
 
 **eBPF agent won't start?**
+
 - Requires Linux kernel 4.4+ with eBPF support
 - On macOS, runs inside Docker's Linux VM (should work)
 - Check Docker has sufficient privileges

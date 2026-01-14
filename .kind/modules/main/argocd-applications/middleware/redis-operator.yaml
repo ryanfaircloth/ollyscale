@@ -10,7 +10,7 @@ metadata:
 spec:
   project: middleware
   source:
-    repoURL: 'ghcr.io/ot-container-kit/charts'
+    repoURL: "ghcr.io/ot-container-kit/charts"
     chart: redis-operator
     targetRevision: 0.23.0
     helm:
@@ -22,7 +22,7 @@ spec:
         - name: redisOperator.webhook
           value: "true"
   destination:
-    server: 'https://kubernetes.default.svc'
+    server: "https://kubernetes.default.svc"
     namespace: redis-operator
   syncPolicy:
     automated:

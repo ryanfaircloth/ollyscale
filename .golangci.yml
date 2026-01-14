@@ -1,0 +1,88 @@
+# golangci-lint configuration for TinyOlly Go services
+# https://golangci-lint.run/usage/configuration/
+
+run:
+  timeout: 5m
+  tests: true
+  skip-dirs:
+    - vendor
+    - .git
+    - .github
+
+linters:
+  enable:
+    - errcheck # Check for unchecked errors
+    - gosimple # Simplify code
+    - govet # Vet examines Go source code
+    - ineffassign # Detects ineffectual assignments
+    - staticcheck # Go static analysis
+    - unused # Checks for unused constants, variables, functions
+    - gofmt # Check code formatting
+    - goimports # Check import formatting
+    - misspell # Finds commonly misspelled words
+    - revive # Fast, configurable, extensible linter
+    - gosec # Inspects code for security problems
+    - errname # Checks error naming conventions
+    - exhaustive # Check exhaustiveness of enum switch statements
+    - goconst # Find repeated strings that could be constants
+    - gocritic # Provides diagnostics that check for bugs, performance and style issues
+    - nolintlint # Reports ill-formed or insufficient nolint directives
+    - stylecheck # Replacement for golint
+
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+    check-blank: true
+
+  govet:
+    check-shadowing: true
+    enable-all: true
+
+  gofmt:
+    simplify: true
+
+  goimports:
+    local-prefixes: github.com/tinyolly/tinyolly
+
+  revive:
+    confidence: 0.8
+    rules:
+      - name: exported
+        severity: warning
+      - name: unexported-return
+        severity: warning
+      - name: var-naming
+        severity: warning
+
+  gosec:
+    excludes:
+      - G404 # Use of weak random number generator (math/rand instead of crypto/rand)
+
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - style
+      - performance
+    disabled-checks:
+      - hugeParam # Not critical for our use case
+
+issues:
+  exclude-rules:
+    # Exclude some linters from running on tests files
+    - path: _test\.go
+      linters:
+        - gosec
+        - errcheck
+
+    # Allow long functions in main.go (initialization code)
+    - path: main\.go
+      linters:
+        - funlen
+
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+output:
+  format: colored-line-number
+  print-issued-lines: true
+  print-linter-name: true

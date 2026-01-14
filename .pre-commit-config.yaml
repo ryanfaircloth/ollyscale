@@ -1,0 +1,118 @@
+# Pre-commit hooks for TinyOlly
+# Install: pip install pre-commit
+# Setup: pre-commit install
+# Run manually: pre-commit run --all-files
+
+repos:
+  # Python: Ruff for linting and formatting
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.11
+    hooks:
+      # Run the linter
+      - id: ruff
+        args: [--fix]
+        types_or: [python, pyi]
+      # Run the formatter
+      - id: ruff-format
+        types_or: [python, pyi]
+
+  # General file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      - id: end-of-file-fixer
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+        exclude: ^(charts/.*/templates/|config/otelcol/templates/)
+      - id: check-json
+      - id: check-added-large-files
+        args: [--maxkb=1024]
+      - id: check-case-conflict
+      - id: check-merge-conflict
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
+      - id: detect-private-key
+      - id: mixed-line-ending
+        args: [--fix=lf]
+      - id: check-toml
+
+  # YAML formatting and validation
+  # Note: yamlfmt disabled on macOS ARM64 due to binary availability
+  # Use prettier for YAML formatting instead
+  # - repo: https://github.com/google/yamlfmt
+  #   rev: v0.21.0
+  #   hooks:
+  #     - id: yamlfmt
+  #       exclude: ^(charts/.*/templates/|config/otelcol/templates/|.github/workflows/)
+
+  # JSON formatting
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v4.0.0-alpha.8
+    hooks:
+      - id: prettier
+        types_or: [json, markdown, yaml]
+        exclude: ^(charts/.*/templates/|config/otelcol/templates/)
+
+  # Shell script linting
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.11.0.1
+    hooks:
+      - id: shellcheck
+        args: [-x, -e, SC1091]
+
+  # Docker linting
+  # Note: Requires Docker daemon running. Skip locally with: SKIP=hadolint-docker
+  - repo: https://github.com/hadolint/hadolint
+    rev: v2.14.0
+    hooks:
+      - id: hadolint-docker
+        args: [--ignore, DL3008, --ignore, DL3013, --ignore, DL3018]
+
+  # Helm chart linting
+  - repo: https://github.com/gruntwork-io/pre-commit
+    rev: v0.1.30
+    hooks:
+      - id: helmlint
+
+  # Markdown linting
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.47.0
+    hooks:
+      - id: markdownlint
+        args: [--fix]
+
+  # Go formatting and linting
+  # Note: golangci-lint pre-commit hook disabled on macOS ARM64
+  # Run manually: golangci-lint run --fix
+  # - repo: https://github.com/golangci/golangci-lint
+  #   rev: v2.8.0
+  #   hooks:
+  #     - id: golangci-lint
+  #       args: [--fix]
+
+  # Terraform/HCL formatting
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.105.0
+    hooks:
+      - id: terraform_fmt
+      - id: terraform_validate
+        exclude: ^\.kind/modules/registry/
+
+# Configuration
+default_language_version:
+  python: python3.11
+  golang: "1.23"
+
+# Global exclusions
+exclude: |
+  (?x)^(
+    .*\.min\.js|
+    .*\.min\.css|
+    .*/vendor/|
+    .*/node_modules/|
+    .*/__pycache__/|
+    .*\.pyc|
+    docs/overrides/
+  )$

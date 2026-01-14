@@ -10,7 +10,7 @@ metadata:
 spec:
   project: observability
   source:
-    repoURL: 'https://open-telemetry.github.io/opentelemetry-helm-charts'
+    repoURL: "https://open-telemetry.github.io/opentelemetry-helm-charts"
     chart: opentelemetry-demo
     targetRevision: 0.40.0
     helm:
@@ -26,18 +26,18 @@ spec:
           enabled: false
         opensearch:
           enabled: false
-        
+
         # Override OTEL_COLLECTOR_NAME to point to TinyOlly collector
         # Components use http://$(OTEL_COLLECTOR_NAME):4317 in their OTLP config
         default:
           env:
             - name: OTEL_COLLECTOR_NAME
               value: agent-collector.tinyolly.svc.cluster.local
-  
+
   destination:
     server: https://kubernetes.default.svc
     namespace: otel-demo
-  
+
   syncPolicy:
     automated:
       prune: true

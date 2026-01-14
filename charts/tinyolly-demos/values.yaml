@@ -11,7 +11,7 @@ global:
 frontend:
   # -- Number of replicas
   replicaCount: 1
-  
+
   image:
     # -- Image repository (unified demo image for both frontend and backend)
     repository: docker-registry.registry.svc.cluster.local:5000/tinyolly/demo
@@ -19,13 +19,13 @@ frontend:
     tag: latest
     # -- Image pull policy
     pullPolicy: Always
-  
+
   service:
     # -- Service type
     type: ClusterIP
     # -- Service port
     port: 5000
-  
+
   # -- Environment variables
   env:
     # -- OTLP endpoint for traces
@@ -34,10 +34,10 @@ frontend:
     otelServiceName: "demo-frontend"
     # -- Prometheus remote write endpoint
     promRemoteWriteEndpoint: "http://gateway-collector.tinyolly.svc.cluster.local:19291/api/v1/write"
-  
+
   # -- Resource limits and requests
   resources: {}
-  
+
   # HTTPRoute configuration
   httpRoute:
     # -- Enable HTTPRoute
@@ -54,7 +54,7 @@ frontend:
 backend:
   # -- Number of replicas
   replicaCount: 1
-  
+
   image:
     # -- Image repository (unified demo image for both frontend and backend)
     repository: docker-registry.registry.svc.cluster.local:5000/tinyolly/demo
@@ -62,19 +62,19 @@ backend:
     tag: latest
     # -- Image pull policy
     pullPolicy: Always
-  
+
   service:
     # -- Service type
     type: ClusterIP
     # -- Service port
     port: 5000
-  
+
   # -- Environment variables
   env:
     # -- OTLP endpoint for traces
     otelExporterOtlpEndpoint: "http://gateway-collector.tinyolly.svc.cluster.local:4317"
     # -- Service name for OTLP
     otelServiceName: "demo-backend"
-  
+
   # -- Resource limits and requests
   resources: {}

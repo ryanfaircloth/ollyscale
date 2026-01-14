@@ -10,7 +10,7 @@ metadata:
 spec:
   project: infrastructure
   source:
-    repoURL: 'https://twuni.github.io/docker-registry.helm'
+    repoURL: "https://twuni.github.io/docker-registry.helm"
     chart: docker-registry
     targetRevision: 3.0.0
     helm:
@@ -23,19 +23,19 @@ spec:
           nodeAffinity:
             requiredDuringSchedulingIgnoredDuringExecution:
               nodeSelectorTerms:
-              - matchExpressions:
-                - key: node-role.kubernetes.io/control-plane
-                  operator: Exists
+                - matchExpressions:
+                    - key: node-role.kubernetes.io/control-plane
+                      operator: Exists
         tolerations:
-        - key: node-role.kubernetes.io/control-plane
-          operator: Exists
-          effect: NoSchedule
+          - key: node-role.kubernetes.io/control-plane
+            operator: Exists
+            effect: NoSchedule
         persistence:
           enabled: true
           size: 20Gi
           deleteEnabled: true
   destination:
-    server: 'https://kubernetes.default.svc'
+    server: "https://kubernetes.default.svc"
     namespace: registry
   syncPolicy:
     automated:

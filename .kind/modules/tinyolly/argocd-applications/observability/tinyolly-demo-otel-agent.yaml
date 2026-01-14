@@ -10,14 +10,14 @@ metadata:
 spec:
   project: observability
   source:
-    repoURL: 'oci://ghcr.io/tinyolly/charts'
+    repoURL: "oci://ghcr.io/tinyolly/charts"
     chart: tinyolly-demo-otel-agent
     targetRevision: 0.1.0
     helm:
       valuesObject:
         global:
           namespace: tinyolly-demo-otel-agent
-        
+
         ollama:
           model: tinyllama
           persistence:
@@ -30,18 +30,18 @@ spec:
             requests:
               cpu: "500m"
               memory: "1Gi"
-        
+
         agent:
           image:
             repository: ghcr.io/tinyolly/demo-otel-agent
             tag: v0.3.0
           httpRoute:
             enabled: false
-  
+
   destination:
     server: https://kubernetes.default.svc
     namespace: tinyolly-demo-otel-agent
-  
+
   syncPolicy:
     automated:
       prune: true

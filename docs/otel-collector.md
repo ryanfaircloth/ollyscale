@@ -14,6 +14,7 @@ TinyOlly uses the [OpenTelemetry Collector](https://opentelemetry.io/docs/collec
 TinyOlly includes a web interface for managing OpenTelemetry Collector configurations via the OpAMP (Open Agent Management Protocol). Access this page through the **"OpenTelemetry Collector + OpAMP Config"** tab in the TinyOlly UI.
 
 **Features:**
+
 - View current configuration from connected collectors
 - Apply configuration changes with real-time validation
 - Browse configuration templates for common use cases
@@ -21,6 +22,7 @@ TinyOlly includes a web interface for managing OpenTelemetry Collector configura
 - Preview configuration diffs before applying
 
 **Requirements:**
+
 - Your collector must be configured with the OpAMP extension (see [OpAMP Configuration](#opamp-configuration-optional) below)
 - Collector must be connected to the OpAMP server
 
@@ -56,7 +58,8 @@ For a complete list of available components, see the [OpenTelemetry Collector Co
 
 ### Docker
 
-After modifying `docker/otelcol-configs/config.yaml` rebuild/restart using:  
+After modifying `docker/otelcol-configs/config.yaml` rebuild/restart using:
+
 ```bash
 cd docker
 ./01-start-core.sh
@@ -68,12 +71,14 @@ When deployed via Helm, the OTel Collector is managed by the OpenTelemetry Opera
 
 1. Edit `charts/tinyolly/values.yaml` under the `otelCollector` section
 2. Apply changes:
+
    ```bash
    cd charts
    helm upgrade tinyolly ./tinyolly -n tinyolly
    ```
 
 Alternatively, patch the OpenTelemetryCollector custom resource directly:
+
 ```bash
 kubectl edit opentelemetrycollector tinyolly-otel-collector -n tinyolly
 ```
@@ -91,6 +96,7 @@ Then, configure your collector's OTLP exporter to send data to the TinyOlly Rece
 - **TLS**: Insecure (or configured as needed)
 
 Example Exporter Configuration:
+
 ```yaml
 exporters:
   otlp:

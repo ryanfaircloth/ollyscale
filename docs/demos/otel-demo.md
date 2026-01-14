@@ -47,19 +47,19 @@ When deployed with TinyOlly, all telemetry data is sent to TinyOlly's collectors
 
 ## Services
 
-| Service | Language | Purpose |
-|---------|----------|---------|
-| **frontend** | TypeScript | Web UI and BFF (Backend for Frontend) |
-| **productcatalog** | Go | Product inventory and search |
-| **cartservice** | Go | Shopping cart management with Redis |
-| **checkoutservice** | Go | Order processing orchestration |
-| **paymentservice** | Node.js | Payment processing |
-| **currencyservice** | .NET | Currency conversion |
-| **shippingservice** | Rust | Shipping cost calculation |
-| **emailservice** | Ruby | Order confirmation emails |
-| **recommendationservice** | Python | Product recommendations |
-| **adservice** | Java | Advertisement serving |
-| **loadgenerator** | Python/Locust | Traffic simulation |
+| Service                   | Language      | Purpose                               |
+| ------------------------- | ------------- | ------------------------------------- |
+| **frontend**              | TypeScript    | Web UI and BFF (Backend for Frontend) |
+| **productcatalog**        | Go            | Product inventory and search          |
+| **cartservice**           | Go            | Shopping cart management with Redis   |
+| **checkoutservice**       | Go            | Order processing orchestration        |
+| **paymentservice**        | Node.js       | Payment processing                    |
+| **currencyservice**       | .NET          | Currency conversion                   |
+| **shippingservice**       | Rust          | Shipping cost calculation             |
+| **emailservice**          | Ruby          | Order confirmation emails             |
+| **recommendationservice** | Python        | Product recommendations               |
+| **adservice**             | Java          | Advertisement serving                 |
+| **loadgenerator**         | Python/Locust | Traffic simulation                    |
 
 ## Features
 
@@ -89,18 +89,21 @@ The load generator creates realistic user flows:
 ### Rich Telemetry
 
 **Traces:**
+
 - Multi-service distributed traces
 - gRPC and HTTP spans
 - Database queries (Redis)
 - External service calls
 
 **Metrics:**
+
 - Request rates per service
 - Error rates
 - Latency histograms
 - Custom business metrics
 
 **Logs:**
+
 - Structured logs with trace context
 - Error logs
 - Business event logs
@@ -134,7 +137,7 @@ The demo is deployed as a subchart dependency with TinyOlly configuration:
 ```yaml
 otelDemo:
   enabled: true
-  
+
   httpRoute:
     enabled: true
     hostname: otel-demo.tinyolly.test
@@ -151,7 +154,7 @@ opentelemetry-demo:
     enabled: false
   opensearch:
     enabled: false
-  
+
   # Configure OTLP export to TinyOlly
   default:
     env:
@@ -346,14 +349,14 @@ helm dependency update
 
 ## Comparison with Custom Demo
 
-| Feature | Custom Demo | OTel Demo |
-|---------|-------------|-----------|
-| Services | 2 | 11+ |
-| Languages | Python | Go, Java, Python, .NET, Node.js, Rust, Ruby |
-| Complexity | Simple | Production-realistic |
-| Resource Usage | Low (~256MB) | High (~2-4GB) |
-| Traces | 3-5 spans | 10-20 spans |
-| Best For | Quick testing, development | Comprehensive demos, training |
+| Feature        | Custom Demo                | OTel Demo                                   |
+| -------------- | -------------------------- | ------------------------------------------- |
+| Services       | 2                          | 11+                                         |
+| Languages      | Python                     | Go, Java, Python, .NET, Node.js, Rust, Ruby |
+| Complexity     | Simple                     | Production-realistic                        |
+| Resource Usage | Low (~256MB)               | High (~2-4GB)                               |
+| Traces         | 3-5 spans                  | 10-20 spans                                 |
+| Best For       | Quick testing, development | Comprehensive demos, training               |
 
 ## Migration from k8s-otel-demo
 

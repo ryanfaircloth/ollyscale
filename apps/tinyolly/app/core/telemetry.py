@@ -35,7 +35,7 @@ auto-instrumentation is injected automatically via the Instrumentation CR.
 
 Auto-instrumented components (no manual setup needed):
 - FastAPI HTTP requests/responses (opentelemetry-instrumentation-fastapi)
-- Redis operations (opentelemetry-instrumentation-redis)  
+- Redis operations (opentelemetry-instrumentation-redis)
 - Logging with trace context (opentelemetry-instrumentation-logging)
 
 This module only provides domain-specific metrics for TinyOlly operations.
@@ -64,71 +64,74 @@ def _is_telemetry_disabled() -> bool:
 
 def setup_telemetry():
     """Configure domain-specific OpenTelemetry metrics
-    
+
     When running in Kubernetes with OTel Operator, the operator automatically:
     - Injects the opentelemetry-instrument wrapper
     - Sets all OTEL_* environment variables
     - Configures exporters to send to the collector
     - Instruments FastAPI, Redis, and logging automatically
-    
+
     This function only defines TinyOlly-specific business metrics.
     """
-    global _telemetry_enabled
-    
+    global _telemetry_enabled  # noqa: PLW0603
+
     # Check if telemetry is explicitly disabled
     if _is_telemetry_disabled():
         logger.info("OpenTelemetry SDK is disabled via OTEL_SDK_DISABLED environment variable")
         _telemetry_enabled = False
         return _create_noop_metrics()
-    
+
     # Check if auto-instrumented by operator
     if _is_auto_instrumented():
         logger.info("Auto-instrumentation detected - using operator-injected configuration")
     else:
         logger.info("Running without auto-instrumentation (development mode)")
-    
+
     try:
-        from opentelemetry import metrics
-        
+        from opentelemetry import metrics  # noqa: PLC0415
+
         # Get the meter - operator will have already configured the provider
         meter = metrics.get_meter("tinyolly-ui")
-        
+
         # Domain-specific metrics for TinyOlly ingestion operations
         # These are business metrics, not infrastructure metrics
         ingestion_counter = meter.create_counter(
             name="tinyolly.ingestion.count",
             description="Total telemetry items ingested by type (spans, logs, metrics)",
-            unit="1"
+            unit="1",
         )
-        
+
         storage_operations_counter = meter.create_counter(
             name="tinyolly.storage.operations",
             description="Storage operations by type (store_spans, store_logs, store_metrics)",
-            unit="1"
+            unit="1",
         )
-        
+
         logger.info("OpenTelemetry domain-specific metrics initialized successfully")
         return {
             "ingestion_counter": ingestion_counter,
             "storage_operations_counter": storage_operations_counter,
         }
-    
+
     except Exception as e:
         # If telemetry setup fails, log and continue with noop metrics
-        logger.warning(f"Failed to initialize OpenTelemetry metrics: {e}. Application will continue without custom metrics.")
+        logger.warning(
+            f"Failed to initialize OpenTelemetry metrics: {e}. Application will continue without custom metrics."
+        )
         _telemetry_enabled = False
         return _create_noop_metrics()
 
 
 def _create_noop_metrics():
     """Create no-op metrics that do nothing when called"""
+
     class NoopMetric:
         def add(self, *args, **kwargs):
             pass
-        
+
         def record(self, *args, **kwargs):
             pass
-    
+
     noop = NoopMetric()
     return {
         "ingestion_counter": noop,
@@ -142,7 +145,7 @@ _metrics = None
 
 def get_metrics():
     """Get the metrics dictionary"""
-    global _metrics
+    global _metrics  # noqa: PLW0603
     if _metrics is None:
         _metrics = setup_telemetry()
     return _metrics

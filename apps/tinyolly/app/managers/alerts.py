@@ -31,12 +31,11 @@
 """Alert manager for handling alert rules and notifications"""
 
 import json
+import logging
 import os
 import time
-import logging
-from typing import List
-import aiohttp
 
+import aiohttp
 from models import AlertRule
 
 logger = logging.getLogger(__name__)
@@ -50,7 +49,7 @@ class AlertManager:
 
     def __init__(self):
         """Initialize alert manager with empty rules."""
-        self.rules: List[AlertRule] = []
+        self.rules: list[AlertRule] = []
         self._load_rules_from_env()
 
     def _load_rules_from_env(self):
@@ -93,27 +92,30 @@ class AlertManager:
             span (dict): Span data to check
         """
         # Check if span has error status
-        status = span.get('status', {})
-        if status.get('code') == 2:  # ERROR status code in OTLP
+        status = span.get("status", {})
+        if status.get("code") == 2:  # ERROR status code in OTLP
             for rule in self.rules:
                 if not rule.enabled or rule.type != "span_error":
                     continue
 
                 # Apply service filter if specified
-                if rule.service_filter and span.get('serviceName') != rule.service_filter:
+                if rule.service_filter and span.get("serviceName") != rule.service_filter:
                     continue
 
                 # Trigger alert
-                await self._send_webhook(rule, {
-                    "alert_type": "span_error",
-                    "rule_name": rule.name,
-                    "span_id": span.get('spanId'),
-                    "trace_id": span.get('traceId'),
-                    "service": span.get('serviceName'),
-                    "operation": span.get('name'),
-                    "error_message": status.get('message', 'Unknown error'),
-                    "timestamp": span.get('startTimeUnixNano')
-                })
+                await self._send_webhook(
+                    rule,
+                    {
+                        "alert_type": "span_error",
+                        "rule_name": rule.name,
+                        "span_id": span.get("spanId"),
+                        "trace_id": span.get("traceId"),
+                        "service": span.get("serviceName"),
+                        "operation": span.get("name"),
+                        "error_message": status.get("message", "Unknown error"),
+                        "timestamp": span.get("startTimeUnixNano"),
+                    },
+                )
 
     async def check_metric_threshold(self, metric_name: str, value: float):
         """Check if metric exceeds threshold and trigger alerts.
@@ -131,23 +133,26 @@ class AlertManager:
 
             # Check threshold
             triggered = False
-            if rule.comparison == "gt" and value > rule.threshold:
-                triggered = True
-            elif rule.comparison == "lt" and value < rule.threshold:
-                triggered = True
-            elif rule.comparison == "eq" and value == rule.threshold:
+            if (
+                (rule.comparison == "gt" and value > rule.threshold)
+                or (rule.comparison == "lt" and value < rule.threshold)
+                or (rule.comparison == "eq" and value == rule.threshold)
+            ):
                 triggered = True
 
             if triggered:
-                await self._send_webhook(rule, {
-                    "alert_type": "metric_threshold",
-                    "rule_name": rule.name,
-                    "metric_name": metric_name,
-                    "current_value": value,
-                    "threshold": rule.threshold,
-                    "comparison": rule.comparison,
-                    "timestamp": int(time.time() * 1e9)
-                })
+                await self._send_webhook(
+                    rule,
+                    {
+                        "alert_type": "metric_threshold",
+                        "rule_name": rule.name,
+                        "metric_name": metric_name,
+                        "current_value": value,
+                        "threshold": rule.threshold,
+                        "comparison": rule.comparison,
+                        "timestamp": int(time.time() * 1e9),
+                    },
+                )
 
     async def _send_webhook(self, rule: AlertRule, payload: dict):
         """Send webhook notification.
@@ -157,16 +162,18 @@ class AlertManager:
             payload (dict): Alert payload to send
         """
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.post(
+            async with (
+                aiohttp.ClientSession() as session,
+                session.post(
                     rule.webhook_url,
                     json=payload,
                     headers={"Content-Type": "application/json"},
-                    timeout=aiohttp.ClientTimeout(total=5)
-                ) as response:
-                    if response.status >= 400:
-                        logger.error(f"Webhook failed: {response.status} for rule {rule.name}")
-                    else:
-                        logger.info(f"Alert sent for rule {rule.name}")
+                    timeout=aiohttp.ClientTimeout(total=5),
+                ) as response,
+            ):
+                if response.status >= 400:
+                    logger.error(f"Webhook failed: {response.status} for rule {rule.name}")
+                else:
+                    logger.info(f"Alert sent for rule {rule.name}")
         except Exception as e:
             logger.error(f"Error sending webhook for rule {rule.name}: {e}")

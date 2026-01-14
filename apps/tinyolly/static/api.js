@@ -79,13 +79,13 @@ export async function loadSpans(serviceName = null) {
         if (serviceName) {
             url += `&service=${encodeURIComponent(serviceName)}`;
         }
-        
+
         const response = await fetch(url);
-        
+
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
+
         let spans = await response.json();
 
         // Ensure spans is an array
@@ -139,7 +139,7 @@ export async function loadMetrics() {
     if (!metricsTab || !metricsTab.classList.contains('active')) {
         return;
     }
-    
+
     try {
         const response = await fetch('/api/metrics');
         let metrics = await response.json();
@@ -157,7 +157,7 @@ export async function loadServiceMap() {
     // Show loading indicator
     const loadingEl = document.getElementById('map-loading');
     if (loadingEl) loadingEl.style.display = 'flex';
-    
+
     try {
         const response = await fetch('/api/service-map?limit=500');
         let graph = await response.json();
@@ -165,14 +165,14 @@ export async function loadServiceMap() {
         // Filter out TinyOlly nodes and edges based on toggle state
         if (shouldHideTinyOlly()) {
             const tinyollyServices = ['tinyolly-ui', 'tinyolly-otlp-receiver', 'tinyolly-opamp-server'];
-            
+
             // First, filter edges to remove TinyOlly connections
             if (graph.edges) {
                 graph.edges = graph.edges.filter(edge => {
                     return !tinyollyServices.includes(edge.source) && !tinyollyServices.includes(edge.target);
                 });
             }
-            
+
             // Then filter nodes: remove TinyOlly services AND nodes only connected to TinyOlly
             if (graph.nodes) {
                 // Build set of nodes that have connections to non-TinyOlly services
@@ -183,7 +183,7 @@ export async function loadServiceMap() {
                         connectedNodes.add(edge.target);
                     });
                 }
-                
+
                 // Keep nodes that are:
                 // Not a TinyOlly service AND have connections in the filtered graph
                 graph.nodes = graph.nodes.filter(node => {

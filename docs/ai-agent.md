@@ -69,14 +69,14 @@ CMD ["opentelemetry-instrument", "python", "-u", "agent.py"]
 
 In the **AI Agents** tab:
 
-| Field | Description |
-|-------|-------------|
-| **Prompt** | The user's input to the LLM |
-| **Response** | The model's output |
-| **Tokens In** | Number of input tokens |
-| **Tokens Out** | Number of output tokens |
-| **Latency** | Response time in milliseconds |
-| **Model** | Model name (e.g., `tinyllama`) |
+| Field          | Description                    |
+| -------------- | ------------------------------ |
+| **Prompt**     | The user's input to the LLM    |
+| **Response**   | The model's output             |
+| **Tokens In**  | Number of input tokens         |
+| **Tokens Out** | Number of output tokens        |
+| **Latency**    | Response time in milliseconds  |
+| **Model**      | Model name (e.g., `tinyllama`) |
 
 Click any row to expand the full span details in JSON format.
 

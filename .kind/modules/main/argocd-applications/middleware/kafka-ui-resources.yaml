@@ -10,7 +10,7 @@ metadata:
 spec:
   project: middleware
   source:
-    repoURL: 'https://bedag.github.io/helm-charts/'
+    repoURL: "https://bedag.github.io/helm-charts/"
     chart: raw
     targetRevision: 2.0.2
     helm:
@@ -92,7 +92,7 @@ spec:
                       namespace: kafka-ui
                       port: 80
   destination:
-    server: 'https://kubernetes.default.svc'
+    server: "https://kubernetes.default.svc"
     namespace: kafka-ui
   syncPolicy:
     automated:

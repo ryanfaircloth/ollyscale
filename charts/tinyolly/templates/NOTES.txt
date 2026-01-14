@@ -23,10 +23,10 @@ TinyOlly components deployed:
 To access the TinyOlly UI:
 {{- if eq .Values.ui.service.type "LoadBalancer" }}
   NOTE: It may take a few minutes for the LoadBalancer IP to be available.
-  
+
   You can watch the status by running:
     kubectl get svc {{ include "tinyolly.ui.name" . }} -n {{ .Release.Namespace }} -w
-  
+
   Once available, access the UI at:
     export SERVICE_IP=$(kubectl get svc {{ include "tinyolly.ui.name" . }} -n {{ .Release.Namespace }} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
     echo "http://$SERVICE_IP:{{ .Values.ui.service.port }}"
@@ -36,7 +36,7 @@ To access the TinyOlly UI:
   echo "http://$NODE_IP:$NODE_PORT"
 {{- else if eq .Values.ui.service.type "ClusterIP" }}
   kubectl port-forward svc/{{ include "tinyolly.ui.name" . }} -n {{ .Release.Namespace }} {{ .Values.ui.service.port }}:{{ .Values.ui.service.port }}
-  
+
   Then visit http://127.0.0.1:{{ .Values.ui.service.port }} in your browser.
 {{- end }}
 {{- end }}

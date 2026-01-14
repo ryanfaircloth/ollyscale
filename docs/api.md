@@ -12,11 +12,13 @@ TinyOlly provides a comprehensive REST API for programmatic access to all teleme
 ## Interactive API Documentation
 
 Access the auto-generated OpenAPI documentation:
+
 - **Swagger UI**: `http://localhost:5005/docs` - Interactive API explorer
 - **ReDoc**: `http://localhost:5005/redoc` - Alternative documentation
 - **OpenAPI Spec**: `http://localhost:5005/openapi.json` - Machine-readable schema
 
 All APIs return **OpenTelemetry-native JSON** with:
+
 - **Resources**: `service.name`, `host.name`, etc.
 - **Attributes**: Metric labels and span attributes
 - **Full Context**: Trace/span IDs, timestamps, status codes
@@ -27,18 +29,18 @@ All APIs return **OpenTelemetry-native JSON** with:
 
 The REST API provides endpoints for:
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/traces` | GET | List recent traces with filtering |
-| `/api/traces/{trace_id}` | GET | Get detailed trace with all spans |
-| `/api/spans` | GET | List recent spans with filtering |
-| `/api/logs` | GET | Retrieve logs with trace correlation |
-| `/api/metrics` | GET | Query time-series metrics |
-| `/api/service-map` | GET | Get service dependency graph |
-| `/api/service-catalog` | GET | List services with RED metrics |
-| `/api/stats` | GET | System stats and cardinality info |
-| `/admin/stats` | GET | Detailed admin statistics |
-| `/health` | GET | Health check endpoint |
+| Endpoint                 | Method | Description                          |
+| ------------------------ | ------ | ------------------------------------ |
+| `/api/traces`            | GET    | List recent traces with filtering    |
+| `/api/traces/{trace_id}` | GET    | Get detailed trace with all spans    |
+| `/api/spans`             | GET    | List recent spans with filtering     |
+| `/api/logs`              | GET    | Retrieve logs with trace correlation |
+| `/api/metrics`           | GET    | Query time-series metrics            |
+| `/api/service-map`       | GET    | Get service dependency graph         |
+| `/api/service-catalog`   | GET    | List services with RED metrics       |
+| `/api/stats`             | GET    | System stats and cardinality info    |
+| `/admin/stats`           | GET    | Detailed admin statistics            |
+| `/health`                | GET    | Health check endpoint                |
 
 All endpoints return data in standard OpenTelemetry format, ensuring compatibility with OpenTelemetry tooling and standards.
 
@@ -51,13 +53,14 @@ All endpoints return data in standard OpenTelemetry format, ensuring compatibili
 Retrieve the last 50 traces:
 
 === "cURL"
-    ```bash
+`bash
     curl http://localhost:5005/api/traces?limit=50
-    ```
+    `
 
 === "Python"
-    ```python
-    import requests
+
+````python
+import requests
 
     response = requests.get('http://localhost:5005/api/traces', params={'limit': 50})
     traces = response.json()
@@ -67,7 +70,7 @@ Retrieve the last 50 traces:
     ```
 
 === "JavaScript"
-    ```javascript
+``javascript
     fetch('http://localhost:5005/api/traces?limit=50')
       .then(response => response.json())
       .then(traces => {
@@ -75,9 +78,10 @@ Retrieve the last 50 traces:
           console.log(`Trace ${trace.trace_id}: ${trace.service_name} - ${trace.name}`);
         });
       });
-    ```
+    ``
 
 **Response Format:**
+
 ```json
 [
   {
@@ -92,7 +96,7 @@ Retrieve the last 50 traces:
     "span_count": 5
   }
 ]
-```
+````
 
 ---
 
@@ -101,13 +105,14 @@ Retrieve the last 50 traces:
 Retrieve a complete trace with all spans for waterfall visualization:
 
 === "cURL"
-    ```bash
+`bash
     curl http://localhost:5005/api/traces/a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6
-    ```
+    `
 
 === "Python"
-    ```python
-    import requests
+
+````python
+import requests
 
     trace_id = "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6"
     response = requests.get(f'http://localhost:5005/api/traces/{trace_id}')
@@ -123,6 +128,7 @@ Retrieve a complete trace with all spans for waterfall visualization:
     ```
 
 **Response Format:**
+
 ```json
 {
   "trace_id": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6",
@@ -139,7 +145,7 @@ Retrieve a complete trace with all spans for waterfall visualization:
       "service_name": "demo-frontend",
       "start_time": 1701234567890000000,
       "duration_ms": 125.4,
-      "status": {"code": 1},
+      "status": { "code": 1 },
       "attributes": {
         "http.method": "GET",
         "http.route": "/products",
@@ -148,7 +154,7 @@ Retrieve a complete trace with all spans for waterfall visualization:
     }
   ]
 }
-```
+````
 
 ---
 
@@ -157,13 +163,14 @@ Retrieve a complete trace with all spans for waterfall visualization:
 Correlate logs with a trace using trace_id:
 
 === "cURL"
-    ```bash
+`bash
     curl "http://localhost:5005/api/logs?trace_id=a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6"
-    ```
+    `
 
 === "Python"
-    ```python
-    import requests
+
+````python
+import requests
 
     trace_id = "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6"
     response = requests.get('http://localhost:5005/api/logs',
@@ -175,6 +182,7 @@ Correlate logs with a trace using trace_id:
     ```
 
 **Response Format:**
+
 ```json
 [
   {
@@ -189,7 +197,7 @@ Correlate logs with a trace using trace_id:
     }
   }
 ]
-```
+````
 
 ---
 
@@ -198,13 +206,14 @@ Correlate logs with a trace using trace_id:
 Retrieve metrics data:
 
 === "cURL"
-    ```bash
+`bash
     curl http://localhost:5005/api/metrics
-    ```
+    `
 
 === "Python"
-    ```python
-    import requests
+
+````python
+import requests
 
     response = requests.get('http://localhost:5005/api/metrics')
     metrics = response.json()
@@ -217,6 +226,7 @@ Retrieve metrics data:
     ```
 
 **Response Format:**
+
 ```json
 [
   {
@@ -243,7 +253,7 @@ Retrieve metrics data:
     ]
   }
 ]
-```
+````
 
 ---
 
@@ -252,13 +262,14 @@ Retrieve metrics data:
 List all services with Rate, Errors, and Duration metrics:
 
 === "cURL"
-    ```bash
+`bash
     curl http://localhost:5005/api/service-catalog
-    ```
+    `
 
 === "Python"
-    ```python
-    import requests
+
+````python
+import requests
 
     response = requests.get('http://localhost:5005/api/service-catalog')
     services = response.json()
@@ -272,6 +283,7 @@ List all services with Rate, Errors, and Duration metrics:
     ```
 
 **Response Format:**
+
 ```json
 [
   {
@@ -286,7 +298,7 @@ List all services with Rate, Errors, and Duration metrics:
     "last_seen": 1701238167890000000
   }
 ]
-```
+````
 
 ---
 
@@ -295,13 +307,14 @@ List all services with Rate, Errors, and Duration metrics:
 Retrieve the service dependency graph:
 
 === "cURL"
-    ```bash
+`bash
     curl http://localhost:5005/api/service-map
-    ```
+    `
 
 === "Python"
-    ```python
-    import requests
+
+````python
+import requests
 
     response = requests.get('http://localhost:5005/api/service-map')
     graph = response.json()
@@ -316,6 +329,7 @@ Retrieve the service dependency graph:
     ```
 
 **Response Format:**
+
 ```json
 {
   "nodes": [
@@ -338,7 +352,7 @@ Retrieve the service dependency graph:
     }
   ]
 }
-```
+````
 
 ---
 
@@ -347,13 +361,14 @@ Retrieve the service dependency graph:
 Get Redis memory usage and cardinality metrics:
 
 === "cURL"
-    ```bash
+`bash
     curl http://localhost:5005/api/stats
-    ```
+    `
 
 === "Python"
-    ```python
-    import requests
+
+````python
+import requests
 
     response = requests.get('http://localhost:5005/api/stats')
     stats = response.json()
@@ -367,6 +382,7 @@ Get Redis memory usage and cardinality metrics:
     ```
 
 **Response Format:**
+
 ```json
 {
   "total_traces": 1523,
@@ -379,7 +395,7 @@ Get Redis memory usage and cardinality metrics:
   "cardinality_usage_pct": 1.2,
   "uptime_seconds": 3600
 }
-```
+````
 
 ---
 

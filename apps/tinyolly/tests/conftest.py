@@ -34,10 +34,12 @@ Pytest configuration and fixtures for TinyOlly UI tests.
 This file provides shared fixtures for testing the SQLite storage backend,
 API endpoints, and data processing functionality.
 """
+
+import os
+import tempfile
+
 import pytest
 import pytest_asyncio
-import tempfile
-import os
 
 # TODO: Import storage module after SQLite migration
 # from app.storage import SQLiteStorage
@@ -46,7 +48,7 @@ import os
 @pytest.fixture
 def temp_db_path():
     """Create a temporary database file path."""
-    with tempfile.NamedTemporaryFile(suffix='.db', delete=False) as f:
+    with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
         db_path = f.name
     yield db_path
     # Cleanup
@@ -79,7 +81,7 @@ def sample_trace():
         "start_time_unix_nano": 1704067200000000000,
         "end_time_unix_nano": 1704067200100000000,
         "duration_ns": 100000000,
-        "status": "OK"
+        "status": "OK",
     }
 
 
@@ -99,7 +101,7 @@ def sample_span():
         "service_name": "api-gateway",
         "attributes": {"http.method": "GET", "http.url": "/api/users"},
         "events": [],
-        "links": []
+        "links": [],
     }
 
 
@@ -115,7 +117,7 @@ def sample_log():
         "trace_id": "abc123def456",
         "span_id": "span001",
         "service_name": "auth-service",
-        "attributes": {"user.id": "user123", "event.type": "login"}
+        "attributes": {"user.id": "user123", "event.type": "login"},
     }
 
 
@@ -129,12 +131,8 @@ def sample_metric_gauge():
         "type": "gauge",
         "service_name": "host-agent",
         "data_points": [
-            {
-                "timestamp_unix_nano": 1704067200000000000,
-                "value": 45.5,
-                "attributes": {"host": "server-01", "cpu": "0"}
-            }
-        ]
+            {"timestamp_unix_nano": 1704067200000000000, "value": 45.5, "attributes": {"host": "server-01", "cpu": "0"}}
+        ],
     }
 
 
@@ -153,9 +151,9 @@ def sample_metric_sum():
             {
                 "timestamp_unix_nano": 1704067200000000000,
                 "value": 1000,
-                "attributes": {"method": "GET", "status": "200"}
+                "attributes": {"method": "GET", "status": "200"},
             }
-        ]
+        ],
     }
 
 
@@ -178,9 +176,9 @@ def sample_metric_histogram():
                 "explicit_bounds": [10, 50, 100, 500],
                 "min": 5.0,
                 "max": 750.0,
-                "attributes": {"method": "GET", "path": "/api/users"}
+                "attributes": {"method": "GET", "path": "/api/users"},
             }
-        ]
+        ],
     }
 
 
@@ -201,11 +199,11 @@ def sample_metric_summary():
                 "quantile_values": [
                     {"quantile": 0.5, "value": 45.0},
                     {"quantile": 0.9, "value": 95.0},
-                    {"quantile": 0.99, "value": 150.0}
+                    {"quantile": 0.99, "value": 150.0},
                 ],
-                "attributes": {"method": "GET"}
+                "attributes": {"method": "GET"},
             }
-        ]
+        ],
     }
 
 
@@ -214,10 +212,7 @@ def sample_service():
     """Sample service catalog entry for testing."""
     return {
         "name": "api-gateway",
-        "attributes": {
-            "service.version": "1.0.0",
-            "deployment.environment": "production"
-        },
+        "attributes": {"service.version": "1.0.0", "deployment.environment": "production"},
         "first_seen": 1704067200000000000,
-        "last_seen": 1704067300000000000
+        "last_seen": 1704067300000000000,
     }

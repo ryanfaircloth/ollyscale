@@ -38,6 +38,7 @@ These tests verify:
 - Log search functionality
 - Trace correlation
 """
+
 import pytest
 
 

@@ -224,4 +224,3 @@ function updateAutoRefreshButton() {
         btn.style.background = '#6b7280';
     }
 }
-

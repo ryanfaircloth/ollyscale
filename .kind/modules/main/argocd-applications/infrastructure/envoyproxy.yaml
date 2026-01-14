@@ -19,10 +19,10 @@ spec:
           replicas: 1
           pod:
             tolerations:
-            - key: node-role.kubernetes.io/control-plane
-              effect: NoSchedule
+              - key: node-role.kubernetes.io/control-plane
+                effect: NoSchedule
   destination:
-    server: 'https://kubernetes.default.svc'
+    server: "https://kubernetes.default.svc"
     namespace: envoy-gateway-system
   syncPolicy:
     automated:

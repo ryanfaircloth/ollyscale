@@ -37,6 +37,7 @@ These tests verify:
 - Alert acknowledgment
 - Alert queries
 """
+
 import pytest
 
 

@@ -8,11 +8,14 @@
 #   demos-otel   : Deploy OpenTelemetry Demo
 #   demos-all    : Deploy both custom and OTel demos
 #   demos-off    : Disable all demos
+#   precommit-setup : Install and configure pre-commit hooks
+#   lint         : Run pre-commit checks on all files
+#   lint-fix     : Run pre-commit with auto-fix on all files
 
 # Cluster configuration
 CLUSTER_NAME := tinyolly
 
-.PHONY: up down clean demos demos-otel demos-all demos-off
+.PHONY: up down clean demos demos-otel demos-all demos-off precommit-setup lint lint-fix
 
 ## Create KIND cluster with local registry
 up:
@@ -117,3 +120,16 @@ demos-off:
 	@echo ""
 	@echo "✅ Demos disabled!"
 	@echo ""
+
+## Install and configure pre-commit hooks
+precommit-setup:
+	@./setup-precommit.sh
+
+## Run pre-commit checks on all files
+lint:
+	@pre-commit run --all-files
+
+## Run pre-commit with auto-fix on all files
+lint-fix:
+	@pre-commit run --all-files || true
+	@echo "🔧 Auto-fixes applied where possible. Review changes before committing."

@@ -76,7 +76,7 @@ $CONTAINER_CMD build \
 echo "✓ OpAMP Server image built"
 echo ""
 
-echo "Step 3/4: Building Unified Demo Image"
+echo "Step 3/3: Building Unified Demo Image"
 echo "-----------------------------------------------------------"
 $CONTAINER_CMD build \
   -f apps/demo/Dockerfile \
@@ -86,18 +86,6 @@ $CONTAINER_CMD build \
   -t $EXTERNAL_REGISTRY/tinyolly/demo:$VERSION \
   apps/demo/
 echo "✓ Unified Demo image built"
-echo ""
-
-echo "Step 4/4: Building AI Agent Demo Image"
-echo "-----------------------------------------------------------"
-$CONTAINER_CMD build \
-  -f apps/ai-agent-demo/Dockerfile \
-  -t tinyolly/ai-agent-demo:latest \
-  -t tinyolly/ai-agent-demo:$VERSION \
-  -t $EXTERNAL_REGISTRY/tinyolly/ai-agent-demo:latest \
-  -t $EXTERNAL_REGISTRY/tinyolly/ai-agent-demo:$VERSION \
-  apps/ai-agent-demo/
-echo "✓ AI Agent Demo image built"
 echo ""
 
 echo "📤 Pushing Container Images to Registry"
@@ -120,12 +108,6 @@ echo "Pushing Unified Demo..."
 $CONTAINER_CMD push $PUSH_FLAGS $EXTERNAL_REGISTRY/tinyolly/demo:latest
 $CONTAINER_CMD push $PUSH_FLAGS $EXTERNAL_REGISTRY/tinyolly/demo:$VERSION
 echo "✓ Unified Demo pushed"
-echo ""
-
-echo "Pushing AI Agent Demo..."
-$CONTAINER_CMD push $PUSH_FLAGS $EXTERNAL_REGISTRY/tinyolly/ai-agent-demo:latest
-$CONTAINER_CMD push $PUSH_FLAGS $EXTERNAL_REGISTRY/tinyolly/ai-agent-demo:$VERSION
-echo "✓ AI Agent Demo pushed"
 echo ""
 
 # ==========================================

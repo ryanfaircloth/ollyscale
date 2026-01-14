@@ -7,11 +7,13 @@ Release-please is now configured for TinyOlly's monorepo with automated semantic
 ## Files Created/Modified
 
 ### Configuration Files
+
 - ✅ `release-please-config.json` - Component definitions and release strategy
 - ✅ `.release-please-manifest.json` - Current version tracking
 - ✅ `.github/workflows/release-please.yml` - Automated release workflow
 
 ### Version Tracking Files
+
 - ✅ `apps/tinyolly/VERSION` → 2.2.2
 - ✅ `apps/opamp-server/VERSION` → 1.0.0
 - ✅ `apps/demo/VERSION` → 0.5.0
@@ -21,6 +23,7 @@ Release-please is now configured for TinyOlly's monorepo with automated semantic
 - ✅ `charts/tinyolly-demo-otel-agent/Chart.yaml` → v0.1.0 / appVersion v0.3.0
 
 ### Documentation & Scripts
+
 - ✅ `docs/release-process.md` - Complete usage guide
 - ✅ `scripts/release/validate-commit-msg.sh` - Commit message validation
 - ✅ `scripts/release/update-chart-image-versions.sh` - Helper for chart updates
@@ -28,6 +31,7 @@ Release-please is now configured for TinyOlly's monorepo with automated semantic
 ## How It Works
 
 ### 1. Developer Workflow
+
 ```bash
 # Make changes and commit with conventional commits
 git commit -m "feat(tinyolly): add new feature"
@@ -35,12 +39,14 @@ git push origin main
 ```
 
 ### 2. Automatic Release PR
+
 - Release-please analyzes commits since last release
 - Creates/updates a **single PR** with all version bumps
 - Updates VERSION files, CHANGELOG.md, Chart.yaml files
 - PR shows exactly what will be released
 
 ### 3. Merge Release PR
+
 - Merging triggers automated builds
 - Container images built and pushed to GHCR
 - Helm charts packaged and pushed to OCI registry
@@ -48,15 +54,15 @@ git push origin main
 
 ## Component Versioning
 
-| Component | Type | Version | Tag Format |
-|-----------|------|---------|------------|
-| tinyolly | Python | 2.2.2 | `tinyolly-v2.2.2` |
-| opamp-server | Go | 1.0.0 | `opamp-server-v1.0.0` |
-| demo | Python | 0.5.0 | `demo-v0.5.0` |
-| demo-otel-agent | Python | 0.3.0 | `demo-otel-agent-v0.3.0` |
-| helm-tinyolly | Helm | 0.1.1 | `helm-tinyolly-v0.1.1` |
-| helm-demos | Helm | 0.1.5 | `helm-demos-v0.1.5` |
-| helm-demo-otel-agent | Helm | 0.1.0 | `helm-demo-otel-agent-v0.1.0` |
+| Component            | Type   | Version | Tag Format                    |
+| -------------------- | ------ | ------- | ----------------------------- |
+| tinyolly             | Python | 2.2.2   | `tinyolly-v2.2.2`             |
+| opamp-server         | Go     | 1.0.0   | `opamp-server-v1.0.0`         |
+| demo                 | Python | 0.5.0   | `demo-v0.5.0`                 |
+| demo-otel-agent      | Python | 0.3.0   | `demo-otel-agent-v0.3.0`      |
+| helm-tinyolly        | Helm   | 0.1.1   | `helm-tinyolly-v0.1.1`        |
+| helm-demos           | Helm   | 0.1.5   | `helm-demos-v0.1.5`           |
+| helm-demo-otel-agent | Helm   | 0.1.0   | `helm-demo-otel-agent-v0.1.0` |
 
 ## Conventional Commit Examples
 
@@ -100,11 +106,13 @@ helm-tinyolly: 0.1.1 → 0.2.0 (SINGLE release)
 ## GitHub Workflow
 
 ### On Push to Main
+
 1. `release-please.yml` workflow runs
 2. Analyzes commits for conventional commit patterns
 3. Creates/updates release PR
 
 ### When Release PR is Merged
+
 1. **Container builds** - Parallel builds for changed components
    - Multi-arch (amd64/arm64)
    - Pushed to `ghcr.io/tinyolly/*`
@@ -138,12 +146,14 @@ Local builds don't update VERSION files or trigger releases.
 ## Next Steps
 
 ### Immediate
+
 1. ✅ Test by making a conventional commit to main
 2. ✅ Review generated release PR
 3. ✅ Verify version bumps are correct
 4. ✅ Merge release PR and verify builds
 
 ### Optional Enhancements
+
 - [ ] Install commitlint pre-commit hook (enforce conventional commits)
 - [ ] Add GitHub branch protection to require conventional commit format
 - [ ] Set up commit message template for git
@@ -151,6 +161,7 @@ Local builds don't update VERSION files or trigger releases.
 - [ ] Configure release notifications (Slack, Discord, etc.)
 
 ### Migration from Old Process
+
 - [ ] Document old release workflow is deprecated
 - [ ] Update team documentation
 - [ ] Train team on conventional commits
@@ -181,7 +192,7 @@ git push origin test-release-please
 ✅ **Parallel builds** - Fast CI pipeline  
 ✅ **GitHub releases** - Professional release notes  
 ✅ **Future-proof** - Easy to add new components  
-✅ **Local dev preserved** - Existing workflows still work  
+✅ **Local dev preserved** - Existing workflows still work
 
 ## References
 

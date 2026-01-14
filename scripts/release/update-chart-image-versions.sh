@@ -30,21 +30,21 @@ case "$CHART_NAME" in
         if [ -f "$REPO_ROOT/apps/tinyolly/VERSION" ]; then
             TINYOLLY_VERSION=$(cat "$REPO_ROOT/apps/tinyolly/VERSION")
             echo "  tinyolly: v$TINYOLLY_VERSION"
-            
+
             # Update values.yaml
             sed -i.bak "s|tag: .*# tinyolly|tag: \"v${TINYOLLY_VERSION}\" # tinyolly|" "$CHART_PATH/values.yaml"
-            
+
             # Update Chart.yaml appVersion
             sed -i.bak "s|^appVersion: .*|appVersion: \"v${TINYOLLY_VERSION}\"|" "$CHART_PATH/Chart.yaml"
         fi
-        
+
         if [ -f "$REPO_ROOT/apps/opamp-server/VERSION" ]; then
             OPAMP_VERSION=$(cat "$REPO_ROOT/apps/opamp-server/VERSION")
             echo "  opamp-server: v$OPAMP_VERSION"
             sed -i.bak "s|tag: .*# opamp-server|tag: \"v${OPAMP_VERSION}\" # opamp-server|" "$CHART_PATH/values.yaml"
         fi
         ;;
-        
+
     "tinyolly-demos")
         if [ -f "$REPO_ROOT/apps/demo/VERSION" ]; then
             DEMO_VERSION=$(cat "$REPO_ROOT/apps/demo/VERSION")
@@ -53,7 +53,7 @@ case "$CHART_NAME" in
             sed -i.bak "s|^appVersion: .*|appVersion: \"v${DEMO_VERSION}\"|" "$CHART_PATH/Chart.yaml"
         fi
         ;;
-        
+
     "tinyolly-demo-otel-agent")
         if [ -f "$REPO_ROOT/apps/demo-otel-agent/VERSION" ]; then
             AI_VERSION=$(cat "$REPO_ROOT/apps/demo-otel-agent/VERSION")
@@ -62,7 +62,7 @@ case "$CHART_NAME" in
             sed -i.bak "s|^appVersion: .*|appVersion: \"v${AI_VERSION}\"|" "$CHART_PATH/Chart.yaml"
         fi
         ;;
-        
+
     *)
         echo "❌ Unknown chart: $CHART_NAME"
         exit 1

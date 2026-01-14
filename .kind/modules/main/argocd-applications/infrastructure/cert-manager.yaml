@@ -10,7 +10,7 @@ metadata:
 spec:
   project: infrastructure
   source:
-    repoURL: 'https://charts.jetstack.io'
+    repoURL: "https://charts.jetstack.io"
     chart: cert-manager
     targetRevision: v1.19.2
     helm:
@@ -18,7 +18,7 @@ spec:
         crds:
           enabled: true
   destination:
-    server: 'https://kubernetes.default.svc'
+    server: "https://kubernetes.default.svc"
     namespace: cert-manager
   syncPolicy:
     automated:

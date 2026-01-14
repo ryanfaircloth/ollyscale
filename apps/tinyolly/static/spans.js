@@ -237,7 +237,7 @@ function showSpanDetail(spanId, spans) {
     `;
 
     const title = `
-        Span: ${span.name} 
+        Span: ${span.name}
         <span style="font-weight: normal; color: var(--text-muted); font-size: 0.9em; margin-left: 8px; font-family: 'JetBrains Mono', monospace;">
             (spanId: ${formatTraceId(span.span_id)})
         </span>
@@ -338,4 +338,3 @@ window.closeAllSpans = () => {
         }]
     });
 };
-
