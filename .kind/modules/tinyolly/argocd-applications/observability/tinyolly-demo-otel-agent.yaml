@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: tinyolly-ai-agent
+  name: tinyolly-demo-otel-agent
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "61"
@@ -10,13 +10,13 @@ metadata:
 spec:
   project: observability
   source:
-    repoURL: 'docker-registry.registry.svc.cluster.local:5000/tinyolly/charts'
-    chart: tinyolly-ai-agent
+    repoURL: 'oci://ghcr.io/tinyolly/charts'
+    chart: tinyolly-demo-otel-agent
     targetRevision: 0.1.0
     helm:
       valuesObject:
         global:
-          namespace: tinyolly-ai-agent
+          namespace: tinyolly-demo-otel-agent
         
         ollama:
           model: tinyllama
@@ -33,14 +33,14 @@ spec:
         
         agent:
           image:
-            repository: ${ai_agent_image}
-            tag: ${ai_agent_tag}
+            repository: ghcr.io/tinyolly/demo-otel-agent
+            tag: v0.3.0
           httpRoute:
             enabled: false
   
   destination:
     server: https://kubernetes.default.svc
-    namespace: tinyolly-ai-agent
+    namespace: tinyolly-demo-otel-agent
   
   syncPolicy:
     automated:

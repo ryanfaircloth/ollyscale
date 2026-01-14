@@ -10,7 +10,7 @@ metadata:
 spec:
   project: observability
   source:
-    repoURL: 'docker-registry.registry.svc.cluster.local:5000/tinyolly/charts'
+    repoURL: 'oci://ghcr.io/tinyolly/charts'
     chart: tinyolly-demos
     targetRevision: 0.1.5
     helm:
@@ -20,8 +20,8 @@ spec:
         
         frontend:
           image:
-            repository: ${custom_demo_frontend_image}
-            tag: ${custom_demo_frontend_tag}
+            repository: ghcr.io/tinyolly/demo
+            tag: v0.5.0
           
           httpRoute:
             enabled: true
@@ -33,8 +33,8 @@ spec:
         
         backend:
           image:
-            repository: ${custom_demo_backend_image}
-            tag: ${custom_demo_backend_tag}
+            repository: ghcr.io/tinyolly/demo
+            tag: v0.5.0
   
   destination:
     server: https://kubernetes.default.svc

@@ -18,15 +18,15 @@ spec:
         - .spec
         - .metadata.annotations
   source:
-    repoURL: 'docker-registry.registry.svc.cluster.local:5000/tinyolly/charts'
+    repoURL: 'oci://ghcr.io/tinyolly/charts'
     chart: tinyolly
-    targetRevision: 0.1.1-v2.2.2-genai-filter
+    targetRevision: 0.1.1
     helm:
       valuesObject:
         ui:
           image:
-            repository: ghcr.io/ryanfaircloth/tinyolly/ui
-            tag: latest
+            repository: ghcr.io/tinyolly/tinyolly
+            tag: v30.0.1
           
           resources:
             limits: {}
@@ -44,16 +44,16 @@ spec:
         
         opampServer:
           image:
-            repository: ghcr.io/ryanfaircloth/tinyolly/opamp-server
-            tag: latest
+            repository: ghcr.io/tinyolly/opamp-server
+            tag: v1.0.0
           
           resources:
             limits: {}
         
         otlpReceiver:
           image:
-            repository: ghcr.io/ryanfaircloth/tinyolly/otlp-receiver
-            tag: latest
+            repository: ghcr.io/tinyolly/tinyolly
+            tag: v30.0.1
           
           resources:
             limits: {}

@@ -10,7 +10,12 @@
       "extra-files": [
         "app/__init__.py",
         "VERSION",
-        "Dockerfile"
+        "Dockerfile",
+        {
+          "type": "generic",
+          "path": "../.kind/modules/main/argocd-applications/observability/tinyolly.yaml",
+          "glob": false
+        }
       ]
     },
     "apps/opamp-server": {
@@ -26,14 +31,24 @@
           "glob": false
         },
         "VERSION",
-        "Dockerfile"
+        "Dockerfile",
+        {
+          "type": "generic",
+          "path": "../.kind/modules/main/argocd-applications/observability/tinyolly.yaml",
+          "glob": false
+        }
       ]
     },
     "apps/demo": {
       "component": "demo",
       "package-name": "demo",
       "release-type": "python",
-      "include-component-in-tag": true,
+      "include-compo,
+        {
+          "type": "generic",
+          "path": "../.kind/modules/tinyolly/argocd-applications/observability/tinyolly-demos.yaml",
+          "glob": false
+        }nent-in-tag": true,
       "changelog-path": "CHANGELOG.md",
       "extra-files": [
         "__init__.py",
@@ -45,7 +60,12 @@
       "component": "demo-otel-agent",
       "package-name": "demo-otel-agent",
       "release-type": "python",
-      "include-component-in-tag": true,
+      "include-compo,
+        {
+          "type": "generic",
+          "path": "../.kind/modules/tinyolly/argocd-applications/observability/tinyolly-demo-otel-agent.yaml",
+          "glob": false
+        }nent-in-tag": true,
       "changelog-path": "CHANGELOG.md",
       "extra-files": [
         "__init__.py",
