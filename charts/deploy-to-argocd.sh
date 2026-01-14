@@ -52,6 +52,7 @@ if [ -f "$ARGOCD_APP_FILE" ]; then
     echo "📝 Verifying targetRevision uses terraform variable..."
 
     # Check if targetRevision uses the variable
+    # shellcheck disable=SC2016
     if grep -q 'targetRevision: \${tinyolly_chart_tag}' "$ARGOCD_APP_FILE"; then
         echo "✓ targetRevision correctly uses \${tinyolly_chart_tag} variable"
     else
