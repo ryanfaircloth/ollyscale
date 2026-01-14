@@ -16,17 +16,17 @@ variable "use_local_registry" {
   default     = false
 }
 
-# TinyOlly image versions (used when use_local_registry=true)
+# TinyOlly image versions from release-please manifest
 variable "tinyolly_tag" {
   description = "TinyOlly image tag"
   type        = string
-  default     = "latest"
+  default     = "v36.0.0"
 }
 
 variable "opamp_tag" {
   description = "OpAMP server image tag"
   type        = string
-  default     = "latest"
+  default     = "v3.0.0"
 }
 
 variable "demo_tag" {
