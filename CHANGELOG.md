@@ -1,5 +1,12 @@
 # Changelog
 
+## [31.0.2](https://github.com/ryanfaircloth/tinyolly/compare/v31.0.1...v31.0.2) (2026-01-14)
+
+
+### Bug Fixes
+
+* **ci:** correct GHCR paths and remove duplicate ArgoCD update job ([da5e69b](https://github.com/ryanfaircloth/tinyolly/commit/da5e69b9c2cdcb4424027aaf169da6559fc05340))
+
 ## [31.0.1](https://github.com/ryanfaircloth/tinyolly/compare/v31.0.0...v31.0.1) (2026-01-14)
 
 
