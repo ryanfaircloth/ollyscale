@@ -122,7 +122,7 @@ build: update base Python image to 3.12
 1. Release-please analyzes commits since last release
 2. Determines which components need version bumps
 3. Creates/updates a **single release PR** with:
-   - Updated VERSION files
+   - Updated `.release-please-manifest.json` (single source of truth)
    - Updated CHANGELOG.md for each component
    - Updated Chart.yaml versions for Helm charts
    - All changes in one PR
@@ -205,7 +205,7 @@ Local builds:
 
 - Use custom version tags (e.g., `local-`, feature names)
 - Push only to local registry
-- Don't update VERSION files
+- Don't update manifest (versions managed by release-please only)
 - Don't trigger releases
 
 ## Manual Version Bumps
@@ -273,9 +273,9 @@ Release-please automatically:
 
 ### Helm chart has wrong image versions
 
-- Ensure VERSION files are committed
-- Check `values.yaml` structure matches workflow expectations
-- Verify workflow's `yq` commands are correct
+- Check `.release-please-manifest.json` for correct versions
+- Verify `values.yaml` structure matches workflow expectations
+- Ensure workflow's `yq` commands reference manifest correctly
 
 ## Best Practices
 
@@ -319,13 +319,13 @@ git config commit.template .gitmessage
 ## Migration from Current Process
 
 1. ✅ Release-please configured
-2. ✅ VERSION files added to all components
+2. ✅ **VERSION files removed** (manifest is single source of truth)
 3. ✅ Manifest initialized with current versions
 4. ✅ GitHub Actions workflow created
-5. ⏳ Update team documentation
-6. ⏳ Train team on conventional commits
-7. ⏳ Test with first release
-8. ⏳ Deprecate old release workflow
+5. ✅ Team documentation updated
+6. ✅ Conventional commits in use
+7. ✅ Multiple successful releases completed
+8. ✅ Old release workflow deprecated
 
 ## References
 

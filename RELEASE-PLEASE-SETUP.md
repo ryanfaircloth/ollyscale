@@ -15,18 +15,16 @@ Release-please is now configured for TinyOlly's monorepo with automated semantic
 ### Version Tracking Files
 
 - ✅ `apps/tinyolly/VERSION` → 2.2.2
-- ✅ `apps/opamp-server/VERSION` → 1.0.0
-- ✅ `apps/demo/VERSION` → 0.5.0
-- ✅ `apps/demo-otel-agent/VERSION` → 0.3.0
-- ✅ `charts/tinyolly/Chart.yaml` → v0.1.1 / appVersion v30.0.1
-- ✅ `charts/tinyolly-demos/Chart.yaml` → v0.1.5 / appVersion v0.5.0
-- ✅ `charts/tinyolly-demo-otel-agent/Chart.yaml` → v0.1.0 / appVersion v0.3.0
+- ✅ `.release-please-manifest.json` - Single source of truth for all versions
+- ✅ `charts/tinyolly/Chart.yaml` → appVersion synced from manifest
+- ✅ `charts/tinyolly-demos/Chart.yaml` → appVersion synced from manifest
+- ✅ `charts/tinyolly-demo-otel-agent/Chart.yaml` → appVersion synced from manifest
 
 ### Documentation & Scripts
 
 - ✅ `docs/release-process.md` - Complete usage guide
 - ✅ `scripts/release/validate-commit-msg.sh` - Commit message validation
-- ✅ `scripts/release/update-chart-image-versions.sh` - Helper for chart updates
+- ❌ `VERSION` files - **REMOVED** - versions managed only by release-please manifest
 
 ## How It Works
 
