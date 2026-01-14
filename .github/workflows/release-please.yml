@@ -194,7 +194,7 @@ jobs:
             echo "Updated tinyolly ArgoCD app to chart v${CHART_VERSION}"
             git add "$ARGOCD_APP"
           fi
-          
+
           # Update tinyolly-demos chart version
           if echo '${{ needs.release-please.outputs.paths_released }}' | jq -e '.[] | select(. == "charts/tinyolly-demos")' > /dev/null; then
             CHART_VERSION=$(cat charts/tinyolly-demos/Chart.yaml | grep '^version:' | awk '{print $2}')
@@ -205,7 +205,7 @@ jobs:
             echo "Updated tinyolly-demos ArgoCD app to chart v${CHART_VERSION}"
             git add "$ARGOCD_APP"
           fi
-          
+
           # Update tinyolly-demo-otel-agent chart version
           if echo '${{ needs.release-please.outputs.paths_released }}' | jq -e '.[] | select(. == "charts/tinyolly-demo-otel-agent")' > /dev/null; then
             CHART_VERSION=$(cat charts/tinyolly-demo-otel-agent/Chart.yaml | grep '^version:' | awk '{print $2}')
@@ -221,7 +221,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          
+
           if git diff --staged --quiet; then
             echo "No ArgoCD chart version changes to commit"
           else
