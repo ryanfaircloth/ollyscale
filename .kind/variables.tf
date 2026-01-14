@@ -10,6 +10,37 @@ variable "bootstrap" {
   default     = false
 }
 
+variable "use_local_registry" {
+  description = "Use local registry (docker-registry.registry.svc.cluster.local:5000) instead of remote (ghcr.io)"
+  type        = bool
+  default     = false
+}
+
+# TinyOlly image versions (used when use_local_registry=true)
+variable "tinyolly_tag" {
+  description = "TinyOlly image tag"
+  type        = string
+  default     = "latest"
+}
+
+variable "opamp_tag" {
+  description = "OpAMP server image tag"
+  type        = string
+  default     = "latest"
+}
+
+variable "demo_tag" {
+  description = "Demo application image tag"
+  type        = string
+  default     = "latest"
+}
+
+variable "demo_agent_tag" {
+  description = "Demo OTel agent image tag"
+  type        = string
+  default     = "latest"
+}
+
 # Demo application settings
 variable "custom_demo_frontend_image" {
   description = "Custom demo frontend image repository (unified demo image)"

@@ -18,14 +18,14 @@ spec:
         - .spec
         - .metadata.annotations
   source:
-    repoURL: "oci://ghcr.io/tinyolly/charts"
+    repoURL: "${chart_registry}"
     chart: tinyolly
-    targetRevision: 0.2.0-v2.2.1-precommit
+    targetRevision: 0.2.0-0.0.1768397129
     helm:
       valuesObject:
         ui:
           image:
-            repository: ghcr.io/tinyolly/tinyolly
+            repository: ${image_registry}/tinyolly
             tag: v30.0.1
 
           resources:
@@ -44,7 +44,7 @@ spec:
 
         opampServer:
           image:
-            repository: ghcr.io/tinyolly/opamp-server
+            repository: ${image_registry}/opamp-server
             tag: v1.0.0
 
           resources:
@@ -52,7 +52,7 @@ spec:
 
         otlpReceiver:
           image:
-            repository: ghcr.io/tinyolly/tinyolly
+            repository: ${image_registry}/tinyolly
             tag: v30.0.1
 
           resources:

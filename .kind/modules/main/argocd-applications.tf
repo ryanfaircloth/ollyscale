@@ -10,6 +10,11 @@ locals {
     https_nodeport      = var.https_nodeport
     mgmt_https_nodeport = var.mgmt_https_nodeport
     gateway_dns_suffix  = var.gateway_dns_suffix
+    use_local_registry  = var.use_local_registry
+    image_registry      = var.image_registry
+    chart_registry      = var.chart_registry
+    tinyolly_tag        = var.tinyolly_tag
+    opamp_tag           = var.opamp_tag
   }
 }
 

@@ -21,6 +21,8 @@ docker/certs/
 .terraform.lock.hcl
 terraform.tfstate
 terraform.tfstate.backup
+terraform.tfvars
+*.auto.tfvars
 
 # Helm packages
 *.tgz
@@ -29,3 +31,4 @@ helm/values-local-dev.yaml
 
 # MkDocs generated site
 site/
+node_modules/

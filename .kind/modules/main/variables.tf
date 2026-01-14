@@ -49,3 +49,28 @@ variable "bootstrap" {
   description = "Bootstrap mode - true for initial cluster creation (no HTTPRoutes), false for subsequent runs"
   type        = bool
 }
+
+variable "use_local_registry" {
+  description = "Use local registry instead of ghcr.io"
+  type        = bool
+}
+
+variable "image_registry" {
+  description = "Container image registry URL"
+  type        = string
+}
+
+variable "chart_registry" {
+  description = "Helm chart OCI registry URL"
+  type        = string
+}
+
+variable "tinyolly_tag" {
+  description = "TinyOlly image tag"
+  type        = string
+}
+
+variable "opamp_tag" {
+  description = "OpAMP server image tag"
+  type        = string
+}

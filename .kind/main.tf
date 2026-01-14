@@ -16,6 +16,11 @@ module "main" {
   https_nodeport         = module.kind_cluster.https_nodeport
   mgmt_https_nodeport    = module.kind_cluster.mgmt_https_nodeport
   bootstrap              = var.bootstrap
+  use_local_registry     = local.use_local_registry
+  image_registry         = local.image_registry
+  chart_registry         = local.chart_registry
+  tinyolly_tag           = local.tinyolly_tag
+  opamp_tag              = local.opamp_tag
 }
 
 module "tinyolly" {
