@@ -161,35 +161,27 @@ jobs:
       - name: Update chart dependencies
         if: steps.check.outputs.released == 'true'
         run: |
-          # Update image tags in values.yaml to match released container versions
+          # Update image tags in values.yaml to match released container versions from manifest
           cd charts/${{ matrix.chart }}
 
           # For tinyolly chart, update both tinyolly and opamp-server image tags
           if [ "${{ matrix.chart }}" = "tinyolly" ]; then
-            if [ -f "../../apps/tinyolly/VERSION" ]; then
-              TINYOLLY_VERSION=$(cat ../../apps/tinyolly/VERSION)
-              yq eval -i ".tinyolly.image.tag = \"v${TINYOLLY_VERSION}\"" values.yaml
-            fi
-            if [ -f "../../apps/opamp-server/VERSION" ]; then
-              OPAMP_VERSION=$(cat ../../apps/opamp-server/VERSION)
-              yq eval -i ".opampServer.image.tag = \"v${OPAMP_VERSION}\"" values.yaml
-            fi
+            TINYOLLY_VERSION=$(jq -r '."apps/tinyolly"' ../../.release-please-manifest.json)
+            yq eval -i ".tinyolly.image.tag = \"v${TINYOLLY_VERSION}\"" values.yaml
+            OPAMP_VERSION=$(jq -r '."apps/opamp-server"' ../../.release-please-manifest.json)
+            yq eval -i ".opampServer.image.tag = \"v${OPAMP_VERSION}\"" values.yaml
           fi
 
           # For demos chart, update demo image tag
           if [ "${{ matrix.chart }}" = "tinyolly-demos" ]; then
-            if [ -f "../../apps/demo/VERSION" ]; then
-              DEMO_VERSION=$(cat ../../apps/demo/VERSION)
-              yq eval -i ".demo.image.tag = \"v${DEMO_VERSION}\"" values.yaml
-            fi
+            DEMO_VERSION=$(jq -r '."apps/demo"' ../../.release-please-manifest.json)
+            yq eval -i ".demo.image.tag = \"v${DEMO_VERSION}\"" values.yaml
           fi
 
           # For demo-otel-agent chart, update demo-otel-agent image tag
           if [ "${{ matrix.chart }}" = "tinyolly-demo-otel-agent" ]; then
-            if [ -f "../../apps/demo-otel-agent/VERSION" ]; then
-              AI_VERSION=$(cat ../../apps/demo-otel-agent/VERSION)
-              yq eval -i ".aiAgent.image.tag = \"v${AI_VERSION}\"" values.yaml
-            fi
+            AI_VERSION=$(jq -r '."apps/demo-otel-agent"' ../../.release-please-manifest.json)
+            yq eval -i ".aiAgent.image.tag = \"v${AI_VERSION}\"" values.yaml
           fi
 
       - name: Package Helm chart

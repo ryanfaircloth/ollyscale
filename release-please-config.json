@@ -14,7 +14,6 @@
       "include-component-in-tag": false,
       "extra-files": [
         "app/__init__.py",
-        "VERSION",
         "Dockerfile",
         {
           "type": "generic",
@@ -34,7 +33,6 @@
           "path": "main.go",
           "glob": false
         },
-        "VERSION",
         "Dockerfile",
         {
           "type": "generic",
@@ -50,7 +48,6 @@
       "include-component-in-tag": true,
       "extra-files": [
         "__init__.py",
-        "VERSION",
         "Dockerfile",
         {
           "type": "generic",
@@ -66,7 +63,6 @@
       "include-component-in-tag": true,
       "extra-files": [
         "__init__.py",
-        "VERSION",
         "Dockerfile",
         {
           "type": "generic",
