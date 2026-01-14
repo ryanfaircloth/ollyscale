@@ -54,7 +54,7 @@ def temp_db_path():
 
 
 @pytest_asyncio.fixture
-async def storage(_temp_db_path):
+async def storage(temp_db_path):  # noqa: ARG001
     """Create a SQLite storage instance for testing (not yet implemented)."""
     pytest.skip("SQLite storage not yet implemented")
 
