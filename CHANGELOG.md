@@ -1,5 +1,20 @@
 # Changelog
 
+## [31.1.0](https://github.com/ryanfaircloth/tinyolly/compare/v31.0.2...v31.1.0) (2026-01-14)
+
+
+### Features
+
+* simplify local dev - make build creates tfvars ([78dfeb1](https://github.com/ryanfaircloth/tinyolly/commit/78dfeb1ac0f9a73ea7e0ceff8730c56c5e9af78b))
+
+
+### Bug Fixes
+
+* **ci:** remove old release script ([ff3d3b0](https://github.com/ryanfaircloth/tinyolly/commit/ff3d3b08a06b2e5f57dfc90bdbb02547e3081a9a))
+* consolidate CI workflows and resolve all linting errors ([1ea8973](https://github.com/ryanfaircloth/tinyolly/commit/1ea8973de8c46c6eb8ff31b4aa91e3790f65a562))
+* correct fixture name reference in tests ([2c540b7](https://github.com/ryanfaircloth/tinyolly/commit/2c540b70d58849e89f7747270cb3fde173c82958))
+* remove ai-agent-demo from build script + add noqa for telemetry ([17f3b2b](https://github.com/ryanfaircloth/tinyolly/commit/17f3b2b43cba70ff68df818ed67f2df538892d09))
+
 ## [31.0.2](https://github.com/ryanfaircloth/tinyolly/compare/v31.0.1...v31.0.2) (2026-01-14)
 
 ### Bug Fixes

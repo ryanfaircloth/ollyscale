@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.2](https://github.com/ryanfaircloth/tinyolly/compare/opamp-server-v2.0.1...opamp-server-v2.0.2) (2026-01-14)
+
+
+### Bug Fixes
+
+* remove ai-agent-demo from build script + add noqa for telemetry ([17f3b2b](https://github.com/ryanfaircloth/tinyolly/commit/17f3b2b43cba70ff68df818ed67f2df538892d09))
+
 ## [2.0.1](https://github.com/ryanfaircloth/tinyolly/compare/opamp-server-v2.0.0...opamp-server-v2.0.1) (2026-01-14)
 
 ### Bug Fixes

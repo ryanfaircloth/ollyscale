@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.2.1](https://github.com/ryanfaircloth/tinyolly/compare/helm-tinyolly-v0.2.0...helm-tinyolly-v0.2.1) (2026-01-14)
+
+
+### Features
+
+* simplify local dev - make build creates tfvars ([78dfeb1](https://github.com/ryanfaircloth/tinyolly/commit/78dfeb1ac0f9a73ea7e0ceff8730c56c5e9af78b))
+
+
+### Bug Fixes
+
+* consolidate CI workflows and resolve all linting errors ([1ea8973](https://github.com/ryanfaircloth/tinyolly/commit/1ea8973de8c46c6eb8ff31b4aa91e3790f65a562))
+* remove ai-agent-demo from build script + add noqa for telemetry ([17f3b2b](https://github.com/ryanfaircloth/tinyolly/commit/17f3b2b43cba70ff68df818ed67f2df538892d09))
+
 ## [0.2.0](https://github.com/ryanfaircloth/tinyolly/compare/helm-tinyolly-v0.1.1...helm-tinyolly-v0.2.0) (2026-01-14)
 
 ### ⚠ BREAKING CHANGES
