@@ -38,11 +38,14 @@ No manual instrumentation needed.
 """
 
 import base64
+import hashlib
 import json
 import logging
+import math
 import os
 import time
 import uuid
+import zlib
 from typing import Any
 
 import msgpack
@@ -188,8 +191,6 @@ class Storage:
         try:
             # Handle legacy ZLIB data (backward compatibility attempt, though flush recommended)
             if isinstance(data, str) and data.startswith("ZLIB_B64:"):
-                import zlib
-
                 compressed = base64.b64decode(data[9:])
                 decompressed = zlib.decompress(compressed)
                 return json.loads(decompressed)
@@ -735,8 +736,6 @@ class Storage:
         Returns:
             8-character hexadecimal hash string
         """
-        import hashlib
-
         sorted_items = sorted(d.items())
         s = json.dumps(sorted_items, sort_keys=True)
         return hashlib.md5(s.encode()).hexdigest()[:8]
@@ -1485,12 +1484,8 @@ class Storage:
                     time_diff = latest_ts - previous_ts
 
                     if time_diff > 0 and count_latest > count_prev:
-                        import math
-
                         red["rate"] = math.ceil((count_latest - count_prev) / time_diff)
                 else:
-                    import math
-
                     red["rate"] = math.ceil(latest["count"] / BUCKET_SIZE)
 
                 # Calculate error rate from calls metric

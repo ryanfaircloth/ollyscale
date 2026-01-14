@@ -32,7 +32,7 @@
 Pydantic models for TinyOlly API request/response validation and OpenAPI schema generation.
 """
 
-from typing import Any, Literal
+from typing import Any, ClassVar, Literal
 
 from pydantic import BaseModel, Field
 
@@ -79,7 +79,7 @@ class TraceSpan(BaseModel):
     status: dict[str, Any] | None = Field(None, description="Span status")
 
     class Config:
-        json_schema_extra = {
+        json_schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "span_id": "abc123",
                 "trace_id": "trace-xyz",
@@ -113,7 +113,7 @@ class TraceDetail(BaseModel):
     span_count: int = Field(..., description="Total number of spans")
 
     class Config:
-        json_schema_extra = {
+        json_schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "trace_id": "trace-xyz",
                 "spans": [{"span_id": "abc123", "name": "GET /api/users"}],
@@ -145,7 +145,7 @@ class LogEntry(BaseModel):
     attributes: dict[str, Any] | None = Field(None, description="Additional log attributes")
 
     class Config:
-        json_schema_extra = {
+        json_schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "log_id": "log-123",
                 "timestamp": 1638360000.0,
@@ -170,7 +170,7 @@ class MetricMetadata(BaseModel):
     services: list[str] = Field(default=[], description="List of service names emitting this metric")
 
     class Config:
-        json_schema_extra = {
+        json_schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "name": "http.server.duration",
                 "type": "histogram",

@@ -8,6 +8,59 @@ on:
   workflow_call:
 
 jobs:
+  pre-commit:
+    name: Pre-commit Checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # Fetch all history for better diffs
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pre-commit
+
+      - name: Cache pre-commit hooks
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+          restore-keys: |
+            pre-commit-${{ runner.os }}-
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: "v3.14.0"
+
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.7.0"
+
+      - name: Run pre-commit
+        run: pre-commit run --all-files --show-diff-on-failure --color=always
+
+      - name: Annotate failures
+        if: failure()
+        run: |
+          echo "::warning::Pre-commit checks failed. Run 'make lint' locally to see details."
+          echo "::warning::To auto-fix issues, run 'make lint-fix' and commit the changes."
+
   test-ui:
     name: Test TinyOlly UI
     runs-on: ubuntu-latest
@@ -39,21 +92,3 @@ jobs:
         with:
           files: apps/tinyolly/coverage.xml
           fail_ci_if_error: false
-
-  lint:
-    name: Lint
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: "3.14"
-
-      - name: Install linters
-        run: pip install ruff
-
-      - name: Run ruff
-        run: ruff check apps/

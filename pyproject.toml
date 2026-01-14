@@ -64,7 +64,11 @@ ignore = [
     "PLR0912", # Too many branches
     "PLR0915", # Too many statements
     "PLR2004", # Magic value used in comparison
+    "PLR0911", # Too many return statements
     "B008",   # Do not perform function call in argument defaults
+    "ERA001", # Commented-out code (intentional documentation/TODOs)
+    "PLW1508", # Invalid type for env var default (int defaults are intentional)
+    "RUF012", # Mutable class attributes in Pydantic Config
 ]
 
 # Allow fix for all enabled rules (when `--fix` is provided)
@@ -94,8 +98,18 @@ known-first-party = ["tinyolly", "app", "common", "receiver"]
 # Ignore unused imports in __init__.py files
 "__init__.py" = ["F401", "F403"]
 # Test files can use assertions, magic values, and unused arguments (for skipped tests)
-"tests/**/*.py" = ["PLR2004", "S101", "ARG002"]
-"**/test_*.py" = ["PLR2004", "S101", "ARG002"]
+"tests/**/*.py" = ["PLR2004", "S101", "ARG002", "ARG001"]
+"**/test_*.py" = ["PLR2004", "S101", "ARG002", "ARG001"]
+# Dependencies.py and receiver/server.py use global for singleton pattern
+"**/dependencies.py" = ["PLW0603"]
+"**/receiver/server.py" = ["PLW0603", "PLW0602", "PLC0415"]
+"**/app/routers/ingest.py" = ["PLW0603", "B904"]
+# main.py imports inside functions intentionally (conditional loading based on MODE)
+"main.py" = ["PLC0415"]
+# system.py uses global for template registration
+"**/app/routers/system.py" = ["PLW0603"]
+# validation.py intentionally reassigns loop variables for clarity
+"**/app/services/validation.py" = ["PLW2901"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

@@ -2,7 +2,9 @@
 
 ## Overview
 
-The TinyOlly AI Agent demo has been refactored to use Helm charts with OTel operator auto-instrumentation. This provides a cleaner, more maintainable deployment approach compared to the previous manual Kubernetes manifests.
+The TinyOlly AI Agent demo has been refactored to use Helm charts with OTel operator
+auto-instrumentation. This provides a cleaner, more maintainable deployment approach
+compared to the previous manual Kubernetes manifests.
 
 ## What Changed
 
@@ -22,7 +24,7 @@ The TinyOlly AI Agent demo has been refactored to use Helm charts with OTel oper
 
 ## Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────┐
 │           tinyolly-ai-agent                 │
 │                                             │

@@ -35,38 +35,27 @@ This file provides shared fixtures for testing the SQLite storage backend,
 API endpoints, and data processing functionality.
 """
 
-import os
 import tempfile
+from pathlib import Path
 
 import pytest
 import pytest_asyncio
-
-# TODO: Import storage module after SQLite migration
-# from app.storage import SQLiteStorage
 
 
 @pytest.fixture
 def temp_db_path():
     """Create a temporary database file path."""
     with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
-        db_path = f.name
+        db_path = Path(f.name)
     yield db_path
     # Cleanup
-    if os.path.exists(db_path):
-        os.unlink(db_path)
+    if db_path.exists():
+        db_path.unlink()
 
 
 @pytest_asyncio.fixture
-async def storage(temp_db_path):
-    """
-    Create a SQLite storage instance for testing.
-
-    TODO: Implement after SQLite migration (Phase 1)
-    """
-    # storage = SQLiteStorage(temp_db_path)
-    # await storage.initialize()
-    # yield storage
-    # await storage.close()
+async def storage(_temp_db_path):
+    """Create a SQLite storage instance for testing (not yet implemented)."""
     pytest.skip("SQLite storage not yet implemented")
 
 

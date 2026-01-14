@@ -57,14 +57,16 @@ agentCollector:
 
 **⚠️ Platform Requirements:**
 
-The eBPF agent requires a **real Linux kernel** with eBPF support (kernel 5.11+). It will **NOT work** on:
+The eBPF agent requires a **real Linux kernel** with eBPF support (kernel 5.11+).
+It will **NOT work** on:
 
 - ❌ KIND clusters on macOS/Windows
 - ❌ Docker Desktop on macOS/Windows
 - ❌ Podman on macOS
 - ❌ Any Docker-in-Docker or VM-based Kubernetes
 
-**For local development** on macOS/Windows, use the [OpenTelemetry Operator auto-instrumentation](#auto-instrumentation) feature instead.
+**For local development** on macOS/Windows, use the
+[OpenTelemetry Operator auto-instrumentation](#auto-instrumentation) feature instead.
 
 **Supported platforms:**
 
@@ -111,7 +113,9 @@ helm install tinyolly tinyolly/tinyolly \
   --set ebpfAgent.config.openPorts="5000,8080,3000"
 ```
 
-**Note**: eBPF instrumentation provides network-level spans (connection details, HTTP status codes) but lacks application-level context (route names, user IDs) compared to SDK instrumentation.
+**Note**: eBPF instrumentation provides network-level spans (connection details,
+HTTP status codes) but lacks application-level context (route names, user IDs) compared
+to SDK instrumentation.
 
 ### Auto-Instrumentation
 
@@ -183,7 +187,7 @@ gatewayCollector:
 
 ## Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                        TinyOlly Platform                         │
 ├─────────────────────────────────────────────────────────────────┤

@@ -11,7 +11,12 @@ permissions:
   packages: write
 
 jobs:
+  # Run tests and checks before creating releases
+  tests:
+    uses: ./.github/workflows/test.yml
+
   release-please:
+    needs: tests
     runs-on: ubuntu-latest
     outputs:
       releases_created: ${{ steps.release.outputs.releases_created }}

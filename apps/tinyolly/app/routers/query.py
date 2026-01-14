@@ -32,6 +32,7 @@
 
 import asyncio
 import json
+import logging
 import time
 from typing import TYPE_CHECKING, Any
 
@@ -190,8 +191,6 @@ async def stream_logs(storage: Storage = Depends(get_storage)):
     };
     ```
     """
-    import logging
-
     logger = logging.getLogger(__name__)
 
     async def event_generator():

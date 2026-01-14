@@ -31,4 +31,6 @@ helm/values-local-dev.yaml
 
 # MkDocs generated site
 site/
+
+# Node modules and cache
 node_modules/

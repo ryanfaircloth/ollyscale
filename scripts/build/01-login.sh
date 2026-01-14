@@ -47,9 +47,7 @@ echo "  3. Name it 'tinyolly-builds' with Read & Write permissions"
 echo "  4. Use the token instead of your password below"
 echo ""
 
-docker login
-
-if [ $? -eq 0 ]; then
+if docker login; then
     echo ""
     echo "✓ Login successful!"
     echo ""

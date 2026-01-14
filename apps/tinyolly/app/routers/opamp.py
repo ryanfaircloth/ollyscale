@@ -32,7 +32,6 @@
 
 import contextlib
 import logging
-import os
 import subprocess
 import tempfile
 from pathlib import Path
@@ -91,7 +90,7 @@ async def opamp_status():
             else:
                 raise HTTPException(status_code=response.status, detail=f"OpAMP server returned {response.status}")
     except aiohttp.ClientError as e:
-        raise HTTPException(status_code=503, detail=f"OpAMP server unavailable: {e!s}")
+        raise HTTPException(status_code=503, detail=f"OpAMP server unavailable: {e!s}") from e
 
 
 @router.get(
@@ -124,7 +123,7 @@ async def opamp_get_config(instance_id: str | None = Query(default=None, descrip
             else:
                 raise HTTPException(status_code=response.status, detail=f"OpAMP server returned {response.status}")
     except aiohttp.ClientError as e:
-        raise HTTPException(status_code=503, detail=f"OpAMP server unavailable: {e!s}")
+        raise HTTPException(status_code=503, detail=f"OpAMP server unavailable: {e!s}") from e
 
 
 @router.post(
@@ -165,7 +164,7 @@ async def opamp_validate_config(request: ConfigValidateRequest):
         # Run otelcol-contrib validate command
         validate_cmd = [otelcol_binary, "validate", f"--config={tmp_file_path}"]
 
-        validate_result = subprocess.run(validate_cmd, capture_output=True, text=True, timeout=10)
+        validate_result = subprocess.run(validate_cmd, capture_output=True, text=True, timeout=10, check=False)
 
         if validate_result.returncode == 0:
             return {"valid": True, "error": None}
@@ -194,7 +193,7 @@ async def opamp_validate_config(request: ConfigValidateRequest):
         # Clean up temp file
         if tmp_file_path:
             with contextlib.suppress(OSError, FileNotFoundError):
-                os.unlink(tmp_file_path)
+                Path(tmp_file_path).unlink()
 
 
 @router.post(
@@ -228,7 +227,7 @@ async def opamp_update_config(request: ConfigUpdateRequest):
     try:
         yaml.safe_load(request.config)
     except yaml.YAMLError as e:
-        raise HTTPException(status_code=400, detail=f"Invalid YAML configuration: {e!s}")
+        raise HTTPException(status_code=400, detail=f"Invalid YAML configuration: {e!s}") from e
 
     try:
         async with aiohttp.ClientSession() as session:
@@ -245,7 +244,7 @@ async def opamp_update_config(request: ConfigUpdateRequest):
                     error_text = await response.text()
                     raise HTTPException(status_code=response.status, detail=f"OpAMP server error: {error_text}")
     except aiohttp.ClientError as e:
-        raise HTTPException(status_code=503, detail=f"OpAMP server unavailable: {e!s}")
+        raise HTTPException(status_code=503, detail=f"OpAMP server unavailable: {e!s}") from e
 
 
 @router.get(
@@ -270,7 +269,7 @@ async def opamp_health():
             else:
                 raise HTTPException(status_code=503, detail="OpAMP server unhealthy")
     except aiohttp.ClientError as e:
-        raise HTTPException(status_code=503, detail=f"OpAMP server unavailable: {e!s}")
+        raise HTTPException(status_code=503, detail=f"OpAMP server unavailable: {e!s}") from e
 
 
 @router.get(
@@ -370,7 +369,7 @@ async def opamp_get_template(template_id: str):
             content = default_config_path.read_text()
             return {"id": "default", "filename": "config.yaml", "config": content}
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to read default config: {e!s}")
+            raise HTTPException(status_code=500, detail=f"Failed to read default config: {e!s}") from e
 
     # Handle other templates
     templates_dir = Path(settings.otelcol_templates_dir)
@@ -383,4 +382,4 @@ async def opamp_get_template(template_id: str):
         content = template_file.read_text()
         return {"id": template_id, "filename": template_file.name, "config": content}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to read template: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Failed to read template: {e!s}") from e

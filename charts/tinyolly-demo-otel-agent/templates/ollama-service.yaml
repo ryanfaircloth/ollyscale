@@ -2,14 +2,15 @@ apiVersion: v1
 kind: Service
 metadata:
   name: ollama
-  namespace: { { .Values.global.namespace } }
-  labels: { { - include "tinyolly-ai-agent.ollama.labels" . | nindent 4 } }
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "tinyolly-ai-agent.ollama.labels" . | nindent 4 }}
 spec:
-  type: { { .Values.ollama.service.type } }
+  type: {{ .Values.ollama.service.type }}
   selector:
-    { { - include "tinyolly-ai-agent.ollama.selectorLabels" . | nindent 4 } }
+    {{- include "tinyolly-ai-agent.ollama.selectorLabels" . | nindent 4 }}
   ports:
     - protocol: TCP
-      port: { { .Values.ollama.service.port } }
+      port: {{ .Values.ollama.service.port }}
       targetPort: 11434
       name: http
