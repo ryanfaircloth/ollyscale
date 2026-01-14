@@ -48,7 +48,6 @@
       "package-name": "demo",
       "release-type": "python",
       "include-component-in-tag": true,
-      "changelog": false,
       "extra-files": [
         "__init__.py",
         "VERSION",

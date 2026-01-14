@@ -38,6 +38,10 @@ docs/overrides/
 # Git
 .git/
 
+# Release-please generated files
+CHANGELOG.md
+**/CHANGELOG.md
+
 # IDE
 .vscode/
 .idea/
