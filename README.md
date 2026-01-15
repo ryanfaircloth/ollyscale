@@ -22,7 +22,7 @@ TinyOlly pioneered the concept of "desktop observability" - bringing enterprise-
 
 ## Documentation
 
-Docs are here: [https://ryanfaircloth.github.io/tinyolly/](https://ryanfaircloth.github.io/tinyolly/)
+Docs are here: [https://ryanfaircloth.github.io/ollyscale/](https://ryanfaircloth.github.io/ollyscale/)
 
 ## What is ollyScale?
 
@@ -237,7 +237,7 @@ cd charts
 # UI exposed via Envoy Gateway on localhost
 ```
 
-UI available at: `http://tinyolly.test`
+UI available at: `http://ollyscale.test`
 
 **Enable eBPF agent for zero-code instrumentation:**
 
@@ -277,7 +277,7 @@ cd k8s-demo-ebpf
 ./02-deploy.sh
 ```
 
-Deploys the eBPF demo with traces captured at the kernel level. Images are pulled from Docker Hub (`tinyolly/ebpf-frontend`, `tinyolly/ebpf-backend`).
+Deploys the eBPF demo with traces captured at the kernel level. Images are pulled from Docker Hub (`ryanfaircloth/ollyscale-ebpf-frontend`, `ryanfaircloth/ollyscale-ebpf-backend`).
 
 See [eBPF Demo Documentation](docs/ebpf.md) for details.
 
@@ -375,7 +375,7 @@ Generate clients in any language:
 
 ```bash
 curl http://localhost:5005/openapi.json > openapi.json
-openapi-generator-cli generate -i openapi.json -g python -o ./tinyolly-client
+openapi-generator-cli generate -i openapi.json -g python -o ./ollyscale-client
 ```
 
 All responses return OpenTelemetry-native JSON with full trace/span context.
@@ -449,7 +449,7 @@ See [NOTICE](./NOTICE) for complete attribution and licensing information.
 <div align="center">
   <p>Built for the OpenTelemetry community</p>
   <p>
-    <a href="https://github.com/ryanfaircloth/tinyolly">GitHub</a> •
-    <a href="https://github.com/ryanfaircloth/tinyolly/issues">Issues</a>
+    <a href="https://github.com/ryanfaircloth/ollyscale">GitHub</a> •
+    <a href="https://github.com/ryanfaircloth/ollyscale/issues">Issues</a>
   </p>
 </div>

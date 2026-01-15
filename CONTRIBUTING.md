@@ -21,7 +21,7 @@ ollyScale is based on the excellent TinyOlly project and maintains compatibility
 
 ```bash
 # Clone the repository
-git clone https://github.com/ryanfaircloth/tinyolly.git
+git clone https://github.com/ryanfaircloth/ollyscale.git
 cd ollyscale
 
 # Setup pre-commit hooks (required)
@@ -297,9 +297,9 @@ Releases are automated using Release Please. See [docs/release-process.md](docs/
 
 ## Getting Help
 
-- **Documentation**: [https://tinyolly.github.io/tinyolly/](https://tinyolly.github.io/tinyolly/)
-- **Issues**: [GitHub Issues](https://github.com/tinyolly/tinyolly/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/tinyolly/tinyolly/discussions)
+- **Documentation**: [https://ryanfaircloth.github.io/ollyscale/](https://ryanfaircloth.github.io/ollyscale/)
+- **Issues**: [GitHub Issues](https://github.com/ryanfaircloth/ollyscale/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/ryanfaircloth/ollyscale/discussions)
 
 ## Code of Conduct
 
@@ -314,4 +314,4 @@ By contributing, you agree that your contributions will be licensed under the BS
 
 ---
 
-**Thank you for contributing to TinyOlly!** 🎉
+**Thank you for contributing to ollyScale!** 🎉

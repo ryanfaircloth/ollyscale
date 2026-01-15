@@ -113,9 +113,9 @@ The load generator creates realistic user flows:
 ### Helm Installation
 
 ```bash
-# Install OTel Demo via tinyolly-demos chart
-helm install tinyolly-demos charts/tinyolly-demos \
-  --namespace tinyolly-demos \
+# Install OTel Demo via ollyscale-demos chart
+helm install ollyscale-demos charts/ollyscale-demos \
+  --namespace ollyscale-demos \
   --create-namespace \
   --set customDemo.enabled=false \
   --set otelDemo.enabled=true
@@ -287,23 +287,23 @@ Identify bottlenecks in the checkout flow by analyzing trace timings.
 
 ```bash
 # Check pod resource usage
-kubectl top pods -n tinyolly-demos
+kubectl top pods -n ollyscale-demos
 
 # Scale down load generator
-kubectl scale deployment loadgenerator -n tinyolly-demos --replicas=0
+kubectl scale deployment loadgenerator -n ollyscale-demos --replicas=0
 ```
 
 ### Services Not Starting
 
 ```bash
 # Check pod status
-kubectl get pods -n tinyolly-demos
+kubectl get pods -n ollyscale-demos
 
 # Describe failing pod
-kubectl describe pod <pod-name> -n tinyolly-demos
+kubectl describe pod <pod-name> -n ollyscale-demos
 
 # Check logs
-kubectl logs <pod-name> -n tinyolly-demos
+kubectl logs <pod-name> -n ollyscale-demos
 ```
 
 ### No Telemetry
@@ -312,10 +312,10 @@ Verify OTLP endpoint configuration:
 
 ```bash
 # Check environment variable
-kubectl get deployment frontend -n tinyolly-demos -o yaml | grep OTEL_EXPORTER
+kubectl get deployment frontend -n ollyscale-demos -o yaml | grep OTEL_EXPORTER
 
 # Test collector connectivity
-kubectl exec -n tinyolly-demos deployment/frontend -- \
+kubectl exec -n ollyscale-demos deployment/frontend -- \
   curl -v gateway-collector.tinyolly.svc.cluster.local:4318
 ```
 
@@ -323,15 +323,15 @@ kubectl exec -n tinyolly-demos deployment/frontend -- \
 
 ```bash
 # Check HTTPRoute
-kubectl get httproute otel-demo-frontend -n tinyolly-demos -o yaml
+kubectl get httproute otel-demo-frontend -n ollyscale-demos -o yaml
 
 # Verify backend service
-kubectl get svc -n tinyolly-demos | grep frontendproxy
+kubectl get svc -n ollyscale-demos | grep frontendproxy
 ```
 
 ## Chart Version
 
-The tinyolly-demos chart uses OpenTelemetry Demo Helm chart version:
+The ollyscale-demos chart uses OpenTelemetry Demo Helm chart version:
 
 ```yaml
 dependencies:
@@ -340,10 +340,10 @@ dependencies:
     repository: https://open-telemetry.github.io/opentelemetry-helm-charts
 ```
 
-To update to a newer version, modify `charts/tinyolly-demos/Chart.yaml` and run:
+To update to a newer version, modify `charts/ollyscale-demos/Chart.yaml` and run:
 
 ```bash
-cd charts/tinyolly-demos
+cd charts/ollyscale-demos
 helm dependency update
 ```
 

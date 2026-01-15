@@ -1,4 +1,4 @@
-# TinyOlly Unified Requirements
+# ollyScale Unified Requirements
 # API Backend and OTLP Receiver dependencies
 
 # Core FastAPI/Web (API only)
