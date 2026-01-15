@@ -405,7 +405,7 @@ frontend:
     # -- API backend image repository (unified tinyolly image, runs in API mode)
     repository: ghcr.io/ryanfaircloth/tinyolly/tinyolly
     # -- API backend image tag
-    tag: latest
+    tag: v0.0.1
     # -- API backend image pull policy (overrides global)
     pullPolicy: ""
 
@@ -497,7 +497,7 @@ webui:
     # -- Web UI image repository (nginx with built frontend)
     repository: ghcr.io/ryanfaircloth/tinyolly/tinyolly-ui
     # -- Web UI image tag
-    tag: latest
+    tag: v0.0.1
     # -- Web UI image pull policy (overrides global)
     pullPolicy: ""
 
@@ -613,7 +613,7 @@ opampServer:
     # -- OpAMP Server image repository
     repository: ghcr.io/ryanfaircloth/tinyolly/opamp-server
     # -- OpAMP Server image tag
-    tag: latest
+    tag: v0.0.1
     # -- OpAMP Server image pull policy (overrides global)
     pullPolicy: ""
 
@@ -716,7 +716,7 @@ otlpReceiver:
     # -- OTLP Receiver image repository (unified tinyolly image)
     repository: ghcr.io/ryanfaircloth/tinyolly/tinyolly
     # -- OTLP Receiver image tag
-    tag: latest
+    tag: v0.0.1
     # -- OTLP Receiver image pull policy (overrides global)
     pullPolicy: ""
 

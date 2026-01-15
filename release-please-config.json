@@ -1,17 +1,13 @@
 {
   "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
   "packages": {
-    ".": {
-      "component": "tinyolly-monorepo",
-      "package-name": "tinyolly-monorepo",
-      "release-type": "simple",
-      "include-component-in-tag": false
-    },
     "apps/tinyolly": {
       "component": "tinyolly",
       "package-name": "tinyolly",
       "release-type": "python",
-      "include-component-in-tag": false,
+      "include-component-in-tag": true,
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true,
       "extra-files": [
         "app/__init__.py",
         "Dockerfile",
@@ -19,6 +15,32 @@
           "type": "generic",
           "path": ".kind/modules/main/argocd-applications/observability/tinyolly.yaml",
           "glob": false
+        },
+        {
+          "type": "yaml",
+          "path": "charts/tinyolly/values.yaml",
+          "jsonpath": "$.tinyolly.image.tag"
+        }
+      ]
+    },
+    "apps/tinyolly-ui": {
+      "component": "tinyolly-ui",
+      "package-name": "tinyolly-ui",
+      "release-type": "node",
+      "include-component-in-tag": true,
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true,
+      "extra-files": [
+        "Dockerfile",
+        {
+          "type": "generic",
+          "path": ".kind/modules/main/argocd-applications/observability/tinyolly.yaml",
+          "glob": false
+        },
+        {
+          "type": "yaml",
+          "path": "charts/tinyolly/values.yaml",
+          "jsonpath": "$.webui.image.tag"
         }
       ]
     },
@@ -27,6 +49,8 @@
       "package-name": "opamp-server",
       "release-type": "simple",
       "include-component-in-tag": true,
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true,
       "extra-files": [
         {
           "type": "generic",
@@ -38,6 +62,11 @@
           "type": "generic",
           "path": ".kind/modules/main/argocd-applications/observability/tinyolly.yaml",
           "glob": false
+        },
+        {
+          "type": "yaml",
+          "path": "charts/tinyolly/values.yaml",
+          "jsonpath": "$.opampServer.image.tag"
         }
       ]
     },
@@ -46,6 +75,8 @@
       "package-name": "demo",
       "release-type": "python",
       "include-component-in-tag": true,
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true,
       "extra-files": [
         "__init__.py",
         "Dockerfile",
@@ -53,6 +84,11 @@
           "type": "generic",
           "path": ".kind/modules/tinyolly/argocd-applications/observability/tinyolly-demos.yaml",
           "glob": false
+        },
+        {
+          "type": "yaml",
+          "path": "charts/tinyolly-demos/values.yaml",
+          "jsonpath": "$.frontend.image.tag"
         }
       ]
     },
@@ -61,6 +97,8 @@
       "package-name": "demo-otel-agent",
       "release-type": "python",
       "include-component-in-tag": true,
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true,
       "extra-files": [
         "__init__.py",
         "Dockerfile",
@@ -68,6 +106,11 @@
           "type": "generic",
           "path": ".kind/modules/tinyolly/argocd-applications/observability/tinyolly-demo-otel-agent.yaml",
           "glob": false
+        },
+        {
+          "type": "yaml",
+          "path": "charts/tinyolly-demo-otel-agent/values.yaml",
+          "jsonpath": "$.aiAgent.image.tag"
         }
       ]
     },
@@ -83,19 +126,23 @@
       "component": "helm-demos",
       "package-name": "helm-tinyolly-demos",
       "include-component-in-tag": true,
-      "release-type": "helm"
+      "release-type": "helm",
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true
     },
     "charts/tinyolly-demo-otel-agent": {
       "component": "helm-demo-otel-agent",
       "package-name": "helm-tinyolly-demo-otel-agent",
       "include-component-in-tag": true,
-      "release-type": "helm"
+      "release-type": "helm",
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true
     }
   },
   "bootstrap-sha": "main",
   "release-search-depth": 100,
-  "separate-pull-requests": false,
-  "group-pull-request-title-pattern": "chore: release ${version}",
+  "separate-pull-requests": true,
+  "group-pull-request-title-pattern": "chore: release ${component} ${version}",
   "changelog-sections": [
     {
       "type": "feat",
