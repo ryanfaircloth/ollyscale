@@ -1,5 +1,35 @@
 # Changelog
 
+## 1.0.0 (2026-01-15)
+
+
+### ⚠ BREAKING CHANGES
+
+* Release process now uses conventional commits and release-please
+* Major folder restructure from scattered layout to organized monorepo
+
+### Features
+
+* add optional eBPF agent support to Helm chart ([8d6c9d4](https://github.com/ryanfaircloth/tinyolly/commit/8d6c9d41d787c3c9fb295d9ceb14942cfd547452))
+* implement release-please for automated semantic versioning ([d5591e9](https://github.com/ryanfaircloth/tinyolly/commit/d5591e9c26d07d072cb589ccace52bdd705df13e))
+* Migrate ai-agent demo to Helm with OTel operator auto-instrumentation ([9f93796](https://github.com/ryanfaircloth/tinyolly/commit/9f93796a5f9e926c3b5a89c588cef7fed95ab563))
+* **release:** : implement independent component versioning with separate PRs ([1312681](https://github.com/ryanfaircloth/tinyolly/commit/1312681e4ff10df74b1a8206fe7a5d66a9c53f0c))
+* simplify local dev - make build creates tfvars ([4a80e97](https://github.com/ryanfaircloth/tinyolly/commit/4a80e9753d6973cef189bbcf3fb1719ce3eb2086))
+* **ui:** refactor to separate static UI from FastAPI backend ([c78c665](https://github.com/ryanfaircloth/tinyolly/commit/c78c665b9df6d151a237b0e5ad92076ed90318d0))
+
+
+### Bug Fixes
+
+* consolidate CI workflows and resolve all linting errors ([79e53bf](https://github.com/ryanfaircloth/tinyolly/commit/79e53bf4220db6657922753e0dd3c7744806eeb9))
+* remove ai-agent-demo from build script + add noqa for telemetry ([2156059](https://github.com/ryanfaircloth/tinyolly/commit/2156059608cf0ebbf7e0d0741cb356891a608a77))
+
+
+### Code Refactoring
+
+* **backend:** remove obsolete static and templates directories ([ef385ca](https://github.com/ryanfaircloth/tinyolly/commit/ef385ca9101db9e4eeee53c07933b4dade6d2a89))
+* restructure repository to standard monorepo layout ([1d0afcf](https://github.com/ryanfaircloth/tinyolly/commit/1d0afcf4f6ee8ebe2c921c4e96a65d56f5d9436d))
+* switch to local-only development builds ([92301cc](https://github.com/ryanfaircloth/tinyolly/commit/92301cc124f798393b2e80fceb259c5519d8e824))
+
 ## [0.3.1](https://github.com/ryanfaircloth/tinyolly/compare/helm-tinyolly-v0.3.0...helm-tinyolly-v0.3.1) (2026-01-15)
 
 
