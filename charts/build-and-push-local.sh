@@ -9,20 +9,37 @@
 
 set -euo pipefail
 
+# Project configuration (can be overridden via environment)
+PROJECT_NAME="${PROJECT_NAME:-ollyScale}"
+PROJECT_SLUG="${PROJECT_SLUG:-ollyscale}"
+GH_ORG="${GH_ORG:-ryanfaircloth}"
+GH_REPO="${GH_REPO:-tinyolly}"
+
+# Registry configuration
+REGISTRY="${REGISTRY:-ghcr.io}"
+REGISTRY_ORG="${REGISTRY_ORG:-$GH_ORG}"
+
+# Legacy support for local KIND registry
+EXTERNAL_REGISTRY="${EXTERNAL_REGISTRY:-registry.tinyolly.test:49443}"  # For desktop build/push
+INTERNAL_REGISTRY="${INTERNAL_REGISTRY:-docker-registry.registry.svc.cluster.local:5000}"  # For cluster pulls
+CHART_REGISTRY="${CHART_REGISTRY:-${EXTERNAL_REGISTRY}/tinyolly/charts}"
+
+# Image naming (can be functional or branded)
+IMAGE_ORG="${IMAGE_ORG:-$PROJECT_SLUG}"  # e.g. ollyscale or observability-platform
+
 VERSION=${1:-"local-$(date +%s)"}
-EXTERNAL_REGISTRY="registry.tinyolly.test:49443"  # For desktop build/push
-INTERNAL_REGISTRY="docker-registry.registry.svc.cluster.local:5000"  # For cluster pulls
-CHART_REGISTRY="${EXTERNAL_REGISTRY}/tinyolly/charts"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "==============================================="
-echo "Building TinyOlly: Containers + Helm Chart"
+echo "Building $PROJECT_NAME: Containers + Helm Chart"
 echo "==============================================="
+echo "Project: $PROJECT_NAME ($PROJECT_SLUG)"
 echo "Version tag: $VERSION"
 echo "External registry (desktop): $EXTERNAL_REGISTRY"
 echo "Internal registry (cluster): $INTERNAL_REGISTRY"
 echo "Chart registry: oci://$CHART_REGISTRY"
+echo "Image organization: $IMAGE_ORG"
 echo ""
 
 # Detect container runtime (podman or docker)
@@ -52,38 +69,38 @@ echo ""
 # Navigate to repo root
 cd "$SCRIPT_DIR/.."
 
-echo "Step 1/4: Building tinyolly (API backend + OTLP receiver)"
+echo "Step 1/4: Building $IMAGE_ORG (API backend + OTLP receiver)"
 echo "-----------------------------------------------------------"
 $CONTAINER_CMD build \
   -f apps/tinyolly/Dockerfile \
-  -t tinyolly/tinyolly:latest \
-  -t tinyolly/tinyolly:$VERSION \
-  -t $EXTERNAL_REGISTRY/tinyolly/tinyolly:latest \
-  -t $EXTERNAL_REGISTRY/tinyolly/tinyolly:$VERSION \
+  -t $IMAGE_ORG/tinyolly:latest \
+  -t $IMAGE_ORG/tinyolly:$VERSION \
+  -t $EXTERNAL_REGISTRY/$IMAGE_ORG/tinyolly:latest \
+  -t $EXTERNAL_REGISTRY/$IMAGE_ORG/tinyolly:$VERSION \
   apps/tinyolly/
-echo "✓ TinyOlly backend image built"
+echo "✓ $PROJECT_NAME backend image built"
 echo ""
 
-echo "Step 2/4: Building tinyolly-ui (static frontend)"
+echo "Step 2/4: Building $IMAGE_ORG-ui (static frontend)"
 echo "-----------------------------------------------------------"
 $CONTAINER_CMD build \
   -f apps/tinyolly-ui/Dockerfile \
-  -t tinyolly/tinyolly-ui:latest \
-  -t tinyolly/tinyolly-ui:$VERSION \
-  -t $EXTERNAL_REGISTRY/tinyolly/tinyolly-ui:latest \
-  -t $EXTERNAL_REGISTRY/tinyolly/tinyolly-ui:$VERSION \
+  -t $IMAGE_ORG/tinyolly-ui:latest \
+  -t $IMAGE_ORG/tinyolly-ui:$VERSION \
+  -t $EXTERNAL_REGISTRY/$IMAGE_ORG/tinyolly-ui:latest \
+  -t $EXTERNAL_REGISTRY/$IMAGE_ORG/tinyolly-ui:$VERSION \
   apps/tinyolly-ui/
-echo "✓ tinyolly-ui image built"
+echo "✓ $IMAGE_ORG-ui image built"
 echo ""
 
 echo "Step 3/4: Building OpAMP Server"
 echo "-----------------------------------------------------------"
 $CONTAINER_CMD build \
   -f apps/opamp-server/Dockerfile \
-  -t tinyolly/opamp-server:latest \
-  -t tinyolly/opamp-server:$VERSION \
-  -t $EXTERNAL_REGISTRY/tinyolly/opamp-server:latest \
-  -t $EXTERNAL_REGISTRY/tinyolly/opamp-server:$VERSION \
+  -t $IMAGE_ORG/opamp-server:latest \
+  -t $IMAGE_ORG/opamp-server:$VERSION \
+  -t $EXTERNAL_REGISTRY/$IMAGE_ORG/opamp-server:latest \
+  -t $EXTERNAL_REGISTRY/$IMAGE_ORG/opamp-server:$VERSION \
   apps/opamp-server/
 echo "✓ OpAMP Server image built"
 echo ""
@@ -92,10 +109,10 @@ echo "Step 4/4: Building Unified Demo Image"
 echo "-----------------------------------------------------------"
 $CONTAINER_CMD build \
   -f apps/demo/Dockerfile \
-  -t tinyolly/demo:latest \
-  -t tinyolly/demo:$VERSION \
-  -t $EXTERNAL_REGISTRY/tinyolly/demo:latest \
-  -t $EXTERNAL_REGISTRY/tinyolly/demo:$VERSION \
+  -t $IMAGE_ORG/demo:latest \
+  -t $IMAGE_ORG/demo:$VERSION \
+  -t $EXTERNAL_REGISTRY/$IMAGE_ORG/demo:latest \
+  -t $EXTERNAL_REGISTRY/$IMAGE_ORG/demo:$VERSION \
   apps/demo/
 echo "✓ Unified Demo image built"
 echo ""
@@ -104,27 +121,27 @@ echo "📤 Pushing Container Images to Registry"
 echo "=========================================="
 echo ""
 
-echo "Pushing TinyOlly backend..."
-$CONTAINER_CMD push $PUSH_FLAGS $EXTERNAL_REGISTRY/tinyolly/tinyolly:latest
-$CONTAINER_CMD push $PUSH_FLAGS $EXTERNAL_REGISTRY/tinyolly/tinyolly:$VERSION
-echo "✓ TinyOlly backend pushed"
+echo "Pushing $PROJECT_NAME backend..."
+$CONTAINER_CMD push $PUSH_FLAGS $EXTERNAL_REGISTRY/$IMAGE_ORG/tinyolly:latest
+$CONTAINER_CMD push $PUSH_FLAGS $EXTERNAL_REGISTRY/$IMAGE_ORG/tinyolly:$VERSION
+echo "✓ $PROJECT_NAME backend pushed"
 echo ""
 
-echo "Pushing tinyolly-ui..."
-$CONTAINER_CMD push $PUSH_FLAGS $EXTERNAL_REGISTRY/tinyolly/tinyolly-ui:latest
-$CONTAINER_CMD push $PUSH_FLAGS $EXTERNAL_REGISTRY/tinyolly/tinyolly-ui:$VERSION
-echo "✓ tinyolly-ui pushed"
+echo "Pushing $IMAGE_ORG-ui..."
+$CONTAINER_CMD push $PUSH_FLAGS $EXTERNAL_REGISTRY/$IMAGE_ORG/tinyolly-ui:latest
+$CONTAINER_CMD push $PUSH_FLAGS $EXTERNAL_REGISTRY/$IMAGE_ORG/tinyolly-ui:$VERSION
+echo "✓ $IMAGE_ORG-ui pushed"
 echo ""
 
 echo "Pushing OpAMP Server..."
-$CONTAINER_CMD push $PUSH_FLAGS $EXTERNAL_REGISTRY/tinyolly/opamp-server:latest
-$CONTAINER_CMD push $PUSH_FLAGS $EXTERNAL_REGISTRY/tinyolly/opamp-server:$VERSION
+$CONTAINER_CMD push $PUSH_FLAGS $EXTERNAL_REGISTRY/$IMAGE_ORG/opamp-server:latest
+$CONTAINER_CMD push $PUSH_FLAGS $EXTERNAL_REGISTRY/$IMAGE_ORG/opamp-server:$VERSION
 echo "✓ OpAMP Server pushed"
 echo ""
 
 echo "Pushing Unified Demo..."
-$CONTAINER_CMD push $PUSH_FLAGS $EXTERNAL_REGISTRY/tinyolly/demo:latest
-$CONTAINER_CMD push $PUSH_FLAGS $EXTERNAL_REGISTRY/tinyolly/demo:$VERSION
+$CONTAINER_CMD push $PUSH_FLAGS $EXTERNAL_REGISTRY/$IMAGE_ORG/demo:latest
+$CONTAINER_CMD push $PUSH_FLAGS $EXTERNAL_REGISTRY/$IMAGE_ORG/demo:$VERSION
 echo "✓ Unified Demo pushed"
 echo ""
 
@@ -175,7 +192,7 @@ cat > "$SCRIPT_DIR/values-local-dev.yaml" <<EOF
 
 frontend:
   image:
-    repository: $INTERNAL_REGISTRY/tinyolly/tinyolly
+    repository: $INTERNAL_REGISTRY/$IMAGE_ORG/tinyolly
     tag: $VERSION
   env:
     - name: MODE
@@ -183,17 +200,17 @@ frontend:
 
 webui:
   image:
-    repository: $INTERNAL_REGISTRY/tinyolly/tinyolly-ui
+    repository: $INTERNAL_REGISTRY/$IMAGE_ORG/tinyolly-ui
     tag: $VERSION
 
 opampServer:
   image:
-    repository: $INTERNAL_REGISTRY/tinyolly/opamp-server
+    repository: $INTERNAL_REGISTRY/$IMAGE_ORG/opamp-server
     tag: $VERSION
 
 otlpReceiver:
   image:
-    repository: $INTERNAL_REGISTRY/tinyolly/tinyolly
+    repository: $INTERNAL_REGISTRY/$IMAGE_ORG/tinyolly
     tag: $VERSION
   env:
     - name: MODE
@@ -255,8 +272,8 @@ echo "✅ BUILD COMPLETE"
 echo "=========================================="
 echo ""
 echo "Container Images:"
-echo "  • Built/pushed to: $EXTERNAL_REGISTRY/tinyolly/*:$VERSION"
-echo "  • Cluster pulls from: $INTERNAL_REGISTRY/tinyolly/*:$VERSION"
+echo "  • Built/pushed to: $EXTERNAL_REGISTRY/$IMAGE_ORG/*:$VERSION"
+echo "  • Cluster pulls from: $INTERNAL_REGISTRY/$IMAGE_ORG/*:$VERSION"
 echo ""
 echo "Helm Chart:"
 echo "  • Package: $(basename "$CHART_PACKAGE")"
@@ -280,8 +297,8 @@ echo "  Deploy to ArgoCD (recommended):"
 echo "    ./deploy-to-argocd.sh"
 echo ""
 echo "  Deploy specific image version with kubectl:"
-echo "    kubectl set image deployment/tinyolly-ui \\"
-echo "      tinyolly-ui=$EXTERNAL_REGISTRY/tinyolly/ui:$VERSION -n tinyolly"
+echo "    kubectl set image deployment/$PROJECT_SLUG-ui \\"
+echo "      $PROJECT_SLUG-ui=$EXTERNAL_REGISTRY/$IMAGE_ORG/ui:$VERSION -n tinyolly"
 echo ""
 
 # Auto-deploy to ArgoCD with new chart version and image version
