@@ -1,6 +1,10 @@
-# Contributing to TinyOlly
+# Contributing to ollyScale
 
-Thank you for your interest in contributing to TinyOlly! This guide will help you get started.
+Thank you for your interest in contributing to ollyScale! This guide will help you get started.
+
+## About ollyScale
+
+ollyScale is based on the excellent TinyOlly project and maintains compatibility with the OpenTelemetry ecosystem. We welcome contributions that enhance the platform while respecting both the original TinyOlly codebase (BSD-3-Clause) and new ollyScale features (AGPL-3.0).
 
 ## Development Setup
 
@@ -17,7 +21,7 @@ Thank you for your interest in contributing to TinyOlly! This guide will help yo
 
 ```bash
 # Clone the repository
-git clone https://github.com/tinyolly/tinyolly.git
+git clone https://github.com/ryanfaircloth/tinyolly.git
 cd tinyolly
 
 # Setup pre-commit hooks (required)
