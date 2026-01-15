@@ -24,7 +24,7 @@ COPY vite.config.js tsconfig.json ./
 RUN npm run build
 
 # Stage 2: Runtime with nginx
-FROM nginx:1.25-alpine
+FROM nginx:1.29-alpine
 
 # Install envsubst for runtime config templating
 RUN apk add --no-cache gettext
