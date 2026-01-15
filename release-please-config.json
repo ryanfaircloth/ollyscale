@@ -141,8 +141,8 @@
   },
   "bootstrap-sha": "main",
   "release-search-depth": 100,
-  "separate-pull-requests": true,
-  "group-pull-request-title-pattern": "chore: release ${component} ${version}",
+  "separate-pull-requests": false,
+  "group-pull-request-title-pattern": "chore: release ${version}",
   "changelog-sections": [
     {
       "type": "feat",
