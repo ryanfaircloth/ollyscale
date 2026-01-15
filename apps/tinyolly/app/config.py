@@ -31,7 +31,6 @@
 """Application configuration and settings"""
 
 import os
-from datetime import datetime
 
 
 class Settings:
@@ -40,11 +39,6 @@ class Settings:
     # Redis
     redis_host: str = os.getenv("REDIS_HOST", "localhost")
     redis_port: int = int(os.getenv("REDIS_PORT", "6379"))
-
-    # Static files cache busting
-    # Uses env var if set, otherwise generates from build time
-    # Format: YYYYMMDDHHMM for readability and uniqueness per build
-    static_version: str = os.getenv("STATIC_VERSION", datetime.utcnow().strftime("%Y%m%d%H%M"))
 
     # Server
     port: int = int(os.getenv("PORT", "5002"))
