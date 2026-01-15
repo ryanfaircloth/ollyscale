@@ -1,7 +1,7 @@
 # TinyOlly Build System - Deliverables & Dependencies
 
-**Document Version**: 2.0  
-**Last Updated**: January 13, 2026  
+**Document Version**: 2.1  
+**Last Updated**: January 15, 2026  
 **Status**: Active
 
 ## Overview
@@ -21,7 +21,7 @@ This document maps TinyOlly's **deliverable artifacts** and traces their build d
 
 TinyOlly produces **two types of artifacts** that are published to OCI registries:
 
-### 1. OCI Container Images (3 images)
+### 1. OCI Container Images (4 images)
 
 ### 2. Helm Charts (2 charts)
 
@@ -31,18 +31,19 @@ All other scripts, configurations, and source code exist solely to produce these
 
 ## Deliverable #1: OCI Container Images
 
-We publish **3 container images** to OCI-compatible registries:
+We publish **4 container images** to OCI-compatible registries:
 
 ```
 DELIVERABLE: OCI Container Images
-├─ tinyolly/tinyolly          (Unified Python application)
-├─ tinyolly/opamp-server       (OpAMP configuration server)
-└─ tinyolly/demo               (Demo application)
+├─ tinyolly/tinyolly          (Python backend - FastAPI + OTLP receiver)
+├─ tinyolly/webui             (Static frontend - nginx + TypeScript/Vite)
+├─ tinyolly/opamp-server      (OpAMP configuration server)
+└─ tinyolly/demo              (Demo application)
 ```
 
 ### Image: `tinyolly/tinyolly`
 
-**What it is**: Unified Python application that runs as either UI or OTLP receiver
+**What it is**: Python backend application that runs as either API server or OTLP receiver
 
 **Published to**:
 
@@ -51,7 +52,7 @@ DELIVERABLE: OCI Container Images
 
 **Run modes** (controlled by `MODE` env var):
 
-- `MODE=ui` → FastAPI web UI on port 5002
+- `MODE=ui` → FastAPI REST API server on port 5002
 - `MODE=receiver` → gRPC OTLP receiver on port 4343
 
 **Built from**:
@@ -62,16 +63,9 @@ DELIVERABLE: OCI Container Images
   - `main.py` - Entry point that selects mode
   - `models.py` - Pydantic data models
   - `requirements.txt` - Python dependencies
-  - `app/` - FastAPI routers for UI mode
+  - `app/` - FastAPI routers and API endpoints
   - `receiver/` - gRPC receiver for receiver mode
   - `common/` - Shared utilities (storage, OTLP parsing)
-  - `static/` - Frontend assets (JS, CSS)
-  - `templates/` - Jinja2 HTML templates
-
-**Build command**:
-
-```bash
-# Production (multi-arch)
 docker buildx build --platform linux/amd64,linux/arm64 \
   -f apps/tinyolly/Dockerfile \
   -t ghcr.io/ryanfaircloth/tinyolly/tinyolly:v2.1.8 \
@@ -88,6 +82,57 @@ podman build -f apps/tinyolly/Dockerfile \
 - Change to any file in `apps/tinyolly/`
 - Change to `requirements.txt`
 - Change to Dockerfile
+
+---
+
+### Image: `tinyolly/webui`
+
+**What it is**: Static web frontend served by nginx
+
+**Published to**:
+
+- Production: `ghcr.io/ryanfaircloth/tinyolly/webui:VERSION`
+- Local dev: `registry.tinyolly.test:49443/tinyolly/webui:VERSION`
+
+**Functionality**:
+
+- TypeScript/Vite SPA with modern build tooling
+- Served by nginx on port 80
+- Connects to backend API at `/api/*`
+
+**Built from**:
+
+- **Dockerfile**: `apps/tinyolly-ui/Dockerfile`
+- **Base image**: `node:20-alpine` (build), `nginx:alpine` (runtime)
+- **Source files** (from `apps/tinyolly-ui/`):
+  - `src/` - TypeScript modules and main entry point
+  - `src/modules/` - API client, traces, serviceMap, metrics, etc.
+  - `index.html` - HTML template
+  - `vite.config.js` - Vite build configuration
+  - `package.json` - NPM dependencies
+  - `nginx/` - nginx configuration
+
+**Build command**:
+
+```bash
+# Production (multi-arch)
+docker buildx build --platform linux/amd64,linux/arm64 \
+  -f apps/tinyolly-ui/Dockerfile \
+  -t ghcr.io/ryanfaircloth/tinyolly/webui:v2.1.8 \
+  --push apps/tinyolly-ui/
+
+# Local dev (single-arch)
+podman build -f apps/tinyolly-ui/Dockerfile \
+  -t registry.tinyolly.test:49443/tinyolly/webui:v2.1.x-feature \
+  apps/tinyolly-ui/
+```
+
+**Rebuild triggers**:
+
+- Change to any file in `apps/tinyolly-ui/src/`
+- Change to `package.json`
+- Change to Dockerfile
+- Change to nginx configuration
 
 ---
 
@@ -203,7 +248,8 @@ DELIVERABLE: Helm Charts (OCI format)
 
 **Contains**:
 
-- UI deployment (uses `tinyolly/tinyolly:VERSION` with `MODE=ui`)
+- Backend API deployment (uses `tinyolly/tinyolly:VERSION` with `MODE=ui`)
+- Frontend webui deployment (uses `tinyolly/webui:VERSION`)
 - OTLP receiver deployment (uses `tinyolly/tinyolly:VERSION` with `MODE=receiver`)
 - OpAMP server deployment (uses `tinyolly/opamp-server:VERSION`)
 - Redis StatefulSet
@@ -217,11 +263,12 @@ DELIVERABLE: Helm Charts (OCI format)
 - **Chart.yaml**: Metadata and version
 - **values.yaml**: Default configuration
 - **templates/**: Kubernetes manifests
-  - `deployment-ui.yaml`
-  - `deployment-otlp-receiver.yaml`
-  - `deployment-opamp-server.yaml`
-  - `statefulset-redis.yaml`
-  - `daemonset-otelcol.yaml`
+  - `webui-deployment.yaml`
+  - `frontend-deployment.yaml`
+  - `otlp-receiver-deployment.yaml`
+  - `opamp-server-deployment.yaml`
+  - `redis-statefulset.yaml`
+  - `otelcol-daemonset.yaml`
   - `instrumentation.yaml`
   - `service-*.yaml`
   - `configmap-*.yaml`
@@ -229,6 +276,7 @@ DELIVERABLE: Helm Charts (OCI format)
 **Dependencies**:
 
 - Requires container images to exist:
+  - `tinyolly/webui:VERSION`
   - `tinyolly/tinyolly:VERSION`
   - `tinyolly/opamp-server:VERSION`
 - May reference external charts (Redis Operator, OTel Operator)
@@ -373,14 +421,14 @@ helm push charts/tinyolly-demos-0.1.5.tgz \
 **Registry**: `ghcr.io/ryanfaircloth/tinyolly/*`  
 **Platforms**: `linux/amd64`, `linux/arm64`
 
-| Script                     | Builds                                   | Command                              |
-| -------------------------- | ---------------------------------------- | ------------------------------------ |
-| `02-build-core.sh VERSION` | tinyolly:VERSION<br>opamp-server:VERSION | Uses Docker Buildx<br>Multi-platform |
-| `02-build-demo.sh VERSION` | demo:VERSION                             | Uses Docker Buildx<br>Multi-platform |
-| `02-build-all.sh VERSION`  | All images above                         | Calls other scripts                  |
-| `03-push-core.sh VERSION`  | N/A - pushes only                        | Pushes to GHCR                       |
-| `03-push-demo.sh VERSION`  | N/A - pushes only                        | Pushes to GHCR                       |
-| `03-push-all.sh VERSION`   | N/A - pushes only                        | Pushes all to GHCR                   |
+| Script                     | Builds                                                 | Command                              |
+| -------------------------- | ------------------------------------------------------ | ------------------------------------ |
+| `02-build-core.sh VERSION` | tinyolly:VERSION<br>webui:VERSION<br>opamp-server:VERSION | Uses Docker Buildx<br>Multi-platform |
+| `02-build-demo.sh VERSION` | demo:VERSION                                           | Uses Docker Buildx<br>Multi-platform |
+| `02-build-all.sh VERSION`  | All images above                                       | Calls other scripts                  |
+| `03-push-core.sh VERSION`  | N/A - pushes only                                      | Pushes to GHCR                       |
+| `03-push-demo.sh VERSION`  | N/A - pushes only                                      | Pushes to GHCR                       |
+| `03-push-all.sh VERSION`   | N/A - pushes only                                      | Pushes all to GHCR                   |
 
 **Typical workflow**:
 
@@ -406,9 +454,9 @@ cd charts
 **Registry**: `registry.tinyolly.test:49443/tinyolly/*`  
 **Platforms**: Native only (faster builds)
 
-| Script                            | Builds                                              | Description                                                                                                                           |
-| --------------------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `build-and-push-local.sh VERSION` | 1. All 3 container images<br>2. tinyolly Helm chart | **Complete pipeline**:<br>- Build images<br>- Push to local registry<br>- Update Chart.yaml<br>- Package chart<br>- Push chart to OCI |
+| Script                            | Builds                                                              | Description                                                                                                                           |
+| --------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `build-and-push-local.sh VERSION` | 1. All 4 container images<br>2. tinyolly Helm chart | **Complete pipeline**:<br>- Build images<br>- Push to local registry<br>- Update Chart.yaml<br>- Package chart<br>- Push chart to OCI |
 
 **What it does**:
 
@@ -420,6 +468,10 @@ podman build -f apps/tinyolly/Dockerfile \
   -t registry.tinyolly.test:49443/tinyolly/tinyolly:v2.1.x-tail-sampling \
   apps/tinyolly/
 
+podman build -f apps/tinyolly-ui/Dockerfile \
+  -t registry.tinyolly.test:49443/tinyolly/webui:v2.1.x-tail-sampling \
+  apps/tinyolly-ui/
+
 podman build -f apps/opamp-server/Dockerfile \
   -t registry.tinyolly.test:49443/tinyolly/opamp-server:v2.1.x-tail-sampling \
   apps/opamp-server/
@@ -430,7 +482,7 @@ podman build -f apps/demo/Dockerfile \
 
 # Step 2: Push images to local registry (external endpoint)
 podman push --tls-verify=false registry.tinyolly.test:49443/tinyolly/tinyolly:v2.1.x-tail-sampling
-# ... (opamp-server, demo)
+# ... (webui, opamp-server, demo)
 
 # Step 3: Update Chart.yaml version
 sed -i '' "s/^version: .*/version: 0.1.1-v2.1.x-tail-sampling/" charts/tinyolly/Chart.yaml
@@ -440,6 +492,10 @@ cat > values-local-dev.yaml <<EOF
 ui:
   image:
     repository: docker-registry.registry.svc.cluster.local:5000/tinyolly/tinyolly
+    tag: v2.1.x-tail-sampling
+webui:
+  image:
+    repository: docker-registry.registry.svc.cluster.local:5000/tinyolly/webui
     tag: v2.1.x-tail-sampling
 # ... etc
 EOF
@@ -464,13 +520,12 @@ terraform apply -replace='kubectl_manifest.observability_applications["observabi
 
 ### Deprecated Scripts (Do Not Use)
 
-| Location          | Script                        | Status        | Replacement                      |
-| ----------------- | ----------------------------- | ------------- | -------------------------------- |
-| `scripts/docker/` | `01-start-core*.sh`           | ⚠️ Deprecated | Kubernetes deployment via ArgoCD |
-| `scripts/docker/` | `04-rebuild-ui.sh`            | ⚠️ Deprecated | `charts/build-and-push-local.sh` |
-| (removed)         | `05-rebuild-local-changes.sh` | 🗑️ Removed    | `charts/build-and-push-local.sh` |
-| (removed)         | `06-rebuild-all-local.sh`     | 🗑️ Removed    | `charts/build-and-push-local.sh` |
-| (removed)         | `07-deploy-local-images.sh`   | 🗑️ Removed    | ArgoCD + Terraform pattern       |
+These scripts are no longer maintained and should not be used:
+
+| Status        | Replacement                      | Notes                          |
+| ------------- | -------------------------------- | ------------------------------ |
+| 🗑️ Removed    | `charts/build-and-push-local.sh` | Old k8s/ scripts deleted       |
+| 🗑️ Removed    | ArgoCD + Terraform pattern       | GitOps deployment recommended  |
 
 ---
 
@@ -544,14 +599,15 @@ ui:
 | **Source Code**                           |                              |                                             |
 | `apps/tinyolly/app/`                      | `tinyolly:VERSION` image     | Rebuild image → Update chart → Deploy       |
 | `apps/tinyolly/receiver/`                 | `tinyolly:VERSION` image     | Rebuild image → Update chart → Deploy       |
-| `apps/tinyolly/static/`                   | `tinyolly:VERSION` image     | Rebuild image → Update chart → Deploy       |
-| `apps/tinyolly/templates/`                | `tinyolly:VERSION` image     | Rebuild image → Update chart → Deploy       |
 | `apps/tinyolly/requirements.txt`          | `tinyolly:VERSION` image     | Rebuild image → Update chart → Deploy       |
+| `apps/tinyolly-ui/src/`                   | `webui:VERSION` image        | Rebuild image → Update chart → Deploy       |
+| `apps/tinyolly-ui/package.json`           | `webui:VERSION` image        | Rebuild image → Update chart → Deploy       |
 | `apps/opamp-server/`                      | `opamp-server:VERSION` image | Rebuild image → Update chart → Deploy       |
 | `apps/demo/frontend.py`                   | `demo:VERSION` image         | Rebuild image → Update demos chart → Deploy |
 | `apps/demo/backend.py`                    | `demo:VERSION` image         | Rebuild image → Update demos chart → Deploy |
 | **Dockerfiles**                           |                              |                                             |
 | `apps/tinyolly/Dockerfile`                | `tinyolly:VERSION` image     | Rebuild image → Update chart → Deploy       |
+| `apps/tinyolly-ui/Dockerfile`             | `webui:VERSION` image        | Rebuild image → Update chart → Deploy       |
 | `apps/opamp-server/Dockerfile`            | `opamp-server:VERSION` image | Rebuild image → Update chart → Deploy       |
 | `apps/demo/Dockerfile`                    | `demo:VERSION` image         | Rebuild image → Update demos chart → Deploy |
 | **Helm Charts**                           |                              |                                             |

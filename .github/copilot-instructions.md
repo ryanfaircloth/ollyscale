@@ -67,13 +67,17 @@ Shared utilities are in `apps/tinyolly/common/`:
 - **CONSUMER spans** (kind=5): Edge direction is **reversed** `target ← source` for messaging systems
 - See [storage.py](apps/tinyolly/common/storage.py) `build_service_graph()` for implementation
 
-### Code Organization (tinyolly-ui)
+### Code Organization
 
+**Backend (`apps/tinyolly/`)**:
 - **Routers**: `app/routers/` (ingest, query, services, admin, system, opamp)
 - **Models**: `models.py` (Pydantic schemas)
-- **Static assets**: `static/*.js` (modular JS with ES6 imports)
-- **Templates**: `templates/` (Jinja2 with partials)
 - **Dependencies**: Use FastAPI dependency injection via `app/dependencies.py`
+
+**Frontend (`apps/tinyolly-ui/`)**:
+- **TypeScript/Vite**: Modern build tooling with ES modules
+- **Modules**: `src/modules/` (api, traces, serviceMap, metrics, etc.)
+- **Assets**: Compiled to `dist/` and served by nginx
 
 ### Async Patterns
 
@@ -82,15 +86,6 @@ Shared utilities are in `apps/tinyolly/common/`:
 - Batch operations with Redis pipelines for performance
 
 ## Build Workflow
-
-### Docker Builds (Pre-built Images)
-
-```bash
-cd docker
-./01-start-core.sh              # Pull & run from GHCR
-./02-stop-core.sh               # Stop all services
-./04-rebuild-ui.sh              # Rebuild UI only (local changes)
-```
 
 ### Kubernetes Builds (KIND Cluster with Terraform)
 
@@ -236,32 +231,21 @@ export TF_VAR_bootstrap=false && terraform apply -auto-approve
 - Edge direction depends on span kind (see above)
 - Node types inferred from span attributes (db, messaging, external)
 
-### Frontend JavaScript
+### Frontend (TypeScript/Vite)
 
-- **Modular ES6**: `api.js`, `render.js`, `filter.js`, `serviceMap.js`
+- **Location**: `apps/tinyolly-ui/src/modules/`
+- **TypeScript modules**: `api.ts`, `traces.ts`, `serviceMap.ts`, `metrics.ts`, etc.
 - **Cytoscape.js**: For service map visualization
 - **Chart.js**: For metrics charts
-- **Filter pattern**: `filterTinyOllyData()` to exclude internal services from UI
+- **Build**: Vite bundles to `dist/`, served by nginx
 
 ### Testing
 
-- Located in `docker/apps/tinyolly-ui/tests/`
+- **Backend tests**: `apps/tinyolly/tests/`
 - Use pytest with async support: `pytest-asyncio`
 - Test Redis operations with real Redis instance (not mocked)
 
 ## Deployment Environments
-
-### Local Development (`docker-compose-*-local.yml`)
-
-- Builds images from local source
-- Mounts no volumes (stateless)
-- Fast iteration with `./04-rebuild-ui.sh`
-
-### Docker Hub (`docker-compose-*.yml`)
-
-- Pulls pre-built images from GHCR (`ghcr.io/ryanfaircloth/*`)
-- Production-like setup
-- Used for demos and releases
 
 ### Kubernetes
 
