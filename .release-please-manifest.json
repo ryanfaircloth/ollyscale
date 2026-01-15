@@ -1,6 +1,6 @@
 {
   "apps/tinyolly": "0.0.0",
-  "apps/tinyolly-ui": "0.0.0",
+  "apps/tinyolly-ui": "1.0.0",
   "apps/opamp-server": "0.0.0",
   "apps/demo": "0.0.0",
   "apps/demo-otel-agent": "0.0.0",
