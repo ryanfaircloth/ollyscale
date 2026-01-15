@@ -29,7 +29,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
-TinyOlly Storage Module (Async)
+ollyScale Storage Module (Async)
 Handles all Redis interactions for traces, logs, and metrics using async operations.
 Optimized with MessagePack, ZSTD, and Batch Operations.
 

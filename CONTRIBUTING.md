@@ -22,7 +22,7 @@ ollyScale is based on the excellent TinyOlly project and maintains compatibility
 ```bash
 # Clone the repository
 git clone https://github.com/ryanfaircloth/tinyolly.git
-cd tinyolly
+cd ollyscale
 
 # Setup pre-commit hooks (required)
 make precommit-setup
@@ -128,7 +128,7 @@ async def my_function(param: str) -> dict:
 ### Python Tests
 
 ```bash
-cd apps/tinyolly
+cd apps/ollyscale
 pip install -r requirements-test.txt
 pytest
 ```
@@ -251,21 +251,21 @@ cd charts
 
 # Update ArgoCD
 cd ../.kind
-terraform apply -replace='kubectl_manifest.observability_applications["observability/tinyolly.yaml"]' -auto-approve
+terraform apply -replace='kubectl_manifest.observability_applications["observability/ollyscale.yaml"]' -auto-approve
 
 # Check deployment
-kubectl get pods -n tinyolly
-kubectl logs -n tinyolly deployment/tinyolly-ui -f
+kubectl get pods -n ollyscale
+kubectl logs -n ollyscale deployment/ollyscale-webui -f
 ```
 
 ### Cleaning Test Data
 
 ```bash
 # Docker
-docker exec tinyolly-redis redis-cli FLUSHDB
+docker exec ollyscale-redis redis-cli FLUSHDB
 
 # Kubernetes
-kubectl exec -n tinyolly tinyolly-redis-0 -- redis-cli FLUSHDB
+kubectl exec -n ollyscale ollyscale-redis-0 -- redis-cli FLUSHDB
 ```
 
 ## Documentation

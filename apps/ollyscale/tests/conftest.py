@@ -29,7 +29,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
-Pytest configuration and fixtures for TinyOlly UI tests.
+Pytest configuration and fixtures for ollyScale UI tests.
 
 This file provides shared fixtures for testing the SQLite storage backend,
 API endpoints, and data processing functionality.
