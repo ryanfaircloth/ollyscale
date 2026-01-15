@@ -70,7 +70,7 @@ jobs:
       - name: Check if component was released
         id: check
         run: |
-          # Read current version from manifest - single source of truth
+          # Read current version from manifest
           VERSION=$(jq -r '."${{ matrix.path }}"' .release-please-manifest.json)
 
           # Tag push: match tag pattern to component
@@ -84,29 +84,21 @@ jobs:
             else
               echo "released=false" >> $GITHUB_OUTPUT
             fi
-          # Release-please: check if version changed in manifest
+          # Release-please: use per-path outputs from release-please action
           else
-            # Determine previous commit reference with fallback
-            BEFORE_REF="${{ github.event.before }}"
-            if [ -z "$BEFORE_REF" ] || ! git cat-file -e "$BEFORE_REF" 2>/dev/null; then
-              BEFORE_REF="HEAD~1"
-            fi
+            # Convert path to output variable name (replaces / with --)
+            PATH_OUTPUT=$(echo "${{ matrix.path }}" | sed 's/\/\//--/g')
+            RELEASE_CREATED="${{ needs.release-please.outputs[format('{0}--release_created', env.PATH_OUTPUT)] }}"
 
-            # Fetch previous commit to compare versions
-            git fetch origin "$BEFORE_REF" --depth=1 2>/dev/null || true
-            PREV_VERSION=$(git show "$BEFORE_REF":.release-please-manifest.json 2>/dev/null | jq -r '."${{ matrix.path }}"' || echo "0.0.0")
-
-            echo "Previous version: ${PREV_VERSION}"
-            echo "Current version: ${VERSION}"
-
-            # If version changed, component was released
-            if [ "${VERSION}" != "${PREV_VERSION}" ] && [ "${VERSION}" != "null" ]; then
+            if [ "${RELEASE_CREATED}" = "true" ]; then
               echo "released=true" >> $GITHUB_OUTPUT
               echo "version=${VERSION}" >> $GITHUB_OUTPUT
             else
               echo "released=false" >> $GITHUB_OUTPUT
             fi
           fi
+        env:
+          PATH_OUTPUT: ${{ matrix.path }}
 
       - name: Set up QEMU
         if: steps.check.outputs.released == 'true'
@@ -150,24 +142,15 @@ jobs:
       - name: Check if chart was released
         id: check
         run: |
-          # Check if chart version changed in manifest or Chart.yaml
+          # Check if chart version changed using release-please outputs
           if [ -f "charts/${{ matrix.chart }}/Chart.yaml" ]; then
             VERSION=$(cat charts/${{ matrix.chart }}/Chart.yaml | grep '^version:' | awk '{print $2}')
 
-            # Determine previous commit reference with fallback
-            BEFORE_REF="${{ github.event.before }}"
-            if [ -z "$BEFORE_REF" ] || ! git cat-file -e "$BEFORE_REF" 2>/dev/null; then
-              BEFORE_REF="HEAD~1"
-            fi
+            # Convert path to output variable name (replaces / with --)
+            PATH_OUTPUT=$(echo "charts/${{ matrix.chart }}" | sed 's/\/\//--/g')
+            RELEASE_CREATED="${{ needs.release-please.outputs[format('{0}--release_created', env.PATH_OUTPUT)] }}"
 
-            # Fetch previous commit to compare versions
-            git fetch origin "$BEFORE_REF" --depth=1 2>/dev/null || true
-            PREV_VERSION=$(git show "$BEFORE_REF":charts/${{ matrix.chart }}/Chart.yaml 2>/dev/null | grep '^version:' | awk '{print $2}' || echo "0.0.0")
-
-            echo "Previous version: ${PREV_VERSION}"
-            echo "Current version: ${VERSION}"
-
-            if [ "${VERSION}" != "${PREV_VERSION}" ] && [ "${VERSION}" != "" ]; then
+            if [ "${RELEASE_CREATED}" = "true" ]; then
               echo "released=true" >> $GITHUB_OUTPUT
               echo "version=${VERSION}" >> $GITHUB_OUTPUT
             else
@@ -176,6 +159,8 @@ jobs:
           else
             echo "released=false" >> $GITHUB_OUTPUT
           fi
+        env:
+          PATH_OUTPUT: charts/${{ matrix.chart }}
 
       - name: Install Helm
         if: steps.check.outputs.released == 'true'
