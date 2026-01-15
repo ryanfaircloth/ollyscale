@@ -3,20 +3,7 @@
   "extends": ["config:recommended", ":dependencyDashboard"],
   "timezone": "America/New_York",
   "schedule": ["before 5am on Monday"],
-  "enabledManagers": ["dockerfile", "docker-compose", "github-actions", "gomod", "pip_requirements", "regex"],
-  "customManagers": [
-    {
-      "customType": "regex",
-      "fileMatch": ["^apps/tinyolly/templates/.*\\.html$"],
-      "matchStrings": [
-        "https://cdnjs\\.cloudflare\\.com/ajax/libs/(?<depName>[^/]+)/(?<currentValue>[^/]+)/[^\"]+",
-        "https://cdn\\.jsdelivr\\.net/npm/(?<depName>[^@]+)@(?<currentValue>[^/]+)/[^\"]+",
-        "https://unpkg\\.com/(?<depName>[^@]+)@(?<currentValue>[^/]+)/[^\"]+"
-      ],
-      "datasourceTemplate": "npm",
-      "versioningTemplate": "npm"
-    }
-  ],
+  "enabledManagers": ["dockerfile", "docker-compose", "github-actions", "gomod", "npm", "pip_requirements"],
   "packageRules": [
     {
       "description": "Group Python packages by app",
@@ -41,6 +28,12 @@
       "matchManagers": ["gomod"],
       "matchFileNames": ["apps/opamp-server/**"],
       "groupName": "opamp-server Go dependencies"
+    },
+    {
+      "description": "Group tinyolly-ui npm dependencies",
+      "matchManagers": ["npm"],
+      "matchFileNames": ["apps/tinyolly-ui/**"],
+      "groupName": "tinyolly-ui npm dependencies"
     },
     {
       "description": "Group all Docker base images",
