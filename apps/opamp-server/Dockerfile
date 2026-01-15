@@ -22,7 +22,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o /ollyscale-opamp-server .
 # Note: If HTTPS/TLS calls fail, switch to distroless/static-debian12:nonroot for CA certs
 FROM scratch
 
-COPY --from=builder /tinyolly-opamp-server /ollyscale-opamp-server
+COPY --from=builder /ollyscale-opamp-server /ollyscale-opamp-server
 
 # OpAMP port for collector connections
 EXPOSE 4320

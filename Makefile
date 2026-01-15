@@ -98,7 +98,7 @@ deploy:
 	echo "✅ Deployment complete!" && \
 	echo "" && \
 	echo "📋 Access $(PROJECT_NAME):" && \
-	echo "  UI: https://tinyolly.tinyolly.test:49443" && \
+	echo "  UI: https://ollyscale.ollyscale.test:49443" && \
 	echo ""
 
 ## Destroy KIND cluster and registry
