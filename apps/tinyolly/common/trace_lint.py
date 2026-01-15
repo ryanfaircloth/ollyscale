@@ -227,19 +227,19 @@ def _check_attribute_naming(span: dict[str, Any]) -> list[dict[str, Any]]:
                     )
                     break
 
-        # Check for missing standard HTTP attributes on HTTP spans
-        span_name = span.get("name", "").lower()
-        if any(method in span_name for method in ["get", "post", "put", "delete", "patch", "head", "options"]):
-            if "http.method" not in attrs and "http.request.method" not in attrs:
-                findings.append(
-                    {
-                        "severity": "info",
-                        "type": "missing_attribute",
-                        "message": f"HTTP span '{span.get('name')}' missing http.method attribute",
-                        "suggestion": "Add http.method or http.request.method attribute for HTTP spans",
-                        "span_name": span.get("name", "unknown"),
-                    }
-                )
+    # Check for missing standard HTTP attributes on HTTP spans
+    span_name = span.get("name", "").lower()
+    if any(method in span_name for method in ["get", "post", "put", "delete", "patch", "head", "options"]):
+        if "http.method" not in attrs and "http.request.method" not in attrs:
+            findings.append(
+                {
+                    "severity": "info",
+                    "type": "missing_attribute",
+                    "message": f"HTTP span '{span.get('name')}' missing http.method attribute",
+                    "suggestion": "Add http.method or http.request.method attribute for HTTP spans",
+                    "span_name": span.get("name", "unknown"),
+                }
+            )
 
     return findings
 
@@ -279,7 +279,7 @@ def _check_auto_instrumentation(span: dict[str, Any]) -> list[dict[str, Any]]:
 
     # Check for database spans
     db_system = get_attr_value(span, ["db.system"])
-    if db_system or any(db in span_name.lower() for db in ["sql", "query", "database", "mongo", "redis", "postgres"]):
+    if db_system or any(db in span_name.lower() for db in ["sql", "select", "insert", "update", "delete", "query", "database", "mongo", "redis", "postgres", "mysql"]):
         if not db_system:
             findings.append(
                 {
