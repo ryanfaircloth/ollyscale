@@ -1,4 +1,26 @@
-# Makefile for TinyOlly KIND cluster management
+# Makefile for ollyScale KIND cluster management
+#
+# Project configuration
+PROJECT_NAME ?= ollyScale
+PROJECT_SLUG ?= ollyscale
+GH_ORG ?= ryanfaircloth
+GH_REPO ?= tinyolly
+
+# Container configuration
+REGISTRY ?= ghcr.io
+REGISTRY_ORG ?= $(GH_ORG)
+IMAGE_PREFIX ?= $(REGISTRY)/$(REGISTRY_ORG)
+
+# Kubernetes configuration
+CLUSTER_NAME ?= $(PROJECT_SLUG)
+NAMESPACE ?= observability
+
+# Legacy cluster name support (can be overridden)
+LEGACY_CLUSTER_NAME := tinyolly
+
+# Use legacy name if it exists, otherwise use new name
+ACTIVE_CLUSTER_NAME := $(shell if kind get clusters 2>/dev/null | grep -q "^$(LEGACY_CLUSTER_NAME)$$"; then echo "$(LEGACY_CLUSTER_NAME)"; else echo "$(CLUSTER_NAME)"; fi)
+
 #
 # Targets:
 #   up           : Create KIND cluster with local registry (infrastructure only)
@@ -13,17 +35,14 @@
 #   lint         : Run pre-commit checks on all files
 #   lint-fix     : Run pre-commit with auto-fix on all files
 
-# Cluster configuration
-CLUSTER_NAME := tinyolly
-
 .PHONY: up deploy down clean demos demos-otel demos-all demos-off precommit-setup lint lint-fix
 
-## Create KIND cluster with local registry (infrastructure only, no TinyOlly apps)
+## Create KIND cluster with local registry (infrastructure only, no $(PROJECT_NAME) apps)
 up:
 	@if [ ! -f .kind/terraform.tfstate ]; then \
 		cd $(CURDIR)/.kind && terraform init; \
 	fi
-	@if ! kind get clusters 2>/dev/null | grep -q "^$(CLUSTER_NAME)$$"; then \
+	@if ! kind get clusters 2>/dev/null | grep -q "^$(ACTIVE_CLUSTER_NAME)$$"; then \
 		echo "🚀 Bootstrap mode: Creating new cluster..."; \
 		cd $(CURDIR)/.kind && export TF_VAR_bootstrap=true && terraform apply -auto-approve; \
 		echo ""; \
@@ -58,7 +77,7 @@ up:
 
 ## Build local images and deploy to cluster
 deploy:
-	@if ! kind get clusters 2>/dev/null | grep -q "^$(CLUSTER_NAME)$$"; then \
+	@if ! kind get clusters 2>/dev/null | grep -q "^$(ACTIVE_CLUSTER_NAME)$$"; then \
 		echo "❌ Cluster not found. Run 'make up' first!"; \
 		exit 1; \
 	fi
@@ -78,23 +97,23 @@ deploy:
 	echo "" && \
 	echo "✅ Deployment complete!" && \
 	echo "" && \
-	echo "📋 Access TinyOlly:" && \
+	echo "📋 Access $(PROJECT_NAME):" && \
 	echo "  UI: https://tinyolly.tinyolly.test:49443" && \
 	echo ""
 
 ## Destroy KIND cluster and registry
 down:
 	@echo "Deleting KIND cluster..."
-	-kind delete cluster --name $(CLUSTER_NAME)
+	-kind delete cluster --name $(ACTIVE_CLUSTER_NAME)
 	@echo "Cleaning up terraform state and config files..."
 	-rm -f .kind/terraform.tfstate .kind/terraform.tfstate.backup
-	-rm -f .kind/$(CLUSTER_NAME)-config
+	-rm -f .kind/$(ACTIVE_CLUSTER_NAME)-config
 	@echo "Cleanup complete!"
 
 ## Remove terraform state files
 clean:
 	rm -f .kind/terraform.tfstate .kind/terraform.tfstate.backup
-	rm -f .kind/$(CLUSTER_NAME)-config
+	rm -f .kind/$(ACTIVE_CLUSTER_NAME)-config
 
 ## Deploy custom demo applications (demo-frontend + demo-backend)
 demos:
