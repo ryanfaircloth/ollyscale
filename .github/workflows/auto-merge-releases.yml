@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   auto-merge:
-    if: contains(github.event.pull_request.labels.*.name, 'autorelease&#58; pending')
+    if: contains(github.event.pull_request.labels.*.name, 'automerge&#58; pending')
     runs-on: ubuntu-latest
     steps:
       - name: Enable auto-merge
