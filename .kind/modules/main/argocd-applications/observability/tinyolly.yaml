@@ -23,9 +23,20 @@ spec:
     targetRevision: ${tinyolly_chart_tag}
     helm:
       valuesObject:
-        ui:
+        frontend:
           image:
             repository: ${image_registry}/tinyolly
+            tag: ${tinyolly_tag}
+
+          resources:
+            limits: {}
+
+          httpRoute:
+            enabled: false
+
+        webui:
+          image:
+            repository: ${image_registry}/tinyolly-ui
             tag: ${tinyolly_tag}
 
           resources:

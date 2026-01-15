@@ -8,8 +8,11 @@ To learn more about the release, try:
   $ helm get all {{ .Release.Name }} -n {{ .Release.Namespace }}
 
 TinyOlly components deployed:
-{{- if .Values.ui.enabled }}
-  ✓ UI: {{ include "tinyolly.ui.name" . }}
+{{- if .Values.frontend }}
+  ✓ Frontend (API): {{ include "tinyolly.frontend.name" . }}
+{{- end }}
+{{- if .Values.webui }}
+  ✓ WebUI (nginx): {{ include "tinyolly.webui.name" . }}
 {{- end }}
 {{- if .Values.opampServer.enabled }}
   ✓ OpAMP Server: {{ include "tinyolly.opampServer.name" . }}
@@ -18,26 +21,26 @@ TinyOlly components deployed:
   ✓ OTLP Receiver: {{ include "tinyolly.otlpReceiver.name" . }}
 {{- end }}
 
-{{- if .Values.ui.enabled }}
+{{- if .Values.webui }}
 
 To access the TinyOlly UI:
-{{- if eq .Values.ui.service.type "LoadBalancer" }}
+{{- if eq .Values.webui.service.type "LoadBalancer" }}
   NOTE: It may take a few minutes for the LoadBalancer IP to be available.
 
   You can watch the status by running:
-    kubectl get svc {{ include "tinyolly.ui.name" . }} -n {{ .Release.Namespace }} -w
+    kubectl get svc {{ include "tinyolly.webui.name" . }} -n {{ .Release.Namespace }} -w
 
   Once available, access the UI at:
-    export SERVICE_IP=$(kubectl get svc {{ include "tinyolly.ui.name" . }} -n {{ .Release.Namespace }} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-    echo "http://$SERVICE_IP:{{ .Values.ui.service.port }}"
-{{- else if eq .Values.ui.service.type "NodePort" }}
-  export NODE_PORT=$(kubectl get svc {{ include "tinyolly.ui.name" . }} -n {{ .Release.Namespace }} -o jsonpath='{.spec.ports[0].nodePort}')
+    export SERVICE_IP=$(kubectl get svc {{ include "tinyolly.webui.name" . }} -n {{ .Release.Namespace }} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+    echo "http://$SERVICE_IP:{{ .Values.webui.service.port }}"
+{{- else if eq .Values.webui.service.type "NodePort" }}
+  export NODE_PORT=$(kubectl get svc {{ include "tinyolly.webui.name" . }} -n {{ .Release.Namespace }} -o jsonpath='{.spec.ports[0].nodePort}')
   export NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="ExternalIP")].address}')
   echo "http://$NODE_IP:$NODE_PORT"
-{{- else if eq .Values.ui.service.type "ClusterIP" }}
-  kubectl port-forward svc/{{ include "tinyolly.ui.name" . }} -n {{ .Release.Namespace }} {{ .Values.ui.service.port }}:{{ .Values.ui.service.port }}
+{{- else if eq .Values.webui.service.type "ClusterIP" }}
+  kubectl port-forward svc/{{ include "tinyolly.webui.name" . }} -n {{ .Release.Namespace }} {{ .Values.webui.service.port }}:{{ .Values.webui.service.port }}
 
-  Then visit http://127.0.0.1:{{ .Values.ui.service.port }} in your browser.
+  Then visit http://127.0.0.1:{{ .Values.webui.service.port }} in your browser.
 {{- end }}
 {{- end }}
 

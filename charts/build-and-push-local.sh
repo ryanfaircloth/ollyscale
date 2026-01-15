@@ -52,7 +52,7 @@ echo ""
 # Navigate to repo root
 cd "$SCRIPT_DIR/.."
 
-echo "Step 1/3: Building tinyolly (unified UI + OTLP receiver)"
+echo "Step 1/4: Building tinyolly (API backend + OTLP receiver)"
 echo "-----------------------------------------------------------"
 $CONTAINER_CMD build \
   -f apps/tinyolly/Dockerfile \
@@ -61,10 +61,22 @@ $CONTAINER_CMD build \
   -t $EXTERNAL_REGISTRY/tinyolly/tinyolly:latest \
   -t $EXTERNAL_REGISTRY/tinyolly/tinyolly:$VERSION \
   apps/tinyolly/
-echo "✓ TinyOlly image built"
+echo "✓ TinyOlly backend image built"
 echo ""
 
-echo "Step 2/3: Building OpAMP Server"
+echo "Step 2/4: Building tinyolly-ui (static frontend)"
+echo "-----------------------------------------------------------"
+$CONTAINER_CMD build \
+  -f apps/tinyolly-ui/Dockerfile \
+  -t tinyolly/tinyolly-ui:latest \
+  -t tinyolly/tinyolly-ui:$VERSION \
+  -t $EXTERNAL_REGISTRY/tinyolly/tinyolly-ui:latest \
+  -t $EXTERNAL_REGISTRY/tinyolly/tinyolly-ui:$VERSION \
+  apps/tinyolly-ui/
+echo "✓ tinyolly-ui image built"
+echo ""
+
+echo "Step 3/4: Building OpAMP Server"
 echo "-----------------------------------------------------------"
 $CONTAINER_CMD build \
   -f apps/opamp-server/Dockerfile \
@@ -76,7 +88,7 @@ $CONTAINER_CMD build \
 echo "✓ OpAMP Server image built"
 echo ""
 
-echo "Step 3/3: Building Unified Demo Image"
+echo "Step 4/4: Building Unified Demo Image"
 echo "-----------------------------------------------------------"
 $CONTAINER_CMD build \
   -f apps/demo/Dockerfile \
@@ -92,10 +104,16 @@ echo "📤 Pushing Container Images to Registry"
 echo "=========================================="
 echo ""
 
-echo "Pushing TinyOlly (unified)..."
+echo "Pushing TinyOlly backend..."
 $CONTAINER_CMD push $PUSH_FLAGS $EXTERNAL_REGISTRY/tinyolly/tinyolly:latest
 $CONTAINER_CMD push $PUSH_FLAGS $EXTERNAL_REGISTRY/tinyolly/tinyolly:$VERSION
-echo "✓ TinyOlly pushed"
+echo "✓ TinyOlly backend pushed"
+echo ""
+
+echo "Pushing tinyolly-ui..."
+$CONTAINER_CMD push $PUSH_FLAGS $EXTERNAL_REGISTRY/tinyolly/tinyolly-ui:latest
+$CONTAINER_CMD push $PUSH_FLAGS $EXTERNAL_REGISTRY/tinyolly/tinyolly-ui:$VERSION
+echo "✓ tinyolly-ui pushed"
 echo ""
 
 echo "Pushing OpAMP Server..."
@@ -155,13 +173,18 @@ cat > "$SCRIPT_DIR/values-local-dev.yaml" <<EOF
 # Version: $VERSION
 # Uses INTERNAL registry for cluster access
 
-ui:
+frontend:
   image:
     repository: $INTERNAL_REGISTRY/tinyolly/tinyolly
     tag: $VERSION
   env:
     - name: MODE
       value: "ui"
+
+webui:
+  image:
+    repository: $INTERNAL_REGISTRY/tinyolly/tinyolly-ui
+    tag: $VERSION
 
 opampServer:
   image:

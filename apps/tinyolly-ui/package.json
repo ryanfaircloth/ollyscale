@@ -1,0 +1,27 @@
+{
+  "name": "tinyolly-ui",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint src --ext .js,.ts",
+    "format": "prettier --write \"src/**/*.{js,ts,css,html}\""
+  },
+  "dependencies": {
+    "chart.js": "^4.4.1",
+    "cytoscape": "^3.28.1"
+  },
+  "devDependencies": {
+    "@types/cytoscape": "^3.21.4",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "eslint": "^8.56.0",
+    "prettier": "^3.2.4",
+    "terser": "^5.36.0",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.11"
+  }
+}

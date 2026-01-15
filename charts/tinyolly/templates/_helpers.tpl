@@ -87,6 +87,90 @@ app: tinyolly-ui
 {{- end }}
 
 {{/*
+Frontend component name (renamed from ui)
+*/}}
+{{- define "tinyolly.frontend.name" -}}
+{{ include "tinyolly.fullname" . }}-frontend
+{{- end }}
+
+{{/*
+Frontend component fullname (for service references)
+*/}}
+{{- define "tinyolly.frontend.fullname" -}}
+{{ include "tinyolly.fullname" . }}-frontend
+{{- end }}
+
+{{/*
+Frontend service account name
+*/}}
+{{- define "tinyolly.frontend.serviceAccountName" -}}
+{{- if .Values.frontend.serviceAccount.create }}
+{{- default (include "tinyolly.frontend.name" .) .Values.frontend.serviceAccount.name }}
+{{- else }}
+{{- default "default" .Values.frontend.serviceAccount.name }}
+{{- end }}
+{{- end }}
+
+{{/*
+Frontend component labels
+*/}}
+{{- define "tinyolly.frontend.labels" -}}
+{{ include "tinyolly.labels" . }}
+app.kubernetes.io/component: frontend
+{{- end }}
+
+{{/*
+Frontend selector labels
+*/}}
+{{- define "tinyolly.frontend.selectorLabels" -}}
+{{ include "tinyolly.selectorLabels" . }}
+app.kubernetes.io/component: frontend
+app: tinyolly-frontend
+{{- end }}
+
+{{/*
+Web UI component name
+*/}}
+{{- define "tinyolly.webui.name" -}}
+{{ include "tinyolly.fullname" . }}-webui
+{{- end }}
+
+{{/*
+Web UI component fullname (for service references)
+*/}}
+{{- define "tinyolly.webui.fullname" -}}
+{{ include "tinyolly.fullname" . }}-webui
+{{- end }}
+
+{{/*
+Web UI service account name
+*/}}
+{{- define "tinyolly.webui.serviceAccountName" -}}
+{{- if .Values.webui.serviceAccount.create }}
+{{- default (include "tinyolly.webui.name" .) .Values.webui.serviceAccount.name }}
+{{- else }}
+{{- default "default" .Values.webui.serviceAccount.name }}
+{{- end }}
+{{- end }}
+
+{{/*
+Web UI component labels
+*/}}
+{{- define "tinyolly.webui.labels" -}}
+{{ include "tinyolly.labels" . }}
+app.kubernetes.io/component: webui
+{{- end }}
+
+{{/*
+Web UI selector labels
+*/}}
+{{- define "tinyolly.webui.selectorLabels" -}}
+{{ include "tinyolly.selectorLabels" . }}
+app.kubernetes.io/component: webui
+app: tinyolly-webui
+{{- end }}
+
+{{/*
 OpAMP Server component name
 */}}
 {{- define "tinyolly.opampServer.name" -}}

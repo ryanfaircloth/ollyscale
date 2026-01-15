@@ -74,17 +74,17 @@ if kubectl get application tinyolly -n argocd &>/dev/null; then
           \"targetRevision\": \"$CHART_VERSION\",
           \"helm\": {
             \"valuesObject\": {
-              \"ui\": {
+              \"frontend\": {
                 \"image\": {
                   \"repository\": \"$INTERNAL_REGISTRY/tinyolly/tinyolly\",
                   \"tag\": \"$IMAGE_VERSION\"
-                },
-                \"env\": [
-                  {
-                    \"name\": \"MODE\",
-                    \"value\": \"ui\"
-                  }
-                ]
+                }
+              },
+              \"webui\": {
+                \"image\": {
+                  \"repository\": \"$INTERNAL_REGISTRY/tinyolly/tinyolly-ui\",
+                  \"tag\": \"$IMAGE_VERSION\"
+                }
               },
               \"opampServer\": {
                 \"image\": {
@@ -136,7 +136,7 @@ if kubectl get application tinyolly -n argocd &>/dev/null; then
     echo "  argocd app get tinyolly"
     echo ""
     echo "To view logs:"
-    echo "  kubectl logs -n tinyolly -l app.kubernetes.io/component=ui -f"
+    echo "  kubectl logs -n tinyolly -l app.kubernetes.io/component=webui -f"
 else
     echo "⚠️  ArgoCD Application not yet created in cluster"
     echo "   Commit the changes to $ARGOCD_APP_FILE"
@@ -145,7 +145,8 @@ else
 fi
 
 echo "📋 Image versions being deployed:"
-echo "  • UI:            $INTERNAL_REGISTRY/tinyolly/tinyolly:$IMAGE_VERSION (MODE=ui)"
-echo "  • OpAMP Server:  $INTERNAL_REGISTRY/tinyolly/opamp-server:$IMAGE_VERSION"
-echo "  • OTLP Receiver: $INTERNAL_REGISTRY/tinyolly/tinyolly:$IMAGE_VERSION (MODE=receiver)"
+echo "  • Frontend (API):  $INTERNAL_REGISTRY/tinyolly/tinyolly:$IMAGE_VERSION"
+echo "  • WebUI (nginx):   $INTERNAL_REGISTRY/tinyolly/tinyolly-ui:$IMAGE_VERSION"
+echo "  • OpAMP Server:    $INTERNAL_REGISTRY/tinyolly/opamp-server:$IMAGE_VERSION"
+echo "  • OTLP Receiver:   $INTERNAL_REGISTRY/tinyolly/tinyolly:$IMAGE_VERSION (MODE=receiver)"
 echo ""

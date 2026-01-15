@@ -28,42 +28,21 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""System endpoints (health, websocket, UI)"""
+"""System endpoints (health, websocket)"""
 
 import asyncio
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Request, WebSocket, WebSocketDisconnect
-from fastapi.responses import HTMLResponse
+from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
 from models import HealthResponse
 
 from common import Storage
 
-from ..config import settings
 from ..dependencies import get_connection_manager, get_storage
 
-router = APIRouter(tags=["System", "UI"])
+router = APIRouter(tags=["System"])
 
 logger = logging.getLogger(__name__)
-
-# Templates will be set up in main.py
-templates = None
-
-
-def set_templates(templates_instance):
-    """Set templates instance from main app"""
-    global templates
-    templates = templates_instance
-
-
-@router.get("/", response_class=HTMLResponse, include_in_schema=False, operation_id="index")
-async def index(request: Request):
-    """Serve the main web UI dashboard"""
-    if templates is None:
-        raise HTTPException(status_code=500, detail="Templates not initialized")
-
-    deployment_env = settings.deployment_env
-    return templates.TemplateResponse("tinyolly.html", {"request": request, "deployment_env": deployment_env})
 
 
 @router.get(

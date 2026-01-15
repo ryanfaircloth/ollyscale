@@ -397,21 +397,21 @@ ebpfAgent:
   affinity: {}
 
 # TinyOlly UI component
-ui:
-  # -- Number of replicas for UI
+frontend:
+  # -- Number of replicas for API backend
   replicaCount: 1
 
   image:
-    # -- UI image repository (unified tinyolly image)
+    # -- API backend image repository (unified tinyolly image, runs in API mode)
     repository: ghcr.io/ryanfaircloth/tinyolly/tinyolly
-    # -- UI image tag
+    # -- API backend image tag
     tag: latest
-    # -- UI image pull policy (overrides global)
+    # -- API backend image pull policy (overrides global)
     pullPolicy: ""
 
   # -- Service account settings
   serviceAccount:
-    # -- Create service account for UI
+    # -- Create service account for API backend
     create: true
     # -- Service account name (generated if not set)
     name: ""
@@ -447,21 +447,9 @@ ui:
     # -- Service annotations
     annotations: {}
 
-  # -- HTTPRoute configuration (Gateway API)
+  # -- HTTPRoute disabled for API frontend (internal only, accessed via webui nginx proxy)
   httpRoute:
-    # -- Enable HTTPRoute for UI
     enabled: false
-    # -- Annotations for HTTPRoute
-    annotations: {}
-    # -- Gateway parentRefs (required for HTTPRoute)
-    parentRefs:
-      - name: management-gateway
-        namespace: envoy-gateway-system
-    # -- Hosts configuration
-    hosts:
-      - host: tinyolly.local.gd
-        path: /
-        pathType: PathPrefix
 
   # -- Resource limits and requests
   resources:
@@ -499,6 +487,104 @@ ui:
       value: kubernetes
     - name: OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED
       value: "true"
+
+# Web UI (nginx + static frontend)
+webui:
+  # -- Number of replicas for web UI
+  replicaCount: 1
+
+  image:
+    # -- Web UI image repository (nginx with built frontend)
+    repository: ghcr.io/ryanfaircloth/tinyolly/tinyolly-ui
+    # -- Web UI image tag
+    tag: latest
+    # -- Web UI image pull policy (overrides global)
+    pullPolicy: ""
+
+  # -- Service account settings
+  serviceAccount:
+    # -- Create service account for web UI
+    create: true
+    # -- Service account name (generated if not set)
+    name: ""
+    # -- Annotations for service account
+    annotations: {}
+
+  # -- Pod annotations
+  podAnnotations: {}
+
+  # -- Pod security context
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 101 # nginx user
+    fsGroup: 101
+
+  # -- Container security context
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: false
+
+  service:
+    # -- Service type
+    type: ClusterIP
+    # -- Service port
+    port: 8000
+    # -- Target port
+    targetPort: 8000
+    # -- Node port (if type is NodePort)
+    nodePort: null
+    # -- Service annotations
+    annotations: {}
+
+  # -- HTTPRoute configuration (Gateway API) - primary UI endpoint
+  httpRoute:
+    # -- Enable HTTPRoute for web UI (public entry point)
+    enabled: true
+    # -- Annotations for HTTPRoute
+    annotations: {}
+    # -- Gateway parentRefs (required for HTTPRoute)
+    parentRefs:
+      - name: management-gateway
+        namespace: envoy-gateway-system
+    # -- Hosts configuration
+    hosts:
+      - host: tinyolly.local.gd
+        path: /
+        pathType: PathPrefix
+
+  # -- Resource limits and requests
+  resources:
+    limits:
+      memory: 256Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+
+  # -- Liveness probe configuration
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: 8000
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+  # -- Readiness probe configuration
+  readinessProbe:
+    httpGet:
+      path: /health
+      port: 8000
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    timeoutSeconds: 2
+    failureThreshold: 3
+
+  # -- Environment variables for nginx (API backend URL)
+  env: []
 
   # -- Additional environment variables (key-value pairs)
   extraEnv: {}

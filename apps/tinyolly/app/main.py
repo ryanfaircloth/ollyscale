@@ -31,46 +31,18 @@
 """Main FastAPI application factory"""
 
 import asyncio
-from typing import TYPE_CHECKING, Any
 
 import uvloop
 from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 
-from .config import settings
 from .core.logging import setup_logging
 from .core.middleware import setup_middleware
 from .core.telemetry import setup_telemetry
 from .routers import admin, ingest, opamp, query, services, system
-from .routers.system import set_templates
-
-if TYPE_CHECKING:
-    from starlette.types import Scope
 
 # Install uvloop policy for faster event loop
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-
-
-class CachedStaticFiles(StaticFiles):
-    """StaticFiles with proper cache-control headers for cache busting"""
-
-    async def __call__(self, scope: Scope, receive: Any, send: Any) -> None:
-        """Add cache headers before serving static files"""
-        if scope["type"] == "http":
-            # Create a wrapper to inject headers
-            async def send_wrapper(message: Any) -> None:
-                if message["type"] == "http.response.start":
-                    headers = list(message.get("headers", []))
-                    # Add cache headers for versioned URLs (1 year cache)
-                    headers.append((b"cache-control", b"public, max-age=31536000, immutable"))
-                    message["headers"] = headers
-                await send(message)
-
-            await super().__call__(scope, receive, send_wrapper)
-        else:
-            await super().__call__(scope, receive, send)
 
 
 # Setup logging
@@ -83,10 +55,10 @@ setup_telemetry()
 def create_app() -> FastAPI:
     """Create and configure the FastAPI application"""
     app = FastAPI(
-        title="TinyOlly",
+        title="TinyOlly API",
         version="2.0.0",
         description="""
-# TinyOlly - Lightweight OpenTelemetry Observability Platform
+# TinyOlly API - Lightweight OpenTelemetry Observability Backend
 
 TinyOlly is a lightweight OpenTelemetry-native observability backend built from scratch
 to visualize and correlate logs, metrics, and traces. Perfect for local development.
@@ -103,6 +75,10 @@ to visualize and correlate logs, metrics, and traces. Perfect for local developm
 
 All data is stored and returned in standard OpenTelemetry format, ensuring
 compatibility with OTLP exporters and OpenTelemetry SDKs.
+
+## Note
+
+This is the API backend. The web UI is served by the tinyolly-ui nginx container.
         """,
         default_response_class=ORJSONResponse,
         docs_url="/docs",
@@ -134,23 +110,7 @@ compatibility with OTLP exporters and OpenTelemetry SDKs.
     # Setup middleware
     setup_middleware(app)
 
-    # Mount static files with cache headers
-    app.mount("/static", CachedStaticFiles(directory="static"), name="static")
-
-    # Setup templates with custom context
-    templates = Jinja2Templates(directory="templates")
-
-    # Add static_url helper function to all templates
-    def static_url(path: str) -> str:
-        """Generate versioned static file URL for cache busting"""
-        return f"/static/{path}?v={settings.static_version}"
-
-    templates.env.globals["static_url"] = static_url
-    templates.env.globals["static_version"] = settings.static_version
-
-    set_templates(templates)
-
-    # Register routers
+    # Register API routers
     app.include_router(ingest.router)
     app.include_router(query.router)
     app.include_router(services.router)

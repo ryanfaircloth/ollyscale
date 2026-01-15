@@ -1,0 +1,1805 @@
+/*
+ * BSD 3-Clause License
+ *
+ * Copyright (c) 2025, Infrastructure Architects, LLC
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ *    contributors may be used to endorse or promote products derived from this
+ *    software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+/**
+ * Metrics Module - OTEL Format with Resources, Attributes, and Exemplars
+ */
+console.log("Metrics Module Loaded - Version 2 (Redesigned Table)");
+import { loadChartJs, renderActionButton, copyToClipboard, downloadJson, renderEmptyState, getColorForIndex, createModal, closeModal, formatCount } from './utils.js';
+
+// State management
+const MAX_METRICS_IN_MEMORY = 1000; // Prevent unbounded memory growth
+let allMetrics = [];
+let activeResourceFilters = {}; // {key: value}
+let activeAttributeFilters = {}; // {key: value} - for metric attribute filtering
+let expandedMetric = null;
+let allResourceKeys = new Set(); // All unique resource keys across metrics
+let showOnlyRED = false;
+
+// Type badge colors
+const TYPE_BADGES = {
+    gauge: { color: '#10b981', label: 'Gauge' },
+    sum: { color: '#3b82f6', label: 'Sum' },
+    histogram: { color: '#f97316', label: 'Histogram' },
+    summary: { color: '#a855f7', label: 'Summary' }
+};
+
+export async function renderMetrics(metricsData) {
+    const container = document.getElementById('metrics-container');
+
+    // Only render if metrics tab is active and container exists
+    if (!container) {
+        return;
+    }
+
+    const metricsTab = document.getElementById('metrics-content');
+    if (!metricsTab || !metricsTab.classList.contains('active')) {
+        return;
+    }
+
+    if (!metricsData || metricsData.length === 0) {
+        container.innerHTML = renderEmptyState('No metrics collected yet');
+        return;
+    }
+
+    // Store metrics globally with memory limit
+    allMetrics = metricsData;
+    if (allMetrics.length > MAX_METRICS_IN_MEMORY) {
+        // Keep only the most recent metrics to prevent memory issues
+        allMetrics = allMetrics.slice(-MAX_METRICS_IN_MEMORY);
+    }
+
+    // Clean up stale chart instances to prevent memory leaks
+    if (typeof Chart !== 'undefined' && Chart.instances) {
+        // Destroy charts for metrics that no longer exist
+        const currentMetricNames = new Set(allMetrics.map(m => m.name));
+        Object.values(Chart.instances).forEach(chart => {
+            const canvasId = chart.canvas?.id || '';
+            const metricName = canvasId.replace('chart-', '').replace(/_/g, '.');
+            if (metricName && !currentMetricNames.has(metricName)) {
+                chart.destroy();
+            }
+        });
+    }
+
+    // Reset expanded metric if it no longer exists
+    if (expandedMetric && !allMetrics.find(m => m.name === expandedMetric)) {
+        expandedMetric = null;
+    }
+
+    // Extract all unique resource keys (for backward compatibility)
+    extractResourceKeys();
+
+    // Metric labels filter section removed - too slow, will be reworked in the future
+
+    // Filter metrics based on active attribute filters and RED filter
+    let filteredMetrics = filterMetricsByAttributes(allMetrics);
+
+    // Apply RED filter if enabled
+    if (showOnlyRED) {
+        filteredMetrics = filteredMetrics.filter(m =>
+            m.name.startsWith('traces.span.metrics.')
+        );
+    }
+
+    // Update filter button appearance
+    const filterBtn = document.getElementById('metric-filter-toggle');
+    if (filterBtn) {
+        filterBtn.textContent = showOnlyRED ? 'Show All Metrics' : 'Show RED Metrics Only';
+        filterBtn.style.background = showOnlyRED ? '#6b7280' : 'var(--primary)';
+    }
+
+    // Add metric count header
+    const METRIC_LIMIT = 1000;
+    const metricCount = allMetrics.length;
+    const percentUsed = Math.round((metricCount / METRIC_LIMIT) * 100);
+    const isNearLimit = percentUsed >= 80;
+
+    const countHeader = document.createElement('div');
+    countHeader.style.cssText = `
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 16px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        margin-bottom: 15px;
+        box-shadow: var(--shadow);
+    `;
+
+    countHeader.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 14px; font-weight: 600; color: var(--text-main);">Metrics Overview</span>
+            <span style="font-size: 12px; color: var(--text-muted);">
+                ${filteredMetrics.length !== metricCount ? `Showing ${filteredMetrics.length} of ${metricCount}` : `${metricCount} total`}
+            </span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 13px; color: ${isNearLimit ? '#ef4444' : 'var(--text-main)'}; font-weight: 600;">
+                ${metricCount}/${METRIC_LIMIT}
+            </span>
+            <span style="font-size: 12px; color: var(--text-muted);">limit</span>
+            ${isNearLimit ? `<span style="font-size: 11px; color: #ef4444; background: #fee2e2; padding: 2px 8px; border-radius: 12px;">⚠️ ${percentUsed}%</span>` : ''}
+        </div>
+    `;
+
+    // Build metrics table
+    const tableContainer = document.createElement('div');
+    tableContainer.style.cssText = 'background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; box-shadow: var(--shadow);';
+
+    const headerHtml = `
+        <div class="data-table-header">
+            <div style="flex: 0 0 250px;">Name</div>
+            <div style="flex: 1; min-width: 150px;">Description</div>
+            <div style="flex: 0 0 60px;">Unit</div>
+            <div style="flex: 0 0 80px;">Type</div>
+            <div style="flex: 0 0 90px;">Resources</div>
+            <div style="flex: 0 0 120px;">Cardinality</div>
+            <div style="flex: 0 0 80px;">Actions</div>
+        </div>
+    `;
+
+    tableContainer.innerHTML = headerHtml;
+
+    // Render each metric row
+    for (const metric of filteredMetrics) {
+        const rowDiv = createMetricRow(metric);
+        tableContainer.appendChild(rowDiv);
+    }
+
+    container.innerHTML = '';
+    container.appendChild(countHeader);
+    container.appendChild(tableContainer);
+
+    // Reapply search filter if there's a search term (input is outside container, so value persists)
+    const searchInput = document.getElementById('metric-search');
+    if (searchInput && searchInput.value.trim()) {
+        filterMetrics();
+    }
+}
+
+function extractResourceKeys() {
+    allResourceKeys.clear();
+    // We'll populate this when fetching full metric data
+    // For now, common keys
+    allResourceKeys.add('service.name');
+    allResourceKeys.add('host.name');
+    allResourceKeys.add('deployment.environment');
+}
+
+// DISABLED: Metric Labels Filter - Too slow, will be reworked in the future
+async function renderMetricLabelsFilters() {
+    // Function disabled - metric labels filter removed
+    return;
+    /*
+    const filterContainer = document.getElementById('metric-labels-section');
+    if (!filterContainer) return;
+
+    // Fetch all available metric labels (attributes) across all metrics
+    const allAttributeKeys = new Set();
+    const attributeValuesMap = new Map(); // key -> Set of values
+
+    // Fetch attributes for each metric
+    for (const metric of allMetrics) {
+        try {
+            const response = await fetch(`/ api / metrics / ${ metric.name }/attributes`);
+    if (response.ok) {
+        const attributes = await response.json();
+        attributes.forEach(attrObj => {
+            Object.keys(attrObj).forEach(key => {
+                allAttributeKeys.add(key);
+                if (!attributeValuesMap.has(key)) {
+                    attributeValuesMap.set(key, new Set());
+                }
+                const value = attrObj[key];
+                if (value !== undefined && value !== null) {
+                    attributeValuesMap.get(key).add(String(value));
+                }
+            });
+        });
+    }
+} catch (error) {
+    console.warn(`Failed to fetch attributes for ${metric.name}:`, error);
+}
+    }
+
+let html = '<div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">';
+html += '<span style="font-weight: 600; font-size: 13px;">Metric Labels:</span>';
+
+// Active filter chips
+for (const [key, value] of Object.entries(activeAttributeFilters)) {
+    html += `
+            <span style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; background: var(--primary); color: white; border-radius: 16px; font-size: 12px;">
+                <span>${key}: ${value}</span>
+                <button onclick="window.removeMetricLabelFilter('${key}')" style="background: none; border: none; color: white; cursor: pointer; font-size: 14px; padding: 0; line-height: 1;">×</button>
+            </span>
+        `;
+}
+
+// Add filter dropdowns for each attribute key
+if (allAttributeKeys.size > 0) {
+    Array.from(allAttributeKeys).sort().forEach(key => {
+        if (!activeAttributeFilters[key]) {
+            const values = Array.from(attributeValuesMap.get(key) || []).sort();
+            if (values.length > 0) {
+                html += `
+                        <select id="metric-label-${key}" onchange="window.applyMetricLabelFilter('${key}', this.value)" style="padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border); background: var(--bg-card); font-size: 12px;">
+                            <option value="">${key} (all)</option>
+                            ${values.map(v => `<option value="${v}">${v}</option>`).join('')}
+                        </select>
+                    `;
+            }
+        }
+    });
+} else {
+    html += '<span style="font-size: 12px; color: var(--text-muted);">No metric labels available</span>';
+}
+
+// Clear all button
+if (Object.keys(activeAttributeFilters).length > 0) {
+    html += `
+            <button onclick="window.clearAllMetricLabelFilters()" style="padding: 4px 10px; background: var(--bg-hover); border: 1px solid var(--border); border-radius: 4px; font-size: 12px; cursor: pointer;">
+                Clear All Filters
+            </button>
+        `;
+}
+
+html += '</div>';
+filterContainer.innerHTML = html;
+    */
+}
+
+function filterMetricsByAttributes(metrics) {
+    if (Object.keys(activeAttributeFilters).length === 0) {
+        return metrics;
+    }
+
+    // Filtering by attributes happens when fetching series data
+    // For now, return all metrics (they'll be filtered when expanded)
+    return metrics;
+}
+
+/**
+ * Clear the metrics search filter and show all metrics
+ */
+export function clearMetricSearch() {
+    const searchInput = document.getElementById('metric-search');
+    if (searchInput) {
+        searchInput.value = '';
+    }
+    // Show all metric rows
+    const metricRows = document.querySelectorAll('#metrics-container .metric-row');
+    metricRows.forEach(row => {
+        row.style.display = 'block';
+    });
+}
+
+// Expose to window for onclick handler
+window.clearMetricSearch = clearMetricSearch;
+
+/**
+ * Filter metrics by search term - filters the visible metric rows
+ */
+export function filterMetrics() {
+    const searchInput = document.getElementById('metric-search');
+    if (!searchInput) return;
+
+    const searchTerm = searchInput.value.toLowerCase().trim();
+    const metricRows = document.querySelectorAll('#metrics-container .metric-row');
+
+    metricRows.forEach(row => {
+        if (!searchTerm) {
+            row.style.display = 'block';
+            return;
+        }
+
+        // Search in metric name, description, type, and services
+        const metricName = row.dataset.metricName || '';
+        const header = row.querySelector('.metric-header');
+        const rowText = header ? header.textContent.toLowerCase() : '';
+
+        const matches = metricName.toLowerCase().includes(searchTerm) || rowText.includes(searchTerm);
+        row.style.display = matches ? 'block' : 'none';
+    });
+}
+
+// Check if metric is from Prometheus histogram (Remote Write)
+function isPrometheusHistogramMetric(metricName) {
+    return metricName.endsWith('_bucket') || metricName.endsWith('_count') || metricName.endsWith('_sum');
+}
+
+function createMetricRow(metric) {
+    const rowDiv = document.createElement('div');
+    rowDiv.className = 'metric-row';
+    rowDiv.dataset.metricName = metric.name;
+
+    const type = metric.type ? metric.type.toLowerCase() : 'unknown';
+    const typeBadge = TYPE_BADGES[type] || TYPE_BADGES.gauge;
+
+    // Check if this is a Prometheus histogram metric
+    const isPromHistogram = isPrometheusHistogramMetric(metric.name);
+    const promNote = isPromHistogram ? `<div style="font-size: 10px; color: #f97316; margin-top: 2px;">📊 Prometheus histogram metric (via Remote Write)</div>` : '';
+
+    rowDiv.innerHTML = `
+        <div class="metric-header data-table-row">
+            <div style="flex: 0 0 250px;">
+                <div class="metric-name text-truncate" title="${metric.name}">${metric.name}</div>
+            </div>
+            <div class="text-truncate text-muted" style="flex: 1; min-width: 150px; font-size: 10px;" title="${metric.description || ''}">
+                ${metric.description || '-'}
+            </div>
+            <div class="text-muted text-truncate" style="flex: 0 0 60px; font-size: 10px;">
+                ${metric.unit || '-'}
+            </div>
+            <div style="flex: 0 0 80px;">
+                <span class="metric-tag" style="background: ${typeBadge.color}15; color: ${typeBadge.color}; border-color: ${typeBadge.color}30;">
+                    ${typeBadge.label}
+                </span>
+            </div>
+            <div class="metric-resources-link metric-link" data-metric-name="${metric.name}" style="flex: 0 0 90px;" onclick="event.stopPropagation(); window.showMetricResources('${metric.name}', ${metric.resource_count});">
+                ${metric.resource_count} ${metric.resource_count === 1 ? 'res.' : 'res.'}
+            </div>
+            <div class="metric-attributes-link metric-link" data-metric-name="${metric.name}" style="flex: 0 0 120px;" onclick="event.stopPropagation(); window.showMetricAttributes('${metric.name}', ${metric.attribute_combinations});">
+                ${metric.label_count} labels / ${metric.attribute_combinations} series
+            </div>
+            <div style="flex: 0 0 80px;">
+                ${renderActionButton(`view-chart-${metric.name.replace(/[^a-zA-Z0-9]/g, '_')}`, 'Chart', 'primary', 'dense')}
+            </div>
+        </div>
+        <div class="metric-detail-container" style="display: none; background: var(--bg-card); border-bottom: 1px solid var(--border-color); padding: 16px;">
+        </div>
+    `;
+
+    // Attach click handler
+    const header = rowDiv.querySelector('.metric-header');
+    const detailContainer = rowDiv.querySelector('.metric-detail-container');
+    const viewChartBtn = rowDiv.querySelector(`button[id^="view-chart-"]`);
+
+    // Toggle logic for both row click and button click
+    const toggleDetail = async (e) => {
+        if (e) e.stopPropagation();
+
+        const isExpanded = detailContainer.style.display !== 'none';
+
+        if (isExpanded) {
+            detailContainer.style.display = 'none';
+            if (viewChartBtn) viewChartBtn.textContent = 'Chart';
+            expandedMetric = null;
+        } else {
+            detailContainer.style.display = 'block';
+            if (viewChartBtn) viewChartBtn.textContent = 'Hide';
+            expandedMetric = metric.name;
+
+            // Load metric detail
+            if (!detailContainer.dataset.loaded) {
+                await renderMetricDetail(metric, detailContainer);
+                detailContainer.dataset.loaded = 'true';
+            }
+        }
+    };
+
+    header.addEventListener('click', toggleDetail);
+    if (viewChartBtn) {
+        viewChartBtn.onclick = toggleDetail;
+    }
+
+    return rowDiv;
+}
+
+async function renderMetricDetail(metric, container) {
+    try {
+        container.innerHTML = '<div style="text-align: center; padding: 20px;">Loading...</div>';
+
+        // Fetch full metric data (attribute filters disabled for now)
+        const params = new URLSearchParams();
+        // DISABLED: Attribute filters - will be reworked in the future
+        // for (const [key, value] of Object.entries(activeAttributeFilters)) {
+        //     params.append(`attribute.${key}`, value);
+        // }
+
+        const response = await fetch(`/api/metrics/${encodeURIComponent(metric.name)}?${params.toString()}`);
+        const data = await response.json();
+
+        // Build action buttons
+        const chartId = `chart-${metric.name.replace(/[^a-zA-Z0-9]/g, '_')}`;
+        const buttonsHtml = `
+            ${renderActionButton(`copy-btn-${chartId}`, 'Copy Name', 'primary')}
+            ${renderActionButton(`download-btn-${chartId}`, 'Download JSON', 'primary')}
+            ${renderActionButton(`close-btn-${chartId}`, 'Close', 'primary')}
+            <span id="copy-feedback-${chartId}" style="color: var(--success); font-size: 12px; display: none; margin-left: 8px;">Copied!</span>
+        `;
+
+        container.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color);">
+                <div style="font-size: 14px; font-weight: 600; color: var(--text-main);">${metric.name}</div>
+                <div style="display: flex; gap: 8px;">${buttonsHtml}</div>
+            </div>
+            ${isPrometheusHistogramMetric(metric.name) ? '<div style="font-size: 11px; color: #f97316; margin-bottom: 12px; font-weight: 500;">📊 Prometheus histogram metric (via Remote Write)</div>' : ''}
+            <div id="attribute-filters-${chartId}" style="margin-bottom: 16px;"></div>
+            <div id="chart-legend-${chartId}" style="margin-bottom: 16px;"></div>
+            <div id="chart-container-${chartId}" style="position: relative; height: 300px; width: 100%;">
+                <canvas id="${chartId}" style="display: block; width: 100%; height: 100%;"></canvas>
+            </div>
+        `;
+
+        // Attach button handlers
+        document.getElementById(`copy-btn-${chartId}`).onclick = () => {
+            copyToClipboard(metric.name, document.getElementById(`copy-feedback-${chartId}`));
+        };
+
+        document.getElementById(`download-btn-${chartId}`).onclick = () => {
+            downloadJson(data, `metric-${metric.name}.json`);
+        };
+
+        document.getElementById(`close-btn-${chartId}`).onclick = () => {
+            container.parentElement.querySelector('.metric-header').click();
+        };
+
+        // Render attribute filters
+        renderAttributeFilters(metric, data, `attribute-filters-${chartId}`, chartId);
+
+        // Adjust container height for gauge charts
+        const chartContainer = document.getElementById(`chart-container-${chartId}`);
+        if (metric.type.toLowerCase() === 'gauge' && chartContainer) {
+            chartContainer.style.height = '120px';
+        }
+
+        // Render chart - load Chart.js and wait for canvas to be ready
+        await loadChartJs();
+
+        // Wait for DOM to settle and container to size properly
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        const canvas = document.getElementById(chartId);
+        if (!canvas) {
+            console.error('Canvas not found after render:', chartId);
+            return;
+        }
+
+        renderMetricChart(metric, data, canvas, chartId);
+
+    } catch (error) {
+        console.error('Error loading metric detail:', error);
+        container.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-muted);">Error loading metric data</div>';
+    }
+}
+
+function renderAttributeFilters(metric, data, containerId, chartId) {
+    const container = document.getElementById(containerId);
+    if (!container || !data.series || data.series.length === 0) return;
+
+    // Extract all unique attribute keys from series
+    const attrKeys = new Set();
+    data.series.forEach(s => {
+        Object.keys(s.attributes || {}).forEach(k => attrKeys.add(k));
+    });
+
+    if (attrKeys.size === 0) return;
+
+    let html = '<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">';
+    html += '<span style="font-size: 12px; font-weight: 600;">Filter by:</span>';
+
+    for (const key of attrKeys) {
+        // Get unique values for this attribute
+        const values = new Set();
+        data.series.forEach(s => {
+            const val = s.attributes?.[key];
+            if (val !== undefined) values.add(String(val));
+        });
+
+        html += `
+            <select onchange="window.applyAttributeFilter('${chartId}', '${key}', this.value)" style="padding: 3px 6px; border-radius: 4px; border: 1px solid var(--border); background: var(--bg-card); font-size: 11px;">
+                <option value="">All ${key}</option>
+                ${Array.from(values).map(v => `<option value="${v}">${v}</option>`).join('')}
+            </select>
+        `;
+    }
+
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function renderMetricChart(metric, data, canvas, chartId) {
+    if (!canvas) {
+        console.error('Canvas element not found:', chartId);
+        return;
+    }
+
+    if (!data || !data.series || data.series.length === 0) {
+        // Ensure canvas has size before drawing
+        const rect = canvas.getBoundingClientRect();
+        canvas.width = rect.width || 800;
+        canvas.height = rect.height || 300;
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'var(--text-muted)';
+        ctx.font = '12px Inter';
+        ctx.textAlign = 'center';
+        ctx.fillText('No data available', canvas.width / 2, canvas.height / 2);
+        console.warn('No series data for metric:', metric.name, data);
+        return;
+    }
+
+    // Check if any series has datapoints
+    const hasDatapoints = data.series.some(s => s.datapoints && s.datapoints.length > 0);
+    if (!hasDatapoints) {
+        // Ensure canvas has size before drawing
+        const rect = canvas.getBoundingClientRect();
+        canvas.width = rect.width || 800;
+        canvas.height = rect.height || 300;
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'var(--text-muted)';
+        ctx.font = '12px Inter';
+        ctx.textAlign = 'center';
+        ctx.fillText('No datapoints available', canvas.width / 2, canvas.height / 2);
+        console.warn('No datapoints in series for metric:', metric.name);
+        return;
+    }
+
+    const type = metric.type.toLowerCase();
+
+    if (type === 'gauge') {
+        renderGaugeChart(metric, data, canvas, chartId);
+    } else if (type === 'sum') {
+        renderSumChart(metric, data, canvas, chartId);
+    } else if (type === 'histogram') {
+        renderHistogramChart(metric, data, canvas, chartId);
+    } else if (type === 'summary') {
+        renderSummaryChart(metric, data, canvas, chartId);
+    } else {
+        renderGaugeChart(metric, data, canvas, chartId);
+    }
+}
+
+function renderGaugeChart(metric, data, canvas, chartId) {
+    if (!canvas) {
+        console.error('Canvas not provided to renderGaugeChart');
+        return;
+    }
+
+    // Show gauge as doughnut chart with current value
+    if (!data.series || data.series.length === 0) {
+        console.warn('No series for gauge chart:', metric.name);
+        return;
+    }
+
+    // Find first series with datapoints
+    let seriesWithData = data.series.find(s => s.datapoints && s.datapoints.length > 0);
+    if (!seriesWithData) {
+        const rect = canvas.getBoundingClientRect();
+        canvas.width = rect.width || 800;
+        canvas.height = rect.height || 300;
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'var(--text-muted)';
+        ctx.font = '12px Inter';
+        ctx.textAlign = 'center';
+        ctx.fillText('No datapoints available', canvas.width / 2, canvas.height / 2);
+        return;
+    }
+
+    // Get the latest value from the series
+    const latestDp = seriesWithData.datapoints.slice(-1)[0];
+    if (!latestDp) {
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'var(--text-muted)';
+        ctx.font = '12px Inter';
+        ctx.textAlign = 'center';
+        ctx.fillText('No datapoint available', canvas.width / 2, 150);
+        return;
+    }
+
+    const currentValue = latestDp.value !== null && latestDp.value !== undefined ? latestDp.value : 0;
+    const label = buildSeriesLabel(seriesWithData, data.series);
+
+    // Determine max value (use 100 as default for percentages, or 1.5x current for others)
+    let maxValue = 100;
+    if (metric.unit !== 'percent' && metric.unit !== '%') {
+        const allValues = seriesWithData.datapoints
+            .map(dp => dp.value)
+            .filter(v => v !== null && v !== undefined);
+        if (allValues.length > 0) {
+            const maxObserved = Math.max(...allValues);
+            maxValue = Math.ceil(maxObserved * 1.5);
+        } else {
+            maxValue = Math.max(100, currentValue * 1.5);
+        }
+    }
+
+    const remaining = Math.max(0, maxValue - currentValue);
+
+    new Chart(canvas, {
+        type: 'doughnut',
+        data: {
+            labels: [label, 'Remaining'],
+            datasets: [{
+                data: [currentValue, remaining],
+                backgroundColor: [
+                    'rgba(59, 130, 246, 0.8)',
+                    'rgba(229, 231, 235, 0.3)'
+                ],
+                borderColor: [
+                    'rgba(59, 130, 246, 1)',
+                    'rgba(229, 231, 235, 0.5)'
+                ],
+                borderWidth: 2,
+                circumference: 180,
+                rotation: 270
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: (context) => {
+                            if (context.dataIndex === 0) {
+                                return `${label}: ${currentValue.toFixed(2)} ${metric.unit || ''}`;
+                            }
+                            return null;
+                        }
+                    }
+                }
+            }
+        },
+        plugins: [{
+            afterDraw: (chart) => {
+                const ctx = chart.ctx;
+                const width = chart.width;
+                const height = chart.height;
+                const chartArea = chart.chartArea;
+
+                ctx.save();
+
+                // Position text in the center-bottom area of the gauge
+                const centerX = (chartArea.left + chartArea.right) / 2;
+                const centerY = chartArea.bottom - 30; // Position near bottom
+
+                // Draw value
+                ctx.font = 'bold 20px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = '#1f2937';
+                const text = `${currentValue.toFixed(1)}`;
+                ctx.fillText(text, centerX, centerY);
+
+                // Draw unit below
+                ctx.font = '11px sans-serif';
+                ctx.fillStyle = '#6b7280';
+                const unit = metric.unit || '';
+                ctx.fillText(unit, centerX, centerY + 16);
+
+                ctx.restore();
+            }
+        }]
+    });
+}
+
+function renderSumChart(metric, data, canvas, chartId) {
+    // Calculate rate (delta / time_delta) and show as line chart
+    // Aggregate series by http.method (or span.kind if no http.method) to simplify the view
+
+    if (!data.series || data.series.length === 0) {
+        const rect = canvas.getBoundingClientRect();
+        canvas.width = rect.width || 800;
+        canvas.height = rect.height || 300;
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'var(--text-muted)';
+        ctx.font = '12px Inter';
+        ctx.textAlign = 'center';
+        ctx.fillText('No series data available', canvas.width / 2, canvas.height / 2);
+        return;
+    }
+
+    // Filter out series without datapoints
+    const seriesWithData = data.series.filter(s => s.datapoints && s.datapoints.length > 0);
+    if (seriesWithData.length === 0) {
+        const rect = canvas.getBoundingClientRect();
+        canvas.width = rect.width || 800;
+        canvas.height = rect.height || 300;
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'var(--text-muted)';
+        ctx.font = '12px Inter';
+        ctx.textAlign = 'center';
+        ctx.fillText('No datapoints available', canvas.width / 2, canvas.height / 2);
+        return;
+    }
+
+    // Group series by aggregation key
+    const seriesGroups = {};
+
+    seriesWithData.forEach(series => {
+        // Determine aggregation key - prefer http.method, fall back to span.kind
+        let groupKey = 'Total';
+        if (series.attributes && series.attributes['http.method']) {
+            groupKey = series.attributes['http.method'];
+        } else if (series.attributes && series.attributes['span.kind']) {
+            groupKey = series.attributes['span.kind'].replace('SPAN_KIND_', '');
+        }
+
+        if (!seriesGroups[groupKey]) {
+            seriesGroups[groupKey] = [];
+        }
+        seriesGroups[groupKey].push(series);
+    });
+
+    const datasets = [];
+    let colorIdx = 0;
+
+    // For each group, aggregate the rates
+    for (const [groupKey, groupSeries] of Object.entries(seriesGroups)) {
+        // Calculate rates for each series in the group
+        const allRates = [];
+
+        groupSeries.forEach(series => {
+            const rates = [];
+            for (let i = 1; i < series.datapoints.length; i++) {
+                const prev = series.datapoints[i - 1];
+                const curr = series.datapoints[i];
+
+                // Skip if values are null/undefined
+                if (prev.value === null || prev.value === undefined ||
+                    curr.value === null || curr.value === undefined) {
+                    continue;
+                }
+
+                const timeDelta = curr.timestamp - prev.timestamp;
+                const valueDelta = curr.value - prev.value;
+
+                if (timeDelta > 0) {
+                    const rate = valueDelta / timeDelta;
+                    rates.push({
+                        timestamp: curr.timestamp * 1000,
+                        rate: Math.max(0, rate)
+                    });
+                }
+            }
+            if (rates.length > 0) {
+                allRates.push(rates);
+            }
+        });
+
+        // Merge and sum rates at each timestamp
+        const aggregatedRates = new Map();
+
+        allRates.forEach(rates => {
+            rates.forEach(({ timestamp, rate }) => {
+                if (!aggregatedRates.has(timestamp)) {
+                    aggregatedRates.set(timestamp, 0);
+                }
+                aggregatedRates.set(timestamp, aggregatedRates.get(timestamp) + rate);
+            });
+        });
+
+        // Convert to points array and sort by timestamp
+        const points = Array.from(aggregatedRates.entries())
+            .map(([timestamp, rate]) => ({ x: timestamp, y: rate }))
+            .sort((a, b) => a.x - b.x);
+
+        if (points.length > 0) {
+            const color = getColorForIndex(colorIdx++);
+            datasets.push({
+                label: `${groupKey} (rate/sec)`,
+                data: points,
+                borderColor: color,
+                backgroundColor: color + '20',
+                borderWidth: 2,
+                tension: 0.4,
+                fill: true,
+                pointRadius: 2
+            });
+        }
+    }
+
+    new Chart(canvas, {
+        type: 'line',
+        data: { datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: true, position: 'top', labels: { boxWidth: 12, font: { size: 11 } } },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    callbacks: {
+                        label: (context) => `${context.dataset.label}: ${context.parsed.y.toFixed(2)}/s`
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    type: 'time',
+                    time: { unit: 'minute', displayFormats: { minute: 'HH:mm' } },
+                    title: { display: true, text: 'Time' }
+                },
+                y: {
+                    beginAtZero: true,
+                    title: { display: true, text: 'Rate per Second' }
+                }
+            }
+        }
+    });
+}
+
+function renderHistogramChart(metric, data, canvas, chartId) {
+    if (!canvas) {
+        console.error('Canvas not provided to renderHistogramChart');
+        return;
+    }
+
+    // Show histogram as percentile bars (P50, P75, P90, P95, P99) over time
+    if (!data.series || data.series.length === 0) return;
+
+    const series = data.series[0];
+    let histogramDps = series.datapoints.filter(dp => dp.histogram && dp.histogram.bucketCounts);
+
+    if (histogramDps.length === 0) {
+        renderGaugeChart(metric, data, canvas, chartId); // Fallback
+        return;
+    }
+
+    // Sample data if we have too many points (limit to ~30 bars for readability)
+    const maxBars = 30;
+    if (histogramDps.length > maxBars) {
+        const step = Math.ceil(histogramDps.length / maxBars);
+        histogramDps = histogramDps.filter((_, idx) => idx % step === 0);
+    }
+
+    const labels = [];
+    const p50Data = [];
+    const p75Data = [];
+    const p90Data = [];
+    const p95Data = [];
+    const p99Data = [];
+
+    let measurementNumber = 0;
+
+    for (const dp of histogramDps) {
+        const hist = dp.histogram;
+        const buckets = (hist.bucketCounts || []).map((count, idx) => ({
+            count: count,
+            bound: hist.explicitBounds[idx]
+        }));
+
+        // Calculate total count
+        const totalCount = buckets.reduce((sum, b) => sum + (b.count || 0), 0);
+
+        if (totalCount > 0) {
+            const percentiles = calculatePercentilesFromBuckets(buckets);
+
+            measurementNumber++;
+            labels.push(`#${measurementNumber}`);
+
+            p50Data.push(percentiles.p50 || 0);
+            p75Data.push(percentiles.p75 || 0);
+            p90Data.push(percentiles.p90 || 0);
+            p95Data.push(percentiles.p95 || 0);
+            p99Data.push(percentiles.p99 || 0);
+        }
+    }
+
+    if (labels.length === 0) {
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'var(--text-muted)';
+        ctx.font = '12px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('No histogram data available', canvas.width / 2, canvas.height / 2);
+        return;
+    }
+
+    new Chart(canvas, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'P50 (Median)',
+                    data: p50Data,
+                    backgroundColor: 'rgba(16, 185, 129, 0.7)',
+                    borderColor: '#10b981',
+                    borderWidth: 1
+                },
+                {
+                    label: 'P75',
+                    data: p75Data,
+                    backgroundColor: 'rgba(0, 102, 204, 0.7)',
+                    borderColor: '#0066CC',
+                    borderWidth: 1
+                },
+                {
+                    label: 'P90',
+                    data: p90Data,
+                    backgroundColor: 'rgba(251, 146, 60, 0.7)',
+                    borderColor: '#fb923c',
+                    borderWidth: 1
+                },
+                {
+                    label: 'P95',
+                    data: p95Data,
+                    backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                    borderColor: '#ef4444',
+                    borderWidth: 1
+                },
+                {
+                    label: 'P99',
+                    data: p99Data,
+                    backgroundColor: 'rgba(168, 85, 247, 0.7)',
+                    borderColor: '#a855f7',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: { boxWidth: 12, font: { size: 11 } }
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    callbacks: {
+                        label: (context) => `${context.dataset.label}: ${context.parsed.y.toFixed(2)} ${metric.unit || 'ms'}`
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    title: { display: true, text: 'Measurement' },
+                    ticks: {
+                        maxRotation: 0,
+                        autoSkip: true,
+                        maxTicksLimit: 20
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    title: { display: true, text: metric.unit || 'Latency (ms)' }
+                }
+            },
+            barPercentage: 0.9,
+            categoryPercentage: 0.8
+        }
+    });
+}
+
+function renderSummaryChart(metric, data, canvas, chartId) {
+    // Show quantile values as lines
+    const datasets = [];
+
+    data.series.forEach((series, idx) => {
+        const label = buildSeriesLabel(series, data.series);
+
+        // Get quantile values from summary
+        series.datapoints.forEach((dp, dpIdx) => {
+            if (dp.summary && dp.summary.quantileValues) {
+                dp.summary.quantileValues.forEach((qv, qIdx) => {
+                    const quantileLabel = `${label} Q${qv.quantile}`;
+                    let dataset = datasets.find(d => d.label === quantileLabel);
+
+                    if (!dataset) {
+                        const color = getColorForIndex(idx * 10 + qIdx);
+                        dataset = {
+                            label: quantileLabel,
+                            data: [],
+                            borderColor: color,
+                            borderWidth: 2,
+                            fill: false,
+                            pointRadius: 2
+                        };
+                        datasets.push(dataset);
+                    }
+
+                    dataset.data.push({ x: dp.timestamp * 1000, y: qv.value });
+                });
+            }
+        });
+    });
+
+    new Chart(canvas, {
+        type: 'line',
+        data: { datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: true, position: 'top', labels: { boxWidth: 12, font: { size: 10 } } },
+                tooltip: { mode: 'index', intersect: false }
+            },
+            scales: {
+                x: {
+                    type: 'time',
+                    time: { unit: 'minute', displayFormats: { minute: 'HH:mm' } },
+                    title: { display: true, text: 'Time' }
+                },
+                y: {
+                    beginAtZero: true,
+                    title: { display: true, text: metric.unit || 'Value' }
+                }
+            }
+        }
+    });
+}
+
+function addExemplarPoints(series, datasets, baseColor) {
+    if (!series.exemplars || series.exemplars.length === 0) return;
+
+    const exemplarPoints = series.exemplars.map(ex => ({
+        x: ex.timestamp * 1000,
+        y: ex.value,
+        traceId: ex.traceId,
+        spanId: ex.spanId
+    }));
+
+    datasets.push({
+        label: '⭐ Exemplars',
+        data: exemplarPoints,
+        pointStyle: 'star',
+        pointRadius: 8,
+        pointBackgroundColor: '#fbbf24',
+        pointBorderColor: '#f59e0b',
+        pointBorderWidth: 2,
+        showLine: false,
+        hoverRadius: 10
+    });
+}
+
+function handleExemplarClick(event, elements, seriesData) {
+    if (elements.length > 0) {
+        const element = elements[0];
+        const dataset = element.chart.data.datasets[element.datasetIndex];
+
+        if (dataset.label.includes('Exemplar')) {
+            const point = dataset.data[element.index];
+            showExemplarModal(point);
+        }
+    }
+}
+
+function showExemplarModal(exemplar) {
+    const contentHtml = `
+        <div style="display: flex; flex-direction: column; gap: 10px; font-size: 13px;">
+            <div><strong>Trace ID:</strong> <code style="background: var(--bg-hover); padding: 2px 6px; border-radius: 3px;">${exemplar.traceId}</code></div>
+            <div><strong>Span ID:</strong> <code style="background: var(--bg-hover); padding: 2px 6px; border-radius: 3px;">${exemplar.spanId}</code></div>
+            <div><strong>Timestamp:</strong> ${new Date(exemplar.x).toLocaleString()}</div>
+            <div><strong>Value:</strong> ${exemplar.y.toFixed(2)}</div>
+        </div>
+    `;
+
+    const buttons = [
+        {
+            id: 'view-trace-btn',
+            label: 'Trace',
+            style: 'primary',
+            handler: (modal) => {
+                closeModal(modal);
+                viewTraceFromExemplar(exemplar.traceId);
+            }
+        },
+        {
+            id: 'copy-trace-btn',
+            label: 'Copy Trace ID',
+            style: 'secondary',
+            handler: () => {
+                copyToClipboard(exemplar.traceId);
+            }
+        },
+        {
+            id: 'close-modal-btn',
+            label: 'Close',
+            style: 'secondary',
+            handler: (modal) => closeModal(modal)
+        }
+    ];
+
+    createModal('Exemplar Details', contentHtml, buttons);
+}
+
+function viewTraceFromExemplar(traceId) {
+    // Switch to traces tab and show trace detail
+    import('./tabs.js').then(module => {
+        module.switchTab('traces');
+    });
+
+    // Load and show trace
+    setTimeout(() => {
+        import('./traces.js').then(module => {
+            module.showTraceDetail(traceId);
+        });
+    }, 100);
+}
+
+function calculatePercentilesFromBuckets(buckets, percentiles = [50, 75, 90, 95, 99]) {
+    if (!buckets || buckets.length === 0) {
+        return {};
+    }
+
+    // Calculate total count
+    const totalCount = buckets.reduce((sum, b) => sum + (b.count || 0), 0);
+    if (totalCount === 0) {
+        return {};
+    }
+
+    // Build cumulative distribution
+    const cumulative = [];
+    let cumulativeCount = 0;
+    let prevBound = 0;
+
+    for (const bucket of buckets) {
+        const bound = bucket.bound !== undefined ? bucket.bound :
+            bucket.upper_bound !== undefined ? bucket.upper_bound :
+                bucket.upperBound;
+        const count = bucket.count || 0;
+
+        cumulativeCount += count;
+
+        // Handle infinity bound
+        const upperBound = (bound === null || bound === undefined || bound === Infinity)
+            ? prevBound * 2 || 1000  // Estimate for +Inf bucket
+            : bound;
+
+        cumulative.push({
+            upperBound: upperBound,
+            cumulativeCount: cumulativeCount,
+            lowerBound: prevBound
+        });
+
+        prevBound = upperBound;
+    }
+
+    // Calculate each percentile using linear interpolation
+    const result = {};
+
+    for (const p of percentiles) {
+        const targetCount = (p / 100) * totalCount;
+
+        // Find the bucket containing this percentile
+        let percentileValue = 0;
+
+        for (let i = 0; i < cumulative.length; i++) {
+            const bucket = cumulative[i];
+
+            if (bucket.cumulativeCount >= targetCount) {
+                // Found the bucket
+                const prevCumulativeCount = i > 0 ? cumulative[i - 1].cumulativeCount : 0;
+                const bucketRange = bucket.upperBound - bucket.lowerBound;
+                const countInBucket = bucket.cumulativeCount - prevCumulativeCount;
+                const countIntoBucket = targetCount - prevCumulativeCount;
+
+                // Linear interpolation within bucket
+                if (countInBucket > 0) {
+                    const ratio = countIntoBucket / countInBucket;
+                    percentileValue = bucket.lowerBound + (ratio * bucketRange);
+                } else {
+                    percentileValue = bucket.lowerBound;
+                }
+
+                break;
+            }
+        }
+
+        result[`p${p}`] = percentileValue;
+    }
+
+    return result;
+}
+
+function buildSeriesLabel(series, allSeries = []) {
+    const parts = [];
+
+    // Check if all series have the same resource attributes
+    // If so, don't include them in the label (they're not distinguishing)
+    const includeResources = allSeries.length > 1 && !allSeriesHaveSameResources(allSeries);
+
+    // Add key resource attributes only if they distinguish series
+    if (includeResources && series.resource) {
+        const serviceName = series.resource['service.name'];
+        if (serviceName) parts.push(serviceName);
+
+        const hostName = series.resource['host.name'];
+        if (hostName && hostName !== serviceName) parts.push(hostName);
+    }
+
+    // Add ALL metric attributes (these usually distinguish series)
+    if (series.attributes) {
+        // Sort attributes by key for consistent ordering
+        const sortedAttrs = Object.entries(series.attributes).sort(([a], [b]) => a.localeCompare(b));
+
+        for (const [key, value] of sortedAttrs) {
+            // Skip service.name if it's already in resources
+            if (key === 'service.name' && includeResources) continue;
+
+            // Format the attribute as key=value
+            parts.push(`${key}=${value}`);
+        }
+    }
+
+    return parts.length > 0 ? parts.join(', ') : 'Series';
+}
+
+function allSeriesHaveSameResources(allSeries) {
+    if (allSeries.length <= 1) return true;
+
+    const firstResource = JSON.stringify(allSeries[0].resource || {});
+    return allSeries.every(s => JSON.stringify(s.resource || {}) === firstResource);
+}
+
+function calculatePercentile(histogram, percentile) {
+    const target = percentile === 'p50' ? 50 : percentile === 'p95' ? 95 : 99;
+    const totalCount = histogram.count || 0;
+
+    if (!histogram.bucketCounts || !histogram.explicitBounds || totalCount === 0) {
+        return 0;
+    }
+
+    const targetCount = (target / 100) * totalCount;
+    let cumulative = 0;
+    let prevBound = 0;
+
+    for (let i = 0; i < histogram.bucketCounts.length; i++) {
+        cumulative += histogram.bucketCounts[i];
+
+        if (cumulative >= targetCount) {
+            const bound = histogram.explicitBounds[i] || prevBound * 2;
+            const bucketCount = histogram.bucketCounts[i];
+
+            if (bucketCount > 0) {
+                const prevCum = cumulative - bucketCount;
+                const fraction = (targetCount - prevCum) / bucketCount;
+                return prevBound + fraction * (bound - prevBound);
+            }
+            return prevBound;
+        }
+
+        prevBound = histogram.explicitBounds[i] || prevBound;
+    }
+
+    return prevBound;
+}
+
+function adjustColorAlpha(color, alpha) {
+    return color + Math.floor(alpha * 255).toString(16).padStart(2, '0');
+}
+
+// DISABLED: Global window functions for metric label filters - Too slow, will be reworked in the future
+/*
+window.removeMetricLabelFilter = async (key) => {
+    delete activeAttributeFilters[key];
+    await renderMetricLabelsFilters();
+    // Reload expanded metrics with new filters
+    if (expandedMetric) {
+        const container = document.querySelector(`[data-metric-name="${expandedMetric}"] .metric-detail-container`);
+        if (container && container.style.display !== 'none') {
+            delete container.dataset.loaded;
+            const metric = allMetrics.find(m => m.name === expandedMetric);
+            if (metric) {
+                await renderMetricDetail(metric, container);
+                container.dataset.loaded = 'true';
+            }
+        }
+    }
+    renderMetrics(allMetrics);
+};
+
+window.clearAllMetricLabelFilters = async () => {
+    activeAttributeFilters = {};
+    await renderMetricLabelsFilters();
+    // Reload expanded metrics with new filters
+    if (expandedMetric) {
+        const container = document.querySelector(`[data-metric-name="${expandedMetric}"] .metric-detail-container`);
+        if (container && container.style.display !== 'none') {
+            delete container.dataset.loaded;
+            const metric = allMetrics.find(m => m.name === expandedMetric);
+            if (metric) {
+                await renderMetricDetail(metric, container);
+                container.dataset.loaded = 'true';
+            }
+        }
+    }
+    renderMetrics(allMetrics);
+};
+
+window.applyMetricLabelFilter = async (key, value) => {
+    if (value) {
+        activeAttributeFilters[key] = value;
+    } else {
+        delete activeAttributeFilters[key];
+    }
+    await renderMetricLabelsFilters();
+    // Reload expanded metrics with new filters
+    if (expandedMetric) {
+        const container = document.querySelector(`[data-metric-name="${expandedMetric}"] .metric-detail-container`);
+        if (container && container.style.display !== 'none') {
+            delete container.dataset.loaded;
+            const metric = allMetrics.find(m => m.name === expandedMetric);
+            if (metric) {
+                await renderMetricDetail(metric, container);
+                container.dataset.loaded = 'true';
+            }
+        }
+    }
+    renderMetrics(allMetrics);
+};
+*/
+
+// Keep old functions for backward compatibility (but they won't be used)
+window.removeResourceFilter = (key) => {
+    delete activeResourceFilters[key];
+    renderMetrics(allMetrics);
+};
+
+window.clearAllResourceFilters = () => {
+    activeResourceFilters = {};
+    renderMetrics(allMetrics);
+};
+
+window.showResourceValueInput = (key) => {
+    if (!key) return;
+    const value = prompt(`Enter value for ${key}:`);
+    if (value) {
+        activeResourceFilters[key] = value;
+        renderMetrics(allMetrics);
+    }
+};
+
+// Store active chart filters per chart
+const chartFilters = {};
+
+window.applyAttributeFilter = async (chartId, key, value) => {
+    // Store the filter for this chart
+    if (!chartFilters[chartId]) {
+        chartFilters[chartId] = {};
+    }
+
+    if (value) {
+        chartFilters[chartId][key] = value;
+    } else {
+        delete chartFilters[chartId][key];
+    }
+
+    // Find the metric name from the chartId
+    const metricName = chartId.replace('chart-', '').replace(/_/g, '.');
+
+    // Find the metric in allMetrics
+    const metric = allMetrics.find(m => m.name.replace(/[^a-zA-Z0-9]/g, '_') === chartId.replace('chart-', ''));
+    if (!metric) {
+        // Try exact name match
+        const exactMetric = allMetrics.find(m => m.name === metricName);
+        if (exactMetric) {
+            await reRenderChartWithFilters(exactMetric, chartId, chartFilters[chartId]);
+        }
+        return;
+    }
+
+    await reRenderChartWithFilters(metric, chartId, chartFilters[chartId]);
+};
+
+async function reRenderChartWithFilters(metric, chartId, filters) {
+    try {
+        // Fetch full metric data
+        const response = await fetch(`/api/metrics/${encodeURIComponent(metric.name)}`);
+        const data = await response.json();
+
+        if (!data.series || data.series.length === 0) return;
+
+        // Filter series based on active filters
+        let filteredData = { ...data };
+        if (filters && Object.keys(filters).length > 0) {
+            filteredData.series = data.series.filter(series => {
+                for (const [filterKey, filterValue] of Object.entries(filters)) {
+                    const seriesValue = series.attributes?.[filterKey];
+                    if (String(seriesValue) !== String(filterValue)) {
+                        return false;
+                    }
+                }
+                return true;
+            });
+        }
+
+        // Destroy existing chart
+        const canvas = document.getElementById(chartId);
+        if (!canvas) return;
+
+        const existingChart = Chart.getChart(canvas);
+        if (existingChart) {
+            existingChart.destroy();
+        }
+
+        // Re-render chart with filtered data
+        renderMetricChart(metric, filteredData, canvas, chartId);
+
+    } catch (error) {
+        console.error('Error re-rendering chart with filters:', error);
+    }
+}
+
+export function isMetricChartOpen() {
+    return expandedMetric !== null;
+}
+
+// === Global Correlation Functions ===
+
+window.viewMetricsForService = (serviceName, startTime, endTime) => {
+    if (!serviceName) return;
+
+    // Set resource filter for service.name
+    activeResourceFilters = {
+        'service.name': serviceName
+    };
+
+    // Switch to metrics tab
+    import('./tabs.js').then(module => {
+        module.switchTab('metrics');
+    });
+
+    // Load metrics and auto-expand first duration metric
+    setTimeout(async () => {
+        const api = await import('./api.js');
+        await api.loadMetrics();
+
+        // After metrics are loaded, find and expand the first duration metric
+        setTimeout(() => {
+            // Look for traces.span.duration or similar duration metric
+            const metricRows = document.querySelectorAll('.metric-row');
+            let targetRow = null;
+
+            for (const row of metricRows) {
+                const metricName = row.dataset.metricName;
+                if (metricName) {
+                    // Prefer duration metrics first
+                    if (metricName.includes('duration') || metricName.includes('latency')) {
+                        targetRow = row;
+                        break;
+                    }
+                    // Fallback to first metric
+                    if (!targetRow) {
+                        targetRow = row;
+                    }
+                }
+            }
+
+            // Expand the target metric by clicking its header
+            if (targetRow) {
+                const header = targetRow.querySelector('.metric-header');
+                if (header) {
+                    header.click();
+                }
+            }
+        }, 300);
+    }, 100);
+};
+
+window.viewMetricsForTrace = (traceId) => {
+    // This function can be called from trace exemplars
+    // For now, just switch to metrics tab
+    import('./tabs.js').then(module => {
+        module.switchTab('metrics');
+    });
+
+    setTimeout(() => {
+        import('./api.js').then(module => module.loadMetrics());
+    }, 100);
+};
+
+window.viewMetricsWithFilters = (filters) => {
+    if (!filters) return;
+
+    // Set resource filters
+    if (filters.resource) {
+        activeResourceFilters = { ...filters.resource };
+    }
+
+    // Store attribute filters for use when metric is expanded
+    if (filters.attributes) {
+        activeAttributeFilters = { ...filters.attributes };
+    } else {
+        activeAttributeFilters = {};
+    }
+
+    // Switch to metrics tab
+    import('./tabs.js').then(module => {
+        module.switchTab('metrics');
+    });
+
+    // Load metrics with filters
+    setTimeout(() => {
+        import('./api.js').then(module => module.loadMetrics());
+    }, 100);
+};
+
+window.viewTraceFromExemplar = (traceId) => {
+    // Switch to traces tab and show trace detail
+    import('./tabs.js').then(module => {
+        module.switchTab('traces');
+    });
+
+    // Load and show trace
+    setTimeout(() => {
+        import('./traces.js').then(module => {
+            module.showTraceDetail(traceId);
+        });
+    }, 200);
+};
+
+window.toggleREDMetricsFilter = () => {
+    showOnlyRED = !showOnlyRED;
+    // Re-render metrics with new filter
+    renderMetrics(allMetrics);
+};
+
+window.closeAllMetrics = () => {
+    // Close all expanded metrics
+    document.querySelectorAll('.metric-detail-container').forEach(container => {
+        if (container.style.display !== 'none') {
+            const row = container.closest('.metric-row');
+            if (row) {
+                const header = row.querySelector('.metric-header');
+                if (header) {
+                    header.click(); // Toggle to close
+                }
+            }
+        }
+    });
+    expandedMetric = null;
+};
+
+window.showMetricResources = async (metricName, resourceCount) => {
+    try {
+        const response = await fetch(`/api/metrics/${metricName}`);
+        const data = await response.json();
+
+        if (!data.series || data.series.length === 0) {
+            createModal('Metric Resources', '<p>No resource data available</p>', [
+                { id: 'close', label: 'Close', style: 'secondary', handler: (modal) => closeModal(modal) }
+            ]);
+            return;
+        }
+
+        // Extract unique resources
+        const resourcesMap = new Map();
+        data.series.forEach(series => {
+            if (series.resource) {
+                const resourceKey = JSON.stringify(series.resource);
+                if (!resourcesMap.has(resourceKey)) {
+                    resourcesMap.set(resourceKey, series.resource);
+                }
+            }
+        });
+
+        let contentHtml = `<div style="max-height: 400px; overflow-y: auto;">`;
+        contentHtml += `<p style="margin-bottom: 10px;"><strong>Found ${resourcesMap.size} unique resource(s):</strong></p>`;
+
+        let index = 1;
+        resourcesMap.forEach((resource) => {
+            contentHtml += `<div style="margin-bottom: 15px; padding: 10px; background: var(--bg-hover); border-radius: 4px;">`;
+            contentHtml += `<div style="font-weight: 600; margin-bottom: 5px;">Resource ${index}:</div>`;
+            contentHtml += `<table style="width: 100%; font-size: 12px;">`;
+
+            Object.entries(resource).forEach(([key, value]) => {
+                contentHtml += `<tr><td style="padding: 2px 5px; color: var(--text-muted);">${key}:</td><td style="padding: 2px 5px;">${value}</td></tr>`;
+            });
+
+            contentHtml += `</table></div>`;
+            index++;
+        });
+
+        contentHtml += `</div>`;
+
+        createModal(`Resources for ${metricName}`, contentHtml, [
+            { id: 'close', label: 'Close', style: 'secondary', handler: (modal) => closeModal(modal) }
+        ]);
+    } catch (error) {
+        console.error('Error loading metric resources:', error);
+        createModal('Error', '<p>Failed to load metric resources</p>', [
+            { id: 'close', label: 'Close', style: 'secondary', handler: (modal) => closeModal(modal) }
+        ]);
+    }
+};
+
+window.showMetricAttributes = async (metricName, totalSeriesCount) => {
+    try {
+        // Fetch last 1 hour of data to get a good sample of active series
+        const endTime = Date.now() / 1000;
+        const startTime = endTime - 3600;
+        const response = await fetch(`/api/metrics/${metricName}?start=${startTime}&end=${endTime}`);
+        const data = await response.json();
+
+        const activeSeries = data.series || [];
+        const activeSeriesCount = activeSeries.length;
+
+        // Analyze labels
+        const labelStats = {}; // key -> Set(values)
+
+        activeSeries.forEach(series => {
+            if (series.attributes) {
+                Object.entries(series.attributes).forEach(([key, value]) => {
+                    if (!labelStats[key]) {
+                        labelStats[key] = new Set();
+                    }
+                    // Handle non-string values
+                    const displayValue = value === null ? 'null' : String(value);
+                    labelStats[key].add(displayValue);
+                });
+            }
+        });
+
+        const labelKeys = Object.keys(labelStats).sort();
+
+        let contentHtml = `<div style="display: flex; flex-direction: column; gap: 16px;">`;
+
+        // Header Stats
+        contentHtml += `
+            <div style="background: var(--bg-secondary); padding: 12px; border-radius: 6px; border: 1px solid var(--border-color); display: flex; gap: 24px; font-size: 12px;">
+                <div>
+                    <div style="color: var(--text-muted); margin-bottom: 4px;">Total Series (Historic)</div>
+                    <div style="font-size: 16px; font-weight: 600; font-family: 'JetBrains Mono', monospace;">${formatCount(totalSeriesCount)}</div>
+                </div>
+                <div>
+                    <div style="color: var(--text-muted); margin-bottom: 4px;">Active Series (1h)</div>
+                    <div style="font-size: 16px; font-weight: 600; font-family: 'JetBrains Mono', monospace; color: var(--primary);">${formatCount(activeSeriesCount)}</div>
+                </div>
+                <div>
+                    <div style="color: var(--text-muted); margin-bottom: 4px;">Label Dimensions</div>
+                    <div style="font-size: 16px; font-weight: 600; font-family: 'JetBrains Mono', monospace;">${labelKeys.length}</div>
+                </div>
+            </div>
+        `;
+
+        // Label Analysis Table
+        if (labelKeys.length > 0) {
+            contentHtml += `
+                <div>
+                    <h4 style="font-size: 13px; font-weight: 600; margin-bottom: 8px;">Label Analysis</h4>
+                    <div style="border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                            <thead style="background: var(--bg-hover); font-weight: 600; color: var(--text-muted); text-align: left;">
+                                <tr>
+                                    <th style="padding: 8px 12px; border-bottom: 1px solid var(--border-color);">Label Name</th>
+                                    <th style="padding: 8px 12px; border-bottom: 1px solid var(--border-color); width: 100px;">Cardinality</th>
+                                    <th style="padding: 8px 12px; border-bottom: 1px solid var(--border-color);">Values (Top 5)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+            `;
+
+            labelKeys.forEach(key => {
+                const values = Array.from(labelStats[key]).sort();
+                const uniqueCount = values.length;
+
+                let valueDisplay = '';
+                if (values.length > 5) {
+                    const firstFive = values.slice(0, 5).join(', ');
+                    const remaining = values.slice(5).join(', ');
+                    valueDisplay = `
+                        <span>${firstFive}, </span>
+                        <a style="cursor: pointer; color: var(--primary); font-weight: 600; text-decoration: none;"
+                           onclick="this.style.display='none'; this.nextElementSibling.style.display='inline'">...</a>
+                        <span style="display: none">${remaining}</span>
+                    `;
+                } else {
+                    valueDisplay = values.join(', ');
+                }
+
+                contentHtml += `
+                    <tr style="border-bottom: 1px solid var(--border-color);">
+                        <td style="padding: 8px 12px; font-family: 'JetBrains Mono', monospace; color: var(--primary);">${key}</td>
+                        <td style="padding: 8px 12px;">${formatCount(uniqueCount)}</td>
+                        <td style="padding: 8px 12px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;">${valueDisplay}</td>
+                    </tr>
+                `;
+            });
+
+            contentHtml += `
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        } else {
+            contentHtml += `<div style="padding: 20px; text-align: center; color: var(--text-muted);">No labels found for this metric.</div>`;
+        }
+
+        // Raw Series Data (Scrollable & Exportable)
+        if (activeSeriesCount > 0) {
+            contentHtml += `
+                <div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <h4 style="font-size: 13px; font-weight: 600;">Raw Active Series (${activeSeriesCount})</h4>
+                        <div style="display: flex; gap: 8px;">
+                            ${renderActionButton('copy-prom-btn', 'Copy PromQL', 'secondary', 'dense')}
+                            ${renderActionButton('download-json-btn', '⬇ Download JSON', 'secondary', 'dense')}
+                        </div>
+                    </div>
+                    <div id="raw-series-container" style="max-height: 200px; overflow-y: auto; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; padding: 12px; font-family: 'JetBrains Mono', monospace; font-size: 11px; white-space: pre-wrap;"></div>
+                </div>
+            `;
+        }
+
+        contentHtml += `</div>`;
+
+        // Create Modal
+        const modal = createModal(`Cardinality Explorer: ${metricName}`, contentHtml, [
+            { id: 'close', label: 'Close', style: 'secondary', handler: (modal) => closeModal(modal) }
+        ], '800px');
+
+        // Populate Raw Series Content and Attach Handlers
+        if (activeSeriesCount > 0) {
+            const rawContainer = modal.querySelector('#raw-series-container');
+            const rawSeriesText = activeSeries.map(series => {
+                if (!series.attributes) return '{}';
+                const props = Object.entries(series.attributes)
+                    .sort((a, b) => a[0].localeCompare(b[0]))
+                    .map(([k, v]) => `${k}="${v}"`)
+                    .join(', ');
+                return `{${props}}`;
+            }).join('\n');
+
+            rawContainer.textContent = rawSeriesText;
+
+            // Attach Export Handlers
+            const copyBtn = modal.querySelector('#copy-prom-btn');
+            if (copyBtn) {
+                copyBtn.onclick = () => {
+                    copyToClipboard(rawSeriesText);
+                    const originalText = copyBtn.textContent;
+                    copyBtn.textContent = '✓ Copied!';
+                    setTimeout(() => copyBtn.textContent = originalText, 2000);
+                };
+            }
+
+            const downloadBtn = modal.querySelector('#download-json-btn');
+            if (downloadBtn) {
+                downloadBtn.onclick = () => {
+                    downloadJson(activeSeries, `${metricName}_series.json`);
+                };
+            }
+        }
+
+    } catch (error) {
+        console.error('Error loading metric attributes:', error);
+        createModal('Error', `<p>Failed to load metric attributes: ${error.message}</p>`, [
+            { id: 'close', label: 'Close', style: 'secondary', handler: (modal) => closeModal(modal) }
+        ]);
+    }
+};

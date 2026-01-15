@@ -5,6 +5,7 @@
 ### Code Quality and Safety
 
 **NEVER bypass pre-commit hooks or git checks without explicit permission:**
+
 - Do NOT use `git commit --no-verify` or `--no-verify` flag
 - Do NOT use `git push --force` or `--force-with-lease` without explicit permission
 - If pre-commit checks fail, fix the issues properly or ask for permission to bypass
@@ -13,6 +14,7 @@
 ### Repository Identity
 
 **This is a FORK:**
+
 - **Repository**: `ryanfaircloth/tinyolly` (forked from `tinyolly/tinyolly`)
 - **Container Registry**: `ghcr.io/ryanfaircloth/tinyolly` - ALWAYS use the fork registry, NEVER `ghcr.io/tinyolly`
 - **Helm Chart Registry**: `ghcr.io/ryanfaircloth/tinyolly/charts` - ALWAYS use the fork registry, NEVER `ghcr.io/tinyolly/charts`

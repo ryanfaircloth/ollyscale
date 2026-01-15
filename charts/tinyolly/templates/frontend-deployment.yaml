@@ -1,51 +1,51 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "tinyolly.ui.name" . }}
+  name: {{ include "tinyolly.frontend.name" . }}
   labels:
-    {{- include "tinyolly.ui.labels" . | nindent 4 }}
+    {{- include "tinyolly.frontend.labels" . | nindent 4 }}
   {{- with .Values.commonAnnotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  replicas: {{ .Values.ui.replicaCount }}
+  replicas: {{ .Values.frontend.replicaCount }}
   selector:
     matchLabels:
-      {{- include "tinyolly.ui.selectorLabels" . | nindent 6 }}
+      {{- include "tinyolly.frontend.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       annotations:
         {{- if and .Values.instrumentation.enabled .Values.instrumentation.selfObservability }}
-        # Self-observability: TinyOlly UI instruments itself (demo mode)
+        # Self-observability: TinyOlly frontend instruments itself (demo mode)
         instrumentation.opentelemetry.io/inject-python: "{{ .Release.Namespace }}/{{ .Values.instrumentation.name }}"
         {{- end }}
-        {{- with .Values.ui.podAnnotations }}
+        {{- with .Values.frontend.podAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
       labels:
-        {{- include "tinyolly.ui.selectorLabels" . | nindent 8 }}
+        {{- include "tinyolly.frontend.selectorLabels" . | nindent 8 }}
     spec:
       {{- with .Values.image.pullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "tinyolly.ui.serviceAccountName" . }}
-      {{- with .Values.ui.podSecurityContext }}
+      serviceAccountName: {{ include "tinyolly.frontend.serviceAccountName" . }}
+      {{- with .Values.frontend.podSecurityContext }}
       securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       containers:
-      - name: tinyolly-ui
-        {{- with .Values.ui.securityContext }}
+      - name: tinyolly-frontend
+        {{- with .Values.frontend.securityContext }}
         securityContext:
           {{- toYaml . | nindent 10 }}
         {{- end }}
-        image: "{{ .Values.ui.image.repository }}:{{ .Values.ui.image.tag }}"
-        imagePullPolicy: {{ include "tinyolly.imagePullPolicy" (dict "component" .Values.ui.image "global" .) }}
+        image: "{{ .Values.frontend.image.repository }}:{{ .Values.frontend.image.tag }}"
+        imagePullPolicy: {{ include "tinyolly.imagePullPolicy" (dict "component" .Values.frontend.image "global" .) }}
         ports:
         - name: http
-          containerPort: {{ .Values.ui.service.targetPort }}
+          containerPort: {{ .Values.frontend.service.targetPort }}
           protocol: TCP
         env:
         - name: REDIS_HOST
@@ -53,32 +53,32 @@ spec:
         - name: REDIS_PORT
           value: {{ .Values.redis.port | quote }}
         - name: OTEL_SERVICE_NAME
-          value: "tinyolly-ui"
+          value: "tinyolly-frontend"
         - name: OPAMP_SERVER_URL
           value: "http://{{ include "tinyolly.opampServer.name" . }}:{{ .Values.opampServer.service.httpPort }}"
-        {{- range .Values.ui.env }}
+        {{- range .Values.frontend.env }}
         - name: {{ .name }}
           value: {{ .value | quote }}
         {{- end }}
-        {{- range $key, $value := .Values.ui.extraEnv }}
+        {{- range $key, $value := .Values.frontend.extraEnv }}
         - name: {{ $key }}
           value: {{ $value | quote }}
         {{- end }}
         volumeMounts:
         - name: otelcol-templates-vol
           mountPath: /app/otelcol-templates
-        {{- with .Values.ui.volumeMounts }}
+        {{- with .Values.frontend.volumeMounts }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
-        {{- with .Values.ui.resources }}
+        {{- with .Values.frontend.resources }}
         resources:
           {{- toYaml . | nindent 10 }}
         {{- end }}
-        {{- with .Values.ui.livenessProbe }}
+        {{- with .Values.frontend.livenessProbe }}
         livenessProbe:
           {{- toYaml . | nindent 10 }}
         {{- end }}
-        {{- with .Values.ui.readinessProbe }}
+        {{- with .Values.frontend.readinessProbe }}
         readinessProbe:
           {{- toYaml . | nindent 10 }}
         {{- end }}
@@ -86,18 +86,18 @@ spec:
       - name: otelcol-templates-vol
         configMap:
           name: {{ include "tinyolly.fullname" . }}-otelcol-templates
-      {{- with .Values.ui.volumes }}
+      {{- with .Values.frontend.volumes }}
         {{- toYaml . | nindent 6 }}
       {{- end }}
-      {{- with .Values.ui.nodeSelector }}
+      {{- with .Values.frontend.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.ui.affinity }}
+      {{- with .Values.frontend.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.ui.tolerations }}
+      {{- with .Values.frontend.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
