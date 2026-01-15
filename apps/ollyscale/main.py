@@ -37,9 +37,9 @@ logger = logging.getLogger(__name__)
 
 
 def start_ui_mode():
-    """Start TinyOlly UI (FastAPI web application)"""
+    """Start ollyScale UI (FastAPI web application)"""
     # Configure OpenTelemetry for UI
-    os.environ.setdefault("OTEL_SERVICE_NAME", "tinyolly-ui")
+    os.environ.setdefault("OTEL_SERVICE_NAME", "ollyscale-ui")
     os.environ.setdefault("OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED", "true")
 
     try:
@@ -55,7 +55,7 @@ def start_ui_mode():
     from app.main import app
 
     port = settings.port
-    logger.info("Starting TinyOlly UI...")
+    logger.info("Starting ollyScale UI...")
     logger.info(f"✓ HTTP mode: http://0.0.0.0:{port}")
 
     uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")
@@ -64,7 +64,7 @@ def start_ui_mode():
 def start_receiver_mode():
     """Start OTLP Receiver (gRPC server)"""
     # Configure OpenTelemetry for receiver
-    os.environ.setdefault("OTEL_SERVICE_NAME", "tinyolly-otlp-receiver")
+    os.environ.setdefault("OTEL_SERVICE_NAME", "ollyscale-otlp-receiver")
     os.environ.setdefault("OTEL_EXPORTER_OTLP_ENDPOINT", "http://otel-collector:4318")
     os.environ.setdefault("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf")
     os.environ.setdefault("OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED", "true")
