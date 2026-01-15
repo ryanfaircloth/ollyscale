@@ -1,5 +1,32 @@
 # Changelog
 
+## [32.1.0](https://github.com/ryanfaircloth/tinyolly/compare/v32.0.0...v32.1.0) (2026-01-15)
+
+
+### Features
+
+* **ui:** refactor to separate static UI from FastAPI backend ([843b7a4](https://github.com/ryanfaircloth/tinyolly/commit/843b7a48c944af54e8de1cb2a6bff70d0837d83c))
+
+
+### Bug Fixes
+
+* add shellcheck disable comment for terraform variable check ([9565356](https://github.com/ryanfaircloth/tinyolly/commit/9565356e3571c8128667f88a1999682082c9eb28))
+* disable ruff TCH rules conflicting with FastAPI dependency injection ([d7f3626](https://github.com/ryanfaircloth/tinyolly/commit/d7f36266d690b450e19f7a55255e49cc3d923d6e))
+* **k8s:** use release-please manifest versions in terraform ([94b17ac](https://github.com/ryanfaircloth/tinyolly/commit/94b17ac0fe88e3c606d4af257ffed3f811df0265))
+* **ui:** restore missing HTML structure in index.html ([e6a341f](https://github.com/ryanfaircloth/tinyolly/commit/e6a341f49193bc098b4d90f241b142363d45bba8))
+* **ui:** update Vite to 6.4.1 to resolve esbuild security vulnerability ([5af2222](https://github.com/ryanfaircloth/tinyolly/commit/5af2222436bac03e41ab8b8a181cc259b1f88b6a))
+
+
+### Documentation
+
+* add critical rule against bypassing pre-commit checks ([ab8ff24](https://github.com/ryanfaircloth/tinyolly/commit/ab8ff2458d5ba342fe9ec94d7ac93736149e94cb))
+
+
+### Code Refactoring
+
+* **backend:** remove obsolete static and templates directories ([6c67eb7](https://github.com/ryanfaircloth/tinyolly/commit/6c67eb701bdc48ff37d7ca35b5369c1ee9ff2bb9))
+* switch to local-only development builds ([d78ba92](https://github.com/ryanfaircloth/tinyolly/commit/d78ba920d14708572cdc4ee32c773c24eed2eefc))
+
 ## [32.0.0](https://github.com/ryanfaircloth/tinyolly/compare/v31.1.4...v32.0.0) (2026-01-14)
 
 

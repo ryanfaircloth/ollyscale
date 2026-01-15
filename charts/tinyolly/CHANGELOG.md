@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.3.1](https://github.com/ryanfaircloth/tinyolly/compare/helm-tinyolly-v0.3.0...helm-tinyolly-v0.3.1) (2026-01-15)
+
+
+### Features
+
+* **ui:** refactor to separate static UI from FastAPI backend ([843b7a4](https://github.com/ryanfaircloth/tinyolly/commit/843b7a48c944af54e8de1cb2a6bff70d0837d83c))
+
+
+### Code Refactoring
+
+* **backend:** remove obsolete static and templates directories ([6c67eb7](https://github.com/ryanfaircloth/tinyolly/commit/6c67eb701bdc48ff37d7ca35b5369c1ee9ff2bb9))
+* switch to local-only development builds ([d78ba92](https://github.com/ryanfaircloth/tinyolly/commit/d78ba920d14708572cdc4ee32c773c24eed2eefc))
+
 ## [0.3.0](https://github.com/ryanfaircloth/tinyolly/compare/helm-tinyolly-v0.2.2...helm-tinyolly-v0.3.0) (2026-01-14)
 
 
