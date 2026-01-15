@@ -48,6 +48,10 @@ jobs:
             path: apps/tinyolly
             dockerfile: apps/tinyolly/Dockerfile
             image: ghcr.io/ryanfaircloth/tinyolly/tinyolly
+          - component: tinyolly-ui
+            path: apps/tinyolly-ui
+            dockerfile: apps/tinyolly-ui/Dockerfile
+            image: ghcr.io/ryanfaircloth/tinyolly/tinyolly-ui
           - component: opamp-server
             path: apps/opamp-server
             dockerfile: apps/opamp-server/Dockerfile
@@ -66,20 +70,13 @@ jobs:
       - name: Check if component was released
         id: check
         run: |
-          # Read version from manifest - single source of truth
+          # Read current version from manifest - single source of truth
           VERSION=$(jq -r '."${{ matrix.path }}"' .release-please-manifest.json)
 
           # Tag push: match tag pattern to component
           if [ "${{ github.ref_type }}" = "tag" ]; then
             TAG_NAME="${GITHUB_REF#refs/tags/}"
-            PATTERN="^v[0-9]+\.[0-9]+\.[0-9]+$"
-            if [ "${{ matrix.component }}" = "opamp-server" ]; then
-              PATTERN="^opamp-server-v[0-9]+\.[0-9]+\.[0-9]+$"
-            elif [ "${{ matrix.component }}" = "demo" ]; then
-              PATTERN="^demo-v[0-9]+\.[0-9]+\.[0-9]+$"
-            elif [ "${{ matrix.component }}" = "demo-otel-agent" ]; then
-              PATTERN="^demo-otel-agent-v[0-9]+\.[0-9]+\.[0-9]+$"
-            fi
+            PATTERN="^${{ matrix.component }}-v[0-9]+\.[0-9]+\.[0-9]+$"
 
             if echo "${TAG_NAME}" | grep -E "${PATTERN}" > /dev/null; then
               echo "released=true" >> $GITHUB_OUTPUT
@@ -87,12 +84,28 @@ jobs:
             else
               echo "released=false" >> $GITHUB_OUTPUT
             fi
-          # Release-please: check if component was released
-          elif echo '${{ needs.release-please.outputs.paths_released }}' | jq -e '.[] | select(. == "${{ matrix.path }}")' > /dev/null; then
-            echo "released=true" >> $GITHUB_OUTPUT
-            echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          # Release-please: check if version changed in manifest
           else
-            echo "released=false" >> $GITHUB_OUTPUT
+            # Determine previous commit reference with fallback
+            BEFORE_REF="${{ github.event.before }}"
+            if [ -z "$BEFORE_REF" ] || ! git cat-file -e "$BEFORE_REF" 2>/dev/null; then
+              BEFORE_REF="HEAD~1"
+            fi
+
+            # Fetch previous commit to compare versions
+            git fetch origin "$BEFORE_REF" --depth=1 2>/dev/null || true
+            PREV_VERSION=$(git show "$BEFORE_REF":.release-please-manifest.json 2>/dev/null | jq -r '."${{ matrix.path }}"' || echo "0.0.0")
+
+            echo "Previous version: ${PREV_VERSION}"
+            echo "Current version: ${VERSION}"
+
+            # If version changed, component was released
+            if [ "${VERSION}" != "${PREV_VERSION}" ] && [ "${VERSION}" != "null" ]; then
+              echo "released=true" >> $GITHUB_OUTPUT
+              echo "version=${VERSION}" >> $GITHUB_OUTPUT
+            else
+              echo "released=false" >> $GITHUB_OUTPUT
+            fi
           fi
 
       - name: Set up QEMU
@@ -119,9 +132,7 @@ jobs:
           file: ${{ matrix.dockerfile }}
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: |
-            ${{ matrix.image }}:v${{ steps.check.outputs.version }}
-            ${{ matrix.image }}:latest
+          tags: ${{ matrix.image }}:v${{ steps.check.outputs.version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -139,10 +150,29 @@ jobs:
       - name: Check if chart was released
         id: check
         run: |
-          if echo '${{ needs.release-please.outputs.paths_released }}' | jq -e '.[] | select(. == "charts/${{ matrix.chart }}")' > /dev/null; then
-            echo "released=true" >> $GITHUB_OUTPUT
+          # Check if chart version changed in manifest or Chart.yaml
+          if [ -f "charts/${{ matrix.chart }}/Chart.yaml" ]; then
             VERSION=$(cat charts/${{ matrix.chart }}/Chart.yaml | grep '^version:' | awk '{print $2}')
-            echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
+            # Determine previous commit reference with fallback
+            BEFORE_REF="${{ github.event.before }}"
+            if [ -z "$BEFORE_REF" ] || ! git cat-file -e "$BEFORE_REF" 2>/dev/null; then
+              BEFORE_REF="HEAD~1"
+            fi
+
+            # Fetch previous commit to compare versions
+            git fetch origin "$BEFORE_REF" --depth=1 2>/dev/null || true
+            PREV_VERSION=$(git show "$BEFORE_REF":charts/${{ matrix.chart }}/Chart.yaml 2>/dev/null | grep '^version:' | awk '{print $2}' || echo "0.0.0")
+
+            echo "Previous version: ${PREV_VERSION}"
+            echo "Current version: ${VERSION}"
+
+            if [ "${VERSION}" != "${PREV_VERSION}" ] && [ "${VERSION}" != "" ]; then
+              echo "released=true" >> $GITHUB_OUTPUT
+              echo "version=${VERSION}" >> $GITHUB_OUTPUT
+            else
+              echo "released=false" >> $GITHUB_OUTPUT
+            fi
           else
             echo "released=false" >> $GITHUB_OUTPUT
           fi
@@ -157,32 +187,6 @@ jobs:
         if: steps.check.outputs.released == 'true'
         run: |
           echo ${{ secrets.GITHUB_TOKEN }} | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
-
-      - name: Update chart dependencies
-        if: steps.check.outputs.released == 'true'
-        run: |
-          # Update image tags in values.yaml to match released container versions from manifest
-          cd charts/${{ matrix.chart }}
-
-          # For tinyolly chart, update both tinyolly and opamp-server image tags
-          if [ "${{ matrix.chart }}" = "tinyolly" ]; then
-            TINYOLLY_VERSION=$(jq -r '."apps/tinyolly"' ../../.release-please-manifest.json)
-            yq eval -i ".tinyolly.image.tag = \"v${TINYOLLY_VERSION}\"" values.yaml
-            OPAMP_VERSION=$(jq -r '."apps/opamp-server"' ../../.release-please-manifest.json)
-            yq eval -i ".opampServer.image.tag = \"v${OPAMP_VERSION}\"" values.yaml
-          fi
-
-          # For demos chart, update demo image tag
-          if [ "${{ matrix.chart }}" = "tinyolly-demos" ]; then
-            DEMO_VERSION=$(jq -r '."apps/demo"' ../../.release-please-manifest.json)
-            yq eval -i ".demo.image.tag = \"v${DEMO_VERSION}\"" values.yaml
-          fi
-
-          # For demo-otel-agent chart, update demo-otel-agent image tag
-          if [ "${{ matrix.chart }}" = "tinyolly-demo-otel-agent" ]; then
-            AI_VERSION=$(jq -r '."apps/demo-otel-agent"' ../../.release-please-manifest.json)
-            yq eval -i ".aiAgent.image.tag = \"v${AI_VERSION}\"" values.yaml
-          fi
 
       - name: Package Helm chart
         if: steps.check.outputs.released == 'true'

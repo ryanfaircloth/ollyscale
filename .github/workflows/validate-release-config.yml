@@ -1,0 +1,128 @@
+name: Validate Release Configuration
+
+on:
+  pull_request:
+    paths:
+      - "release-please-config.json"
+      - ".release-please-manifest.json"
+      - "charts/**/Chart.yaml"
+      - "charts/**/values.yaml"
+      - ".github/workflows/release-please.yml"
+
+jobs:
+  validate-config:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Validate release-please JSON files
+        run: |
+          echo "Validating release-please-config.json..."
+          jq empty release-please-config.json || exit 1
+
+          echo "Validating .release-please-manifest.json..."
+          jq empty .release-please-manifest.json || exit 1
+
+          echo "✅ JSON files are valid"
+
+      - name: Validate Chart.yaml versions
+        run: |
+          echo "Checking Chart.yaml version patterns..."
+          for chart in charts/*/Chart.yaml; do
+            if [ -f "$chart" ]; then
+              version=$(grep '^version:' "$chart" | awk '{print $2}')
+              if ! echo "$version" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' > /dev/null; then
+                echo "❌ Invalid version in $chart: $version"
+                exit 1
+              fi
+              echo "✅ $chart version: $version"
+            fi
+          done
+
+      - name: Validate manifest matches config
+        run: |
+          echo "Checking that all manifest entries have config definitions..."
+          manifest_paths=$(jq -r 'keys[]' .release-please-manifest.json)
+
+          for path in $manifest_paths; do
+            if ! jq -e ".packages.\"$path\"" release-please-config.json > /dev/null; then
+              echo "❌ Manifest entry '$path' has no config in release-please-config.json"
+              exit 1
+            fi
+            echo "✅ $path is configured"
+          done
+
+      - name: Validate component tags are unique
+        run: |
+          echo "Checking for duplicate component tags..."
+          components=$(jq -r '.packages[].component' release-please-config.json | sort)
+          duplicates=$(echo "$components" | uniq -d)
+
+          if [ -n "$duplicates" ]; then
+            echo "❌ Duplicate component names found:"
+            echo "$duplicates"
+            exit 1
+          fi
+
+          echo "✅ All component names are unique"
+
+      - name: Validate extra-files paths exist
+        run: |
+          echo "Checking that extra-files reference existing files..."
+          errors=0
+
+          # Extract all extra-files paths (both string and object format)
+          jq -r '.packages[] | .["extra-files"][]? | if type == "string" then . else .path end' release-please-config.json | while read -r file; do
+            # Skip glob patterns
+            if [[ "$file" == *"*"* ]]; then
+              echo "⏭️  Skipping glob pattern: $file"
+              continue
+            fi
+
+            if [ ! -f "$file" ]; then
+              echo "❌ extra-files references non-existent file: $file"
+              errors=1
+            else
+              echo "✅ $file exists"
+            fi
+          done
+
+          if [ $errors -ne 0 ]; then
+            exit 1
+          fi
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: latest
+
+      - name: Lint Helm charts
+        run: |
+          echo "Linting Helm charts..."
+          for chart in charts/*/; do
+            if [ -f "$chart/Chart.yaml" ]; then
+              echo "Linting $(basename $chart)..."
+              helm lint "$chart" || exit 1
+            fi
+          done
+          echo "✅ All charts pass helm lint"
+
+      - name: Validate chart dependencies in values.yaml
+        run: |
+          echo "Checking that values.yaml image tags match expected patterns..."
+          for values in charts/*/values.yaml; do
+            if [ -f "$values" ]; then
+              chart=$(basename $(dirname "$values"))
+              echo "Checking $chart..."
+
+              # Extract all image.tag values
+              tags=$(yq eval '.. | select(has("image")) | .image.tag' "$values" 2>/dev/null || echo "")
+
+              for tag in $tags; do
+                if [ "$tag" != "latest" ] && ! echo "$tag" | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' > /dev/null; then
+                  echo "⚠️  Non-standard tag in $values: $tag (should be 'latest' or 'vX.Y.Z')"
+                fi
+              done
+            fi
+          done
+          echo "✅ Chart values validated"

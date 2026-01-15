@@ -16,7 +16,7 @@ ollama:
     # -- Image repository
     repository: ollama/ollama
     # -- Image tag
-    tag: latest
+    tag: 0.14.1
     # -- Image pull policy
     pullPolicy: IfNotPresent
 
@@ -72,7 +72,7 @@ agent:
     # -- Image repository
     repository: docker-registry.registry.svc.cluster.local:5000/tinyolly/ai-agent-demo
     # -- Image tag
-    tag: latest
+    tag: v0.0.1
     # -- Image pull policy
     pullPolicy: Always
 
