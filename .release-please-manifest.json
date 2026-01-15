@@ -1,6 +1,6 @@
 {
   ".": "32.1.0",
-  "apps/tinyolly": "37.0.0",
+  "apps/tinyolly": "38.0.0",
   "apps/opamp-server": "3.0.0",
   "apps/demo": "2.0.0",
   "apps/demo-otel-agent": "0.3.4",
