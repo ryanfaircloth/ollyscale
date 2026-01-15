@@ -2,6 +2,19 @@
 
 All notable changes to the TinyOlly UI component will be documented in this file.
 
+## 1.0.0 (2026-01-15)
+
+
+### Features
+
+* **ui:** refactor to separate static UI from FastAPI backend ([843b7a4](https://github.com/ryanfaircloth/tinyolly/commit/843b7a48c944af54e8de1cb2a6bff70d0837d83c))
+
+
+### Bug Fixes
+
+* **ui:** restore missing HTML structure in index.html ([e6a341f](https://github.com/ryanfaircloth/tinyolly/commit/e6a341f49193bc098b4d90f241b142363d45bba8))
+* **ui:** update Vite to 6.4.1 to resolve esbuild security vulnerability ([5af2222](https://github.com/ryanfaircloth/tinyolly/commit/5af2222436bac03e41ab8b8a181cc259b1f88b6a))
+
 ## [2.0.0] - 2025-01-14
 
 ### Added
