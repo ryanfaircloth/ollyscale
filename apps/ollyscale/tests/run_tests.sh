@@ -1,12 +1,12 @@
 #!/bin/bash
-# Run TinyOlly UI tests
+# Run ollyScale UI tests
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/.."
 
 echo "=========================================="
-echo "TinyOlly UI Tests"
+echo "ollyScale UI Tests"
 echo "=========================================="
 
 # Install test dependencies if needed

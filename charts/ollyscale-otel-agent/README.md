@@ -1,6 +1,6 @@
-# TinyOlly AI Agent Demo Helm Chart
+# ollyScale AI Agent Demo Helm Chart
 
-This Helm chart deploys the TinyOlly AI Agent demo with Ollama LLM server.
+This Helm chart deploys the ollyScale AI Agent demo with Ollama LLM server.
 
 ## Overview
 
@@ -20,19 +20,19 @@ The AI agent demo showcases:
 ### Prerequisites
 
 - Kubernetes cluster with OTel operator installed
-- Python Instrumentation resource in `tinyolly` namespace
-- TinyOlly platform deployed
+- Python Instrumentation resource in `ollyscale` namespace
+- ollyScale platform deployed
 
 ### Install the chart
 
 ```bash
-helm install tinyolly-ai-agent ./charts/tinyolly-ai-agent
+helm install ollyscale-ai-agent ./charts/ollyscale-otel-agent
 ```
 
 ### Install with custom values
 
 ```bash
-helm install tinyolly-ai-agent ./charts/tinyolly-ai-agent \
+helm install ollyscale-ai-agent ./charts/ollyscale-otel-agent \
   --set ollama.model=llama2 \
   --set agent.httpRoute.enabled=true
 ```
@@ -43,14 +43,14 @@ See [values.yaml](values.yaml) for all configuration options.
 
 ### Key Configuration
 
-| Parameter                        | Description               | Default             |
-| -------------------------------- | ------------------------- | ------------------- |
-| `global.namespace`               | Namespace for deployment  | `tinyolly-ai-agent` |
-| `ollama.model`                   | LLM model to download     | `tinyllama`         |
-| `ollama.persistence.enabled`     | Enable persistent storage | `true`              |
-| `ollama.persistence.size`        | Storage size              | `10Gi`              |
-| `ollama.resources.limits.memory` | Memory limit for Ollama   | `4Gi`               |
-| `agent.httpRoute.enabled`        | Enable HTTPRoute          | `false`             |
+| Parameter                        | Description               | Default                  |
+| -------------------------------- | ------------------------- | ------------------------ |
+| `global.namespace`               | Namespace for deployment  | `ollyscale-ai-agent`     |
+| `ollama.model`                   | LLM model to download     | `tinyllama`              |
+| `ollama.persistence.enabled`     | Enable persistent storage | `true`                   |
+| `ollama.persistence.size`        | Storage size              | `10Gi`                   |
+| `ollama.resources.limits.memory` | Memory limit for Ollama   | `4Gi`                    |
+| `agent.httpRoute.enabled`        | Enable HTTPRoute          | `false`                  |
 
 ## How It Works
 
@@ -59,7 +59,7 @@ See [values.yaml](values.yaml) for all configuration options.
 The agent deployment has this annotation:
 
 ```yaml
-instrumentation.opentelemetry.io/inject-python: "tinyolly/python-instrumentation"
+instrumentation.opentelemetry.io/inject-python: "ollyscale/python-instrumentation"
 ```
 
 This tells the OTel operator to:
@@ -79,11 +79,11 @@ When the agent calls Ollama, the instrumentation automatically creates spans wit
 
 ## Monitoring
 
-View traces in the TinyOlly UI:
+View traces in the ollyScale UI:
 
 ```bash
-# Port-forward to TinyOlly UI
-kubectl port-forward -n tinyolly svc/tinyolly-ui 5002:5002
+# Port-forward to ollyScale UI
+kubectl port-forward -n ollyscale svc/ollyscale-ui 5002:5002
 
 # Open browser
 open http://localhost:5002
@@ -98,7 +98,7 @@ Filter for service: `ai-agent-demo`
 Check if the model is downloaded:
 
 ```bash
-kubectl exec -n tinyolly-ai-agent deployment/ollama -- ollama list
+kubectl exec -n ollyscale-ai-agent deployment/ollama -- ollama list
 ```
 
 ### Agent not sending traces
@@ -106,7 +106,7 @@ kubectl exec -n tinyolly-ai-agent deployment/ollama -- ollama list
 Check if instrumentation is injected:
 
 ```bash
-kubectl get pod -n tinyolly-ai-agent -o yaml | grep -A 10 "instrumentation"
+kubectl get pod -n ollyscale-ai-agent -o yaml | grep -A 10 "instrumentation"
 ```
 
 Check OTel operator logs:

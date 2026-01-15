@@ -29,7 +29,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
-Pydantic models for TinyOlly API request/response validation and OpenAPI schema generation.
+Pydantic models for ollyScale API request/response validation and OpenAPI schema generation.
 """
 
 from typing import Any, ClassVar, Literal
@@ -262,7 +262,7 @@ class AdminStatsResponse(BaseModel):
     telemetry: dict[str, int] = Field(..., description="Telemetry data counts (traces, spans, logs, metrics)")
     redis: dict[str, Any] = Field(..., description="Redis memory and connection info")
     cardinality: dict[str, int] = Field(..., description="Metric cardinality stats")
-    uptime: str | None = Field(None, description="TinyOlly uptime")
+    uptime: str | None = Field(None, description="ollyScale uptime")
 
 
 class AlertRule(BaseModel):
