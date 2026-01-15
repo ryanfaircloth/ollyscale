@@ -5,10 +5,14 @@ on:
     branches:
       - main
     tags:
-      - "v*"
+      - "tinyolly-v*"
+      - "tinyolly-ui-v*"
       - "opamp-server-v*"
       - "demo-v*"
       - "demo-otel-agent-v*"
+      - "helm-tinyolly-v*"
+      - "helm-demos-v*"
+      - "helm-demo-otel-agent-v*"
 
 permissions:
   contents: write
