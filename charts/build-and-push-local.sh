@@ -72,24 +72,24 @@ cd "$SCRIPT_DIR/.."
 echo "Step 1/4: Building $IMAGE_ORG (API backend + OTLP receiver)"
 echo "-----------------------------------------------------------"
 $CONTAINER_CMD build \
-  -f apps/tinyolly/Dockerfile \
+  -f apps/ollyscale/Dockerfile \
   -t $IMAGE_ORG/tinyolly:latest \
   -t $IMAGE_ORG/tinyolly:$VERSION \
   -t $EXTERNAL_REGISTRY/$IMAGE_ORG/tinyolly:latest \
   -t $EXTERNAL_REGISTRY/$IMAGE_ORG/tinyolly:$VERSION \
-  apps/tinyolly/
+  apps/ollyscale/
 echo "✓ $PROJECT_NAME backend image built"
 echo ""
 
 echo "Step 2/4: Building $IMAGE_ORG-ui (static frontend)"
 echo "-----------------------------------------------------------"
 $CONTAINER_CMD build \
-  -f apps/tinyolly-ui/Dockerfile \
+  -f apps/ollyscale-ui/Dockerfile \
   -t $IMAGE_ORG/tinyolly-ui:latest \
   -t $IMAGE_ORG/tinyolly-ui:$VERSION \
   -t $EXTERNAL_REGISTRY/$IMAGE_ORG/tinyolly-ui:latest \
   -t $EXTERNAL_REGISTRY/$IMAGE_ORG/tinyolly-ui:$VERSION \
-  apps/tinyolly-ui/
+  apps/ollyscale-ui/
 echo "✓ $IMAGE_ORG-ui image built"
 echo ""
 

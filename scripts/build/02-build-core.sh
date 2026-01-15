@@ -79,10 +79,10 @@ echo "Building tinyolly..."
 echo "----------------------------------------"
 docker buildx build --platform $PLATFORMS \
   --no-cache \
-  -f apps/tinyolly/Dockerfile \
+  -f apps/ollyscale/Dockerfile \
   -t $CONTAINER_REGISTRY/tinyolly:latest \
   -t $CONTAINER_REGISTRY/tinyolly:$VERSION \
-  $BUILD_ACTION apps/tinyolly/
+  $BUILD_ACTION apps/ollyscale/
 echo "✓ Built $CONTAINER_REGISTRY/tinyolly:$VERSION"
 echo ""
 
