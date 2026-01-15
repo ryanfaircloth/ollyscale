@@ -5,6 +5,6 @@
   "apps/demo": "0.0.0",
   "apps/demo-otel-agent": "0.0.0",
   "charts/tinyolly": "0.0.0",
-  "charts/tinyolly-demos": "0.0.0",
+  "charts/tinyolly-demos": "1.0.0",
   "charts/tinyolly-demo-otel-agent": "0.0.0"
 }
