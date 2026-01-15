@@ -15,7 +15,6 @@
     "cytoscape": "^3.28.1"
   },
   "devDependencies": {
-    "@types/cytoscape": "^3.21.4",
     "@typescript-eslint/eslint-plugin": "^8.53.0",
     "@typescript-eslint/parser": "^8.53.0",
     "eslint": "^9.39.2",
