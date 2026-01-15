@@ -4,7 +4,7 @@
 PROJECT_NAME ?= ollyScale
 PROJECT_SLUG ?= ollyscale
 GH_ORG ?= ryanfaircloth
-GH_REPO ?= tinyolly
+GH_REPO ?= ollyscale
 
 # Container configuration
 REGISTRY ?= ghcr.io
@@ -16,7 +16,7 @@ CLUSTER_NAME ?= $(PROJECT_SLUG)
 NAMESPACE ?= observability
 
 # Legacy cluster name support (can be overridden)
-LEGACY_CLUSTER_NAME := tinyolly
+LEGACY_CLUSTER_NAME := ollyscale
 
 # Use legacy name if it exists, otherwise use new name
 ACTIVE_CLUSTER_NAME := $(shell if kind get clusters 2>/dev/null | grep -q "^$(LEGACY_CLUSTER_NAME)$$"; then echo "$(LEGACY_CLUSTER_NAME)"; else echo "$(CLUSTER_NAME)"; fi)
@@ -70,7 +70,7 @@ up:
 	@echo ""
 	@echo "📋 Next Steps:"
 	@echo "  1. Build and deploy: make deploy"
-	@echo "  2. Access ArgoCD UI: https://argocd.tinyolly.test:49443"
+	@echo "  2. Access ArgoCD UI: https://argocd.ollyscale.test:49443"
 	@echo "  3. Get ArgoCD admin password:"
 	@echo "     cd .kind && terraform output -raw argocd_admin_password"
 	@echo ""
@@ -88,7 +88,7 @@ deploy:
 	echo "✅ Images built and pushed: version $$VERSION" && \
 	echo "" && \
 	echo "🔄 Creating terraform auto vars file..." && \
-	echo "tinyolly_chart_tag = \"0.3.0-$$VERSION\"" > $(CURDIR)/.kind/terraform.auto.tfvars && \
+	echo "ollyscale_chart_tag = \"0.3.0-$$VERSION\"" > $(CURDIR)/.kind/terraform.auto.tfvars && \
 	echo "tinyolly_tag = \"$$VERSION\"" >> $(CURDIR)/.kind/terraform.auto.tfvars && \
 	echo "opamp_tag = \"$$VERSION\"" >> $(CURDIR)/.kind/terraform.auto.tfvars && \
 	echo "🔄 Updating ArgoCD application..." && \
