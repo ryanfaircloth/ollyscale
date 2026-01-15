@@ -11,7 +11,7 @@ spec:
   project: observability
   source:
     repoURL: "https://github.com/tinyolly/tinyolly.git"
-    path: .kind/modules/tinyolly/k8s-manifests/otel-demo
+    path: .kind/modules/ollyscale/k8s-manifests/otel-demo
     targetRevision: main
   destination:
     server: https://kubernetes.default.svc

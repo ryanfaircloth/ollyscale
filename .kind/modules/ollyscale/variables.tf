@@ -7,7 +7,7 @@ variable "gateway_dns_suffix" {
 variable "custom_demo_frontend_image" {
   description = "Custom demo frontend image"
   type        = string
-  default     = "ghcr.io/ryanfaircloth/tinyolly-demo-frontend"
+  default     = "ghcr.io/ryanfaircloth/ollyscale-demo-frontend"
 }
 
 variable "custom_demo_frontend_tag" {
@@ -19,7 +19,7 @@ variable "custom_demo_frontend_tag" {
 variable "custom_demo_backend_image" {
   description = "Custom demo backend image"
   type        = string
-  default     = "ghcr.io/ryanfaircloth/tinyolly-demo-backend"
+  default     = "ghcr.io/ryanfaircloth/ollyscale-demo-backend"
 }
 
 variable "custom_demo_backend_tag" {
@@ -31,7 +31,7 @@ variable "custom_demo_backend_tag" {
 variable "ai_agent_image" {
   description = "AI agent demo image"
   type        = string
-  default     = "docker-registry.registry.svc.cluster.local:5000/tinyolly/ai-agent-demo"
+  default     = "docker-registry.registry.svc.cluster.local:5000/ollyscale/ai-agent-demo"
 }
 
 variable "ai_agent_tag" {

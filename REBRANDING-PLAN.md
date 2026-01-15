@@ -258,10 +258,10 @@ Phase 3: Kubernetes/Helm (depends on Phase 2)
 │   [VALIDATE & COMMIT] - PARTIALLY COMPLETED
 │
 ├─ 3.2 Additional Charts (depends on 3.1)
-│   ├─ Rename charts/tinyolly-demos/ → charts/ollyscale-demos/
-│   ├─ Rename charts/tinyolly-demo-otel-agent/ → charts/ollyscale-otel-agent/
-│   └─ Update all Chart.yaml and values.yaml
-│   [VALIDATE & COMMIT]
+│   ├─ Rename charts/tinyolly-demos/ → charts/ollyscale-demos/ [COMPLETED]
+│   ├─ Rename charts/tinyolly-demo-otel-agent/ → charts/ollyscale-otel-agent/ [COMPLETED]
+│   └─ Update all Chart.yaml and values.yaml [COMPLETED]
+│   [VALIDATE & COMMIT] - COMPLETED
 │
 └─ 3.3 Terraform/KIND (depends on 3.1, 3.2)
     ├─ Rename .kind/modules/tinyolly/ → .kind/modules/ollyscale/

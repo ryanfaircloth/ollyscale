@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: tinyolly
+  name: ollyscale
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "50"
@@ -13,20 +13,20 @@ spec:
     - group: opentelemetry.io
       kind: Instrumentation
       name: python-instrumentation
-      namespace: tinyolly
+      namespace: ollyscale
       jqPathExpressions:
         - .spec
         - .metadata.annotations
   source:
     repoURL: "${chart_registry}"
-    chart: tinyolly
-    targetRevision: ${tinyolly_chart_tag}
+    chart: ollyscale
+    targetRevision: ${ollyscale_chart_tag}
     helm:
       valuesObject:
         frontend:
           image:
-            repository: ${image_registry}/tinyolly
-            tag: ${tinyolly_tag}
+            repository: ${image_registry}/ollyscale
+            tag: ${ollyscale_tag}
 
           resources:
             limits: {}
@@ -36,8 +36,8 @@ spec:
 
         webui:
           image:
-            repository: ${image_registry}/tinyolly-ui
-            tag: ${tinyolly_tag}
+            repository: ${image_registry}/ollyscale-ui
+            tag: ${ollyscale_tag}
 
           resources:
             limits: {}
@@ -49,7 +49,7 @@ spec:
                 namespace: envoy-gateway-system
                 sectionName: mgmt-https-listener
             hosts:
-              - host: tinyolly.${gateway_dns_suffix}
+              - host: ollyscale.${gateway_dns_suffix}
                 path: /
                 pathType: PathPrefix
 
@@ -63,14 +63,14 @@ spec:
 
         otlpReceiver:
           image:
-            repository: ${image_registry}/tinyolly
-            tag: ${tinyolly_tag}
+            repository: ${image_registry}/ollyscale
+            tag: ${ollyscale_tag}
 
           resources:
             limits: {}
 
         redis:
-          host: tinyolly-redis
+          host: ollyscale-redis
           port: 6379
 
         # eBPF agent disabled by default - requires real Linux kernel
@@ -82,7 +82,7 @@ spec:
         #     # Instrument common development ports
         #     openPorts: "5000,8080,3000,8081"
         #     serviceName: "ebpf-demo"
-        #     otlpEndpoint: "http://gateway-collector.tinyolly.svc.cluster.local:4317"
+        #     otlpEndpoint: "http://gateway-collector.ollyscale.svc.cluster.local:4317"
 
         otelCollector:
           endpoint: http://otel-collector:4318
@@ -92,7 +92,7 @@ spec:
           logsEndpoint: http://otel-collector:4318/v1/logs
   destination:
     server: "https://kubernetes.default.svc"
-    namespace: tinyolly
+    namespace: ollyscale
   syncPolicy:
     automated:
       prune: true

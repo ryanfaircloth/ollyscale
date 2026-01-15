@@ -19,13 +19,13 @@ module "main" {
   use_local_registry     = local.use_local_registry
   image_registry         = local.image_registry
   chart_registry         = local.chart_registry
-  tinyolly_tag           = local.tinyolly_tag
+  ollyscale_tag          = local.ollyscale_tag
   opamp_tag              = local.opamp_tag
-  tinyolly_chart_tag     = var.tinyolly_chart_tag
+  ollyscale_chart_tag    = var.ollyscale_chart_tag
 }
 
-module "tinyolly" {
-  source                     = "./modules/tinyolly"
+module "ollyscale" {
+  source                     = "./modules/ollyscale"
   gateway_dns_suffix         = var.gateway_dns_suffix
   custom_demo_frontend_image = var.custom_demo_frontend_image
   custom_demo_frontend_tag   = var.custom_demo_frontend_tag

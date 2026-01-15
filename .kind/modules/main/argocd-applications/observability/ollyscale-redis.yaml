@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: tinyolly-redis
+  name: ollyscale-redis
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "40"
@@ -49,7 +49,7 @@ spec:
                   storage: 1Gi
   destination:
     server: "https://kubernetes.default.svc"
-    namespace: tinyolly
+    namespace: ollyscale
   syncPolicy:
     automated:
       prune: true

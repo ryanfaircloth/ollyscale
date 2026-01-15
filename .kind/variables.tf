@@ -1,7 +1,7 @@
 variable "gateway_dns_suffix" {
   description = "DNS suffix for gateway routes"
   type        = string
-  default     = "tinyolly.test"
+  default     = "ollyscale.test"
 }
 
 variable "bootstrap" {
@@ -16,9 +16,9 @@ variable "use_local_registry" {
   default     = true
 }
 
-# TinyOlly image versions - use "latest" for local builds
-variable "tinyolly_tag" {
-  description = "TinyOlly image tag"
+# OllyScale image versions - use "latest" for local builds
+variable "ollyscale_tag" {
+  description = "OllyScale image tag"
   type        = string
   default     = "latest"
 }
@@ -29,8 +29,8 @@ variable "opamp_tag" {
   default     = "latest"
 }
 
-variable "tinyolly_chart_tag" {
-  description = "Version of the TinyOlly Helm chart to deploy (use current Chart.yaml version for local builds)"
+variable "ollyscale_chart_tag" {
+  description = "Version of the OllyScale Helm chart to deploy (use current Chart.yaml version for local builds)"
   type        = string
   default     = "0.3.0"
 }
@@ -51,7 +51,7 @@ variable "demo_agent_tag" {
 variable "custom_demo_frontend_image" {
   description = "Custom demo frontend image repository (unified demo image)"
   type        = string
-  default     = "docker-registry.registry.svc.cluster.local:5000/tinyolly/demo"
+  default     = "docker-registry.registry.svc.cluster.local:5000/ollyscale/demo"
 }
 
 variable "custom_demo_frontend_tag" {
@@ -63,7 +63,7 @@ variable "custom_demo_frontend_tag" {
 variable "custom_demo_backend_image" {
   description = "Custom demo backend image repository (unified demo image)"
   type        = string
-  default     = "docker-registry.registry.svc.cluster.local:5000/tinyolly/demo"
+  default     = "docker-registry.registry.svc.cluster.local:5000/ollyscale/demo"
 }
 
 variable "custom_demo_backend_tag" {

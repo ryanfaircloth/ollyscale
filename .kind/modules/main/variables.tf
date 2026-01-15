@@ -27,7 +27,7 @@ variable "flux_namespace" {
 variable "gateway_dns_suffix" {
   description = "DNS suffix for gateway routes"
   type        = string
-  default     = "tinyolly.test"
+  default     = "ollyscale.test"
 }
 
 variable "kafka_nodeport" {
@@ -65,8 +65,8 @@ variable "chart_registry" {
   type        = string
 }
 
-variable "tinyolly_tag" {
-  description = "TinyOlly image tag"
+variable "ollyscale_tag" {
+  description = "OllyScale image tag"
   type        = string
 }
 
@@ -75,7 +75,7 @@ variable "opamp_tag" {
   type        = string
 }
 
-variable "tinyolly_chart_tag" {
-  description = "Version of the TinyOlly Helm chart to deploy"
+variable "ollyscale_chart_tag" {
+  description = "Version of the OllyScale Helm chart to deploy"
   type        = string
 }
