@@ -156,7 +156,7 @@ echo ""
 cd "$SCRIPT_DIR"
 
 # Update Chart.yaml with the new version
-CHART_DIR="$SCRIPT_DIR/tinyolly"
+CHART_DIR="$SCRIPT_DIR/ollyscale"
 CHART_YAML="$CHART_DIR/Chart.yaml"
 
 # Extract current chart version

@@ -1,6 +1,6 @@
 apiVersion: v2
-name: tinyolly-demo-otel-agent
-description: AI Agent demo with Ollama for TinyOlly observability platform
+name: ollyscale-otel-agent
+description: AI Agent demo with Ollama for ollyScale observability platform
 type: application
 version: 1.0.0
 appVersion: "v0.3.0"
@@ -11,12 +11,12 @@ keywords:
   - ai
   - ollama
   - genai
-home: https://github.com/tinyolly/tinyolly
+home: https://github.com/ryanfaircloth/tinyolly
 sources:
-  - https://github.com/tinyolly/tinyolly
+  - https://github.com/ryanfaircloth/tinyolly
 maintainers:
-  - name: TinyOlly Team
-    email: maintainers@tinyolly.io
+  - name: ollyScale Team
+    email: ryan@faircloth.dev
 annotations:
   org.opencontainers.image.title: "TinyOlly AI Agent Demo"
   org.opencontainers.image.description: "AI Agent demo with Ollama LLM for TinyOlly"

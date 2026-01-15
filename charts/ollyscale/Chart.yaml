@@ -1,7 +1,6 @@
 apiVersion: v2
-name: tinyolly
-description: A lightweight, desktop-first OpenTelemetry observability platform
-  for local development
+name: ollyscale
+description: Desktop-first OpenTelemetry observability platform for local development
 type: application
 version: 1.0.0-0.0.1768508085
 appVersion: "v30.0.1"
@@ -14,9 +13,9 @@ keywords:
   - otlp
   - ebpf
   - zero-code-instrumentation
-home: https://github.com/tinyolly/tinyolly
+home: https://github.com/ryanfaircloth/tinyolly
 sources:
-  - https://github.com/tinyolly/tinyolly
+  - https://github.com/ryanfaircloth/tinyolly
 maintainers:
   - name: TinyOlly Team
     email: maintainers@tinyolly.io
