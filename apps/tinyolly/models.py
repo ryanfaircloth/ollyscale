@@ -286,3 +286,109 @@ class AlertConfig(BaseModel):
     """Alert configuration response"""
 
     rules: list[AlertRule] = Field(default_factory=list, description="Configured alert rules")
+
+
+class TraceLintFinding(BaseModel):
+    """Individual lint finding for a trace"""
+
+    severity: Literal["error", "warning", "info"] = Field(..., description="Severity level of the finding")
+    type: str = Field(..., description="Type of finding (e.g., 'naming', 'missing_attribute', 'auto_instrumentation')")
+    message: str = Field(..., description="Human-readable description of the issue")
+    suggestion: str = Field(..., description="Suggested fix or improvement")
+    span_name: str = Field(..., description="Name of the span where issue was found")
+
+    class Config:
+        json_schema_extra: ClassVar[dict[str, Any]] = {
+            "example": {
+                "severity": "warning",
+                "type": "naming",
+                "message": "Attribute 'http_method' should use semantic convention 'http.method'",
+                "suggestion": "Rename 'http_method' to 'http.method'",
+                "span_name": "GET /api/users",
+            }
+        }
+
+
+class TraceLintResult(BaseModel):
+    """Lint result for a trace"""
+
+    trace_id: str = Field(..., description="Trace identifier")
+    flow_hash: str = Field(..., description="Hash identifying unique trace flow structure")
+    findings: list[TraceLintFinding] = Field(..., description="List of lint findings")
+    span_count: int = Field(..., description="Number of spans in trace")
+    severity_counts: dict[str, int] = Field(..., description="Count of findings by severity")
+
+    class Config:
+        json_schema_extra: ClassVar[dict[str, Any]] = {
+            "example": {
+                "trace_id": "abc123",
+                "flow_hash": "a1b2c3d4e5f6g7h8",
+                "findings": [],
+                "span_count": 5,
+                "severity_counts": {"error": 0, "warning": 1, "info": 2},
+            }
+        }
+
+
+class TraceFlowSummary(BaseModel):
+    """Summary of a unique trace flow"""
+
+    flow_hash: str = Field(..., description="Hash identifying unique trace flow structure")
+    root_span_name: str = Field(..., description="Name of root span")
+    root_service: str = Field(..., description="Root service name")
+    span_count: int = Field(..., description="Number of spans in typical trace")
+    service_chain: list[str] = Field(..., description="Services involved in flow")
+    http_method: str | None = Field(None, description="HTTP method if applicable")
+    http_route: str | None = Field(None, description="HTTP route if applicable")
+    status_code: int | None = Field(None, description="Status code if applicable")
+    trace_count: int = Field(..., description="Number of traces matching this flow")
+    example_trace_id: str = Field(..., description="Example trace ID for this flow")
+    finding_count: int = Field(default=0, description="Number of lint findings")
+    severity_counts: dict[str, int] = Field(
+        default_factory=lambda: {"error": 0, "warning": 0, "info": 0}, description="Count of findings by severity"
+    )
+
+    class Config:
+        json_schema_extra: ClassVar[dict[str, Any]] = {
+            "example": {
+                "flow_hash": "a1b2c3d4e5f6g7h8",
+                "root_span_name": "GET /api/users",
+                "root_service": "frontend",
+                "span_count": 5,
+                "service_chain": ["frontend", "backend", "database"],
+                "http_method": "GET",
+                "http_route": "/api/users",
+                "status_code": 200,
+                "trace_count": 42,
+                "example_trace_id": "trace-xyz",
+                "finding_count": 3,
+                "severity_counts": {"error": 0, "warning": 1, "info": 2},
+            }
+        }
+
+
+class TraceFlowDetail(BaseModel):
+    """Detailed information about a trace flow"""
+
+    flow_hash: str = Field(..., description="Hash identifying unique trace flow structure")
+    summary: TraceFlowSummary = Field(..., description="Flow summary")
+    lint_result: TraceLintResult = Field(..., description="Lint findings for this flow")
+    example_traces: list[str] = Field(..., description="Example trace IDs for this flow (up to 5)")
+
+    class Config:
+        json_schema_extra: ClassVar[dict[str, Any]] = {
+            "example": {
+                "flow_hash": "a1b2c3d4e5f6g7h8",
+                "summary": {
+                    "flow_hash": "a1b2c3d4e5f6g7h8",
+                    "root_span_name": "GET /api/users",
+                    "root_service": "frontend",
+                    "span_count": 5,
+                    "service_chain": ["frontend", "backend"],
+                    "trace_count": 42,
+                    "example_trace_id": "trace-xyz",
+                },
+                "lint_result": {"trace_id": "trace-xyz", "flow_hash": "a1b2c3d4e5f6g7h8", "findings": []},
+                "example_traces": ["trace-xyz", "trace-abc"],
+            }
+        }

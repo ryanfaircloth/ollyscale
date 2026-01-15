@@ -320,6 +320,27 @@ class Storage:
         if spans:
             await self.store_spans(spans)
 
+            # Compute trace flow hashes for each unique trace
+            # Import here to avoid circular dependency
+            from .trace_lint import compute_trace_flow_hash
+
+            # Group spans by trace ID
+            traces = {}
+            for span in spans:
+                trace_id = span.get("traceId") or span.get("trace_id")
+                if trace_id:
+                    if trace_id not in traces:
+                        traces[trace_id] = []
+                    traces[trace_id].append(span)
+
+            # Compute and store flow hashes
+            for trace_id, trace_spans in traces.items():
+                try:
+                    flow_hash = compute_trace_flow_hash(trace_spans)
+                    await self.store_trace_flow(flow_hash, trace_id)
+                except Exception as e:
+                    logger.error(f"Error computing trace flow for {trace_id}: {e}", exc_info=True)
+
     async def store_span(self, span):
         """Store a single span (legacy wrapper around batch)"""
         await self.store_spans([span])
@@ -1611,3 +1632,83 @@ class Storage:
         }
 
         return {"telemetry": telemetry, "redis": redis, "cardinality": cardinality_info}
+
+    async def store_trace_flow(self, flow_hash: str, trace_id: str):
+        """Store trace flow mapping.
+
+        Args:
+            flow_hash: Hash identifying the trace flow structure
+            trace_id: Trace ID with this flow
+
+        Note:
+            Stores flow in a sorted set with timestamp for TTL and retrieval
+        """
+        try:
+            client = await self.get_client()
+            pipe = client.pipeline()
+
+            # Add trace to flow's trace list
+            flow_traces_key = f"flow:{flow_hash}:traces"
+            pipe.zadd(flow_traces_key, {trace_id: time.time()})
+            pipe.expire(flow_traces_key, self.ttl)
+
+            # Add flow to flow index
+            pipe.zadd("flow_index", {flow_hash: time.time()})
+            pipe.expire("flow_index", self.ttl)
+
+            await pipe.execute()
+        except Exception as e:
+            logger.error(f"Redis error in store_trace_flow: {e}", exc_info=True)
+
+    async def get_trace_flows(self, limit: int = 100) -> list[str]:
+        """Get recent trace flow hashes.
+
+        Args:
+            limit: Maximum number of flows to return
+
+        Returns:
+            List of flow hashes sorted by recency
+        """
+        try:
+            client = await self.get_client()
+            flows = await client.zrevrange("flow_index", 0, limit - 1)
+            return [flow.decode("utf-8") for flow in flows]
+        except Exception as e:
+            logger.error(f"Error getting trace flows: {e}", exc_info=True)
+            return []
+
+    async def get_flow_traces(self, flow_hash: str, limit: int = 10) -> list[str]:
+        """Get trace IDs for a specific flow.
+
+        Args:
+            flow_hash: Flow hash identifier
+            limit: Maximum number of trace IDs to return
+
+        Returns:
+            List of trace IDs with this flow structure
+        """
+        try:
+            client = await self.get_client()
+            flow_traces_key = f"flow:{flow_hash}:traces"
+            traces = await client.zrevrange(flow_traces_key, 0, limit - 1)
+            return [trace.decode("utf-8") for trace in traces]
+        except Exception as e:
+            logger.error(f"Error getting flow traces: {e}", exc_info=True)
+            return []
+
+    async def get_flow_trace_count(self, flow_hash: str) -> int:
+        """Get count of traces with a specific flow.
+
+        Args:
+            flow_hash: Flow hash identifier
+
+        Returns:
+            Number of traces with this flow
+        """
+        try:
+            client = await self.get_client()
+            flow_traces_key = f"flow:{flow_hash}:traces"
+            return await client.zcard(flow_traces_key)
+        except Exception as e:
+            logger.error(f"Error getting flow trace count: {e}", exc_info=True)
+            return 0

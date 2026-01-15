@@ -435,3 +435,165 @@ async def get_metric_attributes(request: Request, name: str, storage: Storage = 
 
     attributes = await storage.get_all_attributes(name, resource_filter if resource_filter else None)
     return attributes
+
+
+@router.get(
+    "/trace-flows",
+    response_model=list[dict[str, Any]],
+    operation_id="get_trace_flows",
+    summary="Get unique trace flows",
+    responses={200: {"description": "List of unique trace flow structures"}},
+)
+async def get_trace_flows(
+    limit: int = Query(default=50, le=200, description="Maximum number of flows to return (max 200)"),
+    storage: Storage = Depends(get_storage),
+):
+    """
+    Get list of unique trace flow structures.
+
+    Each flow represents a unique trace structure based on span hierarchy, service names,
+    operations, and logic-affecting attributes. Identifiers like IPs and user agents are
+    excluded from flow computation.
+
+    Returns flow summaries with lint finding counts and example traces.
+    """
+    from common.trace_lint import compute_flow_summary, lint_trace
+
+    # Get flow hashes
+    flow_hashes = await storage.get_trace_flows(limit)
+
+    flows = []
+    for flow_hash in flow_hashes:
+        # Get example traces for this flow
+        trace_ids = await storage.get_flow_traces(flow_hash, limit=5)
+        if not trace_ids:
+            continue
+
+        # Get first trace for summary
+        example_trace_id = trace_ids[0]
+        spans = await storage.get_trace_spans(example_trace_id)
+        if not spans:
+            continue
+
+        # Compute summary
+        summary = compute_flow_summary(spans)
+        lint_result = lint_trace(spans)
+
+        # Get trace count
+        trace_count = await storage.get_flow_trace_count(flow_hash)
+
+        flows.append(
+            {
+                "flow_hash": flow_hash,
+                "root_span_name": summary.get("root_span_name", "unknown"),
+                "root_service": summary.get("root_service", "unknown"),
+                "span_count": summary.get("span_count", 0),
+                "service_chain": summary.get("service_chain", []),
+                "http_method": summary.get("http_method"),
+                "http_route": summary.get("http_route"),
+                "status_code": summary.get("status_code"),
+                "trace_count": trace_count,
+                "example_trace_id": example_trace_id,
+                "finding_count": len(lint_result.get("findings", [])),
+                "severity_counts": lint_result.get("severity_counts", {"error": 0, "warning": 0, "info": 0}),
+            }
+        )
+
+    return flows
+
+
+@router.get(
+    "/trace-flows/{flow_hash}",
+    operation_id="get_trace_flow_detail",
+    summary="Get trace flow details",
+    responses={
+        200: {"description": "Detailed trace flow information with lint findings"},
+        404: {"model": ErrorResponse, "description": "Flow not found"},
+    },
+)
+async def get_trace_flow_detail(flow_hash: str, storage: Storage = Depends(get_storage)):
+    """
+    Get detailed information about a specific trace flow.
+
+    Returns flow summary, lint findings, and example traces for this flow structure.
+    """
+    from common.trace_lint import compute_flow_summary, lint_trace
+
+    # Get example traces
+    trace_ids = await storage.get_flow_traces(flow_hash, limit=5)
+    if not trace_ids:
+        raise HTTPException(status_code=404, detail="Flow not found")
+
+    # Get first trace for analysis
+    example_trace_id = trace_ids[0]
+    spans = await storage.get_trace_spans(example_trace_id)
+    if not spans:
+        raise HTTPException(status_code=404, detail="Flow not found")
+
+    # Compute details
+    summary = compute_flow_summary(spans)
+    lint_result = lint_trace(spans)
+    trace_count = await storage.get_flow_trace_count(flow_hash)
+
+    return {
+        "flow_hash": flow_hash,
+        "summary": {
+            "flow_hash": flow_hash,
+            "root_span_name": summary.get("root_span_name", "unknown"),
+            "root_service": summary.get("root_service", "unknown"),
+            "span_count": summary.get("span_count", 0),
+            "service_chain": summary.get("service_chain", []),
+            "http_method": summary.get("http_method"),
+            "http_route": summary.get("http_route"),
+            "status_code": summary.get("status_code"),
+            "trace_count": trace_count,
+            "example_trace_id": example_trace_id,
+            "finding_count": len(lint_result.get("findings", [])),
+            "severity_counts": lint_result.get("severity_counts", {"error": 0, "warning": 0, "info": 0}),
+        },
+        "lint_result": {
+            "trace_id": example_trace_id,
+            "flow_hash": flow_hash,
+            "findings": lint_result.get("findings", []),
+            "span_count": lint_result.get("span_count", 0),
+            "severity_counts": lint_result.get("severity_counts", {"error": 0, "warning": 0, "info": 0}),
+        },
+        "example_traces": trace_ids,
+    }
+
+
+@router.get(
+    "/traces/{trace_id}/lint",
+    operation_id="get_trace_lint",
+    summary="Get lint findings for trace",
+    responses={
+        200: {"description": "Lint findings for the trace"},
+        404: {"model": ErrorResponse, "description": "Trace not found"},
+    },
+)
+async def get_trace_lint(trace_id: str, storage: Storage = Depends(get_storage)):
+    """
+    Get lint findings for a specific trace.
+
+    Analyzes the trace structure and returns suggestions for improvements such as:
+    - Attribute naming issues (non-standard conventions)
+    - Missing semantic convention attributes
+    - Opportunities for auto-instrumentation
+    """
+    from common.trace_lint import lint_trace
+
+    # Get trace spans
+    spans = await storage.get_trace_spans(trace_id)
+    if not spans:
+        raise HTTPException(status_code=404, detail="Trace not found")
+
+    # Lint the trace
+    lint_result = lint_trace(spans)
+
+    return {
+        "trace_id": trace_id,
+        "flow_hash": lint_result.get("flow_hash", ""),
+        "findings": lint_result.get("findings", []),
+        "span_count": lint_result.get("span_count", 0),
+        "severity_counts": lint_result.get("severity_counts", {"error": 0, "warning": 0, "info": 0}),
+    }
