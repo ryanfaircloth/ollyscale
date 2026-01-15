@@ -84,38 +84,18 @@ jobs:
             image: ghcr.io/ryanfaircloth/tinyolly/demo-otel-agent
     steps:
       - uses: actions/checkout@v6
-
-      - name: Determine if should build
-        id: should_build
-        run: |
-          if [ "${{ github.event_name }}" = "release" ]; then
-            TAG="${{ github.event.release.tag_name }}"
-            if [[ "$TAG" == "${{ matrix.component }}-v"* ]]; then
-              VERSION="${TAG#${{ matrix.component }}-v}"
-              echo "build=true" >> $GITHUB_OUTPUT
-              echo "version=$VERSION" >> $GITHUB_OUTPUT
-            else
-              echo "build=false" >> $GITHUB_OUTPUT
-            fi
-          else
-            if [ "${{ needs.release-please.outputs[format('{0}--release_created', matrix.output_key)] }}" = "true" ]; then
-              echo "build=true" >> $GITHUB_OUTPUT
-              echo "version=${{ needs.release-please.outputs[format('{0}--version', matrix.output_key)] }}" >> $GITHUB_OUTPUT
-            else
-              echo "build=false" >> $GITHUB_OUTPUT
-            fi
-          fi
+        if: needs.release-please.outputs[format('{0}--release_created', matrix.output_key)] == 'true'
 
       - name: Set up QEMU
-        if: steps.should_build.outputs.build == 'true'
+        if: needs.release-please.outputs[format('{0}--release_created', matrix.output_key)] == 'true'
         uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
-        if: steps.should_build.outputs.build == 'true'
+        if: needs.release-please.outputs[format('{0}--release_created', matrix.output_key)] == 'true'
         uses: docker/setup-buildx-action@v3
 
       - name: Login to GHCR
-        if: steps.should_build.outputs.build == 'true'
+        if: needs.release-please.outputs[format('{0}--release_created', matrix.output_key)] == 'true'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -123,14 +103,14 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push
-        if: steps.should_build.outputs.build == 'true'
+        if: needs.release-please.outputs[format('{0}--release_created', matrix.output_key)] == 'true'
         uses: docker/build-push-action@v6
         with:
           context: ${{ matrix.path }}
           file: ${{ matrix.dockerfile }}
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ matrix.image }}:v${{ steps.should_build.outputs.version }}
+          tags: ${{ matrix.image }}:v${{ needs.release-please.outputs[format('{0}--version', matrix.output_key)] }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -151,36 +131,27 @@ jobs:
             output_key: charts-tinyolly-demo-otel-agent
     steps:
       - uses: actions/checkout@v6
-
-      - name: Determine if should publish
-        id: should_publish
-        run: |
-          if [ "${{ needs.release-please.outputs[format('{0}--release_created', matrix.output_key)] }}" = "true" ]; then
-            echo "publish=true" >> $GITHUB_OUTPUT
-            echo "version=${{ needs.release-please.outputs[format('{0}--version', matrix.output_key)] }}" >> $GITHUB_OUTPUT
-          else
-            echo "publish=false" >> $GITHUB_OUTPUT
-          fi
+        if: needs.release-please.outputs[format('{0}--release_created', matrix.output_key)] == 'true'
 
       - name: Install Helm
-        if: steps.should_publish.outputs.publish == 'true'
+        if: needs.release-please.outputs[format('{0}--release_created', matrix.output_key)] == 'true'
         uses: azure/setup-helm@v4
         with:
           version: latest
 
       - name: Login to GHCR for Helm
-        if: steps.should_publish.outputs.publish == 'true'
+        if: needs.release-please.outputs[format('{0}--release_created', matrix.output_key)] == 'true'
         run: |
           echo ${{ secrets.GITHUB_TOKEN }} | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
 
       - name: Package Helm chart
-        if: steps.should_publish.outputs.publish == 'true'
+        if: needs.release-please.outputs[format('{0}--release_created', matrix.output_key)] == 'true'
         run: |
           cd charts
           helm package ${{ matrix.chart }}
 
       - name: Push Helm chart to GHCR
-        if: steps.should_publish.outputs.publish == 'true'
+        if: needs.release-please.outputs[format('{0}--release_created', matrix.output_key)] == 'true'
         run: |
           cd charts
-          helm push ${{ matrix.chart }}-${{ steps.should_publish.outputs.version }}.tgz oci://ghcr.io/ryanfaircloth/tinyolly/charts
+          helm push ${{ matrix.chart }}-${{ needs.release-please.outputs[format('{0}--version', matrix.output_key)] }}.tgz oci://ghcr.io/ryanfaircloth/tinyolly/charts
