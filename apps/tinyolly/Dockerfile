@@ -16,8 +16,6 @@ COPY --chown=1000:1000 models.py .
 COPY --chown=1000:1000 common/ common/
 COPY --chown=1000:1000 app/ app/
 COPY --chown=1000:1000 receiver/ receiver/
-COPY --chown=1000:1000 templates/ templates/
-COPY --chown=1000:1000 static/ static/
 
 # Expose ports (both UI and receiver)
 EXPOSE 5002
