@@ -24,7 +24,23 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       releases_created: ${{ steps.release.outputs.releases_created }}
-      paths_released: ${{ steps.release.outputs.paths_released }}
+      # Pass through all per-path outputs
+      apps-tinyolly--release_created: ${{ steps.release.outputs['apps/tinyolly--release_created'] }}
+      apps-tinyolly--version: ${{ steps.release.outputs['apps/tinyolly--version'] }}
+      apps-tinyolly-ui--release_created: ${{ steps.release.outputs['apps/tinyolly-ui--release_created'] }}
+      apps-tinyolly-ui--version: ${{ steps.release.outputs['apps/tinyolly-ui--version'] }}
+      apps-opamp-server--release_created: ${{ steps.release.outputs['apps/opamp-server--release_created'] }}
+      apps-opamp-server--version: ${{ steps.release.outputs['apps/opamp-server--version'] }}
+      apps-demo--release_created: ${{ steps.release.outputs['apps/demo--release_created'] }}
+      apps-demo--version: ${{ steps.release.outputs['apps/demo--version'] }}
+      apps-demo-otel-agent--release_created: ${{ steps.release.outputs['apps/demo-otel-agent--release_created'] }}
+      apps-demo-otel-agent--version: ${{ steps.release.outputs['apps/demo-otel-agent--version'] }}
+      charts-tinyolly--release_created: ${{ steps.release.outputs['charts/tinyolly--release_created'] }}
+      charts-tinyolly--version: ${{ steps.release.outputs['charts/tinyolly--version'] }}
+      charts-tinyolly-demos--release_created: ${{ steps.release.outputs['charts/tinyolly-demos--release_created'] }}
+      charts-tinyolly-demos--version: ${{ steps.release.outputs['charts/tinyolly-demos--version'] }}
+      charts-tinyolly-demo-otel-agent--release_created: ${{ steps.release.outputs['charts/tinyolly-demo-otel-agent--release_created'] }}
+      charts-tinyolly-demo-otel-agent--version: ${{ steps.release.outputs['charts/tinyolly-demo-otel-agent--version'] }}
     steps:
       - uses: googleapis/release-please-action@v4
         id: release
@@ -67,25 +83,24 @@ jobs:
       - name: Check if component was released
         id: check
         run: |
-          # Read current version from manifest
-          VERSION=$(jq -r '."${{ matrix.path }}"' .release-please-manifest.json)
-
           # Release event: match tag to component
           if [ "${{ github.event_name }}" = "release" ]; then
             TAG_NAME="${{ github.event.release.tag_name }}"
             PATTERN="^${{ matrix.component }}-v[0-9]+\.[0-9]+\.[0-9]+(-.*)?$"
 
             if echo "${TAG_NAME}" | grep -E "${PATTERN}" > /dev/null; then
+              # Extract version from tag (remove component prefix and 'v')
+              VERSION="${TAG_NAME#${{ matrix.component }}-v}"
               echo "released=true" >> $GITHUB_OUTPUT
               echo "version=${VERSION}" >> $GITHUB_OUTPUT
             else
               echo "released=false" >> $GITHUB_OUTPUT
             fi
-          # Release-please: use per-path outputs from release-please action
+          # Branch push: use release-please outputs directly
           else
-            # Convert path to output variable name (replaces / with --)
-            PATH_OUTPUT=$(echo "${{ matrix.path }}" | sed 's/\/\//--/g')
+            PATH_OUTPUT=$(echo "${{ matrix.path }}" | sed 's/\/\//-/g')
             RELEASE_CREATED="${{ needs.release-please.outputs[format('{0}--release_created', env.PATH_OUTPUT)] }}"
+            VERSION="${{ needs.release-please.outputs[format('{0}--version', env.PATH_OUTPUT)] }}"
 
             if [ "${RELEASE_CREATED}" = "true" ]; then
               echo "released=true" >> $GITHUB_OUTPUT
@@ -139,20 +154,14 @@ jobs:
       - name: Check if chart was released
         id: check
         run: |
-          # Check if chart version changed using release-please outputs
-          if [ -f "charts/${{ matrix.chart }}/Chart.yaml" ]; then
-            VERSION=$(cat charts/${{ matrix.chart }}/Chart.yaml | grep '^version:' | awk '{print $2}')
+          # Use release-please outputs directly - no need to parse Chart.yaml
+          PATH_OUTPUT=$(echo "charts/${{ matrix.chart }}" | sed 's/\/\//-/g')
+          RELEASE_CREATED="${{ needs.release-please.outputs[format('{0}--release_created', env.PATH_OUTPUT)] }}"
+          VERSION="${{ needs.release-please.outputs[format('{0}--version', env.PATH_OUTPUT)] }}"
 
-            # Convert path to output variable name (replaces / with --)
-            PATH_OUTPUT=$(echo "charts/${{ matrix.chart }}" | sed 's/\/\//--/g')
-            RELEASE_CREATED="${{ needs.release-please.outputs[format('{0}--release_created', env.PATH_OUTPUT)] }}"
-
-            if [ "${RELEASE_CREATED}" = "true" ]; then
-              echo "released=true" >> $GITHUB_OUTPUT
-              echo "version=${VERSION}" >> $GITHUB_OUTPUT
-            else
-              echo "released=false" >> $GITHUB_OUTPUT
-            fi
+          if [ "${RELEASE_CREATED}" = "true" ]; then
+            echo "released=true" >> $GITHUB_OUTPUT
+            echo "version=${VERSION}" >> $GITHUB_OUTPUT
           else
             echo "released=false" >> $GITHUB_OUTPUT
           fi
