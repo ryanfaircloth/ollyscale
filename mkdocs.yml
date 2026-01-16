@@ -1,9 +1,9 @@
 site_name: ollyScale Documentation
-site_url: https://ollyscale.github.io/ollyscale/
+site_url: https://ryanfaircloth.github.io/ollyscale/
 site_description: BYOL (Bring Your Own Laptop) Observability Platform for OpenTelemetry
 site_author: ollyScale
-repo_url: https://github.com/ollyscale/ollyscale
-repo_name: ollyscale/ollyscale
+repo_url: https://github.com/ryanfaircloth/ollyscale
+repo_name: ryanfaircloth/ollyscale
 
 theme:
   name: material
@@ -80,7 +80,7 @@ nav:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/ollyscale/ollyscale
+      link: https://github.com/ryanfaircloth/ollyscale
     - icon: fontawesome/brands/github
-      link: https://github.com/ollyscale/ollyscale/issues
+      link: https://github.com/ryanfaircloth/ollyscale/issues
       name: Issues
