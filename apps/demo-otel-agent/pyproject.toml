@@ -1,0 +1,105 @@
+[project]
+name = "ollyscale-demo-otel-agent"
+version = "2.1.0"
+description = "AI agent demo with OpenTelemetry instrumentation for ollyScale observability platform"
+authors = [
+    {name = "Infrastructure Architects, LLC", email = "info@ollyscale.io"},
+    {name = "Ryan Faircloth", email = "ryan@faircloth.org"}
+]
+license = {text = "BSD-3-Clause"}
+readme = "../../README.md"
+keywords = ["opentelemetry", "observability", "demo", "ai", "ollama", "tracing"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Monitoring",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+requires-python = ">=3.11"
+dependencies = [
+    # AI/LLM client
+    "ollama>=0.4.0",
+
+    # OpenTelemetry core
+    "opentelemetry-api>=1.22.0",
+
+    # OpenTelemetry instrumentation for Ollama
+    "opentelemetry-instrumentation-ollama>=0.30.0",
+]
+
+[project.urls]
+Homepage = "https://ryanfaircloth.github.io/ollyscale/"
+Repository = "https://github.com/ryanfaircloth/ollyscale"
+Documentation = "https://ryanfaircloth.github.io/ollyscale/"
+"Bug Tracker" = "https://github.com/ryanfaircloth/ollyscale/issues"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "httpx>=0.26.0",
+    "black>=24.0.0",
+    "flake8>=6.0.0",
+    "mypy>=1.0.0",
+]
+
+[tool.poetry]
+name = "ollyscale-demo-otel-agent"
+version = "2.1.0"
+description = "AI agent demo with OpenTelemetry instrumentation for ollyScale observability platform"
+authors = [
+    "Infrastructure Architects, LLC <info@ollyscale.io>",
+    "Ryan Faircloth <ryan@faircloth.org>"
+]
+license = "BSD-3-Clause"
+readme = "../../README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = ">=3.11,<4.0"
+ollama = ">=0.4.0"
+opentelemetry-api = ">=1.22.0"
+opentelemetry-instrumentation-ollama = ">=0.30.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = ">=8.0.0"
+pytest-asyncio = ">=0.23.0"
+httpx = ">=0.26.0"
+black = ">=24.0.0"
+flake8 = ">=6.0.0"
+mypy = ">=1.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+# Inherit from root pyproject.toml
+extend = "../../pyproject.toml"
+
+# Demo-specific overrides if needed
+[tool.ruff.lint]
+# Allow print statements in demo code
+ignore = ["T201"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false  # Allow untyped for demo code
+ignore_missing_imports = true
