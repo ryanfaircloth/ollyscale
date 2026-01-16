@@ -31,9 +31,9 @@
 
 **This is a FORK:**
 
-- **Repository**: `ryanfaircloth/tinyolly` (forked from `tinyolly/tinyolly`)
-- **Container Registry**: `ghcr.io/ryanfaircloth/tinyolly` - ALWAYS use the fork registry, NEVER `ghcr.io/tinyolly`
-- **Helm Chart Registry**: `ghcr.io/ryanfaircloth/tinyolly/charts` - ALWAYS use the fork registry, NEVER `ghcr.io/tinyolly/charts`
+- **Repository**: `ryanfaircloth/ollyscale` (forked from `tinyolly/tinyolly`)
+- **Container Registry**: `ghcr.io/ryanfaircloth/ollyscale` - ALWAYS use the fork registry, NEVER `ghcr.io/tinyolly`
+- **Helm Chart Registry**: `ghcr.io/ryanfaircloth/ollyscale/charts` - ALWAYS use the fork registry, NEVER `ghcr.io/tinyolly/charts`
 
 ## Project Overview
 
