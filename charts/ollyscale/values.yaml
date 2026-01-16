@@ -403,9 +403,9 @@ frontend:
 
   image:
     # -- API backend image repository (unified ollyscale image, runs in API mode)
-    repository: ghcr.io/ryanfaircloth/ollyscale/ollyscale
+    repository: ghcr.io/ryanfaircloth/ollyscale
     # -- API backend image tag
-    tag: v0.0.1
+    tag: v0.0.0
     # -- API backend image pull policy (overrides global)
     pullPolicy: ""
 
@@ -497,7 +497,7 @@ webui:
     # -- Web UI image repository (nginx with built frontend)
     repository: ghcr.io/ryanfaircloth/ollyscale/ollyscale-ui
     # -- Web UI image tag
-    tag: v0.0.1
+    tag: v0.0.
     # -- Web UI image pull policy (overrides global)
     pullPolicy: ""
 

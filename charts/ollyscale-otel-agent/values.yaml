@@ -70,9 +70,9 @@ agent:
 
   image:
     # -- Image repository
-    repository: docker-registry.registry.svc.cluster.local:5000/ollyscale/ai-agent-demo
+    repository: ghcr.io/ryanfaircloth/ollyscale/ai-agent-demo
     # -- Image tag
-    tag: v0.0.1
+    tag: v0.0.0
     # -- Image pull policy
     pullPolicy: Always
 

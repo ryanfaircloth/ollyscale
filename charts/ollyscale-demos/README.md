@@ -77,7 +77,7 @@ customDemo:
 
   frontend:
     image:
-      repository: ghcr.io/ryanfaircloth/demo-frontend
+      repository: ghcr.io/ryanfaircloth/ollyscale/demo-frontend
       tag: latest
     httpRoute:
       enabled: true
@@ -85,7 +85,7 @@ customDemo:
 
   backend:
     image:
-      repository: ghcr.io/ryanfaircloth/demo-backend
+      repository: ghcr.io/ryanfaircloth/ollyscale/demo-backend
       tag: latest
 ```
 
