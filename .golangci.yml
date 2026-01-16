@@ -1,4 +1,4 @@
-# golangci-lint configuration for TinyOlly Go services
+# golangci-lint configuration for ollyScale Go services
 # https://golangci-lint.run/usage/configuration/
 
 run:
@@ -42,7 +42,7 @@ linters-settings:
     simplify: true
 
   goimports:
-    local-prefixes: github.com/tinyolly/tinyolly
+    local-prefixes: github.com/ollyscale/ollyscale
 
   revive:
     confidence: 0.8

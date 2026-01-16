@@ -1,7 +1,7 @@
-site_name: TinyOlly Documentation
+site_name: ollyScale Documentation
 site_url: https://ollyscale.github.io/ollyscale/
 site_description: BYOL (Bring Your Own Laptop) Observability Platform for OpenTelemetry
-site_author: TinyOlly
+site_author: ollyScale
 repo_url: https://github.com/ollyscale/ollyscale
 repo_name: ollyscale/ollyscale
 
