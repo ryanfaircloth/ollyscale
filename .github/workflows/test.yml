@@ -78,18 +78,22 @@ jobs:
           python-version: "3.14"
           cache: "pip"
           cache-dependency-path: |
-            apps/ollyscale/requirements.txt
-            apps/ollyscale/requirements-test.txt
+            apps/ollyscale/pyproject.toml
+            apps/ollyscale/poetry.lock
+
+      - name: Install Poetry
+        run: |
+          pip install poetry>=1.8.0
 
       - name: Install dependencies
         run: |
           cd apps/ollyscale
-          pip install -r requirements.txt -r requirements-test.txt
+          poetry install --with test
 
       - name: Run tests
         run: |
           cd apps/ollyscale
-          pytest tests/ -v --cov=app --cov-report=xml --cov-report=term-missing
+          poetry run pytest tests/ -v --cov=app --cov-report=xml --cov-report=term-missing
 
       - name: Upload coverage
         uses: codecov/codecov-action@v5

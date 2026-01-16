@@ -12,7 +12,7 @@ echo "=========================================="
 # Install test dependencies if needed
 if ! python -c "import pytest" 2>/dev/null; then
     echo "Installing test dependencies..."
-    pip install -r requirements-test.txt
+    poetry install --with test
 fi
 
 # Run tests with coverage

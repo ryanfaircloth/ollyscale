@@ -129,8 +129,8 @@ async def my_function(param: str) -> dict:
 
 ```bash
 cd apps/ollyscale
-pip install -r requirements-test.txt
-pytest
+poetry install --with test
+poetry run pytest
 ```
 
 ### Manual Testing
