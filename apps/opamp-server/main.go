@@ -58,7 +58,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-var version = "1.0.0"
+var version = "0.0.0"
 var tracer trace.Tracer
 
 // AgentState tracks the state of a connected OTel Collector agent

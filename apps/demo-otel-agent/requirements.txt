@@ -1,6 +1,0 @@
-# Application dependencies
-ollama
-
-# OTel packages for manual span creation (operator provides the rest)
-opentelemetry-api
-opentelemetry-instrumentation-ollama
