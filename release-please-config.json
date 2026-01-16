@@ -11,7 +11,7 @@
       "extra-files": [
         {
           "type": "yaml",
-          "path": "charts/ollyscale/values.yaml",
+          "path": "../../charts/ollyscale/values.yaml",
           "jsonpath": "$.frontend.image.tag"
         }
       ]
@@ -26,7 +26,7 @@
       "extra-files": [
         {
           "type": "yaml",
-          "path": "charts/ollyscale/values.yaml",
+          "path": "../../charts/ollyscale/values.yaml",
           "jsonpath": "$.webui.image.tag"
         }
       ]
@@ -41,7 +41,7 @@
       "extra-files": [
         {
           "type": "yaml",
-          "path": "charts/ollyscale/values.yaml",
+          "path": "../../charts/ollyscale/values.yaml",
           "jsonpath": "$.opampServer.image.tag"
         }
       ]
@@ -56,12 +56,12 @@
       "extra-files": [
         {
           "type": "yaml",
-          "path": "charts/ollyscale-demos/values.yaml",
+          "path": "../../charts/ollyscale-demos/values.yaml",
           "jsonpath": "$.frontend.image.tag"
         },
         {
           "type": "yaml",
-          "path": "charts/ollyscale-demos/values.yaml",
+          "path": "../../charts/ollyscale-demos/values.yaml",
           "jsonpath": "$.backend.image.tag"
         }
       ]
@@ -76,7 +76,7 @@
       "extra-files": [
         {
           "type": "yaml",
-          "path": "charts/ollyscale-otel-agent/values.yaml",
+          "path": "../../charts/ollyscale-otel-agent/values.yaml",
           "jsonpath": "$.agent.image.tag"
         }
       ]
