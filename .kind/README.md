@@ -63,7 +63,7 @@ make up
 
 Default versions from ghcr.io:
 
-- TinyOlly UI: `v30.0.1`
+- ollyScale UI: `v30.0.1`
 - OpAMP Server: `v1.0.0`
 - OTLP Receiver: `v30.0.1` (same image as UI)
 - Demo: `v0.5.0`

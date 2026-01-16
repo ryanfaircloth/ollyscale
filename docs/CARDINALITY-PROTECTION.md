@@ -7,7 +7,7 @@
 
 ---
 
-TinyOlly includes built-in protection against metric cardinality explosion with a configurable limit on unique metric names.
+ollyScale includes built-in protection against metric cardinality explosion with a configurable limit on unique metric names.
 
 ## Configuration
 
@@ -33,12 +33,12 @@ Then upgrade the deployment:
 
 ```bash
 cd charts
-helm upgrade tinyolly ./tinyolly -n tinyolly
+helm upgrade ollyscale ./ollyscale -n ollyscale
 ```
 
 ### Docker Deployment
 
-Update `docker-compose-tinyolly-core.yml` in the `docker/` directory:
+Update `docker-compose-ollyscale-core.yml` in the `docker/` directory:
 
 ```yaml
 environment:

@@ -149,16 +149,16 @@ Changes:
 ### When Release PR Is Merged
 
 1. **GitHub releases** created for each component with tags:
-   - `tinyolly-v2.3.0`
+   - `ollyscale-v2.3.0`
    - `opamp-server-v1.0.1`
-   - `helm-tinyolly-v0.2.0`
+   - `helm-ollyscale-v0.2.0`
 
 2. **Container images** built and pushed:
-   - `ghcr.io/ollyscale/tinyolly:v2.3.0` (+ `:latest`)
+   - `ghcr.io/ollyscale/ollyscale:v2.3.0` (+ `:latest`)
    - `ghcr.io/ollyscale/opamp-server:v1.0.1` (+ `:latest`)
 
 3. **Helm charts** packaged and pushed:
-   - `oci://ghcr.io/ollyscale/charts/tinyolly:0.2.0`
+   - `oci://ghcr.io/ollyscale/charts/ollyscale:0.2.0`
    - Chart's `values.yaml` updated with new image versions
 
 ## Version Strategy
@@ -168,7 +168,7 @@ Changes:
 Each container maintains independent semantic versioning:
 
 ```
-tinyolly:         v2.3.0
+ollyscale:         v2.3.0
 opamp-server:     v1.0.1
 demo:             v0.5.2
 ai-agent-demo:    v0.3.1
@@ -224,17 +224,17 @@ vim .release-please-manifest.json
 
 # Commit with chore type (won't trigger another bump)
 git add .release-please-manifest.json
-git commit -m "chore: bump tinyolly to v2.3.0"
+git commit -m "chore: bump ollyscale to v2.3.0"
 git push origin main
 ```
 
 ## Coordinated Releases
 
-### Scenario: Both tinyolly and opamp-server updated
+### Scenario: Both ollyscale and opamp-server updated
 
 ```bash
 # Commit 1
-feat(tinyolly): add TLS support
+feat(ollyscale): add TLS support
 
 # Commit 2
 feat(opamp): add TLS configuration endpoint
@@ -313,7 +313,7 @@ git config commit.template .gitmessage
 # <footer>
 #
 # Types: feat, fix, docs, style, refactor, perf, test, build, ci, chore
-# Scopes: tinyolly, opamp, demo, ai-agent, helm/tinyolly, helm/demos, helm/ai-agent
+# Scopes: ollyscale, opamp, demo, ai-agent, helm/ollyscale, helm/demos, helm/ai-agent
 ```
 
 ## Migration from Current Process

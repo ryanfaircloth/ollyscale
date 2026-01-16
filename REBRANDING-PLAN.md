@@ -2,31 +2,31 @@
 
 ## Overview
 
-Complete rebranding from TinyOlly to ollyScale, including licensing changes, container/chart naming
+Complete rebranding from ollyScale to ollyScale, including licensing changes, container/chart naming
 strategy, and CI/CD improvements for future forks.
 
 ## Licensing Strategy
 
 ### Phase 1: License Files
 
-- [x] Rename `LICENSE` to `LICENSE-BSD3-ORIGINAL` (preserve TinyOlly's original license)
+- [x] Rename `LICENSE` to `LICENSE-BSD3-ORIGINAL` (preserve ollyScale's original license)
 - [x] Create `LICENSE` with AGPL-3.0
-- [x] Create `NOTICE` file acknowledging TinyOlly origins and dual licensing
+- [x] Create `NOTICE` file acknowledging ollyScale origins and dual licensing
 - [x] Create `LICENSE-HEADER-AGPL.txt` template for new/modified files
-- [x] Create `LICENSE-HEADER-BSD3.txt` template for original TinyOlly files
+- [x] Create `LICENSE-HEADER-BSD3.txt` template for original ollyScale files
 
 ### Phase 2: File Headers
 
-**Original TinyOlly files (keep BSD-3-Clause header):**
+**Original ollyScale files (keep BSD-3-Clause header):**
 
 - Files we didn't significantly modify from upstream
-- Add comment noting "Originally from TinyOlly project"
+- Add comment noting "Originally from ollyScale project"
 
 **Modified/New files (add AGPL header):**
 
 - Files we created: `.kind/`, rebranding configs, new features
 - Files significantly modified (>30% changes)
-- Include: "Based on TinyOlly (BSD-3-Clause), see LICENSE-BSD3-ORIGINAL"
+- Include: "Based on ollyScale (BSD-3-Clause), see LICENSE-BSD3-ORIGINAL"
 
 ## Naming Strategy
 
@@ -37,15 +37,15 @@ strategy, and CI/CD improvements for future forks.
 
 **Container Images:**
 
-- `tinyolly/ui` → `observability-platform/ui` or keep `ollyscale/ui`
-- `tinyolly/otlp-receiver` → `observability-platform/otlp-receiver`
-- `tinyolly/opamp-server` → `observability-platform/opamp-server`
+- `ollyscale/ui` → `observability-platform/ui` or keep `ollyscale/ui`
+- `ollyscale/otlp-receiver` → `observability-platform/otlp-receiver`
+- `ollyscale/opamp-server` → `observability-platform/opamp-server`
 
 **Helm Charts:**
 
-- `tinyolly` → `observability-platform` or `ollyscale`
-- `tinyolly-demos` → `observability-demos`
-- `tinyolly-demo-otel-agent` → `otel-agent-demo`
+- `ollyscale` → `observability-platform` or `ollyscale`
+- `ollyscale-demos` → `observability-demos`
+- `ollyscale-demo-otel-agent` → `otel-agent-demo`
 
 **Decision Point:** Should we use brand-neutral names or ollyScale brand?
 
@@ -55,7 +55,7 @@ strategy, and CI/CD improvements for future forks.
 
 ### Kubernetes Resources
 
-- Namespace: `tinyolly` → `observability` or `ollyscale`
+- Namespace: `ollyscale` → `observability` or `ollyscale`
 - Service names: functional (ui, receiver, opamp-server)
 - Deployment names: match service names
 
@@ -66,7 +66,7 @@ strategy, and CI/CD improvements for future forks.
 - [ ] `README.md` - Add "Origins" section, update all references
 - [ ] `CONTRIBUTING.md` - Update repository URLs, project name
 - [ ] `docs/` directory - All markdown files
-- [ ] `docs/images/` - Logo files (tinyollytitle.png, etc.) **→ Phase 7**
+- [ ] `docs/images/` - Logo files (ollyscaletitle.png, etc.) **→ Phase 7**
 - [ ] `mkdocs.yml` - Site name, repo URL
 - [ ] Repository description on GitHub
 - [ ] Social media preview image **→ Phase 7**
@@ -88,7 +88,7 @@ strategy, and CI/CD improvements for future forks.
 
 ```bash
 # Instead of hardcoded:
-REPO="tinyolly/tinyolly"
+REPO="ollyscale/ollyscale"
 
 # Use:
 GH_ORG="${GH_ORG:-ollyscale}"
@@ -111,9 +111,9 @@ CONTAINER_REGISTRY="${CONTAINER_REGISTRY:-ghcr.io}"
 - [ ] `charts/ollyscale/Chart.yaml` - name, description, home, sources
 - [ ] `charts/ollyscale/values.yaml` - image repositories, names
 - [ ] `charts/ollyscale/templates/*.yaml` - labels, annotations, names
-- [ ] `charts/tinyolly-demos/Chart.yaml`
-- [ ] `charts/tinyolly-demos/values.yaml`
-- [ ] `charts/tinyolly-demo-otel-agent/Chart.yaml`
+- [ ] `charts/ollyscale-demos/Chart.yaml`
+- [ ] `charts/ollyscale-demos/values.yaml`
+- [ ] `charts/ollyscale-demo-otel-agent/Chart.yaml`
 - [ ] Consider: Rename chart directories to function-based names
 
 ### 4. Kubernetes/KIND Configuration
@@ -139,9 +139,9 @@ CONTAINER_REGISTRY="${CONTAINER_REGISTRY:-ghcr.io}"
 
 ### 6. Source Code - TypeScript/JavaScript
 
-**Frontend (`apps/tinyolly-ui/`):**
+**Frontend (`apps/ollyscale-ui/`):**
 
-- [ ] Directory name: `apps/tinyolly-ui/` → `apps/ui/`
+- [ ] Directory name: `apps/ollyscale-ui/` → `apps/ui/`
 - [ ] `package.json` - name, description, repository
 - [ ] `src/` - All TypeScript imports, API endpoints
 - [ ] Page titles, branding text in UI
@@ -157,8 +157,8 @@ CONTAINER_REGISTRY="${CONTAINER_REGISTRY:-ghcr.io}"
 
 ### 8. Docker & Containers
 
-- [ ] `docker/dockerfiles/Dockerfile.tinyolly-ui` - Rename, update labels
-- [ ] `docker/dockerfiles/Dockerfile.tinyolly-otlp-receiver` - Rename
+- [ ] `docker/dockerfiles/Dockerfile.ollyscale-ui` - Rename, update labels
+- [ ] `docker/dockerfiles/Dockerfile.ollyscale-otlp-receiver` - Rename
 - [ ] `docker/dockerfiles/Dockerfile.opamp-server` - Update labels
 - [ ] `docker/apps/` - Build context references
 - [ ] Container labels: `org.opencontainers.image.*`
@@ -185,7 +185,7 @@ CONTAINER_REGISTRY="${CONTAINER_REGISTRY:-ghcr.io}"
 
 ### 12. DNS and Ingress
 
-- [ ] HTTPRoute host patterns (*.tinyolly.test →*.ollyscale.test)
+- [ ] HTTPRoute host patterns (*.ollyscale.test →*.ollyscale.test)
 - [ ] Certificate names and DNS references
 - [ ] `/etc/hosts` or `hostctl` entries documentation
 - [ ] Ingress annotations and labels
@@ -209,8 +209,8 @@ CONTAINER_REGISTRY="${CONTAINER_REGISTRY:-ghcr.io}"
 ```text
 Phase 0: Pre-Flight (no dependencies)
 ├─ Tag: pre-ollyscale-rebrand
-├─ Audit: grep for all tinyolly references
-└─ Review: Identify files that must keep TinyOlly
+├─ Audit: grep for all ollyscale references
+└─ Review: Identify files that must keep ollyScale
 
 Phase 1: Foundation (depends on Phase 0)
 ├─ 1.1 Licensing (no dependencies)
@@ -222,7 +222,7 @@ Phase 1: Foundation (depends on Phase 0)
 │
 └─ 1.2 Core Documentation (depends on 1.1)
     ├─ README.md - Add origins section
-    ├─ README.md - Update references (keep TinyOlly in origins)
+    ├─ README.md - Update references (keep ollyScale in origins)
     └─ CONTRIBUTING.md - Update basic references
     [VALIDATE & COMMIT] - COMPLETED
 
@@ -258,8 +258,8 @@ Phase 3: Kubernetes/Helm (depends on Phase 2)
 │   [VALIDATE & COMMIT] - PARTIALLY COMPLETED
 │
 ├─ 3.2 Additional Charts (depends on 3.1)
-│   ├─ Rename charts/tinyolly-demos/ → charts/ollyscale-demos/ [COMPLETED]
-│   ├─ Rename charts/tinyolly-demo-otel-agent/ → charts/ollyscale-otel-agent/ [COMPLETED]
+│   ├─ Rename charts/ollyscale-demos/ → charts/ollyscale-demos/ [COMPLETED]
+│   ├─ Rename charts/ollyscale-demo-otel-agent/ → charts/ollyscale-otel-agent/ [COMPLETED]
 │   └─ Update all Chart.yaml and values.yaml [COMPLETED]
 │   [VALIDATE & COMMIT] - COMPLETED
 │
@@ -283,7 +283,7 @@ Phase 4: Source Code (depends on Phase 3)
 │   [VALIDATE & COMMIT]
 │
 ├─ 4.2 TypeScript Frontend (parallel with 4.1, 4.3)
-│   ├─ Rename apps/tinyolly-ui/ → apps/ollyscale-ui/
+│   ├─ Rename apps/ollyscale-ui/ → apps/ollyscale-ui/
 │   ├─ Update package.json
 │   ├─ Update src/ imports and API endpoints
 │   ├─ Add AGPL headers to modified files
@@ -299,8 +299,8 @@ Phase 4: Source Code (depends on Phase 3)
 
 Phase 5: Docker & Containers (depends on Phase 4)
 ├─ 5.1 Dockerfiles
-│   ├─ Rename Dockerfile.tinyolly-ui → Dockerfile.ollyscale-ui
-│   ├─ Rename Dockerfile.tinyolly-otlp-receiver → Dockerfile.ollyscale-receiver
+│   ├─ Rename Dockerfile.ollyscale-ui → Dockerfile.ollyscale-ui
+│   ├─ Rename Dockerfile.ollyscale-otlp-receiver → Dockerfile.ollyscale-receiver
 │   ├─ Update all labels (org.opencontainers.image.*)
 │   └─ Update docker-compose.yml if exists
 │   [VALIDATE & COMMIT]
@@ -327,7 +327,7 @@ Phase 7: Full Integration Test (depends on Phase 6)
 │   ├─ make deploy (build and deploy ollyscale)
 │   ├─ Verify: kubectl get po -n ollyscale
 │   ├─ Verify: All pods Running
-│   └─ Check logs for old "tinyolly" references
+│   └─ Check logs for old "ollyscale" references
 │   [VALIDATE & COMMIT if issues fixed]
 │
 ├─ 7.2 Functional Testing
@@ -339,7 +339,7 @@ Phase 7: Full Integration Test (depends on Phase 6)
 │   [VALIDATE & COMMIT if issues fixed]
 │
 └─ 7.3 Final Cleanup
-    ├─ Search: grep -r "tinyolly" (except allowed files)
+    ├─ Search: grep -r "ollyscale" (except allowed files)
     ├─ Update any missed references
     ├─ Update DNS/ingress docs
     └─ Update .github/ config
@@ -382,8 +382,8 @@ Phase 9: Documentation Polish (depends on Phase 8)
 ### Phase 0: Pre-Flight (no dependencies)
 
 1. Tag current state: `git tag pre-ollyscale-rebrand`
-2. Review all `grep` results for tinyolly references
-3. Create list of files that MUST keep TinyOlly attribution
+2. Review all `grep` results for ollyscale references
+3. Create list of files that MUST keep ollyScale attribution
 4. Backup current working cluster if needed
 
 ### Phase 1: Foundation (Licensing & Core Docs)
@@ -434,7 +434,7 @@ Phase 9: Documentation Polish (depends on Phase 8)
 ### Phase 7: Visual Identity & UX Improvements
 
 1. Design new ollyScale logo and branding assets
-2. Update `docs/images/` - Replace tinyollytitle.png and all logos
+2. Update `docs/images/` - Replace ollyscaletitle.png and all logos
 3. Implement new color scheme across UI
 4. Update favicon and social media preview images
 5. Redesign problematic UI components (fix UX issues)
@@ -449,7 +449,7 @@ After each phase:
 
 ```bash
 # 1. Check for remaining references
-grep -r "TinyOlly\|tinyolly" . --exclude-dir=.git --exclude-dir=node_modules \
+grep -r "ollyScale\|ollyscale" . --exclude-dir=.git --exclude-dir=node_modules \
   --exclude="REBRANDING-PLAN.md" --exclude="LICENSE-BSD3-ORIGINAL"
 
 # 2. Test build
@@ -511,12 +511,12 @@ NAMESPACE ?= observability
 1. **Parameterize Everything:** No hardcoded org/repo names in automation
 2. **Functional Naming:** Container/chart names describe function, not brand
 3. **Docs Separate from Code:** Brand only in docs, not in technical names
-4. **Clear Origins:** Always acknowledge TinyOlly in NOTICE file
+4. **Clear Origins:** Always acknowledge ollyScale in NOTICE file
 5. **License Clarity:** Dual licensing clearly documented
 
-## What Stays as "TinyOlly"
+## What Stays as "ollyScale"
 
-**Files that MUST retain TinyOlly references:**
+**Files that MUST retain ollyScale references:**
 
 1. `LICENSE-BSD3-ORIGINAL` - Original license file
 2. `NOTICE` - Origins and attribution section
@@ -525,7 +525,7 @@ NAMESPACE ?= observability
 5. Git commit history (immutable)
 6. Any direct quotes or attributions in documentation
 
-**Where TinyOlly becomes ollyScale:**
+**Where ollyScale becomes ollyScale:**
 
 - All active branding (UI, docs, marketing)
 - Container images and chart names
@@ -559,7 +559,7 @@ NAMESPACE ?= observability
 - **Container naming:** Branded `ollyscale/*` (ollyscale/ui, ollyscale/receiver, ollyscale/opamp-server)
 - **Kubernetes namespace:** `ollyscale`
 - **Helm chart names:** Branded `ollyscale`, `ollyscale-demos`, `ollyscale-otel-agent`
-- **Repository name:** Rename from `tinyolly` to `ollyscale`
+- **Repository name:** Rename from `ollyscale` to `ollyscale`
 - **Python package:** `ollyscale` (if published to PyPI)
 - **Container registry:** `ghcr.io/ryanfaircloth/ollyscale`
 - **Visual identity:** New logo, color scheme, and UX improvements in Phase 7 (after technical rebrand is stable)
@@ -569,4 +569,4 @@ NAMESPACE ?= observability
 - This document will be updated as we progress
 - Each completed item will be checked off
 - Any issues or blockers will be documented here
-- Consider creating migration guide for existing TinyOlly users
+- Consider creating migration guide for existing ollyScale users

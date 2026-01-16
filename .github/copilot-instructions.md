@@ -15,15 +15,15 @@
 
 **This is a FORK:**
 
-- **Repository**: `ryanfaircloth/ollyscale` (forked from `tinyolly/tinyolly`)
-- **Original Project**: TinyOlly by Infrastructure Architects, LLC (BSD-3-Clause)
+- **Repository**: `ryanfaircloth/ollyscale` (forked from `ollyscale/ollyscale`)
+- **Original Project**: ollyScale by Infrastructure Architects, LLC (BSD-3-Clause)
 - **Fork Enhancements**: AGPL-3.0 licensed
 - **Container Registry**: `ghcr.io/ryanfaircloth/ollyscale` - ALWAYS use this registry
 - **Helm Chart Registry**: `ghcr.io/ryanfaircloth/ollyscale/charts` - ALWAYS use this registry
 
 ## Project Overview
 
-**ollyScale** is a lightweight, desktop-first OpenTelemetry observability platform for local development, evolved from TinyOlly. It ingests traces, logs, and metrics via OTLP, stores them in Redis with 30-minute TTL, and provides real-time visualization through a web UI.
+**ollyScale** is a lightweight, desktop-first OpenTelemetry observability platform for local development, evolved from ollyScale. It ingests traces, logs, and metrics via OTLP, stores them in Redis with 30-minute TTL, and provides real-time visualization through a web UI.
 
 **Core Philosophy**: Ephemeral observability for development. Data is compressed (ZSTD + msgpack), TTL'd, and never persisted. Think of it as "observability workbench" not production monitoring.
 

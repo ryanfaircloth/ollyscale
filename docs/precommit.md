@@ -1,4 +1,4 @@
-# Pre-commit Configuration for TinyOlly
+# Pre-commit Configuration for ollyScale
 
 This project uses [pre-commit](https://pre-commit.com/) to maintain code quality and consistency across all languages and tools.
 

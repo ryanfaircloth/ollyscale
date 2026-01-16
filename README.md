@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="docs/images/tinyollytitle.png" alt="ollyScale" width="500">
+  <img src="docs/images/ollyscaletitle.png" alt="ollyScale" width="500">
 
 **Desktop-First Observability Platform for Local Development**
 

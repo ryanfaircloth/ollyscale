@@ -228,7 +228,7 @@ curl http://localhost:5000/
 
 ## Viewing Telemetry
 
-Open TinyOlly UI at `https://ollyscale.ollyscale.test` to see:
+Open ollyScale UI at `https://ollyscale.ollyscale.test` to see:
 
 1. **Service Map**: Visual graph showing frontend → backend relationships
 2. **Traces**: Distributed traces with detailed timing and attributes
@@ -274,12 +274,12 @@ kubectl describe pod -n ollyscale-demos -l app.kubernetes.io/name=demo-frontend
 kubectl logs -n ollyscale-demos -l app.kubernetes.io/name=demo-frontend
 ```
 
-### No telemetry in TinyOlly
+### No telemetry in ollyScale
 
 1. Verify OTel Collector is running:
 
    ```bash
-   kubectl get pods -n tinyolly -l app.kubernetes.io/name=opentelemetry-collector
+   kubectl get pods -n ollyscale -l app.kubernetes.io/name=opentelemetry-collector
    ```
 
 2. Check demo environment variables:

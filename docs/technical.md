@@ -3,7 +3,7 @@
 ## Architecture
 
 <div align="center">
-  <img src="../images/architecture.png" alt="TinyOlly Architecture" width="700">
+  <img src="../images/architecture.png" alt="ollyScale Architecture" width="700">
 </div>
 
 ---
@@ -21,7 +21,7 @@
 
 ## OTLP Compatibility
 
-TinyOlly is **fully OpenTelemetry-native**:
+ollyScale is **fully OpenTelemetry-native**:
 
 - **Ingestion**: Accepts OTLP/gRPC (primary) and OTLP/HTTP
 - **Storage**: Stores traces, logs, and metrics in full OTEL format with resources, scopes, and attributes

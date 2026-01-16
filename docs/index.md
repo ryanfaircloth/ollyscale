@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="images/tinyollytitle.png" alt="ollyScale" width="500"><br>
+  <img src="images/ollyscaletitle.png" alt="ollyScale" width="500"><br>
   <b>Desktop-First Observability Platform for Local Development</b>
 </div>
 
@@ -36,7 +36,7 @@ ollyScale is a **lightweight OpenTelemetry-native observability platform** built
 - **Zero vendor lock-in** - Works with any OTel Collector distribution
 
 !!! note "Local Development Only"
-TinyOlly is _not_ designed to compete with production observability platforms! It's for local development only and is not focused on infrastructure monitoring at this time.
+ollyScale is _not_ designed to compete with production observability platforms! It's for local development only and is not focused on infrastructure monitoring at this time.
 
 ### Platform Support
 
@@ -48,7 +48,7 @@ Tested on:
 
 ### Quick Start
 
-Ready to try TinyOlly? Check out the [Quick Start Guide](quickstart.md) to get running in under 5 minutes!
+Ready to try ollyScale? Check out the [Quick Start Guide](quickstart.md) to get running in under 5 minutes!
 
 ---
 
