@@ -19,7 +19,12 @@
         {
           "type": "yaml",
           "path": "charts/ollyscale/values.yaml",
-          "jsonpath": "$.ollyscale.image.tag"
+          "jsonpath": "$.frontend.image.tag"
+        },
+        {
+          "type": "yaml",
+          "path": "charts/ollyscale/values.yaml",
+          "jsonpath": "$.otlpReceiver.image.tag"
         }
       ]
     },
@@ -89,6 +94,11 @@
           "type": "yaml",
           "path": "charts/ollyscale-demos/values.yaml",
           "jsonpath": "$.frontend.image.tag"
+        },
+        {
+          "type": "yaml",
+          "path": "charts/ollyscale-demos/values.yaml",
+          "jsonpath": "$.backend.image.tag"
         }
       ]
     },
@@ -110,7 +120,7 @@
         {
           "type": "yaml",
           "path": "charts/ollyscale-otel-agent/values.yaml",
-          "jsonpath": "$.aiAgent.image.tag"
+          "jsonpath": "$.agent.image.tag"
         }
       ]
     },

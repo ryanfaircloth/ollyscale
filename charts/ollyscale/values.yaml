@@ -405,7 +405,7 @@ frontend:
     # -- API backend image repository (unified ollyscale image, runs in API mode)
     repository: ghcr.io/ryanfaircloth/ollyscale/ollyscale
     # -- API backend image tag
-    tag: v0.1.0
+    tag: v0.0.1
     # -- API backend image pull policy (overrides global)
     pullPolicy: ""
 
@@ -497,7 +497,7 @@ webui:
     # -- Web UI image repository (nginx with built frontend)
     repository: ghcr.io/ryanfaircloth/ollyscale/ollyscale-ui
     # -- Web UI image tag
-    tag: v1.0.0
+    tag: v0.0.1
     # -- Web UI image pull policy (overrides global)
     pullPolicy: ""
 
@@ -613,7 +613,7 @@ opampServer:
     # -- OpAMP Server image repository
     repository: ghcr.io/ryanfaircloth/ollyscale/opamp-server
     # -- OpAMP Server image tag
-    tag: v2.0.0
+    tag: v0.0.1
     # -- OpAMP Server image pull policy (overrides global)
     pullPolicy: ""
 
@@ -716,7 +716,7 @@ otlpReceiver:
     # -- OTLP Receiver image repository (unified ollyscale image)
     repository: ghcr.io/ryanfaircloth/ollyscale/ollyscale
     # -- OTLP Receiver image tag
-    tag: v0.1.0
+    tag: v0.0.1
     # -- OTLP Receiver image pull policy (overrides global)
     pullPolicy: ""
 

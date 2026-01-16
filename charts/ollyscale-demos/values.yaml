@@ -16,7 +16,7 @@ frontend:
     # -- Image repository (unified demo image for both frontend and backend)
     repository: docker-registry.registry.svc.cluster.local:5000/ollyscale/demo
     # -- Image tag
-    tag: v0.2.0
+    tag: v0.0.1
     # -- Image pull policy
     pullPolicy: Always
 
@@ -59,7 +59,7 @@ backend:
     # -- Image repository (unified demo image for both frontend and backend)
     repository: docker-registry.registry.svc.cluster.local:5000/ollyscale/demo
     # -- Image tag
-    tag: v0.2.0
+    tag: v0.0.1
     # -- Image pull policy
     pullPolicy: Always
 
