@@ -36,6 +36,10 @@ COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 # Copy built assets from builder
 COPY --from=builder /build/dist /usr/share/nginx/html
 
+# Create static directory and copy static assets
+RUN mkdir -p /usr/share/nginx/html/static
+COPY src/assets/logo.svg /usr/share/nginx/html/static/
+
 # Add healthcheck
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:8000/health || exit 1
