@@ -37,7 +37,7 @@ This demo showcases **OpenTelemetry eBPF Instrumentation (OBI)** - automatic tra
 ### Docker
 
 ```bash
-# Start TinyOlly core first
+# Start ollyScale core first
 cd docker
 ./01-start-core.sh
 
@@ -51,7 +51,7 @@ Access the UI at `http://localhost:5005`
 ### Kubernetes
 
 ```bash
-# Start TinyOlly core first
+# Start ollyScale core first
 minikube start
 cd charts
 ./install.sh
@@ -201,14 +201,14 @@ otel-ebpf-agent:
 
 ### Kubernetes
 
-#### Using the TinyOlly Helm Chart (Recommended)
+#### Using the ollyScale Helm Chart (Recommended)
 
-The easiest way to deploy the eBPF agent in Kubernetes is using the TinyOlly Helm chart:
+The easiest way to deploy the eBPF agent in Kubernetes is using the ollyScale Helm chart:
 
 ```bash
-# Install TinyOlly with eBPF agent enabled
-helm install tinyolly ./charts/tinyolly \
-  --namespace tinyolly \
+# Install ollyScale with eBPF agent enabled
+helm install ollyscale ./charts/ollyscale \
+  --namespace ollyscale \
   --create-namespace \
   --set ebpfAgent.enabled=true \
   --set ebpfAgent.config.openPorts="5000,8080,3000"
@@ -226,7 +226,7 @@ ebpfAgent:
     # Service name prefix
     serviceName: "my-app"
     # Collector endpoint
-    otlpEndpoint: "http://gateway-collector.tinyolly.svc.cluster.local:4317"
+    otlpEndpoint: "http://gateway-collector.ollyscale.svc.cluster.local:4317"
   resources:
     limits:
       memory: 512Mi
@@ -238,8 +238,8 @@ ebpfAgent:
 Then install:
 
 ```bash
-helm install tinyolly ./charts/tinyolly \
-  --namespace tinyolly \
+helm install ollyscale ./charts/ollyscale \
+  --namespace ollyscale \
   --create-namespace \
   --values values-with-ebpf.yaml
 ```
@@ -249,7 +249,7 @@ The Helm chart automatically creates:
 - DaemonSet for eBPF agent (one pod per node)
 - ServiceAccount with proper permissions
 - ClusterRole/ClusterRoleBinding for node and pod access
-- Integration with TinyOlly's gateway collector
+- Integration with ollyScale's gateway collector
 
 #### Manual Kubernetes Deployment
 
@@ -293,7 +293,7 @@ spec:
 
 **No traces appearing?**
 
-- Ensure TinyOlly core is running (`docker ps | grep otel-collector`)
+- Ensure ollyScale core is running (`docker ps | grep otel-collector`)
 - Check eBPF agent logs: `docker logs otel-ebpf-instrumentation`
 - Verify the agent can access `/sys/kernel/debug`
 

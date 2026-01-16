@@ -1,4 +1,4 @@
-# TinyOlly Build System - Deliverables & Dependencies
+# ollyScale Build System - Deliverables & Dependencies
 
 **Document Version**: 2.1  
 **Last Updated**: January 15, 2026  
@@ -6,7 +6,7 @@
 
 ## Overview
 
-This document maps TinyOlly's **deliverable artifacts** and traces their build dependencies. We work backwards from what we ship to understand what needs to be built and in what order.
+This document maps ollyScale's **deliverable artifacts** and traces their build dependencies. We work backwards from what we ship to understand what needs to be built and in what order.
 
 **Purpose**:
 
@@ -19,7 +19,7 @@ This document maps TinyOlly's **deliverable artifacts** and traces their build d
 
 ## Our Deliverables
 
-TinyOlly produces **two types of artifacts** that are published to OCI registries:
+ollyScale produces **two types of artifacts** that are published to OCI registries:
 
 ### 1. OCI Container Images (4 images)
 
@@ -35,20 +35,20 @@ We publish **4 container images** to OCI-compatible registries:
 
 ```
 DELIVERABLE: OCI Container Images
-├─ tinyolly/tinyolly          (Python backend - FastAPI + OTLP receiver)
-├─ tinyolly/webui             (Static frontend - nginx + TypeScript/Vite)
-├─ tinyolly/opamp-server      (OpAMP configuration server)
-└─ tinyolly/demo              (Demo application)
+├─ ollyscale/ollyscale          (Python backend - FastAPI + OTLP receiver)
+├─ ollyscale/webui             (Static frontend - nginx + TypeScript/Vite)
+├─ ollyscale/opamp-server      (OpAMP configuration server)
+└─ ollyscale/demo              (Demo application)
 ```
 
-### Image: `tinyolly/tinyolly`
+### Image: `ollyscale/ollyscale`
 
 **What it is**: Python backend application that runs as either API server or OTLP receiver
 
 **Published to**:
 
-- Production: `ghcr.io/ryanfaircloth/tinyolly/tinyolly:VERSION`
-- Local dev: `registry.tinyolly.test:49443/tinyolly/tinyolly:VERSION`
+- Production: `ghcr.io/ryanfaircloth/ollyscale/ollyscale:VERSION`
+- Local dev: `registry.ollyscale.test:49443/ollyscale/ollyscale:VERSION`
 
 **Run modes** (controlled by `MODE` env var):
 
@@ -57,9 +57,9 @@ DELIVERABLE: OCI Container Images
 
 **Built from**:
 
-- **Dockerfile**: `apps/tinyolly/Dockerfile`
+- **Dockerfile**: `apps/ollyscale/Dockerfile`
 - **Base image**: `python:3.14-slim`
-- **Source files** (all from `apps/tinyolly/`):
+- **Source files** (all from `apps/ollyscale/`):
   - `main.py` - Entry point that selects mode
   - `models.py` - Pydantic data models
   - `requirements.txt` - Python dependencies
@@ -67,32 +67,32 @@ DELIVERABLE: OCI Container Images
   - `receiver/` - gRPC receiver for receiver mode
   - `common/` - Shared utilities (storage, OTLP parsing)
 docker buildx build --platform linux/amd64,linux/arm64 \
-  -f apps/tinyolly/Dockerfile \
-  -t ghcr.io/ryanfaircloth/tinyolly/tinyolly:v2.1.8 \
-  --push apps/tinyolly/
+  -f apps/ollyscale/Dockerfile \
+  -t ghcr.io/ryanfaircloth/ollyscale/ollyscale:v2.1.8 \
+  --push apps/ollyscale/
 
 # Local dev (single-arch)
-podman build -f apps/tinyolly/Dockerfile \
-  -t registry.tinyolly.test:49443/tinyolly/tinyolly:v2.1.x-feature \
-  apps/tinyolly/
+podman build -f apps/ollyscale/Dockerfile \
+  -t registry.ollyscale.test:49443/ollyscale/ollyscale:v2.1.x-feature \
+  apps/ollyscale/
 ```
 
 **Rebuild triggers**:
 
-- Change to any file in `apps/tinyolly/`
+- Change to any file in `apps/ollyscale/`
 - Change to `requirements.txt`
 - Change to Dockerfile
 
 ---
 
-### Image: `tinyolly/webui`
+### Image: `ollyscale/webui`
 
 **What it is**: Static web frontend served by nginx
 
 **Published to**:
 
-- Production: `ghcr.io/ryanfaircloth/tinyolly/webui:VERSION`
-- Local dev: `registry.tinyolly.test:49443/tinyolly/webui:VERSION`
+- Production: `ghcr.io/ryanfaircloth/ollyscale/webui:VERSION`
+- Local dev: `registry.ollyscale.test:49443/ollyscale/webui:VERSION`
 
 **Functionality**:
 
@@ -102,9 +102,9 @@ podman build -f apps/tinyolly/Dockerfile \
 
 **Built from**:
 
-- **Dockerfile**: `apps/tinyolly-ui/Dockerfile`
+- **Dockerfile**: `apps/ollyscale-ui/Dockerfile`
 - **Base image**: `node:20-alpine` (build), `nginx:alpine` (runtime)
-- **Source files** (from `apps/tinyolly-ui/`):
+- **Source files** (from `apps/ollyscale-ui/`):
   - `src/` - TypeScript modules and main entry point
   - `src/modules/` - API client, traces, serviceMap, metrics, etc.
   - `index.html` - HTML template
@@ -117,33 +117,33 @@ podman build -f apps/tinyolly/Dockerfile \
 ```bash
 # Production (multi-arch)
 docker buildx build --platform linux/amd64,linux/arm64 \
-  -f apps/tinyolly-ui/Dockerfile \
-  -t ghcr.io/ryanfaircloth/tinyolly/webui:v2.1.8 \
-  --push apps/tinyolly-ui/
+  -f apps/ollyscale-ui/Dockerfile \
+  -t ghcr.io/ryanfaircloth/ollyscale/webui:v2.1.8 \
+  --push apps/ollyscale-ui/
 
 # Local dev (single-arch)
-podman build -f apps/tinyolly-ui/Dockerfile \
-  -t registry.tinyolly.test:49443/tinyolly/webui:v2.1.x-feature \
-  apps/tinyolly-ui/
+podman build -f apps/ollyscale-ui/Dockerfile \
+  -t registry.ollyscale.test:49443/ollyscale/webui:v2.1.x-feature \
+  apps/ollyscale-ui/
 ```
 
 **Rebuild triggers**:
 
-- Change to any file in `apps/tinyolly-ui/src/`
+- Change to any file in `apps/ollyscale-ui/src/`
 - Change to `package.json`
 - Change to Dockerfile
 - Change to nginx configuration
 
 ---
 
-### Image: `tinyolly/opamp-server`
+### Image: `ollyscale/opamp-server`
 
 **What it is**: OpAMP server for remote OpenTelemetry Collector configuration
 
 **Published to**:
 
-- Production: `ghcr.io/ryanfaircloth/tinyolly/opamp-server:VERSION`
-- Local dev: `registry.tinyolly.test:49443/tinyolly/opamp-server:VERSION`
+- Production: `ghcr.io/ryanfaircloth/ollyscale/opamp-server:VERSION`
+- Local dev: `registry.ollyscale.test:49443/ollyscale/opamp-server:VERSION`
 
 **Functionality**:
 
@@ -164,12 +164,12 @@ podman build -f apps/tinyolly-ui/Dockerfile \
 # Production (multi-arch)
 docker buildx build --platform linux/amd64,linux/arm64 \
   -f apps/opamp-server/Dockerfile \
-  -t ghcr.io/ryanfaircloth/tinyolly/opamp-server:v2.1.8 \
+  -t ghcr.io/ryanfaircloth/ollyscale/opamp-server:v2.1.8 \
   --push apps/opamp-server/
 
 # Local dev (single-arch)
 podman build -f apps/opamp-server/Dockerfile \
-  -t registry.tinyolly.test:49443/tinyolly/opamp-server:v2.1.x-feature \
+  -t registry.ollyscale.test:49443/ollyscale/opamp-server:v2.1.x-feature \
   apps/opamp-server/
 ```
 
@@ -181,14 +181,14 @@ podman build -f apps/opamp-server/Dockerfile \
 
 ---
 
-### Image: `tinyolly/demo`
+### Image: `ollyscale/demo`
 
 **What it is**: Unified demo application with frontend and backend
 
 **Published to**:
 
-- Production: `ghcr.io/ryanfaircloth/tinyolly/demo:VERSION`
-- Local dev: `registry.tinyolly.test:49443/tinyolly/demo:VERSION`
+- Production: `ghcr.io/ryanfaircloth/ollyscale/demo:VERSION`
+- Local dev: `registry.ollyscale.test:49443/ollyscale/demo:VERSION`
 
 **Functionality**:
 
@@ -210,12 +210,12 @@ podman build -f apps/opamp-server/Dockerfile \
 # Production (multi-arch)
 docker buildx build --platform linux/amd64,linux/arm64 \
   -f apps/demo/Dockerfile \
-  -t ghcr.io/ryanfaircloth/tinyolly/demo:v2.1.8 \
+  -t ghcr.io/ryanfaircloth/ollyscale/demo:v2.1.8 \
   --push apps/demo/
 
 # Local dev (single-arch)
 podman build -f apps/demo/Dockerfile \
-  -t registry.tinyolly.test:49443/tinyolly/demo:v2.1.x-feature \
+  -t registry.ollyscale.test:49443/ollyscale/demo:v2.1.x-feature \
   apps/demo/
 ```
 
@@ -233,25 +233,25 @@ We publish **2 Helm charts** to OCI registries:
 
 ```
 DELIVERABLE: Helm Charts (OCI format)
-├─ tinyolly              (Main platform chart)
-└─ tinyolly-demos        (Demo applications chart)
+├─ ollyscale              (Main platform chart)
+└─ ollyscale-demos        (Demo applications chart)
 ```
 
-### Chart: `tinyolly`
+### Chart: `ollyscale`
 
-**What it is**: Complete TinyOlly platform deployment
+**What it is**: Complete ollyScale platform deployment
 
 **Published to**:
 
-- Production: `oci://ghcr.io/ryanfaircloth/tinyolly/charts/tinyolly:VERSION`
-- Local dev: `oci://registry.tinyolly.test:49443/tinyolly/charts/tinyolly:VERSION`
+- Production: `oci://ghcr.io/ryanfaircloth/ollyscale/charts/ollyscale:VERSION`
+- Local dev: `oci://registry.ollyscale.test:49443/ollyscale/charts/ollyscale:VERSION`
 
 **Contains**:
 
-- Backend API deployment (uses `tinyolly/tinyolly:VERSION` with `MODE=ui`)
-- Frontend webui deployment (uses `tinyolly/webui:VERSION`)
-- OTLP receiver deployment (uses `tinyolly/tinyolly:VERSION` with `MODE=receiver`)
-- OpAMP server deployment (uses `tinyolly/opamp-server:VERSION`)
+- Backend API deployment (uses `ollyscale/ollyscale:VERSION` with `MODE=ui`)
+- Frontend webui deployment (uses `ollyscale/webui:VERSION`)
+- OTLP receiver deployment (uses `ollyscale/ollyscale:VERSION` with `MODE=receiver`)
+- OpAMP server deployment (uses `ollyscale/opamp-server:VERSION`)
 - Redis StatefulSet
 - OTel Collector DaemonSet (optional)
 - OpenTelemetry Instrumentation CRs (optional)
@@ -259,7 +259,7 @@ DELIVERABLE: Helm Charts (OCI format)
 
 **Built from**:
 
-- **Chart location**: `charts/tinyolly/`
+- **Chart location**: `charts/ollyscale/`
 - **Chart.yaml**: Metadata and version
 - **values.yaml**: Default configuration
 - **templates/**: Kubernetes manifests
@@ -276,20 +276,20 @@ DELIVERABLE: Helm Charts (OCI format)
 **Dependencies**:
 
 - Requires container images to exist:
-  - `tinyolly/webui:VERSION`
-  - `tinyolly/tinyolly:VERSION`
-  - `tinyolly/opamp-server:VERSION`
+  - `ollyscale/webui:VERSION`
+  - `ollyscale/ollyscale:VERSION`
+  - `ollyscale/opamp-server:VERSION`
 - May reference external charts (Redis Operator, OTel Operator)
 
 **Build command**:
 
 ```bash
 # Package chart
-helm package charts/tinyolly/ -d charts/
+helm package charts/ollyscale/ -d charts/
 
 # Push to OCI registry
-helm push charts/tinyolly-0.1.1-v2.1.x-feature.tgz \
-  oci://registry.tinyolly.test:49443/tinyolly/charts
+helm push charts/ollyscale-0.1.1-v2.1.x-feature.tgz \
+  oci://registry.ollyscale.test:49443/ollyscale/charts
 ```
 
 **Version format**:
@@ -299,32 +299,32 @@ helm push charts/tinyolly-0.1.1-v2.1.x-feature.tgz \
 
 **Rebuild triggers**:
 
-- Change to any file in `charts/tinyolly/templates/`
+- Change to any file in `charts/ollyscale/templates/`
 - Change to `values.yaml`
 - Change to `Chart.yaml`
 - New container image version (update `appVersion`)
 
 ---
 
-### Chart: `tinyolly-demos`
+### Chart: `ollyscale-demos`
 
-**What it is**: Demo applications for TinyOlly
+**What it is**: Demo applications for ollyScale
 
 **Published to**:
 
-- Production: `oci://ghcr.io/ryanfaircloth/tinyolly/charts/tinyolly-demos:VERSION`
-- Local dev: `oci://registry.tinyolly.test:49443/tinyolly/charts/tinyolly-demos:VERSION`
+- Production: `oci://ghcr.io/ryanfaircloth/ollyscale/charts/ollyscale-demos:VERSION`
+- Local dev: `oci://registry.ollyscale.test:49443/ollyscale/charts/ollyscale-demos:VERSION`
 
 **Contains**:
 
-- Demo frontend deployment (uses `tinyolly/demo:VERSION` with `MODE=frontend`)
-- Demo backend deployment (uses `tinyolly/demo:VERSION` with `MODE=backend`)
+- Demo frontend deployment (uses `ollyscale/demo:VERSION` with `MODE=frontend`)
+- Demo backend deployment (uses `ollyscale/demo:VERSION` with `MODE=backend`)
 - Traffic generator (optional)
 - Services to wire frontend → backend
 
 **Built from**:
 
-- **Chart location**: `charts/tinyolly-demos/`
+- **Chart location**: `charts/ollyscale-demos/`
 - **Chart.yaml**: Metadata and version
 - **values.yaml**: Demo configuration
 - **templates/**: Kubernetes manifests
@@ -335,23 +335,23 @@ helm push charts/tinyolly-0.1.1-v2.1.x-feature.tgz \
 
 **Dependencies**:
 
-- Requires container image: `tinyolly/demo:VERSION`
-- Expects `tinyolly` chart to be deployed (for OTLP endpoint)
+- Requires container image: `ollyscale/demo:VERSION`
+- Expects `ollyscale` chart to be deployed (for OTLP endpoint)
 
 **Build command**:
 
 ```bash
 # Package chart
-helm package charts/tinyolly-demos/ -d charts/
+helm package charts/ollyscale-demos/ -d charts/
 
 # Push to OCI registry
-helm push charts/tinyolly-demos-0.1.5.tgz \
-  oci://registry.tinyolly.test:49443/tinyolly/charts
+helm push charts/ollyscale-demos-0.1.5.tgz \
+  oci://registry.ollyscale.test:49443/ollyscale/charts
 ```
 
 **Rebuild triggers**:
 
-- Change to any file in `charts/tinyolly-demos/templates/`
+- Change to any file in `charts/ollyscale-demos/templates/`
 - Change to `values.yaml`
 - Change to `Chart.yaml`
 - New demo image version
@@ -372,8 +372,8 @@ helm push charts/tinyolly-demos-0.1.5.tgz \
      ┌───────────────────┐           ┌───────────────────┐
      │  OCI IMAGES (3)   │           │  HELM CHARTS (2)  │
      ├───────────────────┤           ├───────────────────┤
-     │ 1. tinyolly       │           │ 1. tinyolly       │
-     │ 2. opamp-server   │           │ 2. tinyolly-demos │
+     │ 1. ollyscale       │           │ 1. ollyscale       │
+     │ 2. opamp-server   │           │ 2. ollyscale-demos │
      │ 3. demo           │           └─────────┬─────────┘
      └─────────┬─────────┘                     │
                │                               │
@@ -389,7 +389,7 @@ helm push charts/tinyolly-demos-0.1.5.tgz \
                │                                     │
                ▼                                     ▼
      ┌─────────────────────┐            ┌─────────────────────┐
-     │  apps/tinyolly/     │            │ Chart.yaml          │
+     │  apps/ollyscale/     │            │ Chart.yaml          │
      │  Dockerfile         │            │ values.yaml         │
      │       +             │            │ templates/*.yaml    │
      │  ├─ main.py         │            └─────────────────────┘
@@ -418,12 +418,12 @@ helm push charts/tinyolly-demos-0.1.5.tgz \
 ### Production Builds → GHCR (Multi-platform)
 
 **Location**: `scripts/build/`  
-**Registry**: `ghcr.io/ryanfaircloth/tinyolly/*`  
+**Registry**: `ghcr.io/ryanfaircloth/ollyscale/*`  
 **Platforms**: `linux/amd64`, `linux/arm64`
 
 | Script                     | Builds                                                 | Command                              |
 | -------------------------- | ------------------------------------------------------ | ------------------------------------ |
-| `02-build-core.sh VERSION` | tinyolly:VERSION<br>webui:VERSION<br>opamp-server:VERSION | Uses Docker Buildx<br>Multi-platform |
+| `02-build-core.sh VERSION` | ollyscale:VERSION<br>webui:VERSION<br>opamp-server:VERSION | Uses Docker Buildx<br>Multi-platform |
 | `02-build-demo.sh VERSION` | demo:VERSION                                           | Uses Docker Buildx<br>Multi-platform |
 | `02-build-all.sh VERSION`  | All images above                                       | Calls other scripts                  |
 | `03-push-core.sh VERSION`  | N/A - pushes only                                      | Pushes to GHCR                       |
@@ -451,12 +451,12 @@ cd charts
 ### Local Development Builds → Local Registry (Single-platform)
 
 **Location**: `charts/`  
-**Registry**: `registry.tinyolly.test:49443/tinyolly/*`  
+**Registry**: `registry.ollyscale.test:49443/ollyscale/*`  
 **Platforms**: Native only (faster builds)
 
 | Script                            | Builds                                                              | Description                                                                                                                           |
 | --------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `build-and-push-local.sh VERSION` | 1. All 4 container images<br>2. tinyolly Helm chart | **Complete pipeline**:<br>- Build images<br>- Push to local registry<br>- Update Chart.yaml<br>- Package chart<br>- Push chart to OCI |
+| `build-and-push-local.sh VERSION` | 1. All 4 container images<br>2. ollyscale Helm chart | **Complete pipeline**:<br>- Build images<br>- Push to local registry<br>- Update Chart.yaml<br>- Package chart<br>- Push chart to OCI |
 
 **What it does**:
 
@@ -464,48 +464,48 @@ cd charts
 # Example: ./build-and-push-local.sh v2.1.x-tail-sampling
 
 # Step 1: Build images
-podman build -f apps/tinyolly/Dockerfile \
-  -t registry.tinyolly.test:49443/tinyolly/tinyolly:v2.1.x-tail-sampling \
-  apps/tinyolly/
+podman build -f apps/ollyscale/Dockerfile \
+  -t registry.ollyscale.test:49443/ollyscale/ollyscale:v2.1.x-tail-sampling \
+  apps/ollyscale/
 
-podman build -f apps/tinyolly-ui/Dockerfile \
-  -t registry.tinyolly.test:49443/tinyolly/webui:v2.1.x-tail-sampling \
-  apps/tinyolly-ui/
+podman build -f apps/ollyscale-ui/Dockerfile \
+  -t registry.ollyscale.test:49443/ollyscale/webui:v2.1.x-tail-sampling \
+  apps/ollyscale-ui/
 
 podman build -f apps/opamp-server/Dockerfile \
-  -t registry.tinyolly.test:49443/tinyolly/opamp-server:v2.1.x-tail-sampling \
+  -t registry.ollyscale.test:49443/ollyscale/opamp-server:v2.1.x-tail-sampling \
   apps/opamp-server/
 
 podman build -f apps/demo/Dockerfile \
-  -t registry.tinyolly.test:49443/tinyolly/demo:v2.1.x-tail-sampling \
+  -t registry.ollyscale.test:49443/ollyscale/demo:v2.1.x-tail-sampling \
   apps/demo/
 
 # Step 2: Push images to local registry (external endpoint)
-podman push --tls-verify=false registry.tinyolly.test:49443/tinyolly/tinyolly:v2.1.x-tail-sampling
+podman push --tls-verify=false registry.ollyscale.test:49443/ollyscale/ollyscale:v2.1.x-tail-sampling
 # ... (webui, opamp-server, demo)
 
 # Step 3: Update Chart.yaml version
-sed -i '' "s/^version: .*/version: 0.1.1-v2.1.x-tail-sampling/" charts/tinyolly/Chart.yaml
+sed -i '' "s/^version: .*/version: 0.1.1-v2.1.x-tail-sampling/" charts/ollyscale/Chart.yaml
 
 # Step 4: Generate values-local-dev.yaml with INTERNAL registry
 cat > values-local-dev.yaml <<EOF
 ui:
   image:
-    repository: docker-registry.registry.svc.cluster.local:5000/tinyolly/tinyolly
+    repository: docker-registry.registry.svc.cluster.local:5000/ollyscale/ollyscale
     tag: v2.1.x-tail-sampling
 webui:
   image:
-    repository: docker-registry.registry.svc.cluster.local:5000/tinyolly/webui
+    repository: docker-registry.registry.svc.cluster.local:5000/ollyscale/webui
     tag: v2.1.x-tail-sampling
 # ... etc
 EOF
 
 # Step 5: Package chart
-helm package charts/tinyolly/ -d charts/
+helm package charts/ollyscale/ -d charts/
 
 # Step 6: Push chart to OCI registry
-helm push charts/tinyolly-0.1.1-v2.1.x-tail-sampling.tgz \
-  oci://registry.tinyolly.test:49443/tinyolly/charts
+helm push charts/ollyscale-0.1.1-v2.1.x-tail-sampling.tgz \
+  oci://registry.ollyscale.test:49443/ollyscale/charts
 ```
 
 **Deploy to cluster**:
@@ -513,7 +513,7 @@ helm push charts/tinyolly-0.1.1-v2.1.x-tail-sampling.tgz \
 ```bash
 # Update ArgoCD Application to use new chart version
 cd .kind
-terraform apply -replace='kubectl_manifest.observability_applications["observability/tinyolly.yaml"]' -auto-approve
+terraform apply -replace='kubectl_manifest.observability_applications["observability/ollyscale.yaml"]' -auto-approve
 ```
 
 ---
@@ -531,7 +531,7 @@ These scripts are no longer maintained and should not be used:
 
 ## Registry Endpoints (Critical!)
 
-TinyOlly uses **different registry endpoints** for build/push vs runtime deployment. This is a common source of confusion.
+ollyScale uses **different registry endpoints** for build/push vs runtime deployment. This is a common source of confusion.
 
 ### The Same Physical Registry, Different Access Points
 
@@ -549,7 +549,7 @@ TinyOlly uses **different registry endpoints** for build/push vs runtime deploym
 │  (Build)     │  │  (Alt Build) │  │  (Runtime)   │
 ├──────────────┤  ├──────────────┤  ├──────────────┤
 │ registry.    │  │ localhost:   │  │ docker-      │
-│ tinyolly.    │  │ 30500        │  │ registry.    │
+│ ollyscale.    │  │ 30500        │  │ registry.    │
 │ test:49443   │  │              │  │ registry.svc │
 │              │  │              │  │ .cluster.    │
 │              │  │              │  │ local:5000   │
@@ -562,9 +562,9 @@ TinyOlly uses **different registry endpoints** for build/push vs runtime deploym
 
 **Rules**:
 
-1. **Build scripts** push to `registry.tinyolly.test:49443` (external endpoint)
+1. **Build scripts** push to `registry.ollyscale.test:49443` (external endpoint)
 2. **Helm values** reference `docker-registry.registry.svc.cluster.local:5000` (internal endpoint)
-3. **Never** use `registry.tinyolly.test:49443` in pod image specs - cluster can't resolve it!
+3. **Never** use `registry.ollyscale.test:49443` in pod image specs - cluster can't resolve it!
 
 **Example** (`values-local-dev.yaml`):
 
@@ -572,19 +572,19 @@ TinyOlly uses **different registry endpoints** for build/push vs runtime deploym
 # ✅ CORRECT - internal endpoint for cluster
 ui:
   image:
-    repository: docker-registry.registry.svc.cluster.local:5000/tinyolly/tinyolly
+    repository: docker-registry.registry.svc.cluster.local:5000/ollyscale/ollyscale
     tag: v2.1.x-feature
 
 # ❌ WRONG - external endpoint, pods can't pull
 ui:
   image:
-    repository: registry.tinyolly.test:49443/tinyolly/tinyolly
+    repository: registry.ollyscale.test:49443/ollyscale/ollyscale
     tag: v2.1.x-feature
 ```
 
 ### Production Registry (GHCR)
 
-**Endpoint**: `ghcr.io/ryanfaircloth/tinyolly/*`  
+**Endpoint**: `ghcr.io/ryanfaircloth/ollyscale/*`  
 **Access**: Public (read), authenticated (write)  
 **Usage**: Production releases only
 
@@ -597,24 +597,24 @@ ui:
 | Change Type                               | Requires Rebuild             | Deployment Action                           |
 | ----------------------------------------- | ---------------------------- | ------------------------------------------- |
 | **Source Code**                           |                              |                                             |
-| `apps/tinyolly/app/`                      | `tinyolly:VERSION` image     | Rebuild image → Update chart → Deploy       |
-| `apps/tinyolly/receiver/`                 | `tinyolly:VERSION` image     | Rebuild image → Update chart → Deploy       |
-| `apps/tinyolly/requirements.txt`          | `tinyolly:VERSION` image     | Rebuild image → Update chart → Deploy       |
-| `apps/tinyolly-ui/src/`                   | `webui:VERSION` image        | Rebuild image → Update chart → Deploy       |
-| `apps/tinyolly-ui/package.json`           | `webui:VERSION` image        | Rebuild image → Update chart → Deploy       |
+| `apps/ollyscale/app/`                      | `ollyscale:VERSION` image     | Rebuild image → Update chart → Deploy       |
+| `apps/ollyscale/receiver/`                 | `ollyscale:VERSION` image     | Rebuild image → Update chart → Deploy       |
+| `apps/ollyscale/requirements.txt`          | `ollyscale:VERSION` image     | Rebuild image → Update chart → Deploy       |
+| `apps/ollyscale-ui/src/`                   | `webui:VERSION` image        | Rebuild image → Update chart → Deploy       |
+| `apps/ollyscale-ui/package.json`           | `webui:VERSION` image        | Rebuild image → Update chart → Deploy       |
 | `apps/opamp-server/`                      | `opamp-server:VERSION` image | Rebuild image → Update chart → Deploy       |
 | `apps/demo/frontend.py`                   | `demo:VERSION` image         | Rebuild image → Update demos chart → Deploy |
 | `apps/demo/backend.py`                    | `demo:VERSION` image         | Rebuild image → Update demos chart → Deploy |
 | **Dockerfiles**                           |                              |                                             |
-| `apps/tinyolly/Dockerfile`                | `tinyolly:VERSION` image     | Rebuild image → Update chart → Deploy       |
-| `apps/tinyolly-ui/Dockerfile`             | `webui:VERSION` image        | Rebuild image → Update chart → Deploy       |
+| `apps/ollyscale/Dockerfile`                | `ollyscale:VERSION` image     | Rebuild image → Update chart → Deploy       |
+| `apps/ollyscale-ui/Dockerfile`             | `webui:VERSION` image        | Rebuild image → Update chart → Deploy       |
 | `apps/opamp-server/Dockerfile`            | `opamp-server:VERSION` image | Rebuild image → Update chart → Deploy       |
 | `apps/demo/Dockerfile`                    | `demo:VERSION` image         | Rebuild image → Update demos chart → Deploy |
 | **Helm Charts**                           |                              |                                             |
-| `charts/tinyolly/templates/`              | `tinyolly` chart             | Package chart → Deploy                      |
-| `charts/tinyolly/values.yaml`             | `tinyolly` chart             | Package chart → Deploy                      |
-| `charts/tinyolly/Chart.yaml`              | `tinyolly` chart             | Package chart → Deploy                      |
-| `charts/tinyolly-demos/templates/`        | `tinyolly-demos` chart       | Package chart → Deploy                      |
+| `charts/ollyscale/templates/`              | `ollyscale` chart             | Package chart → Deploy                      |
+| `charts/ollyscale/values.yaml`             | `ollyscale` chart             | Package chart → Deploy                      |
+| `charts/ollyscale/Chart.yaml`              | `ollyscale` chart             | Package chart → Deploy                      |
+| `charts/ollyscale-demos/templates/`        | `ollyscale-demos` chart       | Package chart → Deploy                      |
 | **Deployment**                            |                              |                                             |
 | `.kind/modules/main/argocd-applications/` | None (config only)           | `terraform apply`                           |
 
@@ -624,7 +624,7 @@ ui:
 
 ### Current Issues
 
-1. **No shared base image**: `tinyolly` image rebuilds all Python deps on every build
+1. **No shared base image**: `ollyscale` image rebuilds all Python deps on every build
 2. **No build caching**: Production builds use `--no-cache` flag
 3. **Dockerfile redundancy**: Demo images duplicate patterns from main image
 4. **Version coordination**: Chart version and image tags updated manually
@@ -634,18 +634,18 @@ ui:
 #### 1. Create Python Base Image
 
 ```dockerfile
-# NEW: Dockerfile.tinyolly-python-base
+# NEW: Dockerfile.ollyscale-python-base
 FROM python:3.14-slim
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-# Tag: tinyolly/python-base:v2.1
+# Tag: ollyscale/python-base:v2.1
 ```
 
-Then update `Dockerfile.tinyolly`:
+Then update `Dockerfile.ollyscale`:
 
 ```dockerfile
-FROM tinyolly/python-base:v2.1  # ← Use base
+FROM ollyscale/python-base:v2.1  # ← Use base
 # Only copy app code, deps already installed
 ```
 
@@ -704,14 +704,14 @@ cd charts
 
 # Deploy to cluster
 cd ../.kind
-terraform apply -replace='kubectl_manifest.observability_applications["observability/tinyolly.yaml"]' -auto-approve
+terraform apply -replace='kubectl_manifest.observability_applications["observability/ollyscale.yaml"]' -auto-approve
 
 # Verify deployment
-kubectl get pods -n tinyolly
-kubectl logs -n tinyolly deployment/tinyolly-ui -f
+kubectl get pods -n ollyscale
+kubectl logs -n ollyscale deployment/ollyscale-ui -f
 
 # Clear cache if needed
-kubectl exec -n tinyolly tinyolly-redis-0 -- redis-cli FLUSHDB
+kubectl exec -n ollyscale ollyscale-redis-0 -- redis-cli FLUSHDB
 ```
 
 ### Production Release
@@ -735,15 +735,15 @@ git push origin v2.1.8
 ### Quick Image-Only Rebuild (Local)
 
 ```bash
-# When you ONLY changed tinyolly source code
+# When you ONLY changed ollyscale source code
 cd /repo/root/docker
-podman build -f dockerfiles/Dockerfile.tinyolly \
-  -t registry.tinyolly.test:49443/tinyolly/tinyolly:v2.1.x-hotfix .
+podman build -f dockerfiles/Dockerfile.ollyscale \
+  -t registry.ollyscale.test:49443/ollyscale/ollyscale:v2.1.x-hotfix .
 podman push --tls-verify=false \
-  registry.tinyolly.test:49443/tinyolly/tinyolly:v2.1.x-hotfix
+  registry.ollyscale.test:49443/ollyscale/ollyscale:v2.1.x-hotfix
 
 # Update just the image tag in ArgoCD
-kubectl -n argocd patch application tinyolly --type merge \
+kubectl -n argocd patch application ollyscale --type merge \
   -p '{"spec":{"source":{"helm":{"valuesObject":{"ui":{"image":{"tag":"v2.1.x-hotfix"}}}}}}}'
 ```
 
@@ -756,22 +756,22 @@ SOURCE CODE                    BUILD ARTIFACTS                 REGISTRIES
 ─────────────                  ─────────────────              ──────────────
 
 docker/apps/
-tinyolly/          ────────▶   tinyolly/tinyolly    ────────▶ ghcr.io/...
+ollyscale/          ────────▶   ollyscale/ollyscale    ────────▶ ghcr.io/...
   (Python)                     (OCI image)                    (production)
 
 docker/apps/                                                  registry.
-tinyolly-opamp-    ────────▶   tinyolly/opamp-      ────────▶ tinyolly.test
+ollyscale-opamp-    ────────▶   ollyscale/opamp-      ────────▶ ollyscale.test
 server/ (Go)                   server (OCI image)             (local dev)
 
-apps/demo/       ────────▶   tinyolly/demo        ────────▶
+apps/demo/       ────────▶   ollyscale/demo        ────────▶
   (Python)                     (OCI image)
                                       │
                                       │ (referenced by)
                                       ▼
-charts/tinyolly/     ────────▶   tinyolly             ────────▶ OCI registry
+charts/ollyscale/     ────────▶   ollyscale             ────────▶ OCI registry
   (K8s manifests)              (Helm chart .tgz)              /charts
 
-charts/tinyolly-     ────────▶   tinyolly-demos       ────────▶ OCI registry
+charts/ollyscale-     ────────▶   ollyscale-demos       ────────▶ OCI registry
 demos/                         (Helm chart .tgz)              /charts
 
 
@@ -784,8 +784,8 @@ TOOLS USED:
 
 **Key Insight**: We ship **5 artifacts** total:
 
-- 3 container images (tinyolly, opamp-server, demo)
-- 2 Helm charts (tinyolly, tinyolly-demos)
+- 3 container images (ollyscale, opamp-server, demo)
+- 2 Helm charts (ollyscale, ollyscale-demos)
 
 ---
 

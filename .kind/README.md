@@ -1,11 +1,11 @@
-# TinyOlly KIND Cluster Configuration
+# ollyScale KIND Cluster Configuration
 
 ## Quick Start
 
 ### Production/POC Mode (uses ghcr.io)
 
 ```bash
-make up  # Uses ghcr.io/ryanfaircloth/tinyolly images
+make up  # Uses ghcr.io/ryanfaircloth/ollyscale images
 ```
 
 ### Development Mode (uses local registry)
@@ -20,11 +20,11 @@ make up
 
 ## How It Works
 
-1. **`make up`** (default): Uses production images from `ghcr.io/ryanfaircloth/tinyolly`
+1. **`make up`** (default): Uses production images from `ghcr.io/ryanfaircloth/ollyscale`
 
 2. **`make build`**:
    - Builds images locally with version `0.0.$(timestamp)`
-   - Pushes to local registry at `registry.tinyolly.test:49443`
+   - Pushes to local registry at `registry.ollyscale.test:49443`
    - Creates `.kind/terraform.tfvars` with local configuration (gitignored)
 
 3. **`make up`** (after build): Uses local images from `.kind/terraform.tfvars`
@@ -35,14 +35,14 @@ make up
 
 1. **Terraform Variables** (`.kind/variables.tf`):
    - `use_local_registry` - boolean, defaults to `false` (ghcr.io)
-   - `tinyolly_tag`, `opamp_tag`, `demo_tag` - version tags
+   - `ollyscale_tag`, `opamp_tag`, `demo_tag` - version tags
 
 2. **Terraform Locals** (`.kind/locals.tf`):
    - Conditionally sets `image_registry` and `chart_registry`
-   - Local: `docker-registry.registry.svc.cluster.local:5000/tinyolly`
-   - Remote: `ghcr.io/ryanfaircloth/tinyolly`
+   - Local: `docker-registry.registry.svc.cluster.local:5000/ollyscale`
+   - Remote: `ghcr.io/ryanfaircloth/ollyscale`
 
-3. **ArgoCD Templates** (`.kind/modules/main/argocd-applications/observability/tinyolly.yaml`):
+3. **ArgoCD Templates** (`.kind/modules/main/argocd-applications/observability/ollyscale.yaml`):
    - Uses template variables: `${image_registry}` and `${chart_registry}`
    - Terraform renders templates at apply time
 
@@ -63,7 +63,7 @@ make up
 
 Default versions from ghcr.io:
 
-- TinyOlly UI: `v30.0.1`
+- ollyScale UI: `v30.0.1`
 - OpAMP Server: `v1.0.0`
 - OTLP Receiver: `v30.0.1` (same image as UI)
 - Demo: `v0.5.0`

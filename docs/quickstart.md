@@ -1,10 +1,10 @@
 # Quick Start
 
-Get TinyOlly running in under 5 minutes!
+Get ollyScale running in under 5 minutes!
 
 ## What You'll Get
 
-- **TinyOlly UI** at `http://localhost:5005`
+- **ollyScale UI** at `http://localhost:5005`
 - **OpenTelemetry Collector** listening on ports 4317 (gRPC) and 4318 (HTTP)
 - **OpAMP Server** for remote collector configuration management
 - **Demo microservices** generating automatic telemetry
@@ -22,13 +22,13 @@ Get TinyOlly running in under 5 minutes!
 ## Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/tinyolly/tinyolly
-cd tinyolly
+git clone https://github.com/ryanfaircloth/ollyscale
+cd ollyscale
 ```
 
 ---
 
-## Step 2: Start TinyOlly Core
+## Step 2: Start ollyScale Core
 
 ```bash
 cd docker
@@ -39,8 +39,8 @@ This pulls pre-built images from Docker Hub and starts:
 
 - **OpenTelemetry Collector** (ports 4317/4318)
 - **OpAMP Server** (ports 4320/4321)
-- **TinyOlly OTLP Receiver** (internal)
-- **TinyOlly UI** (port 5005)
+- **ollyScale OTLP Receiver** (internal)
+- **ollyScale UI** (port 5005)
 - **Redis storage** (internal)
 
 **Deployment time:** ~30 seconds (pulls from Docker Hub)
@@ -73,7 +73,7 @@ Open your browser to: **`http://localhost:5005`**
 You should see:
 
 <div align="center">
-  <img src="../images/traces.png" alt="TinyOlly Traces View" width="700">
+  <img src="../images/traces.png" alt="ollyScale Traces View" width="700">
   <p><em>Trace waterfall with correlated logs and span timing</em></p>
 </div>
 
@@ -184,13 +184,13 @@ export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
 export OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
 ```
 
-TinyOlly will automatically capture and display your telemetry!
+ollyScale will automatically capture and display your telemetry!
 
 ---
 
 ## Cleanup
 
-Stop demo apps (keeps TinyOlly running):
+Stop demo apps (keeps ollyScale running):
 
 ```bash
 cd apps/demo
@@ -225,12 +225,12 @@ cd docker
 
 ### Port conflicts
 
-- TinyOlly uses ports 4317, 4318, 4320, 4321, 4343, 5005, 6379, 19291
-- Stop conflicting services or modify ports in `docker-compose-tinyolly-core.yml`
+- ollyScale uses ports 4317, 4318, 4320, 4321, 4343, 5005, 6379, 19291
+- Stop conflicting services or modify ports in `docker-compose-ollyscale-core.yml`
 
 ### Demo apps not generating traffic
 
 - Restart demo: `cd apps/demo && ./02-cleanup-demo.sh && ./01-deploy-demo.sh`
 - Check logs: `docker compose -f apps/demo/docker-compose-demo.yml logs demo-frontend`
 
-For more help, [open an issue on GitHub](https://github.com/tinyolly/tinyolly/issues).
+For more help, [open an issue on GitHub](https://github.com/ryanfaircloth/ollyscale/issues).

@@ -1,9 +1,9 @@
 {
   "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
   "packages": {
-    "apps/tinyolly": {
-      "component": "tinyolly",
-      "package-name": "tinyolly",
+    "apps/ollyscale": {
+      "component": "ollyscale",
+      "package-name": "ollyscale",
       "release-type": "python",
       "include-component-in-tag": true,
       "bump-minor-pre-major": true,
@@ -13,19 +13,19 @@
         "Dockerfile",
         {
           "type": "generic",
-          "path": ".kind/modules/main/argocd-applications/observability/tinyolly.yaml",
+          "path": ".kind/modules/main/argocd-applications/observability/ollyscale.yaml",
           "glob": false
         },
         {
           "type": "yaml",
-          "path": "charts/tinyolly/values.yaml",
-          "jsonpath": "$.tinyolly.image.tag"
+          "path": "charts/ollyscale/values.yaml",
+          "jsonpath": "$.ollyscale.image.tag"
         }
       ]
     },
-    "apps/tinyolly-ui": {
-      "component": "tinyolly-ui",
-      "package-name": "tinyolly-ui",
+    "apps/ollyscale-ui": {
+      "component": "ollyscale-ui",
+      "package-name": "ollyscale-ui",
       "release-type": "node",
       "include-component-in-tag": true,
       "bump-minor-pre-major": true,
@@ -34,12 +34,12 @@
         "Dockerfile",
         {
           "type": "generic",
-          "path": ".kind/modules/main/argocd-applications/observability/tinyolly.yaml",
+          "path": ".kind/modules/main/argocd-applications/observability/ollyscale.yaml",
           "glob": false
         },
         {
           "type": "yaml",
-          "path": "charts/tinyolly/values.yaml",
+          "path": "charts/ollyscale/values.yaml",
           "jsonpath": "$.webui.image.tag"
         }
       ]
@@ -60,12 +60,12 @@
         "Dockerfile",
         {
           "type": "generic",
-          "path": ".kind/modules/main/argocd-applications/observability/tinyolly.yaml",
+          "path": ".kind/modules/main/argocd-applications/observability/ollyscale.yaml",
           "glob": false
         },
         {
           "type": "yaml",
-          "path": "charts/tinyolly/values.yaml",
+          "path": "charts/ollyscale/values.yaml",
           "jsonpath": "$.opampServer.image.tag"
         }
       ]
@@ -82,12 +82,12 @@
         "Dockerfile",
         {
           "type": "generic",
-          "path": ".kind/modules/tinyolly/argocd-applications/observability/tinyolly-demos.yaml",
+          "path": ".kind/modules/ollyscale/argocd-applications/observability/ollyscale-demos.yaml",
           "glob": false
         },
         {
           "type": "yaml",
-          "path": "charts/tinyolly-demos/values.yaml",
+          "path": "charts/ollyscale-demos/values.yaml",
           "jsonpath": "$.frontend.image.tag"
         }
       ]
@@ -104,37 +104,37 @@
         "Dockerfile",
         {
           "type": "generic",
-          "path": ".kind/modules/tinyolly/argocd-applications/observability/tinyolly-demo-otel-agent.yaml",
+          "path": ".kind/modules/ollyscale/argocd-applications/observability/ollyscale-otel-agent.yaml",
           "glob": false
         },
         {
           "type": "yaml",
-          "path": "charts/tinyolly-demo-otel-agent/values.yaml",
+          "path": "charts/ollyscale-otel-agent/values.yaml",
           "jsonpath": "$.aiAgent.image.tag"
         }
       ]
     },
-    "charts/tinyolly": {
-      "component": "helm-tinyolly",
-      "package-name": "helm-tinyolly",
+    "charts/ollyscale": {
+      "component": "helm-ollyscale",
+      "package-name": "helm-ollyscale",
       "include-component-in-tag": true,
       "release-type": "helm",
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "always-bump-patch": true
     },
-    "charts/tinyolly-demos": {
+    "charts/ollyscale-demos": {
       "component": "helm-demos",
-      "package-name": "helm-tinyolly-demos",
+      "package-name": "helm-ollyscale-demos",
       "include-component-in-tag": true,
       "release-type": "helm",
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "always-bump-patch": true
     },
-    "charts/tinyolly-demo-otel-agent": {
+    "charts/ollyscale-otel-agent": {
       "component": "helm-demo-otel-agent",
-      "package-name": "helm-tinyolly-demo-otel-agent",
+      "package-name": "helm-ollyscale-otel-agent",
       "include-component-in-tag": true,
       "release-type": "helm",
       "bump-minor-pre-major": true,

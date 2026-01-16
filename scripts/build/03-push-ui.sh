@@ -32,7 +32,7 @@
 
 set -e
 
-# Push TinyOlly UI image to Docker Hub
+# Push ollyScale UI image to container registry
 # Usage: ./03-push-ui.sh [version]
 # Example: ./03-push-ui.sh v2.1.0
 #
@@ -42,10 +42,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/../../docker"
 
 VERSION=${1:-"latest"}
-CONTAINER_REGISTRY=${CONTAINER_REGISTRY:-"tinyolly"}
+CONTAINER_REGISTRY=${CONTAINER_REGISTRY:-"ghcr.io/ryanfaircloth/ollyscale"}
 
 echo "=========================================="
-echo "TinyOlly UI - Push to Container Registry"
+echo "ollyScale UI - Push to Container Registry"
 echo "=========================================="
 echo "Registry: $CONTAINER_REGISTRY"
 echo "Version: $VERSION"

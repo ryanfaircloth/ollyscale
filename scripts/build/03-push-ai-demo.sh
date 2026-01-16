@@ -32,17 +32,17 @@
 
 set -e
 
-# Push TinyOlly AI Agent demo image to Docker Hub
+# Push ollyScale AI Agent demo image to container registry
 # Usage: ./push-ai-demo.sh [version]
 # Example: ./push-ai-demo.sh v2.1.0
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 VERSION=${1:-"latest"}
-CONTAINER_REGISTRY=${CONTAINER_REGISTRY:-"tinyolly"}
+CONTAINER_REGISTRY=${CONTAINER_REGISTRY:-"ghcr.io/ryanfaircloth/ollyscale"}
 
 echo "=========================================="
-echo "TinyOlly AI Demo - Push to Container Registry"
+echo "ollyScale AI Demo - Push to Container Registry"
 echo "=========================================="
 echo "Registry: $CONTAINER_REGISTRY"
 echo "Version: $VERSION"

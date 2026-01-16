@@ -66,7 +66,7 @@ jobs:
           echo "::warning::To auto-fix issues, run 'make lint-fix' and commit the changes."
 
   test-ui:
-    name: Test TinyOlly UI
+    name: Test ollyScale UI
     runs-on: ubuntu-latest
 
     steps:
@@ -78,21 +78,21 @@ jobs:
           python-version: "3.14"
           cache: "pip"
           cache-dependency-path: |
-            apps/tinyolly/requirements.txt
-            apps/tinyolly/requirements-test.txt
+            apps/ollyscale/requirements.txt
+            apps/ollyscale/requirements-test.txt
 
       - name: Install dependencies
         run: |
-          cd apps/tinyolly
+          cd apps/ollyscale
           pip install -r requirements.txt -r requirements-test.txt
 
       - name: Run tests
         run: |
-          cd apps/tinyolly
+          cd apps/ollyscale
           pytest tests/ -v --cov=app --cov-report=xml --cov-report=term-missing
 
       - name: Upload coverage
         uses: codecov/codecov-action@v5
         with:
-          files: apps/tinyolly/coverage.xml
+          files: apps/ollyscale/coverage.xml
           fail_ci_if_error: false

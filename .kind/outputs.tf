@@ -16,5 +16,5 @@ output "registry_url" {
 
 output "hostctl_command" {
   description = "Command to add DNS entries to /etc/hosts using hostctl"
-  value       = "sudo hostctl add domains tinyolly argocd.${var.gateway_dns_suffix} registry.${var.gateway_dns_suffix} tinyolly.${var.gateway_dns_suffix}"
+  value       = "sudo hostctl add domains ollyscale argocd.${var.gateway_dns_suffix} registry.${var.gateway_dns_suffix} ollyscale.${var.gateway_dns_suffix}"
 }

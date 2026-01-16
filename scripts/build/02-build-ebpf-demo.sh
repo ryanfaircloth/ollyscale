@@ -32,7 +32,7 @@
 
 set -e
 
-# Build TinyOlly eBPF demo images locally (multi-arch)
+# Build ollyScale eBPF demo images locally (multi-arch)
 # Usage: ./build-ebpf-demo.sh [version]
 # Example: ./build-ebpf-demo.sh v2.1.0
 #
@@ -43,11 +43,11 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/../../docker-demo-ebpf"
 
 VERSION=${1:-"latest"}
-CONTAINER_REGISTRY=${CONTAINER_REGISTRY:-"tinyolly"}
+CONTAINER_REGISTRY=${CONTAINER_REGISTRY:-"ghcr.io/ryanfaircloth/ollyscale"}
 PLATFORMS="linux/amd64,linux/arm64"
 
 echo "=========================================="
-echo "TinyOlly eBPF Demo - Build (No Push)"
+echo "ollyScale eBPF Demo - Build (No Push)"
 echo "=========================================="
 echo "Registry: $CONTAINER_REGISTRY"
 echo "Version: $VERSION"
@@ -57,7 +57,7 @@ echo ""
 
 # Ensure buildx builder exists
 echo "Setting up Docker Buildx..."
-docker buildx create --name tinyolly-builder --use 2>/dev/null || docker buildx use tinyolly-builder
+docker buildx create --name ollyscale-builder --use 2>/dev/null || docker buildx use ollyscale-builder
 docker buildx inspect --bootstrap
 echo ""
 

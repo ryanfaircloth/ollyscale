@@ -1,13 +1,13 @@
 # REST API & OpenAPI
 
 <div align="center">
-  <img src="../images/api.png" alt="TinyOlly REST API" width="700">
+  <img src="../images/api.png" alt="ollyScale REST API" width="700">
   <p><em>OpenAPI documentation with interactive Swagger UI</em></p>
 </div>
 
 ---
 
-TinyOlly provides a comprehensive REST API for programmatic access to all telemetry data in **OpenTelemetry-native format**.
+ollyScale provides a comprehensive REST API for programmatic access to all telemetry data in **OpenTelemetry-native format**.
 
 ## Interactive API Documentation
 
@@ -432,32 +432,32 @@ Generate API clients in any language using the OpenAPI spec:
 
 ```bash
 # Download OpenAPI spec
-curl http://localhost:5005/openapi.json > tinyolly-openapi.json
+curl http://localhost:5005/openapi.json > ollyscale-openapi.json
 
 # Generate Python client
 openapi-generator-cli generate \
-  -i tinyolly-openapi.json \
+  -i ollyscale-openapi.json \
   -g python \
-  -o ./tinyolly-python-client
+  -o ./ollyscale-python-client
 
 # Generate Go client
 openapi-generator-cli generate \
-  -i tinyolly-openapi.json \
+  -i ollyscale-openapi.json \
   -g go \
-  -o ./tinyolly-go-client
+  -o ./ollyscale-go-client
 
 # Generate TypeScript client
 openapi-generator-cli generate \
-  -i tinyolly-openapi.json \
+  -i ollyscale-openapi.json \
   -g typescript-fetch \
-  -o ./tinyolly-ts-client
+  -o ./ollyscale-ts-client
 ```
 
 ---
 
 ## Rate Limits
 
-TinyOlly is designed for local development and has no rate limits. However:
+ollyScale is designed for local development and has no rate limits. However:
 
 - **Memory limits** apply based on Redis configuration (default: 256MB)
 - **Cardinality protection** limits unique metric names to 1000 (configurable)
@@ -467,12 +467,12 @@ TinyOlly is designed for local development and has no rate limits. However:
 
 ## Authentication
 
-TinyOlly is designed for local development and does **not** include authentication. Do not expose TinyOlly to the internet without adding authentication via a reverse proxy.
+ollyScale is designed for local development and does **not** include authentication. Do not expose ollyScale to the internet without adding authentication via a reverse proxy.
 
 ---
 
 ## Need Help?
 
 - [View interactive examples in Swagger UI](http://localhost:5005/docs)
-- [Open an issue on GitHub](https://github.com/tinyolly/tinyolly/issues)
+- [Open an issue on GitHub](https://github.com/ryanfaircloth/ollyscale/issues)
 - [Read the technical architecture](technical.md)

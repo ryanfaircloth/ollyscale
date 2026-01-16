@@ -1,25 +1,25 @@
 <div align="center">
-  <img src="images/tinyollytitle.png" alt="TinyOlly" width="500"><br>
-  <b>The World's First Desktop Observability Platform</b>
+  <img src="images/ollyscaletitle.svg" alt="ollyScale" width="500"><br>
+  <b>Desktop-First Observability Platform for Local Development</b>
 </div>
 
 ---
 
-## Introducing TinyOlly - RF Fork
+## Introducing ollyScale
 
-This is a project fork of TinyOlly.
+ollyScale is an OpenTelemetry-native observability platform evolved from the excellent TinyOlly project.
 
-**Repository:** [https://github.com/tinyolly/tinyolly](https://github.com/tinyolly/tinyolly)
+**Repository:** [https://github.com/ryanfaircloth/ollyscale](https://github.com/ryanfaircloth/ollyscale)
 
 ```bash
-git clone https://github.com/tinyolly/tinyolly
+git clone https://github.com/ryanfaircloth/ollyscale
 ```
 
-### Why TinyOlly?
+### Why ollyScale?
 
 Why send telemetry to a cloud observability platform while coding? Why not have one on your desktop?
 
-TinyOlly is a **lightweight OpenTelemetry-native observability platform** built from scratch to visualize and correlate logs, metrics, and traces. No 3rd party observability tools - just Python (FastAPI), Redis, OpenAPI, and JavaScript.
+ollyScale is a **lightweight OpenTelemetry-native observability platform** built to visualize and correlate logs, metrics, and traces. No 3rd party observability tools - just Python (FastAPI), Redis, OpenAPI, and JavaScript.
 
 ### Key Features
 
@@ -36,7 +36,7 @@ TinyOlly is a **lightweight OpenTelemetry-native observability platform** built 
 - **Zero vendor lock-in** - Works with any OTel Collector distribution
 
 !!! note "Local Development Only"
-TinyOlly is _not_ designed to compete with production observability platforms! It's for local development only and is not focused on infrastructure monitoring at this time.
+ollyScale is _not_ designed to compete with production observability platforms! It's for local development only and is not focused on infrastructure monitoring at this time.
 
 ### Platform Support
 
@@ -48,7 +48,7 @@ Tested on:
 
 ### Quick Start
 
-Ready to try TinyOlly? Check out the [Quick Start Guide](quickstart.md) to get running in under 5 minutes!
+Ready to try ollyScale? Check out the [Quick Start Guide](quickstart.md) to get running in under 5 minutes!
 
 ---
 
@@ -92,7 +92,7 @@ Ready to try TinyOlly? Check out the [Quick Start Guide](quickstart.md) to get r
 <div align="center">
   <p>Built for the OpenTelemetry community</p>
   <p>
-    <a href="https://github.com/tinyolly/tinyolly">GitHub</a> •
-    <a href="https://github.com/tinyolly/tinyolly/issues">Issues</a>
+    <a href="https://github.com/ryanfaircloth/ollyscale">GitHub</a> •
+    <a href="https://github.com/ryanfaircloth/ollyscale/issues">Issues</a>
   </p>
 </div>

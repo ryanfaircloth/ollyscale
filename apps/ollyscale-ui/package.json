@@ -1,0 +1,26 @@
+{
+  "name": "ollyscale-ui",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint src",
+    "format": "prettier --write \"src/**/*.{js,ts,css,html}\""
+  },
+  "dependencies": {
+    "chart.js": "^4.4.1",
+    "cytoscape": "^3.28.1"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.53.0",
+    "@typescript-eslint/parser": "^8.53.0",
+    "eslint": "^9.39.2",
+    "prettier": "^3.2.4",
+    "terser": "^5.36.0",
+    "typescript": "^5.3.3",
+    "vite": "^7.3.1"
+  }
+}

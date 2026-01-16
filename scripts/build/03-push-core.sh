@@ -32,7 +32,7 @@
 
 set -e
 
-# Push TinyOlly core images to Docker Hub
+# Push ollyScale core images to container registry
 # Usage: ./push-core.sh [version]
 # Example: ./push-core.sh v2.1.0
 #
@@ -42,10 +42,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/../../docker"
 
 VERSION=${1:-"latest"}
-CONTAINER_REGISTRY=${CONTAINER_REGISTRY:-"ghcr.io/ryanfaircloth/tinyolly"}  # Default to GHCR with org path
+CONTAINER_REGISTRY=${CONTAINER_REGISTRY:-"ghcr.io/ryanfaircloth/ollyscale"}  # Default to GHCR with org path
 
 echo "=========================================="
-echo "TinyOlly Core - Push to Container Registry"
+echo "ollyScale Core - Push to Container Registry"
 echo "=========================================="
 echo "Registry: $CONTAINER_REGISTRY"
 echo "Version: $VERSION"
@@ -53,7 +53,7 @@ echo ""
 
 # Push all core images
 IMAGES=(
-  "tinyolly"
+  "ollyscale"
   "opamp-server"
 )
 
@@ -70,8 +70,8 @@ echo "✓ All core images pushed to container registry!"
 echo "=========================================="
 echo ""
 echo "Published images:"
-echo "  - $CONTAINER_REGISTRY/tinyolly:$VERSION (unified UI + OTLP receiver)"
+echo "  - $CONTAINER_REGISTRY/ollyscale:$VERSION (unified UI + OTLP receiver)"
 echo "  - $CONTAINER_REGISTRY/opamp-server:$VERSION"
 echo ""
-echo "Verify: docker pull $CONTAINER_REGISTRY/tinyolly:$VERSION"
+echo "Verify: docker pull $CONTAINER_REGISTRY/ollyscale:$VERSION"
 echo ""

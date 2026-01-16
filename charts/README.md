@@ -1,6 +1,6 @@
-# TinyOlly Helm Chart
+# ollyScale Helm Chart
 
-A Helm chart for deploying TinyOlly, a lightweight OpenTelemetry observability platform for local development.
+A Helm chart for deploying ollyScale, a lightweight OpenTelemetry observability platform for local development.
 
 ## Prerequisites
 
@@ -11,7 +11,7 @@ A Helm chart for deploying TinyOlly, a lightweight OpenTelemetry observability p
 
 ## Features
 
-- ✅ Supports all three TinyOlly components (UI, OpAMP Server, OTLP Receiver)
+- ✅ Supports all three ollyScale components (UI, OpAMP Server, OTLP Receiver)
 - ✅ Service accounts for each component with RBAC support
 - ✅ Configurable resource limits and requests
 - ✅ Health checks (liveness and readiness probes)
@@ -24,10 +24,10 @@ A Helm chart for deploying TinyOlly, a lightweight OpenTelemetry observability p
 ### Install from OCI Registry
 
 ```bash
-# Add the TinyOlly OCI registry (example)
-helm install tinyolly oci://ghcr.io/tinyolly/charts/tinyolly \
+# Add the ollyScale OCI registry (example)
+helm install ollyscale oci://ghcr.io/ollyscale/charts/ollyscale \
   --version 0.1.0 \
-  --namespace tinyolly \
+  --namespace ollyscale \
   --create-namespace
 ```
 
@@ -35,16 +35,16 @@ helm install tinyolly oci://ghcr.io/tinyolly/charts/tinyolly \
 
 ```bash
 # From the helm directory
-helm install tinyolly ./tinyolly \
-  --namespace tinyolly \
+helm install ollyscale ./ollyscale \
+  --namespace ollyscale \
   --create-namespace
 ```
 
 ### Install with Custom Values
 
 ```bash
-helm install tinyolly ./tinyolly \
-  --namespace tinyolly \
+helm install ollyscale ./ollyscale \
+  --namespace ollyscale \
   --create-namespace \
   --values custom-values.yaml
 ```
@@ -53,24 +53,24 @@ helm install tinyolly ./tinyolly \
 
 ### Key Configuration Options
 
-| Parameter                           | Description                           | Default                      |
-| ----------------------------------- | ------------------------------------- | ---------------------------- |
-| `replicaCount`                      | Number of replicas for each component | `1`                          |
-| `redis.host`                        | Redis hostname                        | `tinyolly-redis`             |
-| `redis.port`                        | Redis port                            | `6379`                       |
-| `ui.enabled`                        | Enable UI component                   | `true`                       |
-| `ui.service.type`                   | UI service type                       | `LoadBalancer`               |
-| `ui.service.port`                   | UI service port                       | `5002`                       |
-| `ui.image.repository`               | UI image repository                   | `ghcr.io/ryanfaircloth/ui`   |
-| `ui.image.tag`                      | UI image tag                          | `latest`                     |
-| `opampServer.enabled`               | Enable OpAMP Server                   | `true`                       |
-| `opampServer.service.type`          | OpAMP service type                    | `ClusterIP`                  |
-| `opampServer.service.websocketPort` | OpAMP WebSocket port                  | `4320`                       |
-| `opampServer.service.httpPort`      | OpAMP HTTP port                       | `4321`                       |
-| `otlpReceiver.enabled`              | Enable OTLP Receiver                  | `true`                       |
-| `otlpReceiver.service.type`         | OTLP service type                     | `ClusterIP`                  |
-| `otlpReceiver.service.port`         | OTLP service port                     | `4343`                       |
-| `otelCollector.endpoint`            | OTel Collector endpoint               | `http://otel-collector:4318` |
+|Parameter|Description|Default|
+|---------|-----------|-------|
+|`replicaCount`|Number of replicas for each component|`1`|
+|`redis.host`|Redis hostname|`ollyscale-redis`|
+|`redis.port`|Redis port|`6379`|
+|`ui.enabled`|Enable UI component|`true`|
+|`ui.service.type`|UI service type|`LoadBalancer`|
+|`ui.service.port`|UI service port|`5002`|
+|`ui.image.repository`|UI image repository|`ghcr.io/ryanfaircloth/ui`|
+|`ui.image.tag`|UI image tag|`latest`|
+|`opampServer.enabled`|Enable OpAMP Server|`true`|
+|`opampServer.service.type`|OpAMP service type|`ClusterIP`|
+|`opampServer.service.websocketPort`|OpAMP WebSocket port|`4320`|
+|`opampServer.service.httpPort`|OpAMP HTTP port|`4321`|
+|`otlpReceiver.enabled`|Enable OTLP Receiver|`true`|
+|`otlpReceiver.service.type`|OTLP service type|`ClusterIP`|
+|`otlpReceiver.service.port`|OTLP service port|`4343`|
+|`otelCollector.endpoint`|OTel Collector endpoint|`http://otel-collector:4318`|
 
 ### Example Custom Values
 
@@ -125,30 +125,30 @@ This will:
 helm registry login ghcr.io -u <username>
 
 # Push the chart
-./push-oci.sh ghcr.io/tinyolly/charts
+./push-oci.sh ghcr.io/ollyscale/charts
 ```
 
 Or manually:
 
 ```bash
-helm push tinyolly-0.1.0.tgz oci://ghcr.io/tinyolly/charts
+helm push ollyscale-0.1.0.tgz oci://ghcr.io/ollyscale/charts
 ```
 
 ### Development Workflow
 
 ```bash
 # Lint the chart
-helm lint ./tinyolly
+helm lint ./ollyscale
 
 # Dry-run installation
-helm install tinyolly ./tinyolly \
-  --namespace tinyolly \
+helm install ollyscale ./ollyscale \
+  --namespace ollyscale \
   --dry-run \
   --debug
 
 # Template rendering (see generated manifests)
-helm template tinyolly ./tinyolly \
-  --namespace tinyolly \
+helm template ollyscale ./ollyscale \
+  --namespace ollyscale \
   --values custom-values.yaml
 ```
 
@@ -156,37 +156,37 @@ helm template tinyolly ./tinyolly \
 
 ```bash
 # Upgrade from OCI registry
-helm upgrade tinyolly oci://ghcr.io/tinyolly/charts/tinyolly \
+helm upgrade ollyscale oci://ghcr.io/ollyscale/charts/ollyscale \
   --version 0.2.0 \
-  --namespace tinyolly
+  --namespace ollyscale
 
 # Upgrade from local chart
-helm upgrade tinyolly ./tinyolly \
-  --namespace tinyolly \
+helm upgrade ollyscale ./ollyscale \
+  --namespace ollyscale \
   --values custom-values.yaml
 ```
 
 ## Uninstalling
 
 ```bash
-helm uninstall tinyolly --namespace tinyolly
+helm uninstall ollyscale --namespace ollyscale
 ```
 
 ## Architecture
 
 The chart deploys three main components:
 
-1. **TinyOlly UI** - Web interface and REST API
+1. **ollyScale UI** - Web interface and REST API
    - Exposes port 5002
    - Service account with minimal permissions
    - Health checks on `/health` endpoint
 
-2. **TinyOlly OpAMP Server** - OpenTelemetry Agent Management Protocol server
+2. **ollyScale OpAMP Server** - OpenTelemetry Agent Management Protocol server
    - WebSocket port 4320
    - HTTP port 4321
    - Service account with minimal permissions
 
-3. **TinyOlly OTLP Receiver** - Dedicated OTLP ingestion endpoint
+3. **ollyScale OTLP Receiver** - Dedicated OTLP ingestion endpoint
    - gRPC port 4343
    - Service account with minimal permissions
 
@@ -217,32 +217,32 @@ This chart follows Helm and Kubernetes best practices:
 ### Check Pod Status
 
 ```bash
-kubectl get pods -n tinyolly
+kubectl get pods -n ollyscale
 ```
 
 ### View Logs
 
 ```bash
 # UI logs
-kubectl logs -n tinyolly -l app.kubernetes.io/component=ui -f
+kubectl logs -n ollyscale -l app.kubernetes.io/component=ui -f
 
 # OpAMP Server logs
-kubectl logs -n tinyolly -l app.kubernetes.io/component=opamp-server -f
+kubectl logs -n ollyscale -l app.kubernetes.io/component=opamp-server -f
 
 # OTLP Receiver logs
-kubectl logs -n tinyolly -l app.kubernetes.io/component=otlp-receiver -f
+kubectl logs -n ollyscale -l app.kubernetes.io/component=otlp-receiver -f
 ```
 
 ### Validate Configuration
 
 ```bash
-helm get values tinyolly -n tinyolly
+helm get values ollyscale -n ollyscale
 ```
 
 ### Debug Template Rendering
 
 ```bash
-helm template tinyolly ./tinyolly --debug
+helm template ollyscale ./ollyscale --debug
 ```
 
 ## Contributing
@@ -260,6 +260,6 @@ Apache 2.0 - See LICENSE file for details
 
 ## Support
 
-- Documentation: <https://tinyolly.io/docs>
-- GitHub Issues: <https://github.com/tinyolly/tinyolly/issues>
-- Discussions: <https://github.com/tinyolly/tinyolly/discussions>
+- Documentation: <https://ollyscale.io/docs>
+- GitHub Issues: <https://github.com/ollyscale/ollyscale/issues>
+- Discussions: <https://github.com/ollyscale/ollyscale/discussions>

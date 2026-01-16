@@ -11,7 +11,7 @@ The OTel Demo (also known as "Astronomy Shop") is a complete distributed system 
 - **Built-in load generator**: Automatic traffic simulation
 - **Rich telemetry**: Traces, metrics, logs across all services
 
-When deployed with TinyOlly, all telemetry data is sent to TinyOlly's collectors instead of bundled backends.
+When deployed with ollyScale, all telemetry data is sent to ollyScale's collectors instead of bundled backends.
 
 ## Architecture
 
@@ -42,7 +42,7 @@ When deployed with TinyOlly, all telemetry data is sent to TinyOlly's collectors
                                                 └─────────────────┘
                  │
                  ↓ OTLP
-        gateway-collector → TinyOlly UI
+        gateway-collector → ollyScale UI
 ```
 
 ## Services
@@ -113,9 +113,9 @@ The load generator creates realistic user flows:
 ### Helm Installation
 
 ```bash
-# Install OTel Demo via tinyolly-demos chart
-helm install tinyolly-demos charts/tinyolly-demos \
-  --namespace tinyolly-demos \
+# Install OTel Demo via ollyscale-demos chart
+helm install ollyscale-demos charts/ollyscale-demos \
+  --namespace ollyscale-demos \
   --create-namespace \
   --set customDemo.enabled=false \
   --set otelDemo.enabled=true
@@ -132,7 +132,7 @@ terraform apply -var="otel_demo_enabled=true" -var="custom_demo_enabled=false"
 
 ### Configuration
 
-The demo is deployed as a subchart dependency with TinyOlly configuration:
+The demo is deployed as a subchart dependency with ollyScale configuration:
 
 ```yaml
 otelDemo:
@@ -140,7 +140,7 @@ otelDemo:
 
   httpRoute:
     enabled: true
-    hostname: otel-demo.tinyolly.test
+    hostname: otel-demo.ollyscale.test
 
 opentelemetry-demo:
   # Disable bundled observability backends
@@ -155,11 +155,11 @@ opentelemetry-demo:
   opensearch:
     enabled: false
 
-  # Configure OTLP export to TinyOlly
+  # Configure OTLP export to ollyScale
   default:
     env:
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "http://gateway-collector.tinyolly.svc.cluster.local:4318"
+        value: "http://gateway-collector.ollyscale.svc.cluster.local:4318"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "http/protobuf"
 ```
@@ -172,10 +172,10 @@ After deployment, access the frontend:
 
 ```bash
 # Via HTTPRoute
-curl https://otel-demo.tinyolly.test/
+curl https://otel-demo.ollyscale.test/
 
 # Or browser
-open https://otel-demo.tinyolly.test/
+open https://otel-demo.ollyscale.test/
 ```
 
 ### Service Endpoints
@@ -189,7 +189,7 @@ The frontend provides:
 
 ## Viewing Telemetry
 
-Open TinyOlly UI at `https://tinyolly.tinyolly.test` to explore:
+Open ollyScale UI at `https://ollyscale.ollyscale.test` to explore:
 
 ### Service Map
 
@@ -267,7 +267,7 @@ To adjust load intensity, modify the load generator settings in Helm values.
 
 ### Multi-Language Observability
 
-Perfect for testing TinyOlly with polyglot microservices. See how different languages export telemetry.
+Perfect for testing ollyScale with polyglot microservices. See how different languages export telemetry.
 
 ### Complex Distributed Traces
 
@@ -287,23 +287,23 @@ Identify bottlenecks in the checkout flow by analyzing trace timings.
 
 ```bash
 # Check pod resource usage
-kubectl top pods -n tinyolly-demos
+kubectl top pods -n ollyscale-demos
 
 # Scale down load generator
-kubectl scale deployment loadgenerator -n tinyolly-demos --replicas=0
+kubectl scale deployment loadgenerator -n ollyscale-demos --replicas=0
 ```
 
 ### Services Not Starting
 
 ```bash
 # Check pod status
-kubectl get pods -n tinyolly-demos
+kubectl get pods -n ollyscale-demos
 
 # Describe failing pod
-kubectl describe pod <pod-name> -n tinyolly-demos
+kubectl describe pod <pod-name> -n ollyscale-demos
 
 # Check logs
-kubectl logs <pod-name> -n tinyolly-demos
+kubectl logs <pod-name> -n ollyscale-demos
 ```
 
 ### No Telemetry
@@ -312,26 +312,26 @@ Verify OTLP endpoint configuration:
 
 ```bash
 # Check environment variable
-kubectl get deployment frontend -n tinyolly-demos -o yaml | grep OTEL_EXPORTER
+kubectl get deployment frontend -n ollyscale-demos -o yaml | grep OTEL_EXPORTER
 
 # Test collector connectivity
-kubectl exec -n tinyolly-demos deployment/frontend -- \
-  curl -v gateway-collector.tinyolly.svc.cluster.local:4318
+kubectl exec -n ollyscale-demos deployment/frontend -- \
+  curl -v gateway-collector.ollyscale.svc.cluster.local:4318
 ```
 
 ### HTTPRoute Not Working
 
 ```bash
 # Check HTTPRoute
-kubectl get httproute otel-demo-frontend -n tinyolly-demos -o yaml
+kubectl get httproute otel-demo-frontend -n ollyscale-demos -o yaml
 
 # Verify backend service
-kubectl get svc -n tinyolly-demos | grep frontendproxy
+kubectl get svc -n ollyscale-demos | grep frontendproxy
 ```
 
 ## Chart Version
 
-The tinyolly-demos chart uses OpenTelemetry Demo Helm chart version:
+The ollyscale-demos chart uses OpenTelemetry Demo Helm chart version:
 
 ```yaml
 dependencies:
@@ -340,10 +340,10 @@ dependencies:
     repository: https://open-telemetry.github.io/opentelemetry-helm-charts
 ```
 
-To update to a newer version, modify `charts/tinyolly-demos/Chart.yaml` and run:
+To update to a newer version, modify `charts/ollyscale-demos/Chart.yaml` and run:
 
 ```bash
-cd charts/tinyolly-demos
+cd charts/ollyscale-demos
 helm dependency update
 ```
 

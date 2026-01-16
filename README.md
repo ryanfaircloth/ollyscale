@@ -1,21 +1,38 @@
 <div align="center">
-  <img src="docs/images/tinyollytitle.png" alt="TinyOlly" width="500">
+  <img src="docs/images/ollyscaletitle.png" alt="ollyScale" width="500">
 
-**The World's First Desktop Observability Platform**
+**Desktop-First Observability Platform for Local Development**
 
 </div>
 
 ---
 
+## Origins
+
+**ollyScale** is based on the excellent [TinyOlly](https://github.com/tinyolly/tinyolly) project by Infrastructure Architects, LLC.
+
+TinyOlly pioneered the concept of "desktop observability" - bringing enterprise-grade observability tools to local development environments. ollyScale continues this vision while adding enhancements and maintaining compatibility with the OpenTelemetry ecosystem.
+
+**Key Attribution:**
+- Original concept and core architecture: TinyOlly (BSD-3-Clause)
+- ollyScale enhancements and modifications: AGPL-3.0
+- See [NOTICE](./NOTICE) for complete licensing information
+
+---
+
+## Quick Start
+
+See the [Quick Start Guide](https://ryanfaircloth.github.io/ollyscale/quickstart/) to get up and running in minutes.
+
 ## Documentation
 
-Docs are here: [https://tinyolly.github.io/tinyolly/](https://tinyolly.github.io/tinyolly/)
+Docs are here: [https://ryanfaircloth.github.io/ollyscale/](https://ryanfaircloth.github.io/ollyscale/)
 
-## What is TinyOlly?
+## What is ollyScale?
 
-Why send telemetry to a cloud observabilty platform while coding? Why not have one on your desktop?
+Why send telemetry to a cloud observability platform while coding? Why not have one on your desktop?
 
-TinyOlly is <i>the world's first desktop observability platform</i>: a **lightweight OpenTelemetry-native observability platform** for local development.  
+ollyScale is a **lightweight OpenTelemetry-native observability platform** for local development, evolved from TinyOlly.  
 Visualize and correlate logs, metrics, and traces without sending data to the cloud.
 
 **Key Features:**
@@ -74,12 +91,12 @@ Visualize and correlate logs, metrics, and traces without sending data to the cl
 All examples are launched from the repo- clone it first:
 
 ```bash
-git clone https://github.com/tinyolly/tinyolly
+git clone https://github.com/ryanfaircloth/ollyscale
 ```
 
 ## Docker Deployment
 
-### 1. Deploy TinyOlly Core (Required)
+### 1. Deploy ollyScale Core (Required)
 
 Start the observability backend (pulls pre-built images from Docker Hub):
 
@@ -163,11 +180,11 @@ View AI traces in the **AI Agents** tab - see prompts, responses, token usage (i
 
 ### 6. OpenTelemetry Demo (~20 Services - Optional)
 
-Clone and configure the [OpenTelemetry Demo](https://github.com/open-telemetry/opentelemetry-demo) to route telemetry to TinyOlly. Edit `src/otel-collector/otelcol-config-extras.yml` to add TinyOlly as an exporter, then deploy with built-in observability tools disabled.
+Clone and configure the [OpenTelemetry Demo](https://github.com/open-telemetry/opentelemetry-demo) to route telemetry to ollyScale. Edit `src/otel-collector/otelcol-config-extras.yml` to add ollyScale as an exporter, then deploy with built-in observability tools disabled.
 
 ---
 
-### 7. Use TinyOlly with Your Own Apps
+### 7. Use ollyScale with Your Own Apps
 
 Point your OpenTelemetry exporter to:
 
@@ -181,7 +198,7 @@ cd docker-core-only
 ./01-start-core.sh
 ```
 
-Deploys TinyOlly without the bundled OTel Collector. Includes:
+Deploys ollyScale without the bundled OTel Collector. Includes:
 
 - **OTLP Receiver**: `localhost:4343` (gRPC only)
 - **OpAMP Server**: `ws://localhost:4320/v1/opamp` (WebSocket), `localhost:4321` (HTTP REST API)
@@ -192,7 +209,7 @@ Point your external collector to `localhost:4343` for telemetry ingestion.
 
 ## OpAMP Configuration (Optional)
 
-The **OpenTelemetry Collector + OpAMP Config** page in the TinyOlly UI allows you to view and manage collector configurations remotely. To enable this feature, add the OpAMP extension to your collector config:
+The **OpenTelemetry Collector + OpAMP Config** page in the ollyScale UI allows you to view and manage collector configurations remotely. To enable this feature, add the OpAMP extension to your collector config:
 
 ```yaml
 extensions:
@@ -205,13 +222,13 @@ service:
   extensions: [opamp]
 ```
 
-The default configuration template (located at `config/otelcol/config.yaml`) shows a complete example with OTLP receivers, OpAMP extension, batch processing, and spanmetrics connector. Your collector will connect to the OpAMP server and receive configuration updates through the TinyOlly UI.
+The default configuration template (located at `config/otelcol/config.yaml`) shows a complete example with OTLP receivers, OpAMP extension, batch processing, and spanmetrics connector. Your collector will connect to the OpAMP server and receive configuration updates through the ollyScale UI.
 
 **Stop:** `./02-stop-core.sh`
 
 ## Kubernetes Deployment
 
-### 1. Deploy TinyOlly Core
+### 1. Deploy ollyScale Core
 
 ```bash
 cd charts
@@ -224,25 +241,25 @@ cd charts
 # UI exposed via Envoy Gateway on localhost
 ```
 
-UI available at: `http://tinyolly.test`
+UI available at: `http://ollyscale.test`
 
 **Enable eBPF agent for zero-code instrumentation:**
 
 ```bash
-helm install tinyolly ./charts/tinyolly \
-  --namespace tinyolly \
+helm install ollyscale ./charts/ollyscale \
+  --namespace ollyscale \
   --create-namespace \
   --set ebpfAgent.enabled=true \
   --set ebpfAgent.config.openPorts="5000,8080,3000"
 ```
 
-The eBPF agent runs as a DaemonSet and automatically captures HTTP/gRPC traces from applications on specified ports without any code changes. See the [Helm Chart README](charts/tinyolly/README.md#ebpf-zero-code-instrumentation) for full configuration options.
+The eBPF agent runs as a DaemonSet and automatically captures HTTP/gRPC traces from applications on specified ports without any code changes. See the [Helm Chart README](charts/ollyscale/README.md#ebpf-zero-code-instrumentation) for full configuration options.
 
 **Cleanup:**
 
 ```bash
-helm uninstall tinyolly -n tinyolly
-kubectl delete namespace tinyolly
+helm uninstall ollyscale -n ollyscale
+kubectl delete namespace ollyscale
 ```
 
 ---
@@ -264,7 +281,7 @@ cd k8s-demo-ebpf
 ./02-deploy.sh
 ```
 
-Deploys the eBPF demo with traces captured at the kernel level. Images are pulled from Docker Hub (`tinyolly/ebpf-frontend`, `tinyolly/ebpf-backend`).
+Deploys the eBPF demo with traces captured at the kernel level. Images are pulled from Docker Hub (`ryanfaircloth/ollyscale-ebpf-frontend`, `ryanfaircloth/ollyscale-ebpf-backend`).
 
 See [eBPF Demo Documentation](docs/ebpf.md) for details.
 
@@ -362,7 +379,7 @@ Generate clients in any language:
 
 ```bash
 curl http://localhost:5005/openapi.json > openapi.json
-openapi-generator-cli generate -i openapi.json -g python -o ./tinyolly-client
+openapi-generator-cli generate -i openapi.json -g python -o ./ollyscale-client
 ```
 
 All responses return OpenTelemetry-native JSON with full trace/span context.
@@ -391,7 +408,7 @@ All responses return OpenTelemetry-native JSON with full trace/span context.
 
 #### Pre-commit Hooks
 
-TinyOlly uses [pre-commit](https://pre-commit.com/) to maintain code quality:
+ollyScale uses [pre-commit](https://pre-commit.com/) to maintain code quality:
 
 ```bash
 # Setup (first time)
@@ -424,16 +441,19 @@ See [docs/precommit.md](docs/precommit.md) for details.
 
 ## Licensing
 
-**BSD 3-Clause License** - Free for individual developers, academic use, and small organizations.
+**Dual Licensing:**
 
-**Commercial use** (50+ employees, production deployments, commercial products) requires a license. Contact info in [`LICENSE`](./LICENSE).
+- **Original TinyOlly Code**: BSD-3-Clause (see [LICENSE-BSD3-ORIGINAL](./LICENSE-BSD3-ORIGINAL))
+- **ollyScale Modifications/Enhancements**: AGPL-3.0 (see [LICENSE](./LICENSE))
+
+See [NOTICE](./NOTICE) for complete attribution and licensing information.
 
 ---
 
 <div align="center">
   <p>Built for the OpenTelemetry community</p>
   <p>
-    <a href="https://github.com/tinyolly/tinyolly">GitHub</a> •
-    <a href="https://github.com/tinyolly/tinyolly/issues">Issues</a>
+    <a href="https://github.com/ryanfaircloth/ollyscale">GitHub</a> •
+    <a href="https://github.com/ryanfaircloth/ollyscale/issues">Issues</a>
   </p>
 </div>

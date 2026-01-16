@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Push TinyOlly Helm Chart to OCI Registry
+# Push ollyScale Helm Chart to OCI Registry
 
 set -euo pipefail
 
@@ -12,9 +12,9 @@ if [ $# -eq 0 ]; then
     echo "Usage: $0 <registry-url> [chart-version]"
     echo ""
     echo "Examples:"
-    echo "  $0 ghcr.io/tinyolly/charts"
-    echo "  $0 ghcr.io/tinyolly/charts 0.1.0"
-    echo "  $0 registry.tinyolly.test:49443/tinyolly/charts"
+    echo "  $0 ghcr.io/ryanfaircloth/ollyscale/charts"
+    echo "  $0 ghcr.io/ryanfaircloth/ollyscale/charts 0.1.0"
+    echo "  $0 registry.ollyscale.test:49443/ollyscale/charts"
     exit 1
 fi
 
@@ -23,10 +23,10 @@ CHART_VERSION="${2:-}"
 
 # Find the chart package
 if [ -n "${CHART_VERSION}" ]; then
-    CHART_PACKAGE="${SCRIPT_DIR}/tinyolly-${CHART_VERSION}.tgz"
+    CHART_PACKAGE="${SCRIPT_DIR}/ollyscale-${CHART_VERSION}.tgz"
 else
     # Get the latest packaged chart
-    CHART_PACKAGE=$(ls -t "${SCRIPT_DIR}"/tinyolly-*.tgz 2>/dev/null | head -1)
+    CHART_PACKAGE=$(ls -t "${SCRIPT_DIR}"/ollyscale-*.tgz 2>/dev/null | head -1)
 fi
 
 if [ ! -f "${CHART_PACKAGE}" ]; then
@@ -36,9 +36,13 @@ if [ ! -f "${CHART_PACKAGE}" ]; then
     exit 1
 fi
 
-echo "🚀 Pushing TinyOlly Helm Chart to OCI Registry..."
+PACKAGE_FILENAME="$(basename "${CHART_PACKAGE}")"
+CHART_VERSION_DISPLAY="${PACKAGE_FILENAME#ollyscale-}"
+CHART_VERSION_DISPLAY="${CHART_VERSION_DISPLAY%.tgz}"
+
+echo "🚀 Pushing ollyScale Helm Chart to OCI Registry..."
 echo "   Registry: ${REGISTRY_URL}"
-echo "   Package:  $(basename "${CHART_PACKAGE}")"
+echo "   Package:  ${PACKAGE_FILENAME}"
 echo ""
 
 # Check if already logged in
@@ -56,8 +60,10 @@ helm push "${CHART_PACKAGE}" "oci://${REGISTRY_URL}" --insecure-skip-tls-verify
 echo ""
 echo "✅ Chart pushed successfully!"
 echo ""
-echo "To install from OCI registry, run:"
-echo "  helm install tinyolly oci://${REGISTRY_URL}/tinyolly \\"
-echo "    --version $(basename "${CHART_PACKAGE}" .tgz | sed 's/tinyolly-//') \\"
-echo "    --namespace tinyolly \\"
-echo "    --create-namespace"
+cat <<EOF
+To install from OCI registry, run:
+    helm install ollyscale oci://${REGISTRY_URL}/ollyscale \\
+        --version ${CHART_VERSION_DISPLAY} \\
+        --namespace ollyscale \\
+        --create-namespace
+EOF

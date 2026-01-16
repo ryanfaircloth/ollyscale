@@ -1,5 +1,5 @@
 [project]
-name = "tinyolly"
+name = "ollyscale"
 description = "Lightweight OpenTelemetry observability platform for local development"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -95,7 +95,7 @@ skip-magic-trailing-comma = false
 line-ending = "auto"
 
 [tool.ruff.lint.isort]
-known-first-party = ["tinyolly", "app", "common", "receiver"]
+known-first-party = ["ollyscale", "app", "common", "receiver"]
 
 [tool.ruff.lint.per-file-ignores]
 # Ignore unused imports in __init__.py files
@@ -116,14 +116,14 @@ known-first-party = ["tinyolly", "app", "common", "receiver"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-testpaths = ["apps/tinyolly/tests"]
+testpaths = ["apps/ollyscale/tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = "-v --tb=short"
 
 [tool.coverage.run]
-source = ["apps/tinyolly"]
+source = ["apps/ollyscale"]
 omit = [
     "*/tests/*",
     "*/test_*.py",

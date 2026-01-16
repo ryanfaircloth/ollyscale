@@ -1,6 +1,10 @@
-# Contributing to TinyOlly
+# Contributing to ollyScale
 
-Thank you for your interest in contributing to TinyOlly! This guide will help you get started.
+Thank you for your interest in contributing to ollyScale! This guide will help you get started.
+
+## About ollyScale
+
+ollyScale is based on the excellent TinyOlly project and maintains compatibility with the OpenTelemetry ecosystem. We welcome contributions that enhance the platform while respecting both the original TinyOlly codebase (BSD-3-Clause) and new ollyScale features (AGPL-3.0).
 
 ## Development Setup
 
@@ -17,8 +21,8 @@ Thank you for your interest in contributing to TinyOlly! This guide will help yo
 
 ```bash
 # Clone the repository
-git clone https://github.com/tinyolly/tinyolly.git
-cd tinyolly
+git clone https://github.com/ryanfaircloth/ollyscale.git
+cd ollyscale
 
 # Setup pre-commit hooks (required)
 make precommit-setup
@@ -124,7 +128,7 @@ async def my_function(param: str) -> dict:
 ### Python Tests
 
 ```bash
-cd apps/tinyolly
+cd apps/ollyscale
 pip install -r requirements-test.txt
 pytest
 ```
@@ -247,21 +251,21 @@ cd charts
 
 # Update ArgoCD
 cd ../.kind
-terraform apply -replace='kubectl_manifest.observability_applications["observability/tinyolly.yaml"]' -auto-approve
+terraform apply -replace='kubectl_manifest.observability_applications["observability/ollyscale.yaml"]' -auto-approve
 
 # Check deployment
-kubectl get pods -n tinyolly
-kubectl logs -n tinyolly deployment/tinyolly-ui -f
+kubectl get pods -n ollyscale
+kubectl logs -n ollyscale deployment/ollyscale-webui -f
 ```
 
 ### Cleaning Test Data
 
 ```bash
 # Docker
-docker exec tinyolly-redis redis-cli FLUSHDB
+docker exec ollyscale-redis redis-cli FLUSHDB
 
 # Kubernetes
-kubectl exec -n tinyolly tinyolly-redis-0 -- redis-cli FLUSHDB
+kubectl exec -n ollyscale ollyscale-redis-0 -- redis-cli FLUSHDB
 ```
 
 ## Documentation
@@ -293,9 +297,9 @@ Releases are automated using Release Please. See [docs/release-process.md](docs/
 
 ## Getting Help
 
-- **Documentation**: [https://tinyolly.github.io/tinyolly/](https://tinyolly.github.io/tinyolly/)
-- **Issues**: [GitHub Issues](https://github.com/tinyolly/tinyolly/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/tinyolly/tinyolly/discussions)
+- **Documentation**: [https://ryanfaircloth.github.io/ollyscale/](https://ryanfaircloth.github.io/ollyscale/)
+- **Issues**: [GitHub Issues](https://github.com/ryanfaircloth/ollyscale/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/ryanfaircloth/ollyscale/discussions)
 
 ## Code of Conduct
 
@@ -310,4 +314,4 @@ By contributing, you agree that your contributions will be licensed under the BS
 
 ---
 
-**Thank you for contributing to TinyOlly!** 🎉
+**Thank you for contributing to ollyScale!** 🎉

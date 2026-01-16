@@ -1,6 +1,6 @@
 # Demo Applications
 
-TinyOlly includes several demo applications to help you explore its observability capabilities. These demos range from simple microservices to complex distributed systems.
+ollyScale includes several demo applications to help you explore its observability capabilities. These demos range from simple microservices to complex distributed systems.
 
 ## Available Demos
 
@@ -89,12 +89,12 @@ All demos can be deployed via:
 
 ```bash
 # Custom Demo
-helm install tinyolly-demos charts/tinyolly-demos \
-  --namespace tinyolly-demos \
+helm install ollyscale-demos charts/ollyscale-demos \
+  --namespace ollyscale-demos \
   --create-namespace
 
 # OTel Demo
-helm install tinyolly-demos charts/tinyolly-demos \
+helm install ollyscale-demos charts/ollyscale-demos \
   --set customDemo.enabled=false \
   --set otelDemo.enabled=true
 ```
@@ -115,13 +115,13 @@ terraform apply -var="otel_demo_enabled=true" -var="custom_demo_enabled=false"
 
 After deployment, demos are available via HTTPRoutes:
 
-- **Custom Demo Frontend**: `https://demo-frontend.tinyolly.test:49443`
-- **OTel Demo**: `https://otel-demo.tinyolly.test:49443`
-- **TinyOlly UI**: `https://tinyolly.tinyolly.test:49443`
+- **Custom Demo Frontend**: `https://demo-frontend.ollyscale.test:49443`
+- **OTel Demo**: `https://otel-demo.ollyscale.test:49443`
+- **ollyScale UI**: `https://ollyscale.ollyscale.test:49443`
 
 ## Viewing Telemetry
 
-All demos send telemetry to TinyOlly. Open the TinyOlly UI to explore:
+All demos send telemetry to ollyScale. Open the ollyScale UI to explore:
 
 1. **Service Map**: Visual representation of service dependencies
 2. **Traces**: Distributed traces with timing and attributes
@@ -161,5 +161,5 @@ If you're migrating from the old `k8s-demo/` or `k8s-otel-demo/` directories, se
 
 For issues or questions:
 
-- [GitHub Issues](https://github.com/tinyolly/tinyolly/issues)
-- [Documentation](https://tinyolly.io/docs)
+- [GitHub Issues](https://github.com/ryanfaircloth/ollyscale/issues)
+- [Documentation](https://ollyscale.io/docs)

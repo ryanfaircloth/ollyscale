@@ -32,7 +32,7 @@
 
 set -e
 
-# Push ALL TinyOlly images to Docker Hub
+# Push ALL ollyScale images to container registry
 # Usage: ./push-all.sh [version]
 # Example: ./push-all.sh v2.1.0
 #
@@ -43,7 +43,7 @@ VERSION=${1:-"latest"}
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "=========================================="
-echo "TinyOlly - Push ALL Images to Container Registry"
+echo "ollyScale - Push ALL Images to Container Registry"
 echo "=========================================="
 echo "Version: $VERSION"
 echo ""
@@ -78,11 +78,11 @@ echo "✓ ALL images pushed to registry!"
 echo "=========================================="
 echo ""
 echo "Published images:"
-echo "  - tinyolly/tinyolly:$VERSION (unified UI + OTLP receiver)"
-echo "  - tinyolly/opamp-server:$VERSION"
-echo "  - tinyolly/demo-frontend:$VERSION"
-echo "  - tinyolly/demo-backend:$VERSION"
-echo "  - tinyolly/ebpf-frontend:$VERSION"
-echo "  - tinyolly/ebpf-backend:$VERSION"
-echo "  - tinyolly/ai-agent-demo:$VERSION"
+echo "  - ollyscale/ollyscale:$VERSION (unified UI + OTLP receiver)"
+echo "  - ollyscale/opamp-server:$VERSION"
+echo "  - ollyscale/demo-frontend:$VERSION"
+echo "  - ollyscale/demo-backend:$VERSION"
+echo "  - ollyscale/ebpf-frontend:$VERSION"
+echo "  - ollyscale/ebpf-backend:$VERSION"
+echo "  - ollyscale/ai-agent-demo:$VERSION"
 echo ""

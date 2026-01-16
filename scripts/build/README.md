@@ -1,6 +1,6 @@
-# TinyOlly Build Scripts
+# ollyScale Build Scripts
 
-Centralized build scripts for all TinyOlly Docker images.
+Centralized build scripts for all ollyScale Docker images.
 
 ## Directory Structure
 
@@ -65,7 +65,7 @@ cd charts
 
 # Deploy to ArgoCD
 cd ../.kind
-terraform apply -replace='kubectl_manifest.observability_applications["observability/tinyolly.yaml"]' -auto-approve
+terraform apply -replace='kubectl_manifest.observability_applications["observability/ollyscale.yaml"]' -auto-approve
 ```
 
 See [charts/README.md](../charts/README.md) for complete documentation.
@@ -83,7 +83,7 @@ See [charts/README.md](../charts/README.md) for complete documentation.
 | Script | Description |
 |--------|-------------|
 | `02-build-all.sh` | Build all images locally |
-| `02-build-core.sh` | Build core TinyOlly images |
+| `02-build-core.sh` | Build core ollyScale images |
 | `02-build-ui.sh` | Build UI image only (quick iteration) |
 | `02-build-demo.sh` | Build demo app images |
 | `02-build-ebpf-demo.sh` | Build eBPF demo images |
@@ -141,7 +141,7 @@ See [charts/README.md](../charts/README.md) for complete documentation.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `CONTAINER_REGISTRY` | `tinyolly` | Container registry path (use `ghcr.io/ryanfaircloth` for GHCR) |
+| `CONTAINER_REGISTRY` | `ollyscale` | Container registry path (use `ghcr.io/ryanfaircloth` for GHCR) |
 
 ## CI/CD Integration
 
@@ -206,7 +206,7 @@ For local manual pushes, create a Personal Access Token (PAT):
 
 1. Go to <https://hub.docker.com/settings/security>
 2. Click "New Access Token"
-3. Name it `tinyolly-ci` with Read & Write permissions
+3. Name it `ollyscale-ci` with Read & Write permissions
 4. Add as repository secret
 
 ## Manual Release Checklist
@@ -235,5 +235,5 @@ cd ../../docker
 
 # Step 6: Test Kubernetes deployment
 cd ../k8s
-./02-deploy-tinyolly.sh
+./02-deploy-ollyscale.sh
 ```

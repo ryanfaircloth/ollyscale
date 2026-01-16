@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-agent
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "ollyscale-otel-agent.agent.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.agent.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "ollyscale-otel-agent.agent.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "ollyscale-otel-agent.agent.selectorLabels" . | nindent 8 }}
+      annotations:
+        # OTel operator auto-instrumentation
+        instrumentation.opentelemetry.io/inject-python: "ollyscale/python-instrumentation"
+    spec:
+      containers:
+      - name: ai-agent
+        image: "{{ .Values.agent.image.repository }}:{{ .Values.agent.image.tag }}"
+        imagePullPolicy: {{ .Values.agent.image.pullPolicy }}
+        ports:
+        - containerPort: 8000
+          name: http
+          protocol: TCP
+        env:
+        - name: OLLAMA_HOST
+          value: {{ .Values.agent.env.ollamaHost | default (printf "http://ollama.%s.svc.cluster.local:11434" .Values.global.namespace) | quote }}
+        {{- with .Values.agent.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}

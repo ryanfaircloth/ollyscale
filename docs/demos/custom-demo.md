@@ -1,6 +1,6 @@
 # Custom Demo Applications
 
-The custom demo applications provide a simple but realistic microservice architecture for demonstrating TinyOlly's observability capabilities.
+The custom demo applications provide a simple but realistic microservice architecture for demonstrating ollyScale's observability capabilities.
 
 ## Overview
 
@@ -28,7 +28,7 @@ Both applications feature **automatic traffic generation** - they create distrib
 └────────┬────────┘
          │ OTLP gRPC → gateway-collector:4317
          ↓
-    TinyOlly UI
+    ollyScale UI
 ```
 
 ## Frontend Endpoints
@@ -40,7 +40,7 @@ Returns service information and available endpoints.
 **Example:**
 
 ```bash
-curl https://demo-frontend.tinyolly.test:49443/
+curl https://demo-frontend.ollyscale.test:49443/
 ```
 
 ### `/hello` - Simple Request
@@ -50,7 +50,7 @@ Basic endpoint that returns a greeting. Generates simple traces.
 **Example:**
 
 ```bash
-curl https://demo-frontend.tinyolly.test:49443/hello
+curl https://demo-frontend.ollyscale.test:49443/hello
 ```
 
 ### `/calculate` - Backend Interaction
@@ -60,7 +60,7 @@ Calls the backend to perform a calculation. Demonstrates service-to-service trac
 **Example:**
 
 ```bash
-curl https://demo-frontend.tinyolly.test:49443/calculate
+curl https://demo-frontend.ollyscale.test:49443/calculate
 ```
 
 **Response:**
@@ -81,7 +81,7 @@ Intentionally triggers an exception to demonstrate error tracking.
 **Example:**
 
 ```bash
-curl https://demo-frontend.tinyolly.test:49443/error
+curl https://demo-frontend.ollyscale.test:49443/error
 ```
 
 ### `/process-order` - Complex Distributed Trace
@@ -97,7 +97,7 @@ Creates a multi-span distributed trace across frontend and backend:
 **Example:**
 
 ```bash
-curl https://demo-frontend.tinyolly.test:49443/process-order
+curl https://demo-frontend.ollyscale.test:49443/process-order
 ```
 
 **Response:**
@@ -171,10 +171,10 @@ Requests occur every 3-8 seconds with random intervals.
 
 ```bash
 # Install demos chart
-helm install tinyolly-demos charts/tinyolly-demos \
-  --namespace tinyolly-demos \
+helm install ollyscale-demos charts/ollyscale-demos \
+  --namespace ollyscale-demos \
   --create-namespace \
-  --values charts/tinyolly-demos/values-local-dev.yaml
+  --values charts/ollyscale-demos/values-local-dev.yaml
 ```
 
 ### ArgoCD Deployment (Recommended)
@@ -201,7 +201,7 @@ customDemo:
       tag: latest
 
     env:
-      otelExporterOtlpEndpoint: "http://gateway-collector.tinyolly.svc.cluster.local:4317"
+      otelExporterOtlpEndpoint: "http://gateway-collector.ollyscale.svc.cluster.local:4317"
       otelServiceName: "demo-frontend"
 
   backend:
@@ -216,19 +216,19 @@ After deployment, access the frontend via HTTPRoute:
 
 ```bash
 # Check deployment status
-kubectl get pods -n tinyolly-demos
+kubectl get pods -n ollyscale-demos
 
 # Access frontend
-curl https://demo-frontend.tinyolly.test:49443/
+curl https://demo-frontend.ollyscale.test:49443/
 
 # Or use port-forward
-kubectl port-forward -n tinyolly-demos svc/demo-frontend 5000:5000
+kubectl port-forward -n ollyscale-demos svc/demo-frontend 5000:5000
 curl http://localhost:5000/
 ```
 
 ## Viewing Telemetry
 
-Open TinyOlly UI at `https://tinyolly.tinyolly.test` to see:
+Open ollyScale UI at `https://ollyscale.ollyscale.test` to see:
 
 1. **Service Map**: Visual graph showing frontend → backend relationships
 2. **Traces**: Distributed traces with detailed timing and attributes
@@ -245,8 +245,8 @@ cd charts
 ./build-and-push-local.sh v2.1.x-custom-demo
 
 # Images will be built and pushed:
-# - registry.tinyolly.test:49443/tinyolly/demo-frontend:v2.1.x-custom-demo
-# - registry.tinyolly.test:49443/tinyolly/demo-backend:v2.1.x-custom-demo
+# - registry.ollyscale.test:49443/ollyscale/demo-frontend:v2.1.x-custom-demo
+# - registry.ollyscale.test:49443/ollyscale/demo-backend:v2.1.x-custom-demo
 ```
 
 ### Source Code
@@ -268,38 +268,38 @@ Dockerfiles:
 
 ```bash
 # Check pod status
-kubectl describe pod -n tinyolly-demos -l app.kubernetes.io/name=demo-frontend
+kubectl describe pod -n ollyscale-demos -l app.kubernetes.io/name=demo-frontend
 
 # Check logs
-kubectl logs -n tinyolly-demos -l app.kubernetes.io/name=demo-frontend
+kubectl logs -n ollyscale-demos -l app.kubernetes.io/name=demo-frontend
 ```
 
-### No telemetry in TinyOlly
+### No telemetry in ollyScale
 
 1. Verify OTel Collector is running:
 
    ```bash
-   kubectl get pods -n tinyolly -l app.kubernetes.io/name=opentelemetry-collector
+   kubectl get pods -n ollyscale -l app.kubernetes.io/name=opentelemetry-collector
    ```
 
 2. Check demo environment variables:
 
    ```bash
-   kubectl get deployment demo-frontend -n tinyolly-demos -o yaml | grep OTEL_
+   kubectl get deployment demo-frontend -n ollyscale-demos -o yaml | grep OTEL_
    ```
 
 3. Test collector connectivity:
 
    ```bash
-   kubectl exec -n tinyolly-demos deployment/demo-frontend -- \
-     curl -v gateway-collector.tinyolly.svc.cluster.local:4317
+   kubectl exec -n ollyscale-demos deployment/demo-frontend -- \
+     curl -v gateway-collector.ollyscale.svc.cluster.local:4317
    ```
 
 ### HTTPRoute not working
 
 ```bash
 # Check HTTPRoute status
-kubectl get httproute -n tinyolly-demos demo-frontend -o yaml
+kubectl get httproute -n ollyscale-demos demo-frontend -o yaml
 
 # Verify Gateway
 kubectl get gateway -n envoy-gateway-system cluster-gateway
@@ -312,14 +312,14 @@ A traffic generation script is provided to continuously send requests to the cus
 ### Usage
 
 ```bash
-# From the charts/tinyolly-demos directory
-cd charts/tinyolly-demos
+# From the charts/ollyscale-demos directory
+cd charts/ollyscale-demos
 ./generate-custom-demo-traffic.sh
 ```
 
 The script:
 
-- Sends requests to `https://demo-frontend.tinyolly.test:49443` (no port-forward needed)
+- Sends requests to `https://demo-frontend.ollyscale.test:49443` (no port-forward needed)
 - Generates realistic traffic patterns:
   - **50%**: `/process-order` - Complex distributed traces
   - **20%**: `/calculate` - Service-to-service calls

@@ -1,0 +1,109 @@
+# Default values for ollyscale-otel-agent
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Global settings
+global:
+  # -- Namespace for AI agent demo deployment
+  namespace: ollyscale-otel-agent
+
+# Ollama LLM server configuration
+ollama:
+  # -- Number of replicas (should be 1 for stateful LLM server)
+  replicaCount: 1
+
+  image:
+    # -- Image repository
+    repository: ollama/ollama
+    # -- Image tag
+    tag: 0.14.1
+    # -- Image pull policy
+    pullPolicy: IfNotPresent
+
+  service:
+    # -- Service type
+    type: ClusterIP
+    # -- Service port
+    port: 11434
+
+  # -- Model to pull on startup
+  model: tinyllama
+
+  # -- Persistent volume configuration
+  persistence:
+    # -- Enable persistent storage for models
+    enabled: true
+    # -- Storage class (leave empty for default)
+    storageClass: ""
+    # -- Storage size
+    size: 10Gi
+    # -- Access mode
+    accessMode: ReadWriteOnce
+
+  # -- Resource limits and requests
+  resources:
+    limits:
+      cpu: "2000m" # 2 CPU cores
+      memory: "4Gi" # 4GB RAM
+    requests:
+      cpu: "500m" # 0.5 CPU cores minimum
+      memory: "1Gi" # 1GB RAM minimum
+
+  # -- Liveness probe configuration
+  livenessProbe:
+    initialDelaySeconds: 120
+    periodSeconds: 15
+    timeoutSeconds: 10
+    failureThreshold: 3
+
+  # -- Readiness probe configuration
+  readinessProbe:
+    initialDelaySeconds: 120
+    periodSeconds: 15
+    timeoutSeconds: 10
+    failureThreshold: 30
+
+# AI Agent configuration
+agent:
+  # -- Number of replicas
+  replicaCount: 1
+
+  image:
+    # -- Image repository
+    repository: docker-registry.registry.svc.cluster.local:5000/ollyscale/ai-agent-demo
+    # -- Image tag
+    tag: v0.0.1
+    # -- Image pull policy
+    pullPolicy: Always
+
+  service:
+    # -- Service type
+    type: ClusterIP
+    # -- Service port
+    port: 8000
+
+  # -- Environment variables
+  env:
+    # -- Ollama host URL (will default to ollama service)
+    ollamaHost: ""
+
+  # -- Resource limits and requests
+  resources:
+    limits:
+      cpu: "500m" # 0.5 CPU cores
+      memory: "512Mi" # 512MB RAM
+    requests:
+      cpu: "100m" # 0.1 CPU cores minimum
+      memory: "128Mi" # 128MB RAM minimum
+
+  # HTTPRoute configuration
+  httpRoute:
+    # -- Enable HTTPRoute
+    enabled: false
+    # -- Gateway parent refs
+    parentRefs:
+      - name: cluster-gateway
+        namespace: envoy-gateway-system
+        sectionName: mgmt-https-listener
+    # -- Hostname for routing
+    hostname: ai-agent.ollyscale.test

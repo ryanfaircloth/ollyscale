@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ollyscale.otlpReceiver.name" . }}
+  labels:
+    {{- include "ollyscale.otlpReceiver.labels" . | nindent 4 }}
+  {{- with .Values.commonAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.otlpReceiver.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "ollyscale.otlpReceiver.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        {{- if and .Values.instrumentation.enabled .Values.instrumentation.selfObservability }}
+        # Self-observability: OTLP receiver instruments itself (demo mode)
+        instrumentation.opentelemetry.io/inject-python: "{{ .Release.Namespace }}/{{ .Values.instrumentation.name }}"
+        {{- end }}
+        {{- with .Values.otlpReceiver.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "ollyscale.otlpReceiver.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.image.pullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "ollyscale.otlpReceiver.serviceAccountName" . }}
+      {{- with .Values.otlpReceiver.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+      - name: ollyscale-otlp-receiver
+        {{- with .Values.otlpReceiver.securityContext }}
+        securityContext:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        image: "{{ .Values.otlpReceiver.image.repository }}:{{ .Values.otlpReceiver.image.tag }}"
+        imagePullPolicy: {{ include "ollyscale.imagePullPolicy" (dict "component" .Values.otlpReceiver.image "global" .) }}
+        ports:
+        - name: grpc
+          containerPort: {{ .Values.otlpReceiver.service.targetPort }}
+          protocol: TCP
+        env:
+        - name: REDIS_HOST
+          value: {{ .Values.redis.host | quote }}
+        - name: REDIS_PORT
+          value: {{ .Values.redis.port | quote }}
+        - name: OTEL_SERVICE_NAME
+          value: "ollyscale-otlp-receiver"
+        {{- range .Values.otlpReceiver.env }}
+        - name: {{ .name }}
+          value: {{ .value | quote }}
+        {{- end }}
+        {{- range $key, $value := .Values.otlpReceiver.extraEnv }}
+        - name: {{ $key }}
+          value: {{ $value | quote }}
+        {{- end }}
+        {{- with .Values.otlpReceiver.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with .Values.otlpReceiver.livenessProbe }}
+        livenessProbe:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with .Values.otlpReceiver.readinessProbe }}
+        readinessProbe:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+      {{- with .Values.otlpReceiver.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.otlpReceiver.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.otlpReceiver.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

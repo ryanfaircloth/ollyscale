@@ -28,9 +28,9 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// TinyOlly OpAMP Server
+// ollyScale OpAMP Server
 // Manages OpenTelemetry Collector configuration via OpAMP protocol
-// Exposes REST API for TinyOlly UI integration
+// Exposes REST API for ollyScale UI integration
 
 package main
 
@@ -406,7 +406,7 @@ extensions:
   opamp:
     server:
       ws:
-        endpoint: ws://tinyolly-opamp-server:4320/v1/opamp
+        endpoint: ws://ollyscale-opamp-server:4320/v1/opamp
 
 processors:
   batch:
@@ -418,7 +418,7 @@ exporters:
     verbosity: detailed
 
   otlp:
-    endpoint: "tinyolly-otlp-receiver:4343"
+    endpoint: "ollyscale-otlp-receiver:4343"
     tls:
       insecure: true
 
@@ -461,7 +461,7 @@ func initTelemetry(ctx context.Context) (func(context.Context) error, error) {
 	// Create resource with service name
 	serviceName := os.Getenv("OTEL_SERVICE_NAME")
 	if serviceName == "" {
-		serviceName = "tinyolly-opamp-server"
+		serviceName = "ollyscale-opamp-server"
 	}
 
 	res, err := resource.New(ctx,
@@ -481,7 +481,7 @@ func initTelemetry(ctx context.Context) (func(context.Context) error, error) {
 	)
 
 	otel.SetTracerProvider(tp)
-	tracer = tp.Tracer("tinyolly-opamp-server")
+	tracer = tp.Tracer("ollyscale-opamp-server")
 
 	log.Printf("OpenTelemetry tracing initialized, exporting to %s", endpoint)
 
@@ -553,7 +553,7 @@ func main() {
 	})
 
 	// Wrap with CORS and OpenTelemetry instrumentation
-	handler := corsMiddleware(otelhttp.NewHandler(mux, "tinyolly-opamp-server"))
+	handler := corsMiddleware(otelhttp.NewHandler(mux, "ollyscale-opamp-server"))
 
 	httpServer := &http.Server{
 		Addr:    fmt.Sprintf(":%s", httpPort),

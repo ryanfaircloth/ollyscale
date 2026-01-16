@@ -13,9 +13,9 @@ locals {
     use_local_registry  = var.use_local_registry
     image_registry      = var.image_registry
     chart_registry      = var.chart_registry
-    tinyolly_tag        = var.tinyolly_tag
+    ollyscale_tag       = var.ollyscale_tag
     opamp_tag           = var.opamp_tag
-    tinyolly_chart_tag  = var.tinyolly_chart_tag
+    ollyscale_chart_tag = var.ollyscale_chart_tag
   }
 }
 

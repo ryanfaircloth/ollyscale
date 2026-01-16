@@ -1,6 +1,6 @@
 # Metrics & Cardinality explorer
 
-TinyOlly provides a powerful interface for analyzing OpenTelemetry metrics, with specific tools designed to help you understand the shape and cardinality of your telemetry data.
+ollyScale provides a powerful interface for analyzing OpenTelemetry metrics, with specific tools designed to help you understand the shape and cardinality of your telemetry data.
 
 ## Metrics Table
 
@@ -46,8 +46,8 @@ This table helps you identify which labels are contributing most to your cardina
 A scrollable view of all active series in a PromQL-like syntax:
 
 ```promql
-{container.id="...", http.method="GET", http.route="/api/traces", http.status_code="200", service.name="tinyolly-ui"}
-{container.id="...", http.method="GET", http.route="/health", http.status_code="200", service.name="tinyolly-ui"}
+{container.id="...", http.method="GET", http.route="/api/traces", http.status_code="200", service.name="ollyscale-ui"}
+{container.id="...", http.method="GET", http.route="/health", http.status_code="200", service.name="ollyscale-ui"}
 ```
 
 ### Export Actions
@@ -61,7 +61,7 @@ Use the buttons in the "Raw Active Series" section to export data for offline an
 
 ## Cardinality Protection
 
-TinyOlly includes built-in protection against cardinality explosions to prevent memory exhaustion during local development.
+ollyScale includes built-in protection against cardinality explosions to prevent memory exhaustion during local development.
 
 - **Hard Limit**: 1000 unique metric names (configurable).
 - **Visual Warnings**:

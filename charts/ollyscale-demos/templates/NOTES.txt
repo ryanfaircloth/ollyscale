@@ -1,0 +1,20 @@
+ollyScale Demos have been deployed!
+
+Enabled demos:
+  ✓ Custom Demo (demo-frontend + demo-backend)
+
+Access URLs:
+{{- if .Values.frontend.httpRoute.enabled }}
+  - Demo Frontend: https://{{ .Values.frontend.httpRoute.hostname }}:49443
+{{- end }}
+
+ollyScale UI:
+  - https://ollyscale.ollyscale.test:49443
+
+The demos automatically generate telemetry data. Check the ollyScale UI to see:
+  - Distributed traces
+  - Service maps
+  - Logs
+  - Metrics
+
+For more information, visit: https://ollyscale.io/docs

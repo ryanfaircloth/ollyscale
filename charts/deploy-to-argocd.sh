@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Deploy TinyOlly Helm chart to ArgoCD after local build
+# Deploy ollyScale Helm chart to ArgoCD after local build
 # This script updates the ArgoCD Application with the correct chart version
 # and image tags, then triggers a sync
 #
@@ -9,8 +9,8 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CHART_DIR="$SCRIPT_DIR/tinyolly"
-ARGOCD_APP_FILE="${ARGOCD_APP_FILE:-$SCRIPT_DIR/../.kind/modules/main/argocd-applications/observability/tinyolly.yaml}"
+CHART_DIR="$SCRIPT_DIR/ollyscale"
+ARGOCD_APP_FILE="${ARGOCD_APP_FILE:-$SCRIPT_DIR/../.kind/modules/main/argocd-applications/observability/ollyscale.yaml}"
 INTERNAL_REGISTRY="docker-registry.registry.svc.cluster.local:5000"
 
 # Get chart version from Chart.yaml or use provided version
@@ -32,7 +32,7 @@ else
 fi
 
 echo ""
-echo "📋 Deploying TinyOlly to ArgoCD"
+echo "📋 Deploying ollyScale to ArgoCD"
 echo "========================================"
 echo "Chart version:  $CHART_VERSION"
 echo "Image version:  $IMAGE_VERSION"
@@ -41,8 +41,8 @@ echo "ArgoCD App:     $ARGOCD_APP_FILE"
 echo ""
 
 # Check if ArgoCD Application exists
-if ! kubectl get application tinyolly -n argocd &>/dev/null; then
-    echo "⚠️  ArgoCD Application 'tinyolly' does not exist yet"
+if ! kubectl get application ollyscale -n argocd &>/dev/null; then
+  echo "⚠️  ArgoCD Application 'ollyscale' does not exist yet"
     echo "   It will be created by ArgoCD when it syncs the Applications"
     echo ""
 fi
@@ -53,10 +53,10 @@ if [ -f "$ARGOCD_APP_FILE" ]; then
 
     # Check if targetRevision uses the variable
     # shellcheck disable=SC2016
-    if grep -q 'targetRevision: \${tinyolly_chart_tag}' "$ARGOCD_APP_FILE"; then
-        echo "✓ targetRevision correctly uses \${tinyolly_chart_tag} variable"
+    if grep -q 'targetRevision: \${ollyscale_chart_tag}' "$ARGOCD_APP_FILE"; then
+      echo "✓ targetRevision correctly uses \${ollyscale_chart_tag} variable"
     else
-        echo "⚠️  WARNING: targetRevision should use \${tinyolly_chart_tag} variable"
+      echo "⚠️  WARNING: targetRevision should use \${ollyscale_chart_tag} variable"
         echo "   Current value:"
         grep "targetRevision:" "$ARGOCD_APP_FILE"
     fi
@@ -64,11 +64,11 @@ if [ -f "$ARGOCD_APP_FILE" ]; then
 fi
 
 # Check if the Application is managed by ArgoCD
-if kubectl get application tinyolly -n argocd &>/dev/null; then
+if kubectl get application ollyscale -n argocd &>/dev/null; then
     echo "🔄 Updating ArgoCD Application with image tags and chart version..."
 
     # Patch the Application with both chart version and image tags
-    kubectl patch application tinyolly -n argocd --type=merge -p "{
+    kubectl patch application ollyscale -n argocd --type=merge -p "{
       \"spec\": {
         \"source\": {
           \"targetRevision\": \"$CHART_VERSION\",
@@ -76,25 +76,25 @@ if kubectl get application tinyolly -n argocd &>/dev/null; then
             \"valuesObject\": {
               \"frontend\": {
                 \"image\": {
-                  \"repository\": \"$INTERNAL_REGISTRY/tinyolly/tinyolly\",
+                  \"repository\": \"$INTERNAL_REGISTRY/ollyscale/ollyscale\",
                   \"tag\": \"$IMAGE_VERSION\"
                 }
               },
               \"webui\": {
                 \"image\": {
-                  \"repository\": \"$INTERNAL_REGISTRY/tinyolly/tinyolly-ui\",
+                  \"repository\": \"$INTERNAL_REGISTRY/ollyscale/ollyscale-ui\",
                   \"tag\": \"$IMAGE_VERSION\"
                 }
               },
               \"opampServer\": {
                 \"image\": {
-                  \"repository\": \"$INTERNAL_REGISTRY/tinyolly/opamp-server\",
+                  \"repository\": \"$INTERNAL_REGISTRY/ollyscale/opamp-server\",
                   \"tag\": \"$IMAGE_VERSION\"
                 }
               },
               \"otlpReceiver\": {
                 \"image\": {
-                  \"repository\": \"$INTERNAL_REGISTRY/tinyolly/tinyolly\",
+                  \"repository\": \"$INTERNAL_REGISTRY/ollyscale/ollyscale\",
                   \"tag\": \"$IMAGE_VERSION\"
                 },
                 \"env\": [
@@ -121,22 +121,22 @@ if kubectl get application tinyolly -n argocd &>/dev/null; then
 
     # Trigger a hard refresh and sync
     echo "🔄 Triggering ArgoCD sync..."
-    argocd app sync tinyolly --force --async 2>/dev/null || {
+    argocd app sync ollyscale --force --async 2>/dev/null || {
         echo "⚠️  argocd CLI not available, using kubectl instead"
-        kubectl patch application tinyolly -n argocd --type=merge -p '{"metadata":{"annotations":{"argocd.argoproj.io/refresh":"hard"}}}'
+        kubectl patch application ollyscale -n argocd --type=merge -p '{"metadata":{"annotations":{"argocd.argoproj.io/refresh":"hard"}}}'
     }
 
     echo ""
     echo "✅ Deployment initiated!"
     echo ""
     echo "To watch the sync progress:"
-    echo "  kubectl get application tinyolly -n argocd -w"
+    echo "  kubectl get application ollyscale -n argocd -w"
     echo ""
     echo "To view sync status:"
-    echo "  argocd app get tinyolly"
+    echo "  argocd app get ollyscale"
     echo ""
     echo "To view logs:"
-    echo "  kubectl logs -n tinyolly -l app.kubernetes.io/component=webui -f"
+    echo "  kubectl logs -n ollyscale -l app.kubernetes.io/component=webui -f"
 else
     echo "⚠️  ArgoCD Application not yet created in cluster"
     echo "   Commit the changes to $ARGOCD_APP_FILE"
@@ -145,8 +145,8 @@ else
 fi
 
 echo "📋 Image versions being deployed:"
-echo "  • Frontend (API):  $INTERNAL_REGISTRY/tinyolly/tinyolly:$IMAGE_VERSION"
-echo "  • WebUI (nginx):   $INTERNAL_REGISTRY/tinyolly/tinyolly-ui:$IMAGE_VERSION"
-echo "  • OpAMP Server:    $INTERNAL_REGISTRY/tinyolly/opamp-server:$IMAGE_VERSION"
-echo "  • OTLP Receiver:   $INTERNAL_REGISTRY/tinyolly/tinyolly:$IMAGE_VERSION (MODE=receiver)"
+echo "  • Frontend (API):  $INTERNAL_REGISTRY/ollyscale/ollyscale:$IMAGE_VERSION"
+echo "  • WebUI (nginx):   $INTERNAL_REGISTRY/ollyscale/ollyscale-ui:$IMAGE_VERSION"
+echo "  • OpAMP Server:    $INTERNAL_REGISTRY/ollyscale/opamp-server:$IMAGE_VERSION"
+echo "  • OTLP Receiver:   $INTERNAL_REGISTRY/ollyscale/ollyscale:$IMAGE_VERSION (MODE=receiver)"
 echo ""

@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
-# Quick install script for TinyOlly Helm Chart
+# Quick install script for ollyScale Helm Chart
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CHART_DIR="${SCRIPT_DIR}/tinyolly"
+CHART_DIR="${SCRIPT_DIR}/ollyscale"
 
 # Default values
-NAMESPACE="${NAMESPACE:-tinyolly}"
-RELEASE_NAME="${RELEASE_NAME:-tinyolly}"
+NAMESPACE="${NAMESPACE:-ollyscale}"
+RELEASE_NAME="${RELEASE_NAME:-ollyscale}"
 VALUES_FILE="${VALUES_FILE:-}"
 
-echo "🚀 Installing TinyOlly Helm Chart..."
+echo "🚀 Installing ollyScale Helm Chart..."
 echo "   Release:   ${RELEASE_NAME}"
 echo "   Namespace: ${NAMESPACE}"
 if [ -n "${VALUES_FILE}" ]; then

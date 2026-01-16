@@ -1,0 +1,48 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ollyscale-demos
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "60"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: observability
+  source:
+    repoURL: "oci://ghcr.io/ryanfaircloth/ollyscale/charts"
+    chart: ollyscale-demos
+    targetRevision: 0.1.5
+    helm:
+      valuesObject:
+        global:
+          namespace: ollyscale-demos
+
+        frontend:
+          image:
+            repository: ghcr.io/ryanfaircloth/ollyscale/demo
+            tag: v0.5.0
+
+          httpRoute:
+            enabled: true
+            parentRefs:
+              - name: cluster-gateway
+                namespace: envoy-gateway-system
+                sectionName: mgmt-https-listener
+            hostname: demo-frontend.${gateway_dns_suffix}
+
+        backend:
+          image:
+            repository: ghcr.io/ryanfaircloth/ollyscale/demo
+            tag: v0.5.0
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ollyscale-demos
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

@@ -32,7 +32,7 @@
 
 set -e
 
-# Build TinyOlly core images locally (multi-arch)
+# Build ollyScale core images locally (multi-arch)
 # Usage: ./build-core.sh [version]
 # Example: ./build-core.sh v2.1.0
 #
@@ -43,7 +43,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/../.."  # Navigate to repo root
 
 VERSION=${1:-"latest"}
-CONTAINER_REGISTRY=${CONTAINER_REGISTRY:-"ghcr.io/ryanfaircloth/tinyolly"}  # Default to GHCR with org path
+CONTAINER_REGISTRY=${CONTAINER_REGISTRY:-"ghcr.io/ryanfaircloth/ollyscale"}  # Default to GHCR with org path
 PLATFORMS="linux/amd64,linux/arm64"
 DOCKER_BUILD_PUSH=${DOCKER_BUILD_PUSH:-"false"}  # Set to "true" in CI to push multi-platform images
 
@@ -56,7 +56,7 @@ else
 fi
 
 echo "=========================================="
-echo "TinyOlly Core - $ACTION_DESC"
+echo "ollyScale Core - $ACTION_DESC"
 echo "=========================================="
 echo "Registry: $CONTAINER_REGISTRY"
 echo "Version: $VERSION"
@@ -66,24 +66,24 @@ echo ""
 
 # Ensure buildx builder exists and is active
 echo "Setting up Docker Buildx..."
-docker buildx create --name tinyolly-builder --use 2>/dev/null || docker buildx use tinyolly-builder
+docker buildx create --name ollyscale-builder --use 2>/dev/null || docker buildx use ollyscale-builder
 docker buildx inspect --bootstrap
 echo ""
 
 echo "Building images in dependency order..."
 echo ""
 
-# Image 1: TinyOlly unified (UI + OTLP Receiver in one image)
+# Image 1: ollyScale unified (UI + OTLP receiver in one image)
 echo "----------------------------------------"
-echo "Building tinyolly..."
+echo "Building ollyScale backend..."
 echo "----------------------------------------"
 docker buildx build --platform $PLATFORMS \
   --no-cache \
-  -f apps/tinyolly/Dockerfile \
-  -t $CONTAINER_REGISTRY/tinyolly:latest \
-  -t $CONTAINER_REGISTRY/tinyolly:$VERSION \
-  $BUILD_ACTION apps/tinyolly/
-echo "✓ Built $CONTAINER_REGISTRY/tinyolly:$VERSION"
+  -f apps/ollyscale/Dockerfile \
+  -t $CONTAINER_REGISTRY/ollyscale:latest \
+  -t $CONTAINER_REGISTRY/ollyscale:$VERSION \
+  $BUILD_ACTION apps/ollyscale/
+echo "✓ Built $CONTAINER_REGISTRY/ollyscale:$VERSION"
 echo ""
 
 # Image 2: OpAMP Server (independent Go build)
@@ -104,7 +104,7 @@ echo "✓ All core images built locally!"
 echo "=========================================="
 echo ""
 echo "Built images:"
-echo "  - $CONTAINER_REGISTRY/tinyolly:$VERSION (unified UI + OTLP receiver)"
+echo "  - $CONTAINER_REGISTRY/ollyscale:$VERSION (unified UI + OTLP receiver)"
 echo "  - $CONTAINER_REGISTRY/opamp-server:$VERSION"
 echo ""
 echo "Next step - push to registry:"

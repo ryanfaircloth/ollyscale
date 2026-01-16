@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: otel-demo-routes
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "70"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: observability
+  source:
+    repoURL: "https://github.com/ryanfaircloth/ollyscale.git"
+    path: .kind/modules/ollyscale/k8s-manifests/otel-demo
+    targetRevision: main
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: otel-demo
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

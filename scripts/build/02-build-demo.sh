@@ -32,7 +32,7 @@
 
 set -e
 
-# Build TinyOlly demo images locally (multi-arch)
+# Build ollyScale demo images locally (multi-arch)
 # Usage: ./build-demo.sh [version]
 # Example: ./build-demo.sh v2.1.0
 #
@@ -43,7 +43,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/../.."  # Navigate to repo root
 
 VERSION=${1:-"latest"}
-CONTAINER_REGISTRY=${CONTAINER_REGISTRY:-"ghcr.io/ryanfaircloth/tinyolly"}
+CONTAINER_REGISTRY=${CONTAINER_REGISTRY:-"ghcr.io/ryanfaircloth/ollyscale"}
 PLATFORMS="linux/amd64,linux/arm64"
 DOCKER_BUILD_PUSH=${DOCKER_BUILD_PUSH:-"false"}
 
@@ -56,7 +56,7 @@ else
 fi
 
 echo "=========================================="
-echo "TinyOlly Demo - $ACTION_DESC"
+echo "ollyScale Demo - $ACTION_DESC"
 echo "=========================================="
 echo "Registry: $CONTAINER_REGISTRY"
 echo "Version: $VERSION"
@@ -66,7 +66,7 @@ echo ""
 
 # Ensure buildx builder exists
 echo "Setting up Docker Buildx..."
-docker buildx create --name tinyolly-builder --use 2>/dev/null || docker buildx use tinyolly-builder
+docker buildx create --name ollyscale-builder --use 2>/dev/null || docker buildx use ollyscale-builder
 docker buildx inspect --bootstrap
 echo ""
 

@@ -1,0 +1,49 @@
+name: Publish Documentation
+
+# This workflow builds and deploys MkDocs documentation to the gh-pages branch.
+# The gh-pages branch is automatically created/updated and should be configured
+# as the source for GitHub Pages in repository settings.
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "docs/**"
+      - "mkdocs.yml"
+      - ".github/workflows/docs.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    name: Deploy MkDocs to GitHub Pages
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+          cache: "pip"
+          cache-dependency-path: docs/requirements.txt
+
+      - name: Install MkDocs dependencies
+        run: |
+          pip install -r docs/requirements.txt
+
+      - name: Configure git for deployment
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Deploy to GitHub Pages
+        run: |
+          mkdocs gh-deploy --force --clean --verbose

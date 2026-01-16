@@ -28,8 +28,8 @@
     {
       "description": "Group Python packages by app",
       "matchManagers": ["pip_requirements"],
-      "matchFileNames": ["apps/tinyolly/**"],
-      "groupName": "tinyolly Python dependencies"
+      "matchFileNames": ["apps/ollyscale/**"],
+      "groupName": "ollyscale Python dependencies"
     },
     {
       "description": "Group demo app dependencies separately",
@@ -50,10 +50,10 @@
       "groupName": "opamp-server Go dependencies"
     },
     {
-      "description": "Group tinyolly-ui npm dependencies",
+      "description": "Group ollyscale-ui npm dependencies",
       "matchManagers": ["npm"],
-      "matchFileNames": ["apps/tinyolly-ui/**"],
-      "groupName": "tinyolly-ui npm dependencies"
+      "matchFileNames": ["apps/ollyscale-ui/**"],
+      "groupName": "ollyscale-ui npm dependencies"
     },
     {
       "description": "Group all Docker base images",

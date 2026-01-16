@@ -33,7 +33,7 @@
 set -e
 
 echo "========================================================"
-echo "  TinyOlly - Install MkDocs"
+echo "  ollyScale - Install MkDocs"
 echo "========================================================"
 echo ""
 

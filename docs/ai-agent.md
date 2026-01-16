@@ -16,7 +16,7 @@ GenAI observability captures telemetry from LLM interactions including:
 ### Docker
 
 ```bash
-# Start TinyOlly core first
+# Start ollyScale core first
 cd docker
 ./01-start-core.sh
 
@@ -105,7 +105,7 @@ ai-agent:
 
 **No AI traces appearing?**
 
-- Ensure TinyOlly core is running
+- Ensure ollyScale core is running
 - Check agent logs: `docker logs ai-agent-demo`
 - Verify Ollama is ready: `docker logs ollama`
 

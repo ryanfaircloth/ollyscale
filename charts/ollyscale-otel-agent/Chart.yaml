@@ -1,0 +1,23 @@
+apiVersion: v2
+name: ollyscale-otel-agent
+description: AI Agent demo with Ollama for ollyScale observability platform
+type: application
+version: 1.0.0
+appVersion: "v0.3.0"
+keywords:
+  - observability
+  - opentelemetry
+  - demo
+  - ai
+  - ollama
+  - genai
+home: https://github.com/ryanfaircloth/ollyscale
+sources:
+  - https://github.com/ryanfaircloth/ollyscale
+maintainers:
+  - name: ollyScale Team
+    email: ryan@faircloth.dev
+annotations:
+  org.opencontainers.image.title: "ollyScale AI Agent Demo"
+  org.opencontainers.image.description: "AI Agent demo with Ollama LLM for ollyScale"
+  org.opencontainers.image.source: "https://github.com/ryanfaircloth/ollyscale"

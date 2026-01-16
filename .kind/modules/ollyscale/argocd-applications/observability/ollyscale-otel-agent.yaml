@@ -1,0 +1,50 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ollyscale-otel-agent
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "61"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: observability
+  source:
+    repoURL: "oci://ghcr.io/ryanfaircloth/ollyscale/charts"
+    chart: ollyscale-otel-agent
+    targetRevision: 0.1.0
+    helm:
+      valuesObject:
+        global:
+          namespace: ollyscale-otel-agent
+
+        ollama:
+          model: tinyllama
+          persistence:
+            enabled: true
+            size: 10Gi
+          resources:
+            limits:
+              cpu: "2000m"
+              memory: "4Gi"
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+
+        agent:
+          image:
+            repository: ghcr.io/ryanfaircloth/ollyscale/demo-otel-agent
+            tag: v0.3.0
+          httpRoute:
+            enabled: false
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ollyscale-otel-agent
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

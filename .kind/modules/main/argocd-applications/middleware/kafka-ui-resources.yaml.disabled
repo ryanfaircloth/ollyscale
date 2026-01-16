@@ -81,7 +81,7 @@ spec:
                   namespace: envoy-gateway-system
                   sectionName: mgmt-https-listener
               hostnames:
-                - "kafka-ui.tinyolly.test"
+                - "kafka-ui.ollyscale.test"
               rules:
                 - matches:
                     - path:

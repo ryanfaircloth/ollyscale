@@ -1,9 +1,9 @@
-site_name: TinyOlly Documentation
-site_url: https://tinyolly.github.io/tinyolly/
+site_name: ollyScale Documentation
+site_url: https://ryanfaircloth.github.io/ollyscale/
 site_description: BYOL (Bring Your Own Laptop) Observability Platform for OpenTelemetry
-site_author: TinyOlly
-repo_url: https://github.com/tinyolly/tinyolly
-repo_name: tinyolly/tinyolly
+site_author: ollyScale
+repo_url: https://github.com/ryanfaircloth/ollyscale
+repo_name: ryanfaircloth/ollyscale
 
 theme:
   name: material
@@ -30,8 +30,8 @@ theme:
     - search.highlight
     - content.tabs
     - content.code.annotate
-  logo: images/logo.png
-  favicon: images/logo.png
+  logo: images/logo.svg
+  favicon: images/logo.svg
 
 extra_css:
   - assets/css/custom.css
@@ -80,7 +80,7 @@ nav:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/tinyolly/tinyolly
+      link: https://github.com/ryanfaircloth/ollyscale
     - icon: fontawesome/brands/github
-      link: https://github.com/tinyolly/tinyolly/issues
+      link: https://github.com/ryanfaircloth/ollyscale/issues
       name: Issues

@@ -1,4 +1,4 @@
-# Example of an INCORRECT configuration to test TinyOlly UI error handling
+# Example of an INCORRECT configuration to test OllyScale UI error handling
 # This config contains intentional errors: invalid YAML syntax, missing required sections,
 # invalid processor names, and pipeline misconfigurations.
 
@@ -17,7 +17,7 @@ extensions:
   opamp:
     server:
       ws:
-        endpoint: ws://tinyolly-opamp-server:4320/v1/opamp
+        endpoint: ws://ollyscale-opamp-server:4320/v1/opamp
 
 processors:
   batch:
@@ -38,7 +38,7 @@ exporters:
   debug:
     verbosity: detailed
   otlp:
-    endpoint: "tinyolly-otlp-receiver:4343"
+    endpoint: "ollyscale-otlp-receiver:4343"
     tls:
       insecure: true
   # Invalid exporter - missing required configuration

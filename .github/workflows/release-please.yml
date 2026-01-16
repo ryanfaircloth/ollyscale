@@ -25,22 +25,22 @@ jobs:
     outputs:
       releases_created: ${{ steps.release.outputs.releases_created }}
       # Pass through all per-path outputs
-      apps-tinyolly--release_created: ${{ steps.release.outputs['apps/tinyolly--release_created'] }}
-      apps-tinyolly--version: ${{ steps.release.outputs['apps/tinyolly--version'] }}
-      apps-tinyolly-ui--release_created: ${{ steps.release.outputs['apps/tinyolly-ui--release_created'] }}
-      apps-tinyolly-ui--version: ${{ steps.release.outputs['apps/tinyolly-ui--version'] }}
+      apps-ollyscale--release_created: ${{ steps.release.outputs['apps/ollyscale--release_created'] }}
+      apps-ollyscale--version: ${{ steps.release.outputs['apps/ollyscale--version'] }}
+      apps-ollyscale-ui--release_created: ${{ steps.release.outputs['apps/ollyscale-ui--release_created'] }}
+      apps-ollyscale-ui--version: ${{ steps.release.outputs['apps/ollyscale-ui--version'] }}
       apps-opamp-server--release_created: ${{ steps.release.outputs['apps/opamp-server--release_created'] }}
       apps-opamp-server--version: ${{ steps.release.outputs['apps/opamp-server--version'] }}
       apps-demo--release_created: ${{ steps.release.outputs['apps/demo--release_created'] }}
       apps-demo--version: ${{ steps.release.outputs['apps/demo--version'] }}
       apps-demo-otel-agent--release_created: ${{ steps.release.outputs['apps/demo-otel-agent--release_created'] }}
       apps-demo-otel-agent--version: ${{ steps.release.outputs['apps/demo-otel-agent--version'] }}
-      charts-tinyolly--release_created: ${{ steps.release.outputs['charts/tinyolly--release_created'] }}
-      charts-tinyolly--version: ${{ steps.release.outputs['charts/tinyolly--version'] }}
-      charts-tinyolly-demos--release_created: ${{ steps.release.outputs['charts/tinyolly-demos--release_created'] }}
-      charts-tinyolly-demos--version: ${{ steps.release.outputs['charts/tinyolly-demos--version'] }}
-      charts-tinyolly-demo-otel-agent--release_created: ${{ steps.release.outputs['charts/tinyolly-demo-otel-agent--release_created'] }}
-      charts-tinyolly-demo-otel-agent--version: ${{ steps.release.outputs['charts/tinyolly-demo-otel-agent--version'] }}
+      charts-ollyscale--release_created: ${{ steps.release.outputs['charts/ollyscale--release_created'] }}
+      charts-ollyscale--version: ${{ steps.release.outputs['charts/ollyscale--version'] }}
+      charts-ollyscale-demos--release_created: ${{ steps.release.outputs['charts/ollyscale-demos--release_created'] }}
+      charts-ollyscale-demos--version: ${{ steps.release.outputs['charts/ollyscale-demos--version'] }}
+      charts-ollyscale-otel-agent--release_created: ${{ steps.release.outputs['charts/ollyscale-otel-agent--release_created'] }}
+      charts-ollyscale-otel-agent--version: ${{ steps.release.outputs['charts/ollyscale-otel-agent--version'] }}
     steps:
       - uses: googleapis/release-please-action@v4
         id: release
@@ -57,31 +57,31 @@ jobs:
     strategy:
       matrix:
         include:
-          - component: tinyolly
-            path: apps/tinyolly
-            output_key: apps-tinyolly
-            dockerfile: apps/tinyolly/Dockerfile
-            image: ghcr.io/ryanfaircloth/tinyolly/tinyolly
-          - component: tinyolly-ui
-            path: apps/tinyolly-ui
-            output_key: apps-tinyolly-ui
-            dockerfile: apps/tinyolly-ui/Dockerfile
-            image: ghcr.io/ryanfaircloth/tinyolly/tinyolly-ui
+          - component: ollyscale
+            path: apps/ollyscale
+            output_key: apps-ollyscale
+            dockerfile: apps/ollyscale/Dockerfile
+            image: ghcr.io/ryanfaircloth/ollyscale/ollyscale
+          - component: ollyscale-ui
+            path: apps/ollyscale-ui
+            output_key: apps-ollyscale-ui
+            dockerfile: apps/ollyscale-ui/Dockerfile
+            image: ghcr.io/ryanfaircloth/ollyscale/ollyscale-ui
           - component: opamp-server
             path: apps/opamp-server
             output_key: apps-opamp-server
             dockerfile: apps/opamp-server/Dockerfile
-            image: ghcr.io/ryanfaircloth/tinyolly/opamp-server
+            image: ghcr.io/ryanfaircloth/ollyscale/opamp-server
           - component: demo
             path: apps/demo
             output_key: apps-demo
             dockerfile: apps/demo/Dockerfile
-            image: ghcr.io/ryanfaircloth/tinyolly/demo
+            image: ghcr.io/ryanfaircloth/ollyscale/demo
           - component: demo-otel-agent
             path: apps/demo-otel-agent
             output_key: apps-demo-otel-agent
             dockerfile: apps/demo-otel-agent/Dockerfile
-            image: ghcr.io/ryanfaircloth/tinyolly/demo-otel-agent
+            image: ghcr.io/ryanfaircloth/ollyscale/demo-otel-agent
     steps:
       - uses: actions/checkout@v6
         if: needs.release-please.outputs[format('{0}--release_created', matrix.output_key)] == 'true'
@@ -121,14 +121,14 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        chart: [tinyolly, tinyolly-demos, tinyolly-demo-otel-agent]
+        chart: [ollyscale, ollyscale-demos, ollyscale-otel-agent]
         include:
-          - chart: tinyolly
-            output_key: charts-tinyolly
-          - chart: tinyolly-demos
-            output_key: charts-tinyolly-demos
-          - chart: tinyolly-demo-otel-agent
-            output_key: charts-tinyolly-demo-otel-agent
+          - chart: ollyscale
+            output_key: charts-ollyscale
+          - chart: ollyscale-demos
+            output_key: charts-ollyscale-demos
+          - chart: ollyscale-otel-agent
+            output_key: charts-ollyscale-otel-agent
     steps:
       - uses: actions/checkout@v6
         if: needs.release-please.outputs[format('{0}--release_created', matrix.output_key)] == 'true'
@@ -154,4 +154,4 @@ jobs:
         if: needs.release-please.outputs[format('{0}--release_created', matrix.output_key)] == 'true'
         run: |
           cd charts
-          helm push ${{ matrix.chart }}-${{ needs.release-please.outputs[format('{0}--version', matrix.output_key)] }}.tgz oci://ghcr.io/ryanfaircloth/tinyolly/charts
+          helm push ${{ matrix.chart }}-${{ needs.release-please.outputs[format('{0}--version', matrix.output_key)] }}.tgz oci://ghcr.io/ryanfaircloth/ollyscale/charts

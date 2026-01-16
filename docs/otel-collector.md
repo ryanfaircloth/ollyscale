@@ -7,11 +7,11 @@
 
 ---
 
-TinyOlly uses the [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) as the telemetry ingestion and shipping layer. The collector receives telemetry from your applications and forwards it to TinyOlly's OTLP receiver.
+ollyScale uses the [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) as the telemetry ingestion and shipping layer. The collector receives telemetry from your applications and forwards it to ollyScale's OTLP receiver.
 
 ## OpenTelemetry Collector + OpAMP Config Page
 
-TinyOlly includes a web interface for managing OpenTelemetry Collector configurations via the OpAMP (Open Agent Management Protocol). Access this page through the **"OpenTelemetry Collector + OpAMP Config"** tab in the TinyOlly UI.
+ollyScale includes a web interface for managing OpenTelemetry Collector configurations via the OpAMP (Open Agent Management Protocol). Access this page through the **"OpenTelemetry Collector + OpAMP Config"** tab in the ollyScale UI.
 
 **Features:**
 
@@ -28,20 +28,20 @@ TinyOlly includes a web interface for managing OpenTelemetry Collector configura
 
 ## Configuration
 
-TinyOlly includes a sample collector configuration that you can customize for your needs. The configuration files are located at:
+ollyScale includes a sample collector configuration that you can customize for your needs. The configuration files are located at:
 
 - **Docker**: `docker/otelcol-configs/config.yaml`
-- **Kubernetes (Helm)**: Configured via Helm values - see `charts/tinyolly/values.yaml` for OTel Collector settings
+- **Kubernetes (Helm)**: Configured via Helm values - see `charts/ollyscale/values.yaml` for OTel Collector settings
 
 ## Default Configuration
 
 The default configuration includes:
 
 - **OTLP Receivers**: Accepts telemetry on ports 4317 (gRPC) and 4318 (HTTP)
-- **OpAMP Extension**: Enables remote configuration management via TinyOlly UI
+- **OpAMP Extension**: Enables remote configuration management via ollyScale UI
 - **Span Metrics Connector**: Automatically generates RED metrics from traces
 - **Batch Processor**: Batches telemetry for efficient processing
-- **OTLP Exporter**: Forwards all telemetry to TinyOlly's OTLP receiver
+- **OTLP Exporter**: Forwards all telemetry to ollyScale's OTLP receiver
 
 ## Customization Examples
 
@@ -69,29 +69,29 @@ cd docker
 
 When deployed via Helm, the OTel Collector is managed by the OpenTelemetry Operator. To customize the configuration:
 
-1. Edit `charts/tinyolly/values.yaml` under the `otelCollector` section
+1. Edit `charts/ollyscale/values.yaml` under the `otelCollector` section
 2. Apply changes:
 
    ```bash
    cd charts
-   helm upgrade tinyolly ./tinyolly -n tinyolly
+   helm upgrade ollyscale ./ollyscale -n ollyscale
    ```
 
 Alternatively, patch the OpenTelemetryCollector custom resource directly:
 
 ```bash
-kubectl edit opentelemetrycollector tinyolly-otel-collector -n tinyolly
+kubectl edit opentelemetrycollector ollyscale-otel-collector -n ollyscale
 ```
 
 ## Using Your Own Collector
 
-You can use your own OpenTelemetry Collector instance instead of the one bundled with TinyOlly. This is useful if you have an existing collector setup or want to test specific collector configurations.
+You can use your own OpenTelemetry Collector instance instead of the one bundled with ollyScale. This is useful if you have an existing collector setup or want to test specific collector configurations.
 
-To do this, deploy the **Core-Only** version of TinyOlly (see [Docker Deployment](docker.md#5-tinyolly-core-only-deployment-use-your-own-docker-opentelemetry-collector) or [Kubernetes Deployment](kubernetes.md#4-tinyolly-core-only-deployment-use-your-own-kubernetes-opentelemetry-collector)).
+To do this, deploy the **Core-Only** version of ollyScale (see [Docker Deployment](docker.md#5-ollyscale-core-only-deployment-use-your-own-docker-opentelemetry-collector) or [Kubernetes Deployment](kubernetes.md#4-ollyscale-core-only-deployment-use-your-own-kubernetes-opentelemetry-collector)).
 
-Then, configure your collector's OTLP exporter to send data to the TinyOlly Receiver:
+Then, configure your collector's OTLP exporter to send data to the ollyScale Receiver:
 
-- **Endpoint**: `tinyolly-otlp-receiver:4343` (or `localhost:4343` from host)
+- **Endpoint**: `ollyscale-otlp-receiver:4343` (or `localhost:4343` from host)
 - **Protocol**: gRPC
 - **TLS**: Insecure (or configured as needed)
 
@@ -100,14 +100,14 @@ Example Exporter Configuration:
 ```yaml
 exporters:
   otlp:
-    endpoint: "tinyolly-otlp-receiver:4343"
+    endpoint: "ollyscale-otlp-receiver:4343"
     tls:
       insecure: true
 ```
 
 ## OpAMP Configuration (Optional)
 
-The **OpenTelemetry Collector + OpAMP Config** page in the TinyOlly UI allows you to view and manage collector configurations remotely. To enable this feature, add the OpAMP extension to your collector config:
+The **OpenTelemetry Collector + OpAMP Config** page in the ollyScale UI allows you to view and manage collector configurations remotely. To enable this feature, add the OpAMP extension to your collector config:
 
 ```yaml
 extensions:
@@ -120,4 +120,4 @@ service:
   extensions: [opamp]
 ```
 
-The default configuration template (located at `docker/otelcol-configs/config.yaml`) shows a complete example with OTLP receivers, OpAMP extension, batch processing, and spanmetrics connector. Your collector will connect to the OpAMP server and receive configuration updates through the TinyOlly UI.
+The default configuration template (located at `docker/otelcol-configs/config.yaml`) shows a complete example with OTLP receivers, OpAMP extension, batch processing, and spanmetrics connector. Your collector will connect to the OpAMP server and receive configuration updates through the ollyScale UI.

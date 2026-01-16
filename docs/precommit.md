@@ -1,4 +1,4 @@
-# Pre-commit Configuration for TinyOlly
+# Pre-commit Configuration for ollyScale
 
 This project uses [pre-commit](https://pre-commit.com/) to maintain code quality and consistency across all languages and tools.
 
@@ -95,7 +95,7 @@ pre-commit run ruff --all-files
 pre-commit run hadolint-docker --all-files
 
 # Run on specific files
-pre-commit run --files apps/tinyolly/main.py apps/demo/backend.py
+pre-commit run --files apps/ollyscale/main.py apps/demo/backend.py
 
 # Update hooks to latest versions
 pre-commit autoupdate
@@ -214,4 +214,4 @@ Pre-commit checks run in GitHub Actions workflows. See [`.github/workflows/`](.g
 - Pre-commit docs: <https://pre-commit.com>
 - Ruff docs: <https://docs.astral.sh/ruff>
 - Hadolint docs: <https://github.com/hadolint/hadolint>
-- Project issues: <https://github.com/tinyolly/tinyolly/issues>
+- Project issues: <https://github.com/ryanfaircloth/ollyscale/issues>

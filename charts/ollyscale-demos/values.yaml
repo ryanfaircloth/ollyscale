@@ -1,0 +1,80 @@
+# Default values for ollyscale-demos
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Global settings
+global:
+  # -- Namespace for demos deployment
+  namespace: ollyscale-demos
+
+# Frontend configuration
+frontend:
+  # -- Number of replicas
+  replicaCount: 1
+
+  image:
+    # -- Image repository (unified demo image for both frontend and backend)
+    repository: docker-registry.registry.svc.cluster.local:5000/ollyscale/demo
+    # -- Image tag
+    tag: v0.0.1
+    # -- Image pull policy
+    pullPolicy: Always
+
+  service:
+    # -- Service type
+    type: ClusterIP
+    # -- Service port
+    port: 5000
+
+  # -- Environment variables
+  env:
+    # -- OTLP endpoint for traces
+    otelExporterOtlpEndpoint: "http://gateway-collector.ollyscale.svc.cluster.local:4317"
+    # -- Service name for OTLP
+    otelServiceName: "demo-frontend"
+    # -- Prometheus remote write endpoint
+    promRemoteWriteEndpoint: "http://gateway-collector.ollyscale.svc.cluster.local:19291/api/v1/write"
+
+  # -- Resource limits and requests
+  resources: {}
+
+  # HTTPRoute configuration
+  httpRoute:
+    # -- Enable HTTPRoute
+    enabled: true
+    # -- Gateway parent refs
+    parentRefs:
+      - name: cluster-gateway
+        namespace: envoy-gateway-system
+        sectionName: mgmt-https-listener
+    # -- Hostname for routing
+    hostname: demo-frontend.ollyscale.test
+
+# Backend configuration
+backend:
+  # -- Number of replicas
+  replicaCount: 1
+
+  image:
+    # -- Image repository (unified demo image for both frontend and backend)
+    repository: docker-registry.registry.svc.cluster.local:5000/ollyscale/demo
+    # -- Image tag
+    tag: v0.0.1
+    # -- Image pull policy
+    pullPolicy: Always
+
+  service:
+    # -- Service type
+    type: ClusterIP
+    # -- Service port
+    port: 5000
+
+  # -- Environment variables
+  env:
+    # -- OTLP endpoint for traces
+    otelExporterOtlpEndpoint: "http://gateway-collector.ollyscale.svc.cluster.local:4317"
+    # -- Service name for OTLP
+    otelServiceName: "demo-backend"
+
+  # -- Resource limits and requests
+  resources: {}

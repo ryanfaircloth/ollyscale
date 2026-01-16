@@ -1,8 +1,8 @@
-# TinyOlly AI Agent Demo - Deployment Guide
+# ollyScale AI Agent Demo - Deployment Guide
 
 ## Overview
 
-The TinyOlly AI Agent demo has been refactored to use Helm charts with OTel operator
+The ollyScale AI Agent demo has been refactored to use Helm charts with OTel operator
 auto-instrumentation. This provides a cleaner, more maintainable deployment approach
 compared to the previous manual Kubernetes manifests.
 
@@ -17,7 +17,7 @@ compared to the previous manual Kubernetes manifests.
 
 ### After (New Approach)
 
-- Helm chart in `charts/tinyolly-ai-agent/`
+- Helm chart in `charts/ollyscale-ai-agent/`
 - OTel operator auto-instrumentation (zero-code)
 - ArgoCD GitOps deployment
 - Integrated with local registry and build scripts
@@ -26,7 +26,7 @@ compared to the previous manual Kubernetes manifests.
 
 ```text
 ┌─────────────────────────────────────────────┐
-│           tinyolly-ai-agent                 │
+│           ollyscale-ai-agent                 │
 │                                             │
 │  ┌──────────────┐      ┌────────────────┐  │
 │  │  AI Agent    │─────▶│    Ollama      │  │
@@ -40,7 +40,7 @@ compared to the previous manual Kubernetes manifests.
 │         ▼                                   │
 │  ┌──────────────────┐                      │
 │  │ Agent Collector  │                      │
-│  │   (in tinyolly)  │                      │
+│  │   (in ollyscale)  │                      │
 │  └──────────────────┘                      │
 └─────────────────────────────────────────────┘
 ```
@@ -60,7 +60,7 @@ This will:
 1. Create the KIND cluster
 2. Install ArgoCD
 3. Deploy infrastructure (including OTel operator)
-4. Deploy TinyOlly platform
+4. Deploy ollyScale platform
 5. Deploy AI agent demo
 
 ### Manual Build and Deploy
@@ -84,8 +84,8 @@ If you only changed the Helm chart (no code changes):
 
 ```bash
 cd charts
-helm package tinyolly-ai-agent
-helm push tinyolly-ai-agent-0.1.0.tgz oci://registry.tinyolly.test:49443/tinyolly/charts --insecure-skip-tls-verify
+helm package ollyscale-ai-agent
+helm push ollyscale-ai-agent-0.1.0.tgz oci://registry.ollyscale.test:49443/ollyscale/charts --insecure-skip-tls-verify
 
 # Update ArgoCD
 cd ../.kind
@@ -96,11 +96,11 @@ terraform apply -auto-approve
 
 ### Default Values
 
-See [`charts/tinyolly-ai-agent/values.yaml`](../charts/tinyolly-ai-agent/values.yaml) for all configuration options.
+See [`charts/ollyscale-ai-agent/values.yaml`](../charts/ollyscale-ai-agent/values.yaml) for all configuration options.
 
 Key defaults:
 
-- **Namespace**: `tinyolly-ai-agent`
+- **Namespace**: `ollyscale-ai-agent`
 - **Ollama model**: `tinyllama`
 - **Ollama storage**: 10Gi persistent volume
 - **Ollama resources**: 2 CPU / 4Gi RAM (limit)
@@ -109,7 +109,7 @@ Key defaults:
 
 ### Customization
 
-To override values, edit `.kind/modules/tinyolly/argocd-applications/observability/tinyolly-ai-agent.yaml`:
+To override values, edit `.kind/modules/ollyscale/argocd-applications/observability/ollyscale-ai-agent.yaml`:
 
 ```yaml
 spec:
@@ -134,45 +134,45 @@ spec:
 
 ```bash
 # Check ArgoCD application
-kubectl get application -n argocd tinyolly-ai-agent
+kubectl get application -n argocd ollyscale-ai-agent
 
 # Check pods
-kubectl get pods -n tinyolly-ai-agent
+kubectl get pods -n ollyscale-ai-agent
 
 # Check services
-kubectl get svc -n tinyolly-ai-agent
+kubectl get svc -n ollyscale-ai-agent
 ```
 
 ### View Logs
 
 ```bash
 # Agent logs (should show successful LLM calls)
-kubectl logs -n tinyolly-ai-agent deployment/ai-agent -f
+kubectl logs -n ollyscale-ai-agent deployment/ai-agent -f
 
 # Ollama logs (should show model downloads)
-kubectl logs -n tinyolly-ai-agent deployment/ollama -f
+kubectl logs -n ollyscale-ai-agent deployment/ollama -f
 ```
 
 ### Verify Auto-Instrumentation
 
 ```bash
 # Check if init container was injected
-kubectl get pod -n tinyolly-ai-agent -l app=ai-agent \
+kubectl get pod -n ollyscale-ai-agent -l app=ai-agent \
   -o jsonpath='{.items[0].spec.initContainers[*].name}'
 # Should output: opentelemetry-auto-instrumentation-python
 
 # Check OTLP endpoint configuration
-kubectl get pod -n tinyolly-ai-agent -l app=ai-agent \
+kubectl get pod -n ollyscale-ai-agent -l app=ai-agent \
   -o jsonpath='{.items[0].spec.containers[0].env[?(@.name=="OTEL_EXPORTER_OTLP_ENDPOINT")].value}'
-# Should output: http://agent-collector.tinyolly.svc.cluster.local:4318
+# Should output: http://agent-collector.ollyscale.svc.cluster.local:4318
 ```
 
-### Check Traces in TinyOlly UI
+### Check Traces in ollyScale UI
 
-1. Port-forward to TinyOlly UI:
+1. Port-forward to ollyScale UI:
 
    ```bash
-   kubectl port-forward -n tinyolly svc/tinyolly-ui 5002:5002
+   kubectl port-forward -n ollyscale svc/ollyscale-ui 5002:5002
    ```
 
 2. Open browser: <http://localhost:5002>
@@ -193,10 +193,10 @@ If Ollama pod stays in "NotReady":
 
 ```bash
 # Check if model is downloading
-kubectl logs -n tinyolly-ai-agent deployment/ollama
+kubectl logs -n ollyscale-ai-agent deployment/ollama
 
 # Verify model is pulled
-kubectl exec -n tinyolly-ai-agent deployment/ollama -- ollama list
+kubectl exec -n ollyscale-ai-agent deployment/ollama -- ollama list
 ```
 
 Model download can take several minutes depending on network speed.
@@ -207,25 +207,25 @@ If agent logs show connection errors:
 
 ```bash
 # Verify Ollama service
-kubectl get svc -n tinyolly-ai-agent ollama
+kubectl get svc -n ollyscale-ai-agent ollama
 
 # Check Ollama pod is ready
-kubectl get pods -n tinyolly-ai-agent -l app=ollama
+kubectl get pods -n ollyscale-ai-agent -l app=ollama
 ```
 
 ### No Traces Appearing
 
-If traces aren't showing in TinyOlly:
+If traces aren't showing in ollyScale:
 
 ```bash
 # Verify instrumentation annotation
-kubectl get deployment -n tinyolly-ai-agent ai-agent -o yaml | grep instrumentation
+kubectl get deployment -n ollyscale-ai-agent ai-agent -o yaml | grep instrumentation
 
 # Check OTel operator logs
 kubectl logs -n opentelemetry-operator-system deployment/opentelemetry-operator
 
 # Verify Python instrumentation resource exists
-kubectl get instrumentation -n tinyolly python-instrumentation
+kubectl get instrumentation -n ollyscale python-instrumentation
 ```
 
 ## Cleanup
@@ -234,10 +234,10 @@ kubectl get instrumentation -n tinyolly python-instrumentation
 
 ```bash
 # Delete via ArgoCD
-kubectl delete application -n argocd tinyolly-ai-agent
+kubectl delete application -n argocd ollyscale-ai-agent
 
 # Or delete namespace directly
-kubectl delete namespace tinyolly-ai-agent
+kubectl delete namespace ollyscale-ai-agent
 ```
 
 ### Full Cluster Teardown
@@ -258,8 +258,8 @@ If you were using the old K8s deployment method:
 
 ## Files Reference
 
-- **Helm Chart**: `charts/tinyolly-ai-agent/`
-- **ArgoCD App**: `.kind/modules/tinyolly/argocd-applications/observability/tinyolly-ai-agent.yaml`
-- **Terraform Config**: `.kind/modules/tinyolly/variables.tf` (ai_agent_image, ai_agent_tag)
+- **Helm Chart**: `charts/ollyscale-ai-agent/`
+- **ArgoCD App**: `.kind/modules/ollyscale/argocd-applications/observability/ollyscale-ai-agent.yaml`
+- **Terraform Config**: `.kind/modules/ollyscale/variables.tf` (ai_agent_image, ai_agent_tag)
 - **Build Script**: `charts/build-and-push-local.sh`
 - **Application Code**: `apps/ai-agent-demo/`

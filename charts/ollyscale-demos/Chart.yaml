@@ -1,0 +1,21 @@
+apiVersion: v2
+name: ollyscale-demos
+description: Demo applications for ollyScale observability platform
+type: application
+version: 1.0.0
+appVersion: "v0.5.0"
+keywords:
+  - observability
+  - opentelemetry
+  - demo
+  - tracing
+home: https://github.com/ryanfaircloth/ollyscale
+sources:
+  - https://github.com/ryanfaircloth/ollyscale
+maintainers:
+  - name: ollyScale Team
+    email: ryan@faircloth.dev
+annotations:
+  org.opencontainers.image.title: "ollyScale Demos"
+  org.opencontainers.image.description: "Demo applications for ollyScale"
+  org.opencontainers.image.source: "https://github.com/ollyscale/ollyscale"

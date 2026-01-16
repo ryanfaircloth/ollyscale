@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OllyScale - OpenTelemetry Observability Platform</title>
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script>
+        // Global error handler
+        window.onerror = function (msg, url, line, col, error) {
+            const errorDiv = document.createElement('div');
+            errorDiv.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; background: #fee2e2; color: #991b1b; padding: 10px; text-align: center; z-index: 100000; border-bottom: 1px solid #ef4444; font-family: monospace; font-size: 12px;';
+            errorDiv.textContent = 'JS Error: ' + msg + ' at ' + url + ':' + line;
+            document.body.prepend(errorDiv);
+            console.error('Global error:', error);
+            return false;
+        };
+        console.log('OllyScale UI v2.0.0');
+    </script>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <img src="/assets/logo.svg" alt="OllyScale Logo" style="height: 36px; width: auto; cursor: pointer;" onclick="window.location.href='/'">>
+                <div>
+                    <h1 style="cursor: pointer; margin: 0;" onclick="window.location.href='/'">OllyScale</h1>
+                    <div class="subtitle">Lightweight Observability For OpenTelemetry - Logs, Metrics & Traces</div>
+                </div>
+            </div>
+            <div class="header-controls">
+                <button class="theme-toggle" onclick="window.toggleHideOllyScale()" id="hide-ollyscale-btn" title="Hide OllyScale's own telemetry">
+                    <span id="hide-ollyscale-text">Show OllyScale</span>
+                </button>
+                <a href="https://ollyscale.dev/docs" target="_blank" class="docs-link">
+                    <span>Docs</span>
+                </a>
+                <a href="/docs" target="_blank" class="docs-link">
+                    <span>OpenAPI</span>
+                </a>
+                <button class="theme-toggle" onclick="toggleTheme()">
+                    <span id="theme-icon">🌙</span>
+                    <span id="theme-text">Dark Mode</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Tabs Navigation -->
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('logs', this)" data-tab="logs">Logs</button>
+            <button class="tab" onclick="switchTab('metrics', this)" data-tab="metrics">Metrics</button>
+            <button class="tab" onclick="switchTab('traces', this)" data-tab="traces">Traces</button>
+            <button class="tab" onclick="switchTab('spans', this)" data-tab="spans">Spans</button>
+            <button class="tab" onclick="switchTab('catalog', this)" data-tab="catalog">APM Service Catalog</button>
+            <button class="tab" onclick="switchTab('map', this)" data-tab="map">APM Service Map</button>
+            <button class="tab" onclick="switchTab('ai-agents', this)" data-tab="ai-agents">AI Agents</button>
+            <button class="tab" onclick="switchTab('collector', this)" data-tab="collector">OpenTelemetry Collector + OpAMP Config</button>
+            <div style="margin-left: auto; display: flex; align-items: center; padding-bottom: 0;">
+                <button onclick="toggleAutoRefresh()" title="Pause auto-refresh" id="auto-refresh-btn" class="pause-btn">
+                    <span id="refresh-icon">⏸</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Logs Tab -->
+        <div id="logs-content" class="tab-content active">
+            <div class="logs-controls">
+                <input type="text" id="log-search" placeholder="Search logs (trace ID, span ID, message, service)">
+                <button onclick="clearLogFilter()">Clear</button>
+                <div class="severity-filters">
+                    <button class="severity-btn active" data-severity="all" onclick="filterLogsBySeverity('all')">All</button>
+                    <button class="severity-btn" data-severity="error" onclick="filterLogsBySeverity('error')">Error</button>
+                    <button class="severity-btn" data-severity="warn" onclick="filterLogsBySeverity('warn')">Warn</button>
+                    <button class="severity-btn" data-severity="info" onclick="filterLogsBySeverity('info')">Info</button>
+                    <button class="severity-btn" data-severity="debug" onclick="filterLogsBySeverity('debug')">Debug</button>
+                </div>
+                <button onclick="window.closeAllLogs()">Close All</button>
+            </div>
+            <div id="log-json-container"></div>
+            <div class="log-list" id="logs-container">
+                <div class="loading">
+                    <img src="/assets/logo.svg" alt="Loading..." style="height: 48px; width: 48px; animation: spin 1.5s linear infinite;">
+                    <div style="margin-top: 12px;">Loading logs...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Traces Tab -->
+        <div id="traces-content" class="tab-content">
+            <div id="traces-list-view">
+                <div class="logs-controls">
+                    <input type="text" id="trace-search" placeholder="Search traces (trace ID, service name, method)">
+                    <button onclick="clearTraceFilter()">Clear</button>
+                    <div class="status-filters">
+                        <button class="status-btn active" data-status="all" onclick="filterTracesByStatus('all')">All</button>
+                        <button class="status-btn" data-status="2xx" onclick="filterTracesByStatus('2xx')">2xx</button>
+                        <button class="status-btn" data-status="4xx" onclick="filterTracesByStatus('4xx')">4xx</button>
+                        <button class="status-btn" data-status="5xx" onclick="filterTracesByStatus('5xx')">5xx</button>
+                    </div>
+                </div>
+                <div class="trace-list" id="traces-container">
+                    <div class="loading">
+                        <img src="/assets/logo.svg" alt="Loading..." style="height: 48px; width: 48px; animation: spin 1.5s linear infinite;">
+                        <div style="margin-top: 12px;">Loading traces...</div>
+                    </div>
+                </div>
+            </div>
+            <div id="trace-detail-view" style="display: none;">
+                <div class="trace-detail" id="trace-detail-container"></div>
+                <div id="trace-json-view" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Spans Tab -->
+        <div id="spans-content" class="tab-content">
+            <div class="logs-controls">
+                <input type="text" id="span-search" placeholder="Search spans (trace ID, span ID, service, name, status)">
+                <button onclick="clearSpanFilter()">Clear</button>
+                <div class="status-filters">
+                    <button class="status-btn active" data-status="all" onclick="filterSpansByStatus('all')">All</button>
+                    <button class="status-btn" data-status="2xx" onclick="filterSpansByStatus('2xx')">2xx</button>
+                    <button class="status-btn" data-status="4xx" onclick="filterSpansByStatus('4xx')">4xx</button>
+                    <button class="status-btn" data-status="5xx" onclick="filterSpansByStatus('5xx')">5xx</button>
+                </div>
+                <button onclick="window.closeAllSpans()">Close All</button>
+            </div>
+            <div class="span-list" id="spans-container">
+                <div class="loading">
+                    <img src="/assets/logo.svg" alt="Loading..." style="height: 48px; width: 48px; animation: spin 1.5s linear infinite;">
+                    <div style="margin-top: 12px;">Loading spans...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Metrics Tab -->
+        <div id="metrics-content" class="tab-content">
+            <div class="logs-controls" style="margin-bottom: 15px; display: flex; gap: 10px; align-items: center;">
+                <input type="text" id="metric-search" placeholder="Search metrics..." style="flex: 1;">
+                <button onclick="window.clearMetricSearch()">Clear</button>
+                <button id="metric-filter-toggle" onclick="window.toggleREDMetricsFilter()" style="padding: 8px 16px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; white-space: nowrap;">
+                    Show RED Metrics Only
+                </button>
+                <button onclick="window.closeAllMetrics()" style="padding: 8px 16px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; white-space: nowrap;">
+                    Close All
+                </button>
+            </div>
+            <div class="metric-table" id="metrics-container">
+                <div class="loading">
+                    <img src="/assets/logo.svg" alt="Loading..." style="height: 48px; width: 48px; animation: spin 1.5s linear infinite;">
+                    <div style="margin-top: 12px;">Loading metrics...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Service Catalog Tab -->
+        <div id="catalog-content" class="tab-content">
+            <div class="logs-controls" style="margin-bottom: 15px;">
+                <button onclick="window.closeAllServiceCharts()" style="padding: 8px 16px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                    Close All Charts
+                </button>
+            </div>
+            <div id="catalog-container">
+                <div class="loading">
+                    <img src="/assets/logo.svg" alt="Loading..." style="height: 48px; width: 48px; animation: spin 1.5s linear infinite;">
+                    <div style="margin-top: 12px;">Loading service catalog...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Service Map Tab -->
+        <div id="map-content" class="tab-content">
+            <div class="map-container" style="background: #fff; border: 1px solid #ddd; border-radius: 4px; height: 600px; position: relative; overflow: hidden;">
+                <div id="service-map-cy" style="width: 100%; height: 100%; display: block;"></div>
+                <div id="map-legend" style="position: absolute; top: 10px; right: 10px; background: rgba(255, 255, 255, 0.9); padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 11px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); z-index: 10;">
+                    <div style="font-weight: 600; margin-bottom: 6px; color: #64748b;">Legend</div>
+                    <div style="display: flex; align-items: center; margin-bottom: 4px;">
+                        <div style="width: 12px; height: 12px; background: #8b5cf6; transform: rotate(45deg); margin-right: 8px; border: 1px solid #7c3aed;"></div>
+                        <span>Client</span>
+                    </div>
+                    <div style="display: flex; align-items: center; margin-bottom: 4px;">
+                        <div style="width: 12px; height: 12px; background: #0066CC; border-radius: 2px; margin-right: 8px; border: 1px solid #0052CC;"></div>
+                        <span>Server</span>
+                    </div>
+                    <div style="display: flex; align-items: center; margin-bottom: 4px;">
+                        <div style="width: 12px; height: 10px; background: #10b981; border-radius: 0 0 2px 2px; border: 1px solid #059669; margin-right: 8px; position: relative;">
+                            <div style="position: absolute; top: -2px; left: -1px; width: 12px; height: 4px; background: #10b981; border: 1px solid #059669; border-radius: 50%;"></div>
+                        </div>
+                        <span>Database</span>
+                    </div>
+                    <div style="display: flex; align-items: center; margin-bottom: 4px;">
+                        <div style="width: 12px; height: 12px; background: #f59e0b; transform: skewX(-20deg); margin-right: 8px; border: 1px solid #d97706;"></div>
+                        <span>Messaging</span>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <div style="width: 12px; height: 12px; background: #94a3b8; border-radius: 50%; margin-right: 8px; border: 1px solid #64748b;"></div>
+                        <span>Isolated (no connections)</span>
+                    </div>
+                </div>
+                <div id="map-loading" class="loading" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255, 255, 255, 0.9); z-index: 5; display: flex; justify-content: center; align-items: center;">
+                    <img src="/assets/logo.svg" alt="Loading..." style="height: 48px; width: 48px; animation: spin 1.5s linear infinite;">
+                    <div style="margin-top: 12px;">Loading service map...</div>
+                </div>
+                <div id="service-details-panel" style="display: none; position: absolute; top: 10px; left: 10px; width: 250px; background: rgba(255, 255, 255, 0.95); padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 20; backdrop-filter: blur(4px);"></div>
+            </div>
+        </div>
+
+        <!-- AI Agents Tab -->
+        <div id="ai-agents-content" class="tab-content">
+            <div id="ai-agents-list-view">
+                <div class="logs-controls">
+                    <input type="text" id="ai-search" placeholder="Search sessions (ID, model, prompt)">
+                    <button onclick="window.clearAISearch()">Clear</button>
+                    <button onclick="refreshAIView()">Refresh</button>
+                </div>
+                <div class="ai-metrics-row">
+                    <div class="ai-metric-card">
+                        <div class="ai-metric-label">Total Sessions</div>
+                        <div class="ai-metric-value" id="ai-total-sessions">-</div>
+                    </div>
+                    <div class="ai-metric-card">
+                        <div class="ai-metric-label">Total Tokens</div>
+                        <div class="ai-metric-value" id="ai-total-tokens">-</div>
+                    </div>
+                    <div class="ai-metric-card">
+                        <div class="ai-metric-label">Est. Cost</div>
+                        <div class="ai-metric-value" id="ai-total-cost">-</div>
+                    </div>
+                    <div class="ai-metric-card">
+                        <div class="ai-metric-label">Avg Latency</div>
+                        <div class="ai-metric-value" id="ai-avg-latency">-</div>
+                    </div>
+                </div>
+                <div class="trace-list" id="ai-sessions-container">
+                    <div class="loading">
+                        <img src="/assets/logo.svg" alt="Loading..." style="height: 48px; width: 48px; animation: spin 1.5s linear infinite;">
+                        <div style="margin-top: 12px;">Loading AI sessions...</div>
+                    </div>
+                </div>
+            </div>
+            <div id="ai-detail-view" style="display: none;">
+                <div class="trace-header">
+                    <button class="back-button" onclick="closeAISessionDetail()">← Back to Sessions</button>
+                    <h2 id="ai-session-title">Session Detail</h2>
+                </div>
+                <div class="trace-detail" id="ai-session-detail-container"></div>
+            </div>
+        </div>
+
+        <!-- Collector Tab -->
+        <div id="collector-content" class="tab-content">
+            <div class="collector-header">
+                <h2>OpenTelemetry Collector Configuration</h2>
+                <p class="collector-description">
+                    View and modify the OTel Collector configuration in real-time via OpAMP protocol.
+                    Changes are pushed to the collector require ~5 seconds to take effect but do not require a restart.
+                </p>
+            </div>
+            <div class="status-agents-row">
+                <div class="status-card">
+                    <div class="status-card-header">
+                        <h4>OpAMP Server</h4>
+                        <button class="collector-btn collector-btn-secondary collector-btn-xs" onclick="refreshOpampStatus()">Refresh</button>
+                    </div>
+                    <div id="opamp-status-container" class="status-card-content">
+                        <div class="loading-indicator">Loading...</div>
+                    </div>
+                </div>
+                <div class="status-card">
+                    <div class="status-card-header">
+                        <h4>Connected Collectors</h4>
+                    </div>
+                    <div id="agents-container" class="status-card-content">
+                        <div class="empty-state">No collectors connected</div>
+                    </div>
+                </div>
+            </div>
+            <div class="config-templates-section">
+                <div class="templates-header">
+                    <h3>Configuration Templates</h3>
+                    <span class="templates-description">Quick-start templates for common use cases</span>
+                </div>
+                <div class="templates-grid">
+                    <div class="loading-indicator">Loading templates...</div>
+                </div>
+            </div>
+            <div class="config-editor-section">
+                <div class="config-header">
+                    <h3>Collector Configuration</h3>
+                    <div class="config-actions">
+                        <button class="collector-btn collector-btn-secondary" onclick="loadCollectorConfig()">Load Current</button>
+                        <button class="collector-btn collector-btn-secondary" onclick="copyCurrentConfig()">Copy Config</button>
+                        <button class="collector-btn collector-btn-secondary" onclick="resetConfigToDefault()">Reset to Default</button>
+                        <button class="collector-btn collector-btn-secondary" onclick="showConfigDiff()">Show Diff</button>
+                        <button class="collector-btn collector-btn-primary" onclick="applyCollectorConfig()">Apply Configuration</button>
+                    </div>
+                </div>
+                <div class="config-validation" id="config-validation"></div>
+                <div class="config-editor-container">
+                    <div class="config-status" id="config-status"></div>
+                    <div class="config-editor-wrapper">
+                        <div id="collector-line-numbers" class="line-numbers">1</div>
+                        <textarea id="collector-config-editor" class="config-editor" spellcheck="false" placeholder="Loading collector configuration..."></textarea>
+                    </div>
+                </div>
+            </div>
+            <div id="config-diff-modal" class="diff-modal" style="display: none;" onclick="if(event.target === this) closeConfigDiff()">
+                <div class="diff-modal-content" onclick="event.stopPropagation()">
+                    <div class="diff-modal-header">
+                        <h3>Configuration Changes</h3>
+                        <button class="diff-modal-close" onclick="closeConfigDiff()">&times;</button>
+                    </div>
+                    <div class="diff-modal-body">
+                        <p class="diff-description">Review the changes before applying:</p>
+                        <div id="config-diff-content" class="diff-content"></div>
+                    </div>
+                    <div class="diff-modal-footer">
+                        <button class="collector-btn collector-btn-secondary" onclick="closeConfigDiff()">Cancel</button>
+                        <button class="collector-btn collector-btn-primary" onclick="confirmApplyConfig()">Apply Changes</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application Entry -->
+    <script type="module" src="/main.ts"></script>
+</body>
+</html>

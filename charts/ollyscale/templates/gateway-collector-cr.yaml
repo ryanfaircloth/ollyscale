@@ -1,0 +1,31 @@
+{{- if .Values.gatewayCollector.enabled -}}
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: gateway
+  namespace: {{ .Values.gatewayCollector.namespace }}
+  labels:
+    {{- include "ollyscale.labels" . | nindent 4 }}
+    app.kubernetes.io/component: otel-gateway
+  {{- with .Values.commonAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  mode: deployment
+  serviceAccount: gateway
+  replicas: {{ .Values.gatewayCollector.replicas }}
+
+  {{- with .Values.gatewayCollector.resources }}
+  resources:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+
+  {{- with .Values.gatewayCollector.podAnnotations }}
+  podAnnotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+
+  config:
+    {{- toYaml .Values.gatewayCollector.config | nindent 4 }}
+{{- end }}

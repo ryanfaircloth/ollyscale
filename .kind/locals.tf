@@ -5,17 +5,17 @@ locals {
   use_local_registry = var.use_local_registry
 
   # Image registry configuration
-  # When use_local_registry=true:  docker-registry.registry.svc.cluster.local:5000/tinyolly
-  # When use_local_registry=false: ghcr.io/ryanfaircloth/tinyolly
-  image_registry = local.use_local_registry ? "docker-registry.registry.svc.cluster.local:5000/tinyolly" : "ghcr.io/ryanfaircloth/tinyolly"
+  # When use_local_registry=true:  docker-registry.registry.svc.cluster.local:5000/ollyscale
+  # When use_local_registry=false: ghcr.io/ryanfaircloth/ollyscale
+  image_registry = local.use_local_registry ? "docker-registry.registry.svc.cluster.local:5000/ollyscale" : "ghcr.io/ryanfaircloth/ollyscale"
 
   # Chart registry configuration
-  # When use_local_registry=true:  oci://docker-registry.registry.svc.cluster.local:5000/tinyolly/charts
-  # When use_local_registry=false: oci://ghcr.io/ryanfaircloth/tinyolly/charts
-  chart_registry = local.use_local_registry ? "docker-registry.registry.svc.cluster.local:5000/tinyolly/charts" : "oci://ghcr.io/ryanfaircloth/tinyolly/charts"
+  # When use_local_registry=true:  oci://docker-registry.registry.svc.cluster.local:5000/ollyscale/charts
+  # When use_local_registry=false: oci://ghcr.io/ryanfaircloth/ollyscale/charts
+  chart_registry = local.use_local_registry ? "docker-registry.registry.svc.cluster.local:5000/ollyscale/charts" : "oci://ghcr.io/ryanfaircloth/ollyscale/charts"
 
   # Image tags
-  tinyolly_tag   = var.tinyolly_tag
+  ollyscale_tag  = var.ollyscale_tag
   opamp_tag      = var.opamp_tag
   demo_tag       = var.demo_tag
   demo_agent_tag = var.demo_agent_tag

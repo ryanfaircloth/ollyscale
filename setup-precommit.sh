@@ -1,9 +1,9 @@
 #!/bin/bash
-# Setup pre-commit hooks for TinyOlly
+# Setup pre-commit hooks for ollyScale
 
 set -e
 
-echo "🔧 Setting up pre-commit hooks for TinyOlly..."
+echo "🔧 Setting up pre-commit hooks for ollyScale..."
 
 # Check if pre-commit is installed
 if ! command -v pre-commit &> /dev/null; then

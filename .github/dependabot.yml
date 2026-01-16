@@ -5,14 +5,14 @@
 
 version: 2
 updates:
-  # Main TinyOlly app (Python)
+  # Main ollyScale app (Python)
   - package-ecosystem: "pip"
-    directory: "/apps/tinyolly"
+    directory: "/apps/ollyscale"
     schedule:
       interval: "weekly"
     labels:
       - "dependencies"
-      - "tinyolly"
+      - "ollyscale"
 
   # OpAMP server (Go)
   - package-ecosystem: "gomod"
@@ -61,7 +61,7 @@ updates:
 
   # Docker base images
   - package-ecosystem: "docker"
-    directory: "/apps/tinyolly"
+    directory: "/apps/ollyscale"
     schedule:
       interval: "weekly"
     labels:

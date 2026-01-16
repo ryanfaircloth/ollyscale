@@ -43,7 +43,7 @@ echo ""
 echo "To create an access token:"
 echo "  1. Go to https://hub.docker.com/settings/security"
 echo "  2. Click 'New Access Token'"
-echo "  3. Name it 'tinyolly-builds' with Read & Write permissions"
+echo "  3. Name it 'ollyscale-builds' with Read & Write permissions"
 echo "  4. Use the token instead of your password below"
 echo ""
 

@@ -32,7 +32,7 @@
 
 set -e
 
-# Build ALL TinyOlly images locally (multi-arch)
+# Build ALL ollyScale images locally (multi-arch)
 # Usage: ./build-all.sh [version]
 # Example: ./build-all.sh v2.1.0
 #
@@ -43,7 +43,7 @@ VERSION=${1:-"latest"}
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "=========================================="
-echo "TinyOlly - Build ALL Images (No Push)"
+echo "ollyScale - Build ALL Images (No Push)"
 echo "=========================================="
 echo "Version: $VERSION"
 echo ""
@@ -78,19 +78,19 @@ echo "✓ ALL images built locally!"
 echo "=========================================="
 echo ""
 echo "Core images:"
-echo "  - tinyolly/tinyolly:$VERSION (unified UI + OTLP receiver)"
-echo "  - tinyolly/opamp-server:$VERSION"
+echo "  - ollyscale/ollyscale:$VERSION (unified UI + OTLP receiver)"
+echo "  - ollyscale/opamp-server:$VERSION"
 echo ""
 echo "Demo images:"
-echo "  - tinyolly/demo-frontend:$VERSION"
-echo "  - tinyolly/demo-backend:$VERSION"
+echo "  - ollyscale/demo-frontend:$VERSION"
+echo "  - ollyscale/demo-backend:$VERSION"
 echo ""
 echo "eBPF Demo images:"
-echo "  - tinyolly/ebpf-frontend:$VERSION"
-echo "  - tinyolly/ebpf-backend:$VERSION"
+echo "  - ollyscale/ebpf-frontend:$VERSION"
+echo "  - ollyscale/ebpf-backend:$VERSION"
 echo ""
 echo "AI Demo image:"
-echo "  - tinyolly/ai-agent-demo:$VERSION"
+echo "  - ollyscale/ai-agent-demo:$VERSION"
 echo ""
 echo "Next step - push to registry:"
 echo "  ./03-push-all.sh $VERSION"

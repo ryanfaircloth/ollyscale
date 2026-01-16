@@ -32,7 +32,7 @@
 
 set -e
 
-# Build TinyOlly AI Agent demo image locally (multi-arch)
+# Build ollyScale AI Agent demo image locally (multi-arch)
 # Usage: ./build-ai-demo.sh [version]
 # Example: ./build-ai-demo.sh v2.1.0
 #
@@ -43,11 +43,11 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/../../docker-ai-agent-demo"
 
 VERSION=${1:-"latest"}
-CONTAINER_REGISTRY=${CONTAINER_REGISTRY:-"tinyolly"}
+CONTAINER_REGISTRY=${CONTAINER_REGISTRY:-"ghcr.io/ryanfaircloth/ollyscale"}
 PLATFORMS="linux/amd64,linux/arm64"
 
 echo "=========================================="
-echo "TinyOlly AI Demo - Build (No Push)"
+echo "ollyScale AI Demo - Build (No Push)"
 echo "=========================================="
 echo "Registry: $CONTAINER_REGISTRY"
 echo "Version: $VERSION"
@@ -57,7 +57,7 @@ echo ""
 
 # Ensure buildx builder exists
 echo "Setting up Docker Buildx..."
-docker buildx create --name tinyolly-builder --use 2>/dev/null || docker buildx use tinyolly-builder
+docker buildx create --name ollyscale-builder --use 2>/dev/null || docker buildx use ollyscale-builder
 docker buildx inspect --bootstrap
 echo ""
 

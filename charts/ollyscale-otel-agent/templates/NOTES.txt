@@ -1,0 +1,25 @@
+ollyScale AI Agent Demo has been deployed!
+
+Components:
+- Ollama LLM Server ({{ .Values.ollama.model }} model)
+- AI Agent with OpenTelemetry auto-instrumentation
+
+Namespace: {{ .Values.global.namespace }}
+
+To check the status:
+  kubectl get pods -n {{ .Values.global.namespace }}
+
+To view agent logs:
+  kubectl logs -n {{ .Values.global.namespace }} deployment/ai-agent -f
+
+To view Ollama logs:
+  kubectl logs -n {{ .Values.global.namespace }} deployment/ollama -f
+
+{{- if .Values.agent.httpRoute.enabled }}
+
+HTTPRoute is enabled. Access the agent at:
+  https://{{ .Values.agent.httpRoute.hostname }}
+{{- end }}
+
+The AI agent will automatically send traces to ollyScale via the OpenTelemetry operator injection.
+View traces in the ollyScale UI to see GenAI spans with gen_ai.* attributes!

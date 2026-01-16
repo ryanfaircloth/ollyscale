@@ -32,7 +32,7 @@
 
 set -e
 
-# Build TinyOlly UI image only (multi-arch)
+# Build ollyScale UI image only (multi-arch)
 # Usage: ./02-build-ui.sh [version]
 # Example: ./02-build-ui.sh v2.1.0
 #
@@ -43,11 +43,11 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/../../docker"
 
 VERSION=${1:-"latest"}
-CONTAINER_REGISTRY=${CONTAINER_REGISTRY:-"tinyolly"}
+CONTAINER_REGISTRY=${CONTAINER_REGISTRY:-"ollyscale"}
 PLATFORMS="linux/amd64,linux/arm64"
 
 echo "=========================================="
-echo "TinyOlly UI - Build (No Push)"
+echo "ollyScale UI - Build (No Push)"
 echo "=========================================="
 echo "Registry: $CONTAINER_REGISTRY"
 echo "Version: $VERSION"
@@ -57,7 +57,7 @@ echo ""
 
 # Ensure buildx builder exists and is active
 echo "Setting up Docker Buildx..."
-docker buildx create --name tinyolly-builder --use 2>/dev/null || docker buildx use tinyolly-builder
+docker buildx create --name ollyscale-builder --use 2>/dev/null || docker buildx use ollyscale-builder
 docker buildx inspect --bootstrap
 echo ""
 
@@ -66,8 +66,8 @@ echo "Building ui..."
 echo "----------------------------------------"
 docker buildx build --platform $PLATFORMS \
   --no-cache \
-  -f dockerfiles/Dockerfile.tinyolly-ui \
-  --build-arg APP_DIR=tinyolly-ui \
+  -f dockerfiles/Dockerfile.ollyscale-ui \
+  --build-arg APP_DIR=ollyscale-ui \
   -t $CONTAINER_REGISTRY/ui:latest \
   -t $CONTAINER_REGISTRY/ui:$VERSION \
   $BUILD_ACTION .

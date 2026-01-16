@@ -1,9 +1,9 @@
 # Kubernetes Deployment
 
-Deploy TinyOlly on Kubernetes (Minikube) for local development!
+Deploy ollyScale on Kubernetes (Minikube) for local development!
 
 <div align="center">
-  <img src="../images/servicemap.png" alt="TinyOlly on Kubernetes" width="600">
+  <img src="../images/servicemap.png" alt="ollyScale on Kubernetes" width="600">
   <p><em>Service map showing microservices running on Kubernetes</em></p>
 </div>
 
@@ -12,7 +12,7 @@ Deploy TinyOlly on Kubernetes (Minikube) for local development!
 All examples are launched from the repo - clone it first or download the current GitHub release archive:
 
 ```bash
-git clone https://github.com/tinyolly/tinyolly
+git clone https://github.com/ryanfaircloth/ollyscale
 ```
 
 ## Prerequisites
@@ -20,7 +20,7 @@ git clone https://github.com/tinyolly/tinyolly
 - [Minikube](https://minikube.sigs.k8s.io/docs/start/)
 - [kubectl](https://kubernetes.io/docs/tasks/tools/)
 
-## 1. Deploy TinyOlly Core
+## 1. Deploy ollyScale Core
 
 1. **Start Minikube:**
 
@@ -28,7 +28,7 @@ git clone https://github.com/tinyolly/tinyolly
     minikube start
     ```
 
-2. **Deploy TinyOlly:**
+2. **Deploy ollyScale:**
 
         Deploy using Helm (images will be pulled from Docker Hub automatically):
 
@@ -47,7 +47,7 @@ git clone https://github.com/tinyolly/tinyolly
 
 3. **Access the UI:**
 
-    To access the TinyOlly UI (Service Type: LoadBalancer) on macOS with Minikube, you need to use `minikube tunnel`.
+    To access the ollyScale UI (Service Type: LoadBalancer) on macOS with Minikube, you need to use `minikube tunnel`.
 
     Open a **new terminal window** and run:
 
@@ -57,7 +57,7 @@ git clone https://github.com/tinyolly/tinyolly
 
     You may be asked for your password. Keep this terminal open.
 
-    Now you can access the TinyOlly UI at: [http://localhost:5002](http://localhost:5002)
+    Now you can access the ollyScale UI at: [http://localhost:5002](http://localhost:5002)
 
     **OpenTelemetry Collector + OpAMP Config Page:** Navigate to the "OpenTelemetry Collector + OpAMP Config" tab in the UI to view and manage collector configurations remotely. See the [OpAMP Configuration](#opamp-configuration-optional) section below for setup instructions.
 
@@ -88,11 +88,11 @@ git clone https://github.com/tinyolly/tinyolly
 
 5. **Clean Up:**
 
-    Uninstall TinyOlly using Helm:
+    Uninstall ollyScale using Helm:
 
     ```bash
-    helm uninstall tinyolly -n tinyolly
-    kubectl delete namespace tinyolly
+    helm uninstall ollyscale -n ollyscale
+    kubectl delete namespace ollyscale
     ```
 
     Shut down Minikube:
@@ -111,7 +111,7 @@ git clone https://github.com/tinyolly/tinyolly
 
 ## 2. Demo Applications (Optional)
 
-To see TinyOlly in action with instrumented microservices:
+To see ollyScale in action with instrumented microservices:
 
 ```bash
 cd k8s-demo
@@ -136,7 +136,7 @@ To deploy the full [OpenTelemetry Demo](https://opentelemetry.io/docs/demo/) wit
 
 **Prerequisites:**
 
-- TinyOlly must be deployed first (see Setup above)
+- ollyScale must be deployed first (see Setup above)
 - [Helm](https://helm.sh/docs/intro/install/) installed
 - Sufficient cluster resources (demo is resource-intensive)
 
@@ -147,7 +147,7 @@ cd k8s-otel-demo
 ./01-deploy-otel-demo-helm.sh
 ```
 
-This deploys all OpenTelemetry Demo services configured to send telemetry to TinyOlly's collector via HTTP on port 4318. Built-in observability tools (Jaeger, Grafana, Prometheus) are disabled.
+This deploys all OpenTelemetry Demo services configured to send telemetry to ollyScale's collector via HTTP on port 4318. Built-in observability tools (Jaeger, Grafana, Prometheus) are disabled.
 
 **Cleanup:**
 
@@ -156,11 +156,11 @@ cd k8s-otel-demo
 ./02-cleanup-otel-demo-helm.sh
 ```
 
-This removes the OpenTelemetry Demo but leaves TinyOlly running.
+This removes the OpenTelemetry Demo but leaves ollyScale running.
 
-## 4. TinyOlly **Core-Only** Deployment: Use Your Own Kubernetes OpenTelemetry Collector
+## 4. ollyScale **Core-Only** Deployment: Use Your Own Kubernetes OpenTelemetry Collector
 
-To deploy TinyOlly without the bundled OTel Collector (e.g., if you have an existing collector daemonset). Includes OpAMP server for optional remote collector configuration management:
+To deploy ollyScale without the bundled OTel Collector (e.g., if you have an existing collector daemonset). Includes OpAMP server for optional remote collector configuration management:
 
 1. **Deploy Core:**
 
@@ -178,11 +178,11 @@ To deploy TinyOlly without the bundled OTel Collector (e.g., if you have an exis
    ./02-cleanup.sh
    ```
 
-### Use TinyOlly with Any OpenTelemetry Collector
+### Use ollyScale with Any OpenTelemetry Collector
 
 Swap out the included Otel Collector for any distro of Otel Collector.
 
-**Point your OpenTelemetry exporters to tinyolly-otlp-receiver:4343:**
+**Point your OpenTelemetry exporters to ollyscale-otlp-receiver:4343:**
 i.e.
 
 ```yaml
@@ -191,7 +191,7 @@ exporters:
     verbosity: detailed
 
   otlp:
-    endpoint: "tinyolly-otlp-receiver:4343"
+    endpoint: "ollyscale-otlp-receiver:4343"
     tls:
       insecure: true
 
@@ -213,29 +213,29 @@ service:
       exporters: [debug, otlp]
 ```
 
-The Otel Collector will forward everything to TinyOlly's OTLP receiver, which process telemetry and stores it in Redis in OTEL format for the backend and UI to access.
+The Otel Collector will forward everything to ollyScale's OTLP receiver, which process telemetry and stores it in Redis in OTEL format for the backend and UI to access.
 
 ## OpAMP Configuration (Optional)
 
-The **OpenTelemetry Collector + OpAMP Config** page in the TinyOlly UI allows you to view and manage collector configurations remotely. To enable this feature, add the OpAMP extension to your collector config:
+The **OpenTelemetry Collector + OpAMP Config** page in the ollyScale UI allows you to view and manage collector configurations remotely. To enable this feature, add the OpAMP extension to your collector config:
 
 ```yaml
 extensions:
   opamp:
     server:
       ws:
-        endpoint: ws://tinyolly-opamp-server:4320/v1/opamp
+        endpoint: ws://ollyscale-opamp-server:4320/v1/opamp
 
 service:
   extensions: [opamp]
 ```
 
-The default configuration template (included as a ConfigMap in `k8s-core-only/tinyolly-opamp-server.yaml`) shows a complete example with OTLP receivers, OpAMP extension, batch processing, and spanmetrics connector. Your collector will connect to the OpAMP server and receive configuration updates through the TinyOlly UI.
+The default configuration template (included as a ConfigMap in `k8s-core-only/ollyscale-opamp-server.yaml`) shows a complete example with OTLP receivers, OpAMP extension, batch processing, and spanmetrics connector. Your collector will connect to the OpAMP server and receive configuration updates through the ollyScale UI.
 
 ---
 
 ## Building Images
 
-By default, deployment scripts pull pre-built images from GitHub Container Registry (GHCR). For building images locally (Minikube) or publishing to GHCR, see [build/README.md](https://github.com/tinyolly/tinyolly/blob/main/build/README.md).
+By default, deployment scripts pull pre-built images from GitHub Container Registry (GHCR). For building images locally (Minikube) or publishing to GHCR, see [build/README.md](https://github.com/ryanfaircloth/ollyscale/blob/main/build/README.md).
 
 ---

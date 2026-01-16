@@ -32,17 +32,17 @@
 
 set -e
 
-# Push TinyOlly eBPF demo images to Docker Hub
+# Push ollyScale eBPF demo images to container registry
 # Usage: ./push-ebpf-demo.sh [version]
 # Example: ./push-ebpf-demo.sh v2.1.0
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 VERSION=${1:-"latest"}
-CONTAINER_REGISTRY=${CONTAINER_REGISTRY:-"tinyolly"}
+CONTAINER_REGISTRY=${CONTAINER_REGISTRY:-"ghcr.io/ryanfaircloth/ollyscale"}
 
 echo "=========================================="
-echo "TinyOlly eBPF Demo - Push to Container Registry"
+echo "ollyScale eBPF Demo - Push to Container Registry"
 echo "=========================================="
 echo "Registry: $CONTAINER_REGISTRY"
 echo "Version: $VERSION"

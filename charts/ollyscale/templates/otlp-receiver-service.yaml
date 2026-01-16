@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ollyscale.otlpReceiver.name" . }}
+  labels:
+    {{- include "ollyscale.otlpReceiver.labels" . | nindent 4 }}
+  {{- with .Values.otlpReceiver.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.otlpReceiver.service.type }}
+  ports:
+  - name: grpc
+    port: {{ .Values.otlpReceiver.service.port }}
+    targetPort: {{ .Values.otlpReceiver.service.targetPort }}
+    protocol: TCP
+  selector:
+    {{- include "ollyscale.otlpReceiver.selectorLabels" . | nindent 4 }}

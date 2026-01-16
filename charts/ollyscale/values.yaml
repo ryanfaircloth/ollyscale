@@ -1,0 +1,804 @@
+# Default values for ollyscale.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Global settings
+global:
+  # -- Namespace for ollyScale deployment
+  namespace: ollyscale
+
+# -- Number of replicas for each component (can be overridden per component)
+replicaCount: 1
+
+# Image settings
+image:
+  # -- Image pull policy
+  pullPolicy: Always
+  # -- Image pull secrets
+  pullSecrets: []
+
+# -- Labels to add to all resources
+commonLabels: {}
+
+# -- Annotations to add to all resources
+commonAnnotations: {}
+
+# Redis configuration (assumes redis-operator managed cluster)
+redis:
+  # -- Redis host (should match your redis-operator cluster name)
+  host: ollyscale-redis
+  # -- Redis port
+  port: 6379
+
+# DEPRECATED: Use gatewayCollector instead - this basic collector is redundant
+# The gateway collector provides all the same features plus tail sampling,
+# Envoy service name extraction, and spanmetrics generation.
+# NOTE: OTel Operator creates service as {name}-collector, e.g., gateway-collector
+otelCollector:
+  enabled: false
+  serviceName: gateway-collector
+  port: 4318
+  # When enabled, the OTel Operator creates service: gateway-collector.ollyscale.svc.cluster.local
+
+# Agent Collector configuration (daemonset for node-level log collection)
+agentCollector:
+  # -- Enable Agent OpenTelemetryCollector Custom Resource
+  enabled: true
+
+  # -- Namespace for agent collector (defaults to release namespace)
+  namespace: ollyscale
+
+  # -- Full collector configuration (receivers, processors, exporters, service)
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+    processors:
+      batch:
+        timeout: 5s
+        send_batch_size: 256
+    exporters:
+      loadbalancing/gateway:
+        resolver:
+          dns:
+            hostname: gateway-collector-headless.ollyscale.svc.cluster.local
+            port: "4317"
+        protocol:
+          otlp:
+            tls:
+              insecure: true
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [loadbalancing/gateway]
+        metrics:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [loadbalancing/gateway]
+        logs:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [loadbalancing/gateway]
+
+# Gateway Collector configuration (deployment for centralized processing)
+# This is the main ollyScale collector - it receives from the agent collector,
+# performs tail sampling, Envoy service name extraction, generates RED metrics,
+# and forwards to ollyScale's OTLP receiver.
+gatewayCollector:
+  # -- Enable Gateway OpenTelemetryCollector Custom Resource
+  enabled: true
+
+  # -- Namespace for gateway collector (defaults to release namespace)
+  namespace: ollyscale
+
+  # -- Number of replicas for gateway deployment
+  replicas: 1
+
+  # -- Pod annotations
+  podAnnotations: {}
+
+  # -- Resource limits and requests for the gateway collector
+  resources:
+    limits:
+      memory: 1Gi
+    requests:
+      cpu: 200m
+      memory: 512Mi
+
+  # -- Full collector configuration
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+    processors:
+      batch:
+        timeout: 5s
+        send_batch_size: 256
+      tail_sampling:
+        # Wait to see all spans before deciding
+        decision_wait: 10s
+        num_traces: 50000
+        expected_new_traces_per_sec: 100
+        policies:
+          # Keep ALL error traces (all services)
+          - name: errors
+            type: status_code
+            status_code:
+              status_codes: [ERROR]
+          # Keep ALL HTTP 4xx/5xx (all services)
+          - name: http-errors
+            type: string_attribute
+            string_attribute:
+              key: http.status_code
+              values: ["4[0-9]{2}", "5[0-9]{2}"]
+              enabled_regex_matching: true
+          # Keep ALL demo service traces (no sampling)
+          - name: keep-demos
+            type: string_attribute
+            string_attribute:
+              key: service.name
+              values: ["demo-.*", "otel-demo-.*", "ai-agent.*"]
+              enabled_regex_matching: true
+          # Keep ALL non-ollyScale service traces (all external apps/demos)
+          - name: keep-non-ollyscale
+            type: and
+            and:
+              and_sub_policy:
+                - name: not-ollyscale
+                  type: string_attribute
+                  string_attribute:
+                    key: service.name
+                    values: ["ollyscale-.*"]
+                    enabled_regex_matching: true
+                    invert_match: true
+          # Sample ollyScale success traces at 5% (only ollyScale internal services)
+          - name: sample-ollyscale-success
+            type: and
+            and:
+              and_sub_policy:
+                - name: ollyscale-services
+                  type: string_attribute
+                  string_attribute:
+                    key: service.name
+                    values: ["ollyscale-.*"]
+                    enabled_regex_matching: true
+                - name: not-error
+                  type: status_code
+                  status_code:
+                    status_codes: [OK, UNSET]
+                - name: probabilistic
+                  type: probabilistic
+                  probabilistic:
+                    sampling_percentage: 5.0
+    exporters:
+      otlp/to:
+        endpoint: ollyscale-otlp-receiver.ollyscale.svc.cluster.local:4343
+        tls:
+          insecure: true
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [tail_sampling, batch]
+          exporters: [otlp/to]
+        metrics:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [otlp/to]
+        logs:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [otlp/to]
+  #     batch: {}
+  #   exporters:
+  #     otlp:
+  #       endpoint: ollyscale-otlp-receiver.ollyscale.svc.cluster.local:4343
+  #       tls:
+  #         insecure: true
+  #   service:
+  #     pipelines:
+  #       traces:
+  #         receivers: [otlp]
+  #         processors: [batch]
+  #         exporters: [otlp]
+
+# OpenTelemetry Instrumentation configuration
+instrumentation:
+  # -- Enable ollyScale Instrumentation Custom Resource (managed by OpenTelemetry Operator)
+  enabled: true
+
+  # -- Enable self-observability: instrument ollyScale UI and OTLP receiver
+  # Use sampling configuration to control overhead while maintaining error visibility
+  selfObservability: true
+
+  # -- Name of the Instrumentation CR
+  name: python-instrumentation
+
+  # -- Exporter configuration
+  exporter:
+    # -- Endpoint for the collector (OTel Operator creates service as agent-collector)
+    endpoint: http://agent-collector.ollyscale.svc.cluster.local:4318
+
+  # -- Propagators for context propagation
+  propagators:
+    - tracecontext
+    - baggage
+
+  # -- Sampler configuration - always sample at SDK, let gateway do tail_sampling
+  sampler:
+    # Always on sampler - create all traces, gateway collector does tail_sampling
+    type: always_on
+
+  # -- Resource attributes configuration
+  resource:
+    # -- Add Kubernetes UID attributes
+    addK8sUIDAttributes: true
+    # -- Additional resource attributes
+    attributes:
+      deployment.environment: "development"
+
+  # Python auto-instrumentation configuration
+  python:
+    # Image for Python auto-instrumentation
+    image:
+      repository: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python
+      tag: 0.60b0
+
+    # -- Environment variables for Python instrumentation
+    env:
+      - name: OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED
+        value: "true"
+      - name: OTEL_PYTHON_LOGGING_INJECTION_ENABLED
+        value: "true"
+      - name: OTEL_PYTHON_LOG_LEVEL
+        value: "INFO"
+      - name: OTEL_PYTHON_LOG_CORRELATION
+        value: "true"
+      - name: OTEL_INSTRUMENTATION_HTTP_CAPTURE_HEADERS_SERVER_REQUEST
+        value: "content-.*,x-.*"
+      - name: OTEL_INSTRUMENTATION_HTTP_CAPTURE_HEADERS_SERVER_RESPONSE
+        value: "content-.*,x-.*"
+      - name: OTEL_PYTHON_EXCLUDED_URLS
+        value: "/health,/metrics,ready,PING"
+
+    # -- Resource limits and requests for instrumentation init container
+    resources:
+      limits:
+        cpu: 500m
+        memory: 256Mi
+      requests:
+        cpu: 50m
+        memory: 64Mi
+
+  # Go auto-instrumentation configuration
+  go:
+    # Image for Go auto-instrumentation
+    image:
+      repository: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-go
+      tag: v0.15.0-alpha
+
+    # -- Environment variables for Go instrumentation
+    env:
+      - name: OTEL_GO_AUTO_TARGET_EXE
+        value: "/app/ollyscale-opamp-server"
+      - name: OTEL_SERVICE_NAME
+        value: "ollyscale-opamp-server"
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: "http://agent-collector.ollyscale.svc.cluster.local:4318"
+
+    # -- Resource limits and requests for Go instrumentation init container
+    resources:
+      limits:
+        cpu: 500m
+        memory: 256Mi
+      requests:
+        cpu: 50m
+        memory: 64Mi
+
+# OpenTelemetry eBPF Agent configuration (OpenTelemetry eBPF Instrumentation - OBI)
+# Provides kernel-level automatic tracing for applications without code changes
+#
+# PLATFORM REQUIREMENTS:
+#   - Requires real Linux kernel with eBPF support (kernel 5.11+)
+#   - Will NOT work on: KIND/macOS, Docker Desktop, Podman on macOS
+#   - For local development, use OpenTelemetry Operator auto-instrumentation instead
+#
+# Use cases:
+#   - Legacy applications without OTel SDK
+#   - Quick tracing during development (on Linux clusters)
+#   - Multi-language microservices (no per-language SDK needed)
+# Note: eBPF provides network-level spans but lacks application-level context
+#       compared to SDK instrumentation (e.g., no route names, user IDs)
+ebpfAgent:
+  # -- Enable eBPF agent DaemonSet for zero-code instrumentation
+  enabled: false
+
+  # -- Namespace for eBPF agent (defaults to release namespace)
+  namespace: ollyscale
+
+  image:
+    # -- eBPF agent image repository
+    repository: docker.io/otel/ebpf-instrument
+    # -- eBPF agent image tag
+    tag: v0.4.1
+    # -- eBPF agent image pull policy
+    pullPolicy: Always
+
+  # -- Pod annotations
+  podAnnotations: {}
+
+  # -- Pod security context (requires privileged mode for eBPF)
+  podSecurityContext:
+    hostPID: true
+
+  # -- Container security context (privileged required for eBPF)
+  securityContext:
+    privileged: true
+    runAsUser: 0
+    readOnlyRootFilesystem: false
+
+  # -- Resource limits and requests
+  resources:
+    limits:
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+
+  # -- eBPF agent configuration
+  config:
+    # -- OTLP exporter endpoint (defaults to gateway collector)
+    otlpEndpoint: "http://gateway-collector.ollyscale.svc.cluster.local:4317"
+    # -- Ports to instrument (comma-separated list)
+    # Examples:
+    #   "5000" - Flask default port
+    #   "8080,8081" - Multiple ports
+    #   "5000,8080,3000,8081" - Common development ports
+    openPorts: "5000"
+    # -- Service name prefix for instrumented services
+    serviceName: "ebpf-demo"
+
+  # -- Node selector
+  # Example: Only run on specific nodes
+  # nodeSelector:
+  #   kubernetes.io/os: linux
+  nodeSelector: {}
+
+  # -- Tolerations
+  # Example: Allow running on tainted nodes
+  # tolerations:
+  #   - key: "node-role.kubernetes.io/control-plane"
+  #     operator: "Exists"
+  #     effect: "NoSchedule"
+  tolerations: []
+
+  # -- Affinity
+  # Example: Prefer nodes with specific labels
+  # affinity:
+  #   nodeAffinity:
+  #     preferredDuringSchedulingIgnoredDuringExecution:
+  #       - weight: 100
+  #         preference:
+  #           matchExpressions:
+  #             - key: workload-type
+  #               operator: In
+  #               values:
+  #                 - application
+  affinity: {}
+
+# ollyScale UI component
+frontend:
+  # -- Number of replicas for API backend
+  replicaCount: 1
+
+  image:
+    # -- API backend image repository (unified ollyscale image, runs in API mode)
+    repository: ghcr.io/ryanfaircloth/ollyscale/ollyscale
+    # -- API backend image tag
+    tag: v0.0.1
+    # -- API backend image pull policy (overrides global)
+    pullPolicy: ""
+
+  # -- Service account settings
+  serviceAccount:
+    # -- Create service account for API backend
+    create: true
+    # -- Service account name (generated if not set)
+    name: ""
+    # -- Annotations for service account
+    annotations: {}
+
+  # -- Pod annotations
+  podAnnotations: {}
+
+  # -- Pod security context
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+
+  # -- Container security context
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: false
+
+  service:
+    # -- Service type
+    type: ClusterIP
+    # -- Service port
+    port: 5002
+    # -- Target port
+    targetPort: 5002
+    # -- Node port (if type is NodePort)
+    nodePort: null
+    # -- Service annotations
+    annotations: {}
+
+  # -- HTTPRoute disabled for API frontend (internal only, accessed via webui nginx proxy)
+  httpRoute:
+    enabled: false
+
+  # -- Resource limits and requests
+  resources:
+    limits:
+      memory: 1Gi
+    requests:
+      cpu: 200m
+      memory: 256Mi
+
+  # -- Liveness probe configuration
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: 5002
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+  # -- Readiness probe configuration
+  readinessProbe:
+    httpGet:
+      path: /health
+      port: 5002
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+  # -- Environment variables
+  env:
+    - name: MODE
+      value: "ui"
+    - name: DEPLOYMENT_ENV
+      value: kubernetes
+    - name: OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED
+      value: "true"
+
+# Web UI (nginx + static frontend)
+webui:
+  # -- Number of replicas for web UI
+  replicaCount: 1
+
+  image:
+    # -- Web UI image repository (nginx with built frontend)
+    repository: ghcr.io/ryanfaircloth/ollyscale/ollyscale-ui
+    # -- Web UI image tag
+    tag: v0.0.1
+    # -- Web UI image pull policy (overrides global)
+    pullPolicy: ""
+
+  # -- Service account settings
+  serviceAccount:
+    # -- Create service account for web UI
+    create: true
+    # -- Service account name (generated if not set)
+    name: ""
+    # -- Annotations for service account
+    annotations: {}
+
+  # -- Pod annotations
+  podAnnotations: {}
+
+  # -- Pod security context
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 101 # nginx user
+    fsGroup: 101
+
+  # -- Container security context
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: false
+
+  service:
+    # -- Service type
+    type: ClusterIP
+    # -- Service port
+    port: 8000
+    # -- Target port
+    targetPort: 8000
+    # -- Node port (if type is NodePort)
+    nodePort: null
+    # -- Service annotations
+    annotations: {}
+
+  # -- HTTPRoute configuration (Gateway API) - primary UI endpoint
+  httpRoute:
+    # -- Enable HTTPRoute for web UI (public entry point)
+    enabled: true
+    # -- Annotations for HTTPRoute
+    annotations: {}
+    # -- Gateway parentRefs (required for HTTPRoute)
+    parentRefs:
+      - name: management-gateway
+        namespace: envoy-gateway-system
+    # -- Hosts configuration
+    hosts:
+      - host: ollyscale.local.gd
+        path: /
+        pathType: PathPrefix
+
+  # -- Resource limits and requests
+  resources:
+    limits:
+      memory: 256Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+
+  # -- Liveness probe configuration
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: 8000
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+  # -- Readiness probe configuration
+  readinessProbe:
+    httpGet:
+      path: /health
+      port: 8000
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    timeoutSeconds: 2
+    failureThreshold: 3
+
+  # -- Environment variables for nginx (API backend URL)
+  env: []
+
+  # -- Additional environment variables (key-value pairs)
+  extraEnv: {}
+
+  # -- Additional volume mounts (core mounts are defined in template)
+  volumeMounts: []
+
+  # -- Additional volumes (core volumes are defined in template)
+  volumes: []
+
+  # -- Node selector
+  nodeSelector: {}
+
+  # -- Tolerations
+  tolerations: []
+
+  # -- Affinity
+  affinity: {}
+
+# ollyScale OpAMP Server component
+opampServer:
+  # -- Number of replicas for OpAMP Server
+  replicaCount: 1
+
+  image:
+    # -- OpAMP Server image repository
+    repository: ghcr.io/ryanfaircloth/ollyscale/opamp-server
+    # -- OpAMP Server image tag
+    tag: v0.0.1
+    # -- OpAMP Server image pull policy (overrides global)
+    pullPolicy: ""
+
+  # -- Service account settings
+  serviceAccount:
+    # -- Create service account for OpAMP Server
+    create: true
+    # -- Service account name (generated if not set)
+    name: ""
+    # -- Annotations for service account
+    annotations: {}
+
+  # -- Pod annotations
+  podAnnotations: {}
+
+  # -- Pod security context
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+
+  # -- Container security context
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: false
+
+  service:
+    # -- Service type
+    type: ClusterIP
+    # -- WebSocket port
+    websocketPort: 4320
+    # -- HTTP port
+    httpPort: 4321
+    # -- Service annotations
+    annotations: {}
+
+  # -- Resource limits and requests
+  resources:
+    limits: {}
+    requests:
+      cpu: 50m
+      memory: 128Mi
+
+  # -- Liveness probe configuration
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: 4321
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+  # -- Readiness probe configuration
+  readinessProbe:
+    httpGet:
+      path: /health
+      port: 4321
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+  # -- Environment variables
+  env:
+    - name: OPAMP_PORT
+      value: "4320"
+    - name: HTTP_PORT
+      value: "4321"
+    - name: COLLECTOR_CONFIG_PATH
+      value: /etc/otel-collector-config.yaml
+
+  # -- Additional environment variables
+  extraEnv: {}
+
+  # -- Additional volume mounts (core mounts are defined in template)
+  volumeMounts: []
+
+  # -- Additional volumes (core volumes are defined in template)
+  volumes: []
+
+  # -- Node selector
+  nodeSelector: {}
+
+  # -- Tolerations
+  tolerations: []
+
+  # -- Affinity
+  affinity: {}
+
+# ollyScale OTLP Receiver component
+otlpReceiver:
+  # -- Number of replicas for OTLP Receiver
+  replicaCount: 1
+
+  image:
+    # -- OTLP Receiver image repository (unified ollyscale image)
+    repository: ghcr.io/ryanfaircloth/ollyscale/ollyscale
+    # -- OTLP Receiver image tag
+    tag: v0.0.1
+    # -- OTLP Receiver image pull policy (overrides global)
+    pullPolicy: ""
+
+  # -- Service account settings
+  serviceAccount:
+    # -- Create service account for OTLP Receiver
+    create: true
+    # -- Service account name (generated if not set)
+    name: ""
+    # -- Annotations for service account
+    annotations: {}
+
+  # -- Pod annotations
+  podAnnotations: {}
+
+  # -- Pod security context
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+
+  # -- Container security context
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: false
+
+  service:
+    # -- Service type
+    type: ClusterIP
+    # -- Service port
+    port: 4343
+    # -- Target port
+    targetPort: 4343
+    # -- Service annotations
+    annotations: {}
+
+  # -- Resource limits and requests
+  resources:
+    limits:
+      memory: 512Mi
+    requests:
+      cpu: 200m
+      memory: 256Mi
+
+  # -- Liveness probe configuration
+  livenessProbe:
+    tcpSocket:
+      port: 4343
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+  # -- Readiness probe configuration
+  readinessProbe:
+    tcpSocket:
+      port: 4343
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+  # -- Environment variables
+  env:
+    - name: MODE
+      value: "receiver"
+    - name: PORT
+      value: "4343"
+    - name: OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED
+      value: "true"
+
+  # -- Additional environment variables
+  extraEnv: {}
+
+  # -- Node selector
+  nodeSelector: {}
+
+  # -- Tolerations
+  tolerations: []
+
+  # -- Affinity
+  affinity: {}

@@ -1,0 +1,22 @@
+{{- if .Values.agent.httpRoute.enabled }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: ai-agent
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "ollyscale-otel-agent.agent.labels" . | nindent 4 }}
+spec:
+  parentRefs:
+    {{- toYaml .Values.agent.httpRoute.parentRefs | nindent 4 }}
+  hostnames:
+    - {{ .Values.agent.httpRoute.hostname }}
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: ai-agent
+          port: {{ .Values.agent.service.port }}
+{{- end }}

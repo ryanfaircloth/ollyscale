@@ -1,0 +1,62 @@
+ollyScale - Observability Platform for Local Development
+Copyright (c) 2026 Ryan Faircloth
+
+This software contains code originally from the TinyOlly project.
+
+================================================================================
+TinyOlly Origins
+================================================================================
+
+This project is based on TinyOlly, which is:
+Copyright (c) 2025, Infrastructure Architects, LLC
+
+TinyOlly is licensed under the BSD 3-Clause License (see LICENSE-BSD3-ORIGINAL).
+The original TinyOlly project can be found at:
+https://github.com/tinyolly/tinyolly
+
+================================================================================
+Dual Licensing
+================================================================================
+
+ollyScale uses dual licensing:
+
+1. Original TinyOlly Code (BSD-3-Clause):
+   - Files that remain substantially unchanged from the upstream TinyOlly project
+   - These files retain their original BSD-3-Clause license headers
+   - See LICENSE-BSD3-ORIGINAL for full terms
+
+2. New/Modified Code (AGPL-3.0):
+   - Files created specifically for ollyScale
+   - Files significantly modified from the original TinyOlly code
+   - These files are licensed under AGPL-3.0
+   - See LICENSE for full terms
+
+================================================================================
+License Headers
+================================================================================
+
+Files in this project contain appropriate license headers indicating which
+license applies:
+
+- Original TinyOlly files: BSD-3-Clause header + note about TinyOlly origins
+- Modified/New files: AGPL-3.0 header + acknowledgment of TinyOlly base
+
+================================================================================
+Attribution Requirements
+================================================================================
+
+When using, modifying, or distributing this software:
+
+1. Keep this NOTICE file intact
+2. Preserve license headers in source files
+3. Acknowledge both TinyOlly origins and ollyScale contributions
+4. Comply with both BSD-3-Clause (for original code) and AGPL-3.0 (for new code)
+
+================================================================================
+Third-Party Licenses
+================================================================================
+
+This software also includes components from various open-source projects.
+See individual files and the documentation for specific license information.
+
+For questions about licensing, please contact: ryan@faircloth.dev
