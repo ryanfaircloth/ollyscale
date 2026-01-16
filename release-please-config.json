@@ -9,22 +9,10 @@
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "extra-files": [
-        "app/__init__.py",
-        "Dockerfile",
-        {
-          "type": "generic",
-          "path": ".kind/modules/main/argocd-applications/observability/ollyscale.yaml",
-          "glob": false
-        },
         {
           "type": "yaml",
           "path": "charts/ollyscale/values.yaml",
           "jsonpath": "$.frontend.image.tag"
-        },
-        {
-          "type": "yaml",
-          "path": "charts/ollyscale/values.yaml",
-          "jsonpath": "$.otlpReceiver.image.tag"
         }
       ]
     },
@@ -36,12 +24,6 @@
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "extra-files": [
-        "Dockerfile",
-        {
-          "type": "generic",
-          "path": ".kind/modules/main/argocd-applications/observability/ollyscale.yaml",
-          "glob": false
-        },
         {
           "type": "yaml",
           "path": "charts/ollyscale/values.yaml",
@@ -52,22 +34,11 @@
     "apps/opamp-server": {
       "component": "opamp-server",
       "package-name": "opamp-server",
-      "release-type": "simple",
+      "release-type": "go",
       "include-component-in-tag": true,
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "extra-files": [
-        {
-          "type": "generic",
-          "path": "main.go",
-          "glob": false
-        },
-        "Dockerfile",
-        {
-          "type": "generic",
-          "path": ".kind/modules/main/argocd-applications/observability/ollyscale.yaml",
-          "glob": false
-        },
         {
           "type": "yaml",
           "path": "charts/ollyscale/values.yaml",
@@ -83,13 +54,6 @@
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "extra-files": [
-        "__init__.py",
-        "Dockerfile",
-        {
-          "type": "generic",
-          "path": ".kind/modules/ollyscale/argocd-applications/observability/ollyscale-demos.yaml",
-          "glob": false
-        },
         {
           "type": "yaml",
           "path": "charts/ollyscale-demos/values.yaml",
@@ -110,13 +74,6 @@
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "extra-files": [
-        "__init__.py",
-        "Dockerfile",
-        {
-          "type": "generic",
-          "path": ".kind/modules/ollyscale/argocd-applications/observability/ollyscale-otel-agent.yaml",
-          "glob": false
-        },
         {
           "type": "yaml",
           "path": "charts/ollyscale-otel-agent/values.yaml",
@@ -152,7 +109,6 @@
       "always-bump-patch": true
     }
   },
-  "bootstrap-sha": "main",
   "release-search-depth": 100,
   "separate-pull-requests": false,
   "group-pull-request-title-pattern": "chore: release",

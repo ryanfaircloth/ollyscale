@@ -497,7 +497,7 @@ webui:
     # -- Web UI image repository (nginx with built frontend)
     repository: ghcr.io/ryanfaircloth/ollyscale/ollyscale-ui
     # -- Web UI image tag
-    tag: v0.0.
+    tag: v0.0.0
     # -- Web UI image pull policy (overrides global)
     pullPolicy: ""
 
@@ -613,7 +613,7 @@ opampServer:
     # -- OpAMP Server image repository
     repository: ghcr.io/ryanfaircloth/ollyscale/opamp-server
     # -- OpAMP Server image tag
-    tag: v0.0.1
+    tag: v0.0.0
     # -- OpAMP Server image pull policy (overrides global)
     pullPolicy: ""
 
