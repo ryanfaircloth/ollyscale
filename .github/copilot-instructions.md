@@ -2,7 +2,7 @@
 
 ## Documentation and Resources
 
-- **Official Documentation**: [https://tinyolly.github.io/tinyolly/](https://tinyolly.github.io/tinyolly/)
+- **Official Documentation**: [https://ryanfaircloth.github.io/ollyscale/](https://ryanfaircloth.github.io/ollyscale/)
 - **Contributing Guide**: [CONTRIBUTING.md](../CONTRIBUTING.md)
 - **README**: [README.md](../README.md)
 - **Pre-commit Documentation**: [docs/precommit.md](../docs/precommit.md)
