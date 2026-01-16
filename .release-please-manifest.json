@@ -1,10 +1,10 @@
 {
-  "apps/ollyscale": "0.0.0",
-  "apps/ollyscale-ui": "0.0.0",
-  "apps/opamp-server": "1.0.0",
-  "apps/demo": "0.1.0",
-  "apps/demo-otel-agent": "0.1.0",
-  "charts/ollyscale": "0.0.0",
-  "charts/ollyscale-demos": "0.0.0",
-  "charts/ollyscale-otel-agent": "0.0.0"
+  "apps/ollyscale": "0.1.0",
+  "apps/ollyscale-ui": "1.0.0",
+  "apps/opamp-server": "2.0.0",
+  "apps/demo": "0.2.0",
+  "apps/demo-otel-agent": "0.1.1",
+  "charts/ollyscale": "1.0.0",
+  "charts/ollyscale-demos": "1.0.0",
+  "charts/ollyscale-otel-agent": "1.0.0"
 }
