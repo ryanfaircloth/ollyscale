@@ -7,7 +7,6 @@ authors = [
     {name = "Ryan Faircloth", email = "ryan@faircloth.org"}
 ]
 license = {text = "BSD-3-Clause"}
-readme = "../../README.md"
 keywords = ["opentelemetry", "observability", "demo", "ai", "ollama", "tracing"]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -52,33 +51,13 @@ dev = [
 ]
 
 [tool.poetry]
-name = "ollyscale-demo-otel-agent"
-version = "2.1.0"
-description = "AI agent demo with OpenTelemetry instrumentation for ollyScale observability platform"
-authors = [
-    "Infrastructure Architects, LLC <info@ollyscale.io>",
-    "Ryan Faircloth <ryan@faircloth.org>"
+# Include the root module files as the package
+packages = [
+    {include = "*.py", from = "."}
 ]
-license = "BSD-3-Clause"
-readme = "../../README.md"
-package-mode = false
-
-[tool.poetry.dependencies]
-python = ">=3.11,<4.0"
-ollama = ">=0.4.0"
-opentelemetry-api = ">=1.22.0"
-opentelemetry-instrumentation-ollama = ">=0.30.0"
-
-[tool.poetry.group.dev.dependencies]
-pytest = ">=8.0.0"
-pytest-asyncio = ">=0.23.0"
-httpx = ">=0.26.0"
-black = ">=24.0.0"
-flake8 = ">=6.0.0"
-mypy = ">=1.0.0"
 
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.ruff]
