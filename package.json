@@ -7,6 +7,13 @@
     "type": "git",
     "url": "https://github.com/ryanfaircloth/ollyscale.git"
   },
+  "workspaces": [
+    "apps/ollyscale",
+    "apps/ollyscale-ui",
+    "apps/opamp-server",
+    "apps/demo",
+    "apps/demo-otel-agent"
+  ],
   "scripts": {
     "semantic-release": "semantic-release"
   },
