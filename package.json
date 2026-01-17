@@ -24,7 +24,6 @@
     "conventional-changelog-conventionalcommits": "^9.1.0",
     "@anolilab/multi-semantic-release": "^4.1.0",
     "@codedependant/semantic-release-docker": "^5.1.1",
-    "@covage/semantic-release-poetry-plugin": "^0.1.0-development",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/commit-analyzer": "^13.0.1",
     "@semantic-release/exec": "^7.1.0",
