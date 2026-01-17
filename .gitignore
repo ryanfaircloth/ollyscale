@@ -34,3 +34,7 @@ site/
 
 # Node modules and cache
 node_modules/
+# Python poetry builds
+dist/
+build/
+*.egg-info/
