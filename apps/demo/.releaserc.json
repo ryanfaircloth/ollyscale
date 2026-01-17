@@ -4,12 +4,30 @@
   "plugins": [
     ["@semantic-release/commit-analyzer", { "preset": "conventionalcommits" }],
     ["@semantic-release/release-notes-generator", { "preset": "conventionalcommits" }],
+    ["semantic-release-poetry"],
     [
       "semantic-release-pypi",
       {
         "srcDir": ".",
         "pypiPublish": false,
         "buildPath": null
+      }
+    ],
+    [
+      "semantic-release-replace-plugin",
+      {
+        "replacements": [
+          {
+            "files": ["pyproject.toml"],
+            "from": "version = \".*\"",
+            "to": "version = \"${nextRelease.version}\""
+          },
+          {
+            "files": ["__init__.py"],
+            "from": "__version__ = \".*\"",
+            "to": "__version__ = \"${nextRelease.version}\""
+          }
+        ]
       }
     ],
     [
@@ -49,7 +67,7 @@
     [
       "@semantic-release/git",
       {
-        "assets": ["apps/demo/pyproject.toml", "../../charts/ollyscale-demos/values.yaml"],
+        "assets": ["apps/demo/pyproject.toml", "apps/demo/__init__.py", "../../charts/ollyscale-demos/values.yaml"],
         "message": "chore(demo): release v${nextRelease.version}"
       }
     ],
