@@ -21,9 +21,8 @@
     "semantic-release": "semantic-release"
   },
   "devDependencies": {
+    "@anolilab/multi-semantic-release": "^4.1.0",
     "@codedependant/semantic-release-docker": "^5.1.1",
-    "@pdecat/semantic-release-python": "^2.6.3",
-    "@qiwi/multi-semantic-release": "^7.1.2",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/commit-analyzer": "^13.0.1",
     "@semantic-release/exec": "^7.1.0",
@@ -32,6 +31,7 @@
     "@semantic-release/release-notes-generator": "^14.1.0",
     "semantic-release": "^25.0.2",
     "semantic-release-helm3": "^2.10.0",
+    "semantic-release-pypi": "^5.1.3",
     "semantic-release-replace-plugin": "^1.2.7",
     "semantic-release-yaml": "^1.1.3"
   }

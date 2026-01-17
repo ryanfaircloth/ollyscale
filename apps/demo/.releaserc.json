@@ -5,7 +5,7 @@
     ["@semantic-release/commit-analyzer", { "preset": "conventionalcommits" }],
     ["@semantic-release/release-notes-generator", { "preset": "conventionalcommits" }],
     [
-      "@pdecat/semantic-release-python",
+      "semantic-release-pypi",
       {
         "setupPy": "pyproject.toml",
         "pypiPublish": false

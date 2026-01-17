@@ -39,7 +39,48 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Release
+      - name: Check for releaseable changes and create release branch
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx multi-semantic-release --debug
+        run: |
+          # Run semantic-release in dry-run mode to check for changes
+          npx @anolilab/multi-semantic-release --dry-run --no-ci 2>&1 | tee release-output.txt
+
+          # Check if there are releaseable changes
+          if grep -q "created new release" release-output.txt || grep -q "SEMREL" release-output.txt; then
+            echo "Releaseable changes detected"
+
+            # Create or switch to release branch
+            if git rev-parse --quiet --verify origin/next-release > /dev/null 2>&1; then
+              git checkout next-release
+              git pull origin next-release
+            else
+              git checkout -b next-release
+            fi
+
+            # Run semantic-release for real on the release branch
+            npx @anolilab/multi-semantic-release --debug
+
+            # Push the release branch
+            git push origin next-release --force
+
+            # Create or update PR back to main
+            PR_TITLE="chore: release updates"
+            PR_BODY="Automated release updates with version bumps and changelogs."
+
+            if gh pr list --base main --head next-release --state open -q | grep -q .; then
+              # PR already exists, just ensure it's up to date
+              echo "Release PR already exists"
+            else
+              # Create new PR
+              gh pr create \
+                --base main \
+                --head next-release \
+                --title "$PR_TITLE" \
+                --body "$PR_BODY" \
+                --draft=false \
+                || true
+            fi
+          else
+            echo "No releaseable changes detected"
+          fi
