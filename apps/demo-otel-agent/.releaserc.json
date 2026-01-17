@@ -11,12 +11,14 @@
           {
             "files": ["pyproject.toml"],
             "from": "version = \".*\"",
-            "to": "version = \"${nextRelease.version}\""
+            "to": "version = \"${nextRelease.version}\"",
+            "glob": { "cwd": "apps/demo-otel-agent" }
           },
           {
             "files": ["__init__.py"],
             "from": "__version__ = \".*\"",
-            "to": "__version__ = \"${nextRelease.version}\""
+            "to": "__version__ = \"${nextRelease.version}\"",
+            "glob": { "cwd": "apps/demo-otel-agent" }
           }
         ]
       }
