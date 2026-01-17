@@ -7,7 +7,7 @@
     [
       "semantic-release-pypi",
       {
-        "srcDir": "apps/demo-otel-agent",
+        "srcDir": ".",
         "pypiPublish": false
       }
     ],

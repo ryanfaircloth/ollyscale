@@ -7,7 +7,7 @@
     [
       "semantic-release-pypi",
       {
-        "srcDir": "apps/demo",
+        "srcDir": ".",
         "pypiPublish": false
       }
     ],
