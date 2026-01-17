@@ -42,6 +42,8 @@ jobs:
       - name: Check for releaseable changes and create release branch
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DOCKER_REGISTRY_USER: ${{ secrets.DOCKER_REGISTRY_USER }}
+          DOCKER_REGISTRY_PASSWORD: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
         run: |
           # Run semantic-release in dry-run mode to check for changes
           npx @anolilab/multi-semantic-release --dry-run --no-ci 2>&1 | tee release-output.txt

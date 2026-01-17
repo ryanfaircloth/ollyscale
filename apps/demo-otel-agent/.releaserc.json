@@ -25,6 +25,21 @@
       }
     ],
     [
+      "@codedependant/semantic-release-docker",
+      {
+        "dockerImage": "demo-otel-agent",
+        "dockerRegistry": "ghcr.io",
+        "dockerProject": "ryanfaircloth/ollyscale",
+        "dockerFile": "Dockerfile",
+        "dockerContext": ".",
+        "dockerTags": ["latest", "{{major}}", "{{major}}.{{minor}}", "{{version}}"],
+        "dockerBuildFlags": {
+          "platform": "linux/amd64,linux/arm64"
+        },
+        "dockerPublish": true
+      }
+    ],
+    [
       "@semantic-release/git",
       {
         "assets": ["pyproject.toml", "../../charts/ollyscale-otel-agent/values.yaml"],
