@@ -1,18 +1,5 @@
-[project]
-name = "ollyscale"
-version = "2.1.0"
-description = "Lightweight OpenTelemetry observability platform for local development"
-readme = "README.md"
-requires-python = ">=3.11"
-license = "AGPL-3.0"
-
-[tool.poetry]
-# This is a root configuration file for the monorepo, not a buildable package
-package-mode = false
-
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+# Monorepo configuration for ollyScale
+# Tool configurations only - not a buildable package
 
 [tool.ruff]
 # Set the target Python version

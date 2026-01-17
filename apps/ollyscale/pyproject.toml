@@ -69,5 +69,36 @@ requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.ruff]
-# Inherit from root pyproject.toml
-extend = "../../pyproject.toml"
+# Target Python version
+target-version = "py314"
+line-length = 120
+
+[tool.ruff.lint]
+select = [
+    "E", "W", "F", "I", "B", "C4", "UP", "ARG", "SIM", "TCH", "PTH", "ERA", "PL", "RUF",
+]
+ignore = [
+    "E501", "PLR0913", "PLR0912", "PLR0915", "PLR2004", "PLR0911", "B008", "ERA001",
+    "PLW1508", "RUF012", "TCH001", "TCH002", "TCH003",
+]
+fixable = ["ALL"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401", "F403"]
+"tests/**/*.py" = ["PLR2004", "S101", "ARG002", "ARG001"]
+"**/test_*.py" = ["PLR2004", "S101", "ARG002", "ARG001"]
+"**/dependencies.py" = ["PLW0603"]
+"**/receiver/server.py" = ["PLW0603", "PLW0602", "PLC0415"]
+"**/app/routers/ingest.py" = ["PLW0603", "B904"]
+"main.py" = ["PLC0415"]
+"**/app/routers/system.py" = ["PLW0603"]
+"**/app/services/validation.py" = ["PLW2901"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.ruff.lint.isort]
+known-first-party = ["ollyscale", "app", "common", "receiver"]
