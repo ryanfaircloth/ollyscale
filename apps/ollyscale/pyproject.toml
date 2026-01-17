@@ -5,7 +5,7 @@ description = "Lightweight OpenTelemetry observability platform for local develo
 authors = [
     {name = "Ryan Faircloth", email = "ryan@faircloth.org"}
 ]
-license = {text = "AGPL-3.0"}
+license = "AGPL-3.0"
 keywords = ["opentelemetry", "observability", "tracing", "logging", "metrics"]
 classifiers = [
     "Development Status :: 4 - Beta",

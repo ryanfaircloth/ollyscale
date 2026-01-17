@@ -6,7 +6,7 @@ authors = [
     {name = "Infrastructure Architects, LLC", email = "info@ollyscale.io"},
     {name = "Ryan Faircloth", email = "ryan@faircloth.org"}
 ]
-license = {text = "BSD-3-Clause"}
+license = "AGPL-3.0"
 keywords = ["opentelemetry", "observability", "demo", "ai", "ollama", "tracing"]
 classifiers = [
     "Development Status :: 4 - Beta",
