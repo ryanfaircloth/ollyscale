@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - develop
 
 permissions:
   contents: write
@@ -35,12 +34,12 @@ jobs:
       - name: Make update script executable
         run: chmod +x scripts/update-chart-values.sh
 
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
       - name: Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm run semantic-release
-
-      - name: Pre-commit checks on generated files
-        if: success()
-        run: |
-          npm run lint || true
