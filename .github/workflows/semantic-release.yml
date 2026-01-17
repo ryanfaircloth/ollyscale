@@ -29,17 +29,6 @@ jobs:
         with:
           node-version: "24"
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Install yq for chart updates
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y yq
-
-      - name: Make update script executable
-        run: chmod +x scripts/update-chart-values.sh
-
       - name: Configure git
         run: |
           git config user.name "github-actions[bot]"
