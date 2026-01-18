@@ -45,7 +45,7 @@
         "dockerRegistry": "ghcr.io",
         "dockerProject": "ryanfaircloth/ollyscale",
         "dockerFile": "Dockerfile",
-        "dockerContext": "apps/demo",
+        "dockerContext": ".",
         "dockerTags": ["{{version}}", "develop", "latest", "{{major}}", "{{major}}.{{minor}}"],
         "dockerBuildFlags": {
           "platform": "linux/amd64,linux/arm64"
