@@ -3,7 +3,7 @@
 # Mode is selected via MODE environment variable
 
 # Builder stage - install dependencies with Poetry
-FROM python:3.14-slim AS builder
+FROM python:3.13-slim AS builder
 
 WORKDIR /app
 
@@ -25,7 +25,7 @@ RUN python -m venv /app/venv && \
     rm -rf $POETRY_CACHE_DIR
 
 # Production stage - copy dependencies and application code
-FROM python:3.14-slim AS production
+FROM python:3.13-slim AS production
 
 WORKDIR /app
 

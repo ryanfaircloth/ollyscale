@@ -1,7 +1,7 @@
 # Unified demo image (frontend or backend) with Poetry multi-stage build
 
 # Builder: install dependencies via Poetry into project venv
-FROM python:3.14-slim AS builder
+FROM python:3.13-slim AS builder
 
 WORKDIR /app
 
@@ -15,7 +15,7 @@ COPY pyproject.toml poetry.lock* ./
 RUN poetry config virtualenvs.in-project true && poetry install --only=main --no-root && rm -rf $POETRY_CACHE_DIR
 
 # Runtime: copy the venv and app code; default CMD runs frontend
-FROM python:3.14-slim AS runtime
+FROM python:3.13-slim AS runtime
 
 ENV VIRTUAL_ENV=/app/.venv \
     PATH="/app/.venv/bin:$PATH"

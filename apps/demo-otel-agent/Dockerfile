@@ -1,5 +1,5 @@
 # Multi-stage build using Poetry
-FROM python:3.14-slim as builder
+FROM python:3.13-slim as builder
 
 # Install Poetry
 RUN pip install --no-cache-dir poetry>=1.8.0
@@ -18,7 +18,7 @@ COPY pyproject.toml poetry.lock ./
 RUN poetry config virtualenvs.in-project true && poetry install --only=main && rm -rf $POETRY_CACHE_DIR
 
 # Production stage
-FROM python:3.14-slim as runtime
+FROM python:3.13-slim as runtime
 
 # Copy virtual environment from builder stage
 ENV VIRTUAL_ENV=/app/.venv \
