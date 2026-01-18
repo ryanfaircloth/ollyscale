@@ -1,0 +1,116 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "bootstrap-sha": "fb3d7de5f679324cd3e6387743c3f0e33483bb5e",
+  "release-type": "simple",
+  "separate-pull-requests": true,
+  "bump-minor-pre-major": true,
+  "bump-patch-for-minor-pre-major": true,
+  "packages": {
+    "apps/ollyscale": {
+      "component": "ollyscale",
+      "release-type": "python",
+      "package-name": "@ollyscale/ollyscale",
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "apps/ollyscale/package.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "yaml",
+          "path": "charts/ollyscale/values.yaml",
+          "jsonpath": "$.frontend.image.tag",
+          "glob": false
+        },
+        {
+          "type": "yaml",
+          "path": "charts/ollyscale/values.yaml",
+          "jsonpath": "$.otlpReceiver.image.tag",
+          "glob": false
+        }
+      ]
+    },
+    "apps/ollyscale-ui": {
+      "component": "ollyscale-ui",
+      "release-type": "node",
+      "package-name": "ollyscale-ui",
+      "extra-files": [
+        {
+          "type": "yaml",
+          "path": "charts/ollyscale/values.yaml",
+          "jsonpath": "$.webui.image.tag",
+          "glob": false
+        }
+      ]
+    },
+    "apps/opamp-server": {
+      "component": "opamp-server",
+      "release-type": "simple",
+      "package-name": "@ollyscale/opamp-server",
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "apps/opamp-server/package.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "yaml",
+          "path": "charts/ollyscale/values.yaml",
+          "jsonpath": "$.opampServer.image.tag",
+          "glob": false
+        }
+      ]
+    },
+    "apps/demo": {
+      "component": "demo",
+      "release-type": "node",
+      "package-name": "@ollyscale/demo"
+    },
+    "apps/demo-otel-agent": {
+      "component": "demo-otel-agent",
+      "release-type": "node",
+      "package-name": "@ollyscale/demo-otel-agent"
+    },
+    "charts/ollyscale": {
+      "component": "chart-ollyscale",
+      "release-type": "helm",
+      "package-name": "ollyscale",
+      "extra-files": [
+        {
+          "type": "yaml",
+          "path": "charts/ollyscale/Chart.yaml",
+          "jsonpath": "$.version"
+        }
+      ]
+    },
+    "charts/ollyscale-demos": {
+      "component": "chart-ollyscale-demos",
+      "release-type": "helm",
+      "package-name": "ollyscale-demos",
+      "extra-files": [
+        {
+          "type": "yaml",
+          "path": "charts/ollyscale-demos/Chart.yaml",
+          "jsonpath": "$.version"
+        }
+      ]
+    },
+    "charts/ollyscale-otel-agent": {
+      "component": "chart-ollyscale-otel-agent",
+      "release-type": "helm",
+      "package-name": "ollyscale-otel-agent",
+      "extra-files": [
+        {
+          "type": "yaml",
+          "path": "charts/ollyscale-otel-agent/Chart.yaml",
+          "jsonpath": "$.version"
+        }
+      ]
+    }
+  },
+  "plugins": [
+    {
+      "type": "node-workspace"
+    }
+  ]
+}
