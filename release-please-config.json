@@ -15,33 +15,13 @@
           "type": "json",
           "path": "apps/ollyscale/package.json",
           "jsonpath": "$.version"
-        },
-        {
-          "type": "yaml",
-          "path": "charts/ollyscale/values.yaml",
-          "jsonpath": "$.frontend.image.tag",
-          "glob": false
-        },
-        {
-          "type": "yaml",
-          "path": "charts/ollyscale/values.yaml",
-          "jsonpath": "$.otlpReceiver.image.tag",
-          "glob": false
         }
       ]
     },
     "apps/ollyscale-ui": {
       "component": "ollyscale-ui",
       "release-type": "node",
-      "package-name": "ollyscale-ui",
-      "extra-files": [
-        {
-          "type": "yaml",
-          "path": "charts/ollyscale/values.yaml",
-          "jsonpath": "$.webui.image.tag",
-          "glob": false
-        }
-      ]
+      "package-name": "ollyscale-ui"
     },
     "apps/opamp-server": {
       "component": "opamp-server",
@@ -52,12 +32,6 @@
           "type": "json",
           "path": "apps/opamp-server/package.json",
           "jsonpath": "$.version"
-        },
-        {
-          "type": "yaml",
-          "path": "charts/ollyscale/values.yaml",
-          "jsonpath": "$.opampServer.image.tag",
-          "glob": false
         }
       ]
     },
