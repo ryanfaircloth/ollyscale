@@ -22,9 +22,11 @@ The new release-please system provides:
 ### Configuration Files
 
 **Removed:**
-- Individual `.releaserc.json` files in `apps/*/` and `charts/*/`
-- Root `.releaserc.json` (replaced by new config)
-- `.multi-releaserc.json` (no longer needed)
+- Individual `.releaserc.json` files in `apps/*/` and `charts/*/` ✅ COMPLETED
+- Root `.releaserc.json` ✅ COMPLETED
+- `.multi-releaserc.json` ✅ COMPLETED
+- All semantic-release dependencies from `package.json` ✅ COMPLETED
+- `.github/workflows/semantic-release.yml` ✅ COMPLETED
 
 **Added:**
 - `release-please-config.json` - Main configuration for all components
@@ -32,9 +34,11 @@ The new release-please system provides:
 
 ### GitHub Workflows
 
-**Changed:**
-- `.github/workflows/semantic-release.yml` - Disabled (kept for reference)
-- `.github/workflows/release-please.yml` - New release workflow
+**Removed:**
+- `.github/workflows/semantic-release.yml` - Completely removed ✅ COMPLETED
+
+**Added:**
+- `.github/workflows/release-please.yml` - New release workflow supporting multiple branches
 
 ### Version Management
 

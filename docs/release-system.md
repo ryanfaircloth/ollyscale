@@ -50,9 +50,23 @@ When `apps/ollyscale` gets a new release:
 
 ## Release Workflow
 
+### Supported Branches
+
+The release-please workflow triggers on pushes to these branches:
+- **`main`** - Stable releases (Docker images tagged with `latest`)
+- **`develop`** - Pre-release builds
+- **`next-release`** - Pre-release builds for minor version testing
+- **`next-release-major`** - Pre-release builds for major version testing
+
+**Pre-release behavior:**
+- All branches except `main` produce pre-release builds
+- Pre-release Docker images do NOT get the `latest` tag
+- GitHub releases marked as pre-releases
+- Images labeled with `org.opencontainers.image.prerelease=true`
+
 ### Automatic Releases
 
-1. **Commit with Conventional Commit messages** to the `main` branch:
+1. **Commit with Conventional Commit messages** to any supported branch:
    - `feat:` - triggers a minor version bump (0.x.0)
    - `fix:` - triggers a patch version bump (0.0.x)
    - `feat!:` or `BREAKING CHANGE:` - triggers a major version bump (x.0.0)
@@ -72,7 +86,7 @@ When `apps/ollyscale` gets a new release:
 For testing releases before production:
 
 ```bash
-# Trigger via GitHub UI or gh CLI
+# Trigger via GitHub UI or gh CLI on any branch
 gh workflow run release-please.yml -f prerelease=true
 ```
 

@@ -4,7 +4,9 @@ on:
   push:
     branches:
       - main
-      - copilot/next-release  # Treat as develop branch for pre-release builds
+      - develop
+      - next-release
+      - next-release-major
   workflow_dispatch:
     inputs:
       prerelease:
@@ -29,12 +31,13 @@ jobs:
       - name: Check if this is a pre-release branch
         id: check_branch
         run: |
-          if [[ "${{ github.ref }}" == "refs/heads/copilot/next-release" ]] || [[ "${{ inputs.prerelease }}" == "true" ]]; then
-            echo "is_prerelease=true" >> $GITHUB_OUTPUT
-            echo "📦 Building as pre-release"
-          else
+          # Main is stable release, all others are pre-releases
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]] && [[ "${{ inputs.prerelease }}" != "true" ]]; then
             echo "is_prerelease=false" >> $GITHUB_OUTPUT
             echo "🚀 Building as stable release"
+          else
+            echo "is_prerelease=true" >> $GITHUB_OUTPUT
+            echo "📦 Building as pre-release (branch: ${GITHUB_REF#refs/heads/})"
           fi
       
       - name: Run release-please
