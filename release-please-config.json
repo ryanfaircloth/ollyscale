@@ -23,12 +23,12 @@
     },
     "apps/demo": {
       "component": "demo",
-      "release-type": "node",
+      "release-type": "simple",
       "package-name": "@ollyscale/demo"
     },
     "apps/demo-otel-agent": {
       "component": "demo-otel-agent",
-      "release-type": "node",
+      "release-type": "simple",
       "package-name": "@ollyscale/demo-otel-agent"
     },
     "charts/ollyscale": {
@@ -77,9 +77,5 @@
       "package-name": "ollyscale-otel-agent"
     }
   },
-  "plugins": [
-    {
-      "type": "node-workspace"
-    }
-  ]
+  "plugins": []
 }
