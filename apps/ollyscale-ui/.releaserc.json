@@ -1,5 +1,5 @@
 {
-  "branches": ["main"],
+  "branches": ["main", { "name": "develop", "prerelease": true }],
   "tagFormat": "ollyscale-ui-v${version}",
   "plugins": [
     ["@semantic-release/commit-analyzer", { "preset": "conventionalcommits" }],
@@ -10,8 +10,7 @@
       {
         "commands": [
           {
-            "cwd": "../../charts/ollyscale",
-            "file": "values.yaml",
+            "file": "charts/ollyscale/values.yaml",
             "selector": "webui.image.tag",
             "value": "v${nextRelease.version}"
           }
@@ -25,8 +24,8 @@
         "dockerRegistry": "ghcr.io",
         "dockerProject": "ryanfaircloth/ollyscale",
         "dockerFile": "Dockerfile",
-        "dockerContext": ".",
-        "dockerTags": ["latest", "{{major}}", "{{major}}.{{minor}}", "{{version}}"],
+        "dockerContext": "apps/ollyscale-ui",
+        "dockerTags": ["{{version}}", "develop", "latest", "{{major}}", "{{major}}.{{minor}}"],
         "dockerBuildFlags": {
           "platform": "linux/amd64,linux/arm64"
         },
@@ -36,7 +35,11 @@
     [
       "@semantic-release/git",
       {
-        "assets": ["package.json", "package-lock.json", "../../charts/ollyscale/values.yaml"],
+        "assets": [
+          "apps/ollyscale-ui/package.json",
+          "apps/ollyscale-ui/package-lock.json",
+          "charts/ollyscale/values.yaml"
+        ],
         "message": "chore(ollyscale-ui): release v${nextRelease.version}"
       }
     ],

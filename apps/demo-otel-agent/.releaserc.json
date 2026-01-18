@@ -1,5 +1,5 @@
 {
-  "branches": ["main"],
+  "branches": ["main", { "name": "develop", "prerelease": true }],
   "tagFormat": "demo-otel-agent-v${version}",
   "plugins": [
     ["@semantic-release/commit-analyzer", { "preset": "conventionalcommits" }],
@@ -26,8 +26,7 @@
       {
         "commands": [
           {
-            "cwd": "../../charts/ollyscale-otel-agent",
-            "file": "values.yaml",
+            "file": "charts/ollyscale-otel-agent/values.yaml",
             "selector": "image.tag",
             "value": "v${nextRelease.version}"
           }
@@ -41,8 +40,8 @@
         "dockerRegistry": "ghcr.io",
         "dockerProject": "ryanfaircloth/ollyscale",
         "dockerFile": "Dockerfile",
-        "dockerContext": ".",
-        "dockerTags": ["latest", "{{major}}", "{{major}}.{{minor}}", "{{version}}"],
+        "dockerContext": "apps/demo-otel-agent",
+        "dockerTags": ["{{version}}", "develop", "latest", "{{major}}", "{{major}}.{{minor}}"],
         "dockerBuildFlags": {
           "platform": "linux/amd64,linux/arm64"
         },
@@ -55,7 +54,7 @@
         "assets": [
           "apps/demo-otel-agent/pyproject.toml",
           "apps/demo-otel-agent/__init__.py",
-          "../../charts/ollyscale-otel-agent/values.yaml"
+          "charts/ollyscale-otel-agent/values.yaml"
         ],
         "message": "chore(demo-otel-agent): release v${nextRelease.version}"
       }

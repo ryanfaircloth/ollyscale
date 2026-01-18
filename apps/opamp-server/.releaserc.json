@@ -1,5 +1,5 @@
 {
-  "branches": ["main"],
+  "branches": ["main", { "name": "develop", "prerelease": true }],
   "tagFormat": "opamp-server-v${version}",
   "plugins": [
     ["@semantic-release/commit-analyzer", { "preset": "conventionalcommits" }],
@@ -9,8 +9,7 @@
       {
         "commands": [
           {
-            "cwd": "../../charts/ollyscale",
-            "file": "values.yaml",
+            "file": "charts/ollyscale/values.yaml",
             "selector": "opampServer.image.tag",
             "value": "v${nextRelease.version}"
           }
@@ -24,8 +23,8 @@
         "dockerRegistry": "ghcr.io",
         "dockerProject": "ryanfaircloth/ollyscale",
         "dockerFile": "Dockerfile",
-        "dockerContext": ".",
-        "dockerTags": ["latest", "{{major}}", "{{major}}.{{minor}}", "{{version}}"],
+        "dockerContext": "apps/opamp-server",
+        "dockerTags": ["{{version}}", "develop", "latest", "{{major}}", "{{major}}.{{minor}}"],
         "dockerBuildFlags": {
           "platform": "linux/amd64,linux/arm64"
         },
@@ -35,7 +34,7 @@
     [
       "@semantic-release/git",
       {
-        "assets": ["../../charts/ollyscale/values.yaml"],
+        "assets": ["charts/ollyscale/values.yaml"],
         "message": "chore(opamp-server): release v${nextRelease.version}"
       }
     ],

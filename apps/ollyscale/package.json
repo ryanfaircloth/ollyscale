@@ -1,6 +1,6 @@
 {
   "name": "@ollyscale/ollyscale",
-  "version": "2.1.9",
+  "version": "0.1.0",
   "private": true,
   "description": "ollyScale main application (Python)",
   "scripts": {}

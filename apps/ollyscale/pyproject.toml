@@ -1,6 +1,6 @@
 [project]
 name = "ollyscale"
-version = "2.1.0"
+version = "0.1.0"
 description = "Lightweight OpenTelemetry observability platform for local development"
 authors = [
     {name = "Ryan Faircloth", email = "ryan@faircloth.org"}

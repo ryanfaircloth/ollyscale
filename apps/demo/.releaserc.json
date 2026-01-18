@@ -1,5 +1,5 @@
 {
-  "branches": ["main"],
+  "branches": ["main", { "name": "develop", "prerelease": true }],
   "tagFormat": "demo-v${version}",
   "plugins": [
     ["@semantic-release/commit-analyzer", { "preset": "conventionalcommits" }],
@@ -26,14 +26,12 @@
       {
         "commands": [
           {
-            "cwd": "../../charts/ollyscale-demos",
-            "file": "values.yaml",
+            "file": "charts/ollyscale-demos/values.yaml",
             "selector": "frontend.image.tag",
             "value": "v${nextRelease.version}"
           },
           {
-            "cwd": "../../charts/ollyscale-demos",
-            "file": "values.yaml",
+            "file": "charts/ollyscale-demos/values.yaml",
             "selector": "backend.image.tag",
             "value": "v${nextRelease.version}"
           }
@@ -47,8 +45,8 @@
         "dockerRegistry": "ghcr.io",
         "dockerProject": "ryanfaircloth/ollyscale",
         "dockerFile": "Dockerfile",
-        "dockerContext": ".",
-        "dockerTags": ["latest", "{{major}}", "{{major}}.{{minor}}", "{{version}}"],
+        "dockerContext": "apps/demo",
+        "dockerTags": ["{{version}}", "develop", "latest", "{{major}}", "{{major}}.{{minor}}"],
         "dockerBuildFlags": {
           "platform": "linux/amd64,linux/arm64"
         },
@@ -58,7 +56,7 @@
     [
       "@semantic-release/git",
       {
-        "assets": ["apps/demo/pyproject.toml", "apps/demo/__init__.py", "../../charts/ollyscale-demos/values.yaml"],
+        "assets": ["apps/demo/pyproject.toml", "apps/demo/__init__.py", "charts/ollyscale-demos/values.yaml"],
         "message": "chore(demo): release v${nextRelease.version}"
       }
     ],
