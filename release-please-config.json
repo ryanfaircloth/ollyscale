@@ -13,7 +13,7 @@
       "extra-files": [
         {
           "type": "json",
-          "path": "apps/ollyscale/package.json",
+          "path": "package.json",
           "jsonpath": "$.version"
         }
       ]
@@ -30,7 +30,7 @@
       "extra-files": [
         {
           "type": "json",
-          "path": "apps/opamp-server/package.json",
+          "path": "package.json",
           "jsonpath": "$.version"
         }
       ]
