@@ -28,6 +28,11 @@ jobs:
       release_data: ${{ toJSON(steps.release.outputs) }}
       is_prerelease: ${{ steps.check_branch.outputs.is_prerelease }}
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
       - name: Check if this is a pre-release branch
         id: check_branch
         run: |
