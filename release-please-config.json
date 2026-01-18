@@ -83,12 +83,12 @@
     "charts/ollyscale-demos": {
       "component": "chart-ollyscale-demos",
       "release-type": "helm",
-      "package-name": "ollyscale-demos",
+      "package-name": "ollyscale-demos"
     },
     "charts/ollyscale-otel-agent": {
       "component": "chart-ollyscale-otel-agent",
       "release-type": "helm",
-      "package-name": "ollyscale-otel-agent",
+      "package-name": "ollyscale-otel-agent"
     }
   },
   "plugins": [
