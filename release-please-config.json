@@ -80,6 +80,34 @@
           "type": "yaml",
           "path": "charts/ollyscale/Chart.yaml",
           "jsonpath": "$.version"
+        },
+        {
+          "type": "yaml",
+          "path": "charts/ollyscale/values.yaml",
+          "jsonpath": "$.frontend.image.tag",
+          "component": "ollyscale",
+          "bumpDependents": true
+        },
+        {
+          "type": "yaml",
+          "path": "charts/ollyscale/values.yaml",
+          "jsonpath": "$.otlpReceiver.image.tag",
+          "component": "ollyscale",
+          "bumpDependents": true
+        },
+        {
+          "type": "yaml",
+          "path": "charts/ollyscale/values.yaml",
+          "jsonpath": "$.webui.image.tag",
+          "component": "ollyscale-ui",
+          "bumpDependents": true
+        },
+        {
+          "type": "yaml",
+          "path": "charts/ollyscale/values.yaml",
+          "jsonpath": "$.opampServer.image.tag",
+          "component": "opamp-server",
+          "bumpDependents": true
         }
       ]
     },
