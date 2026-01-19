@@ -1,5 +1,35 @@
 # Changelog
 
+## [2.0.0](https://github.com/ryanfaircloth/ollyscale/compare/opamp-server-v1.1.0...opamp-server-v2.0.0) (2026-01-19)
+
+
+### ⚠ BREAKING CHANGES
+
+* Release process now uses conventional commits and release-please
+* Major folder restructure from scattered layout to organized monorepo
+
+### Features
+
+* implement release-please for automated semantic versioning ([d5591e9](https://github.com/ryanfaircloth/ollyscale/commit/d5591e9c26d07d072cb589ccace52bdd705df13e))
+* migrate to semantic-release with multi-package support ([315ecb5](https://github.com/ryanfaircloth/ollyscale/commit/315ecb5a2c3a477fb6dd5e951a669fd20e161256))
+* upgrade to modern semantic-release tooling ([d85e66c](https://github.com/ryanfaircloth/ollyscale/commit/d85e66c275833e76355376cfb47a3c50d2e93a09))
+
+
+### Bug Fixes
+
+* **apps:** force rebuild of all containers after VERSION file removal ([e2b92fa](https://github.com/ryanfaircloth/ollyscale/commit/e2b92fa2279bc50ee6b7885c9930728a35d04225))
+* **ci:** implement proper monorepo semantic-release with @qiwi/multi-semantic-release ([99cf15c](https://github.com/ryanfaircloth/ollyscale/commit/99cf15cb521c7ac09e649a7489d1335a857add16))
+* **opamp-server:** reset version ([e7cdc38](https://github.com/ryanfaircloth/ollyscale/commit/e7cdc380dfd5b38a369847b16dc1af95a6eb58c9))
+* **opamp:** correct Go syntax and Dockerfile ([75910d3](https://github.com/ryanfaircloth/ollyscale/commit/75910d3daf7ee39a1f75e833b738f43ff7dbaa2c))
+* remove ai-agent-demo from build script + add noqa for telemetry ([2156059](https://github.com/ryanfaircloth/ollyscale/commit/2156059608cf0ebbf7e0d0741cb356891a608a77))
+* remove VERSION files entirely ([362fa38](https://github.com/ryanfaircloth/ollyscale/commit/362fa3831740bdeeb55db77bb4f2a262c2e26039))
+* use manifest as single source of truth for versions ([a0a1241](https://github.com/ryanfaircloth/ollyscale/commit/a0a12416e553e93a9082e2870871392c39c5570d))
+
+
+### Code Refactoring
+
+* restructure repository to standard monorepo layout ([1d0afcf](https://github.com/ryanfaircloth/ollyscale/commit/1d0afcf4f6ee8ebe2c921c4e96a65d56f5d9436d))
+
 ## [1.1.0](https://github.com/ryanfaircloth/ollyscale/compare/opamp-server-v1.0.1...opamp-server-v1.1.0) (2026-01-18)
 
 

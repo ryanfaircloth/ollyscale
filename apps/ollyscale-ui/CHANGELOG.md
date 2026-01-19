@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.1.0](https://github.com/ryanfaircloth/ollyscale/compare/ollyscale-ui-v1.0.0...ollyscale-ui-v1.1.0) (2026-01-19)
+
+
+### Features
+
+* migrate to semantic-release with multi-package support ([315ecb5](https://github.com/ryanfaircloth/ollyscale/commit/315ecb5a2c3a477fb6dd5e951a669fd20e161256))
+
+
+### Bug Fixes
+
+* **ci:** implement proper monorepo semantic-release with @qiwi/multi-semantic-release ([99cf15c](https://github.com/ryanfaircloth/ollyscale/commit/99cf15cb521c7ac09e649a7489d1335a857add16))
+* **ollyscale-ui:** reset version ([a955be0](https://github.com/ryanfaircloth/ollyscale/commit/a955be01939f33a065ed9b06662a4e6260cd7e6b))
+* **ollyscale-ui:** trigger release ([a66eaeb](https://github.com/ryanfaircloth/ollyscale/commit/a66eaeb8c193dac7c8f136d2da3a859512521237))
+
 ## 1.0.0 (2026-01-18)
 
 
