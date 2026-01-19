@@ -88,7 +88,7 @@ jobs:
       - name: Install dependencies
         run: |
           cd apps/ollyscale
-          poetry install --with test
+          poetry install --extras test
 
       - name: Run tests
         run: |
