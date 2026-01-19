@@ -104,7 +104,7 @@ repos:
 
 # Configuration
 default_language_version:
-  python: python3.11
+  python: python3.12
   golang: "1.23"
 
 # Global exclusions

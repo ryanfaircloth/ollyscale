@@ -1,0 +1,202 @@
+name: release-please
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - next-release
+      - next-release-major
+      - copilot/next-release # Current testing branch
+  workflow_dispatch:
+    inputs:
+      prerelease:
+        description: "Create pre-release"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  packages: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    outputs:
+      releases_created: ${{ steps.release.outputs.releases_created }}
+      release_data: ${{ toJSON(steps.release.outputs) }}
+      is_prerelease: ${{ steps.check_branch.outputs.is_prerelease }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check if this is a pre-release branch
+        id: check_branch
+        run: |
+          # Main is stable release, all others are pre-releases
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]] && [[ "${{ inputs.prerelease }}" != "true" ]]; then
+            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+            echo "🚀 Building as stable release"
+          else
+            echo "is_prerelease=true" >> $GITHUB_OUTPUT
+            echo "📦 Building as pre-release (branch: ${GITHUB_REF#refs/heads/})"
+          fi
+
+      - name: Run release-please
+        id: release
+        uses: ryanfaircloth/release-please-action@test/fork-dependency
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+          target-branch: ${{ github.ref_name }}
+
+  build-and-publish:
+    needs: release-please
+    if: needs.release-please.outputs.releases_created == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        component:
+          - name: ollyscale
+            path: apps/ollyscale
+            dockerfile: apps/ollyscale/Dockerfile
+            image: ghcr.io/ryanfaircloth/ollyscale/ollyscale
+          - name: ollyscale-ui
+            path: apps/ollyscale-ui
+            dockerfile: apps/ollyscale-ui/Dockerfile
+            image: ghcr.io/ryanfaircloth/ollyscale/ollyscale-ui
+          - name: opamp-server
+            path: apps/opamp-server
+            dockerfile: apps/opamp-server/Dockerfile
+            image: ghcr.io/ryanfaircloth/ollyscale/opamp-server
+          - name: demo
+            path: apps/demo
+            dockerfile: apps/demo/Dockerfile
+            image: ghcr.io/ryanfaircloth/ollyscale/demo
+          - name: demo-otel-agent
+            path: apps/demo-otel-agent
+            dockerfile: apps/demo-otel-agent/Dockerfile
+            image: ghcr.io/ryanfaircloth/ollyscale/demo-otel-agent
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check if component was released
+        id: check_release
+        run: |
+          RELEASE_DATA='${{ needs.release-please.outputs.release_data }}'
+          COMPONENT_PATH="${{ matrix.component.path }}"
+
+          # Check if this component has a release
+          if echo "$RELEASE_DATA" | jq -e ".[\"${COMPONENT_PATH}--tag_name\"]" > /dev/null 2>&1; then
+            TAG_NAME=$(echo "$RELEASE_DATA" | jq -r ".[\"${COMPONENT_PATH}--tag_name\"]")
+            VERSION=$(echo "$TAG_NAME" | sed 's/.*-v//')
+            echo "released=true" >> $GITHUB_OUTPUT
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "tag=$TAG_NAME" >> $GITHUB_OUTPUT
+            echo "✅ Component ${{ matrix.component.name }} was released as $TAG_NAME"
+          else
+            echo "released=false" >> $GITHUB_OUTPUT
+            echo "⏭️ Component ${{ matrix.component.name }} was not released"
+          fi
+
+      - name: Set up QEMU
+        if: steps.check_release.outputs.released == 'true'
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        if: steps.check_release.outputs.released == 'true'
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        if: steps.check_release.outputs.released == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        if: steps.check_release.outputs.released == 'true'
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ matrix.component.image }}
+          tags: |
+            type=semver,pattern={{version}},value=${{ steps.check_release.outputs.version }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ steps.check_release.outputs.version }}
+            type=semver,pattern={{major}},value=${{ steps.check_release.outputs.version }}
+            type=raw,value=latest,enable=${{ needs.release-please.outputs.is_prerelease != 'true' }}
+          labels: |
+            org.opencontainers.image.version=${{ steps.check_release.outputs.version }}
+            org.opencontainers.image.prerelease=${{ needs.release-please.outputs.is_prerelease }}
+
+      - name: Build and push Docker image
+        if: steps.check_release.outputs.released == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.component.path }}
+          file: ${{ matrix.component.dockerfile }}
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  publish-helm-charts:
+    needs: release-please
+    if: needs.release-please.outputs.releases_created == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        chart:
+          - name: ollyscale
+            path: charts/ollyscale
+          - name: ollyscale-demos
+            path: charts/ollyscale-demos
+          - name: ollyscale-otel-agent
+            path: charts/ollyscale-otel-agent
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check if chart was released
+        id: check_release
+        run: |
+          RELEASE_DATA='${{ needs.release-please.outputs.release_data }}'
+          CHART_PATH="${{ matrix.chart.path }}"
+
+          # Check if this chart has a release
+          if echo "$RELEASE_DATA" | jq -e ".[\"${CHART_PATH}--tag_name\"]" > /dev/null 2>&1; then
+            TAG_NAME=$(echo "$RELEASE_DATA" | jq -r ".[\"${CHART_PATH}--tag_name\"]")
+            VERSION=$(echo "$TAG_NAME" | sed 's/.*-v//')
+            echo "released=true" >> $GITHUB_OUTPUT
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "tag=$TAG_NAME" >> $GITHUB_OUTPUT
+            echo "✅ Chart ${{ matrix.chart.name }} was released as $TAG_NAME"
+          else
+            echo "released=false" >> $GITHUB_OUTPUT
+            echo "⏭️ Chart ${{ matrix.chart.name }} was not released"
+          fi
+
+      - name: Install Helm
+        if: steps.check_release.outputs.released == 'true'
+        uses: azure/setup-helm@v4
+        with:
+          version: latest
+
+      - name: Log in to GitHub Container Registry
+        if: steps.check_release.outputs.released == 'true'
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io --username ${{ github.actor }} --password-stdin
+
+      - name: Package and push Helm chart
+        if: steps.check_release.outputs.released == 'true'
+        run: |
+          cd ${{ matrix.chart.path }}
+          helm package .
+          helm push ${{ matrix.chart.name }}-${{ steps.check_release.outputs.version }}.tgz oci://ghcr.io/ryanfaircloth/ollyscale/charts

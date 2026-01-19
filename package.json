@@ -8,31 +8,10 @@
     "url": "https://github.com/ryanfaircloth/ollyscale.git"
   },
   "workspaces": [
-    "apps/ollyscale",
-    "apps/ollyscale-ui",
-    "apps/opamp-server",
-    "apps/demo",
-    "apps/demo-otel-agent",
-    "charts/ollyscale",
-    "charts/ollyscale-demos",
-    "charts/ollyscale-otel-agent"
+    "apps/ollyscale-ui"
   ],
-  "scripts": {
-    "semantic-release": "semantic-release"
-  },
+  "scripts": {},
   "devDependencies": {
-    "conventional-changelog-conventionalcommits": "^9.1.0",
-    "@anolilab/multi-semantic-release": "^4.1.0",
-    "@codedependant/semantic-release-docker": "^5.1.1",
-    "@semantic-release/changelog": "^6.0.3",
-    "@semantic-release/commit-analyzer": "^13.0.1",
-    "@semantic-release/exec": "^7.1.0",
-    "@semantic-release/git": "^10.0.1",
-    "@semantic-release/github": "^12.0.2",
-    "@semantic-release/release-notes-generator": "^14.1.0",
-    "semantic-release": "^25.0.2",
-    "semantic-release-helm3": "^2.10.0",
-    "semantic-release-replace-plugin": "^1.2.7",
-    "semantic-release-yaml": "^1.1.3"
+    "conventional-changelog-conventionalcommits": "^9.1.0"
   }
 }

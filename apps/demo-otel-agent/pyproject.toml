@@ -1,6 +1,6 @@
 [project]
 name = "ollyscale-demo-otel-agent"
-version = "2.1.0"
+version = "0.1.0"
 description = "AI agent demo with OpenTelemetry instrumentation for ollyScale observability platform"
 authors = [
     {name = "Infrastructure Architects, LLC", email = "info@ollyscale.io"},
@@ -22,7 +22,7 @@ classifiers = [
     "Topic :: System :: Monitoring",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
-requires-python = ">=3.11"
+requires-python = ">=3.11,<4"
 dependencies = [
     # AI/LLM client
     "ollama>=0.4.0",

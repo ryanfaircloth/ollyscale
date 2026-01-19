@@ -1,7 +1,0 @@
-{
-  "name": "@ollyscale/demo-otel-agent",
-  "version": "1.0.1",
-  "private": true,
-  "description": "ollyScale OTel agent demo (Python)",
-  "scripts": {}
-}

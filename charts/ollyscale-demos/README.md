@@ -2,6 +2,8 @@
 
 Unified Helm chart for deploying demo applications to showcase ollyScale's observability capabilities.
 
+This chart provides both custom and OpenTelemetry demo applications for testing.
+
 ## Features
 
 - **Custom Demo**: Simple Python Flask microservices (demo-frontend + demo-backend)

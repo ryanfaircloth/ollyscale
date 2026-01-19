@@ -2,6 +2,8 @@
 
 This Helm chart deploys the ollyScale AI Agent demo with Ollama LLM server.
 
+Demonstrates GenAI observability with automatic span generation for LLM calls.
+
 ## Overview
 
 The AI agent demo showcases:

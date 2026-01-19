@@ -433,6 +433,18 @@ make lint-fix
 
 See [docs/precommit.md](docs/precommit.md) for details.
 
+#### Release System
+
+ollyScale uses [release-please](https://github.com/googleapis/release-please) for automated releases:
+
+- Conventional Commits for version bumping
+- Separate releases for each component
+- Automatic Docker image builds and publishing
+- Helm chart packaging and OCI registry publishing
+- Cross-component dependency management via `bumpDependents`
+
+See [docs/release-system.md](docs/release-system.md) for complete documentation.
+
 ### Admin Endpoints
 
 - `GET /admin/stats` - Redis memory, cardinality, uptime

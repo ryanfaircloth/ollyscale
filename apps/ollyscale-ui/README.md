@@ -2,6 +2,8 @@
 
 Modern frontend for ollyScale observability platform built with Vite and TypeScript.
 
+This component provides the user interface for viewing traces, logs, metrics, and service maps.
+
 ## Architecture
 
 - **Build System**: Vite for fast builds and HMR

@@ -1,7 +1,0 @@
-{
-  "name": "@ollyscale/ollyscale-demos-chart",
-  "version": "0.1.0",
-  "private": true,
-  "description": "ollyScale demos Helm chart",
-  "scripts": {}
-}

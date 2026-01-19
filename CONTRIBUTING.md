@@ -189,6 +189,31 @@ git commit -m "docs: update Kubernetes deployment guide"
 git commit -m "chore: update dependencies"
 ```
 
+**Scopes (optional):**
+- Component names: `ollyscale`, `ollyscale-ui`, `opamp-server`, `chart-ollyscale`
+- Functional areas: `ui`, `api`, `storage`, `ingestion`, `opamp`
+
+**Breaking Changes:**
+
+For breaking changes, use `!` after the type or add `BREAKING CHANGE:` in the footer:
+
+```bash
+git commit -m "feat(api)!: redesign OTLP endpoint authentication"
+# or
+git commit -m "feat(api): redesign OTLP endpoint
+
+BREAKING CHANGE: The endpoint now requires Bearer token authentication."
+```
+
+**Version Bumping:**
+
+Commits trigger automatic version bumps based on type:
+- `feat:` → Minor version bump (0.x.0)
+- `fix:` → Patch version bump (0.0.x)
+- `feat!:` or `BREAKING CHANGE:` → Major version bump (x.0.0)
+
+See [docs/release-system.md](docs/release-system.md) for complete release process documentation.
+
 ### Pull Request Process
 
 1. **Create a feature branch** from `develop`:
