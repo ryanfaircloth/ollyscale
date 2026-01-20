@@ -10,8 +10,5 @@
   "workspaces": [
     "apps/ollyscale-ui"
   ],
-  "scripts": {},
-  "devDependencies": {
-    "conventional-changelog-conventionalcommits": "^9.1.0"
-  }
+  "scripts": {}
 }
