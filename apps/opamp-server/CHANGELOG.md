@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.0](https://github.com/ryanfaircloth/ollyscale/compare/opamp-server-v2.0.0...opamp-server-v2.1.0) (2026-01-20)
+
+
+### Features
+
+* **opamp-server:** clarify management capabilities ([b4fa876](https://github.com/ryanfaircloth/ollyscale/commit/b4fa87653f720b921415897723c0a101f6454e9b))
+
 ## [2.0.0](https://github.com/ryanfaircloth/ollyscale/compare/opamp-server-v1.1.0...opamp-server-v2.0.0) (2026-01-19)
 
 
