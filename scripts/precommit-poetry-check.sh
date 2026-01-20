@@ -12,8 +12,7 @@ for dir in apps/ollyscale apps/demo apps/demo-otel-agent; do
 
         # Check if poetry.lock exists and is in sync
         if [ -f "poetry.lock" ]; then
-            poetry check
-            poetry lock --check
+            poetry check --lock
         else
             echo "Warning: No poetry.lock in $dir"
         fi
