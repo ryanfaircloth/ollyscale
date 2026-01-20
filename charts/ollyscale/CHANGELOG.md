@@ -1,5 +1,7 @@
 # Changelog
 
+## [0.1.3](https://github.com/ryanfaircloth/ollyscale/compare/chart-ollyscale-v0.1.2...chart-ollyscale-v0.1.3) (2026-01-20)
+
 ## [0.1.2](https://github.com/ryanfaircloth/ollyscale/compare/chart-ollyscale-v0.1.1...chart-ollyscale-v0.1.2) (2026-01-20)
 
 ## [0.1.1](https://github.com/ryanfaircloth/ollyscale/compare/chart-ollyscale-v0.1.0...chart-ollyscale-v0.1.1) (2026-01-19)

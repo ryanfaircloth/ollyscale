@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.2](https://github.com/ryanfaircloth/ollyscale/compare/ollyscale-v2.3.1...ollyscale-v2.3.2) (2026-01-20)
+
+
+### Documentation
+
+* **ollyscale:** update module docstring for CI/CD testing ([a08700f](https://github.com/ryanfaircloth/ollyscale/commit/a08700fa895080b698cbde2c72df52c40768e9e9))
+
 ## [2.3.1](https://github.com/ryanfaircloth/ollyscale/compare/ollyscale-v2.3.0...ollyscale-v2.3.1) (2026-01-20)
 
 
