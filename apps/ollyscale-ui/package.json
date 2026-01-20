@@ -1,7 +1,7 @@
 {
   "name": "ollyscale-ui",
   "description": "Web UI for ollyScale observability platform with real-time trace and metric visualization",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "private": true,
   "type": "module",
   "scripts": {

@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.1](https://github.com/ryanfaircloth/ollyscale/compare/ollyscale-ui-v1.2.0...ollyscale-ui-v1.2.1) (2026-01-20)
+
+
+### Bug Fixes
+
+* **demo-otel-agent:** update agent description for artifact rebuild ([fcfed94](https://github.com/ryanfaircloth/ollyscale/commit/fcfed9441000f5bab747f1925c32ad309518e883))
+* **ollyscale-ui:** update package description for artifact rebuild ([fcfed94](https://github.com/ryanfaircloth/ollyscale/commit/fcfed9441000f5bab747f1925c32ad309518e883))
+
 ## [1.2.0](https://github.com/ryanfaircloth/ollyscale/compare/ollyscale-ui-v1.1.0...ollyscale-ui-v1.2.0) (2026-01-20)
 
 

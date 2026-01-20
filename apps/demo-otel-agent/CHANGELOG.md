@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.3](https://github.com/ryanfaircloth/ollyscale/compare/demo-otel-agent-v0.1.2...demo-otel-agent-v0.1.3) (2026-01-20)
+
+
+### Bug Fixes
+
+* **demo-otel-agent:** update agent description for artifact rebuild ([fcfed94](https://github.com/ryanfaircloth/ollyscale/commit/fcfed9441000f5bab747f1925c32ad309518e883))
+* **ollyscale-ui:** update package description for artifact rebuild ([fcfed94](https://github.com/ryanfaircloth/ollyscale/commit/fcfed9441000f5bab747f1925c32ad309518e883))
+
 ## [0.1.2](https://github.com/ryanfaircloth/ollyscale/compare/demo-otel-agent-v0.1.1...demo-otel-agent-v0.1.2) (2026-01-20)
 
 
