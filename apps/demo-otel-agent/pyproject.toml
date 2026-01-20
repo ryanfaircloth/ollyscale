@@ -1,6 +1,6 @@
 [project]
 name = "ollyscale-demo-otel-agent"
-version = "0.1.3"
+version = "0.1.4"
 description = "AI agent demo with OpenTelemetry instrumentation for ollyScale observability platform"
 authors = [
     {name = "Infrastructure Architects, LLC", email = "info@ollyscale.io"},

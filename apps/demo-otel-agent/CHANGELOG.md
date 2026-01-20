@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.4](https://github.com/ryanfaircloth/ollyscale/compare/demo-otel-agent-v0.1.3...demo-otel-agent-v0.1.4) (2026-01-20)
+
+
+### Bug Fixes
+
+* **demo-otel-agent:** copy source files before poetry install ([4ff7bcb](https://github.com/ryanfaircloth/ollyscale/commit/4ff7bcba277fa94c27e1b8b7895eb4b613e20688))
+
 ## [0.1.3](https://github.com/ryanfaircloth/ollyscale/compare/demo-otel-agent-v0.1.2...demo-otel-agent-v0.1.3) (2026-01-20)
 
 
