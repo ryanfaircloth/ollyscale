@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.3](https://github.com/ryanfaircloth/ollyscale/compare/ollyscale-ui-v1.2.2...ollyscale-ui-v1.2.3) (2026-01-20)
+
+
+### Bug Fixes
+
+* **ollyscale-ui:** move package-lock.json to correct location ([6af0452](https://github.com/ryanfaircloth/ollyscale/commit/6af04524a054fec86339a444e0bd9476d0f7adf3))
+* **ollyscale-ui:** regenerate corrupted package-lock.json ([c833a77](https://github.com/ryanfaircloth/ollyscale/commit/c833a774d396267398814d37d3c7b15687f68eb2))
+
 ## [1.2.2](https://github.com/ryanfaircloth/ollyscale/compare/ollyscale-ui-v1.2.1...ollyscale-ui-v1.2.2) (2026-01-20)
 
 
