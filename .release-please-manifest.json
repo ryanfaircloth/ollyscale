@@ -1,10 +1,10 @@
 {
   "apps/ollyscale": "2.3.3",
-  "apps/ollyscale-ui": "1.2.1",
+  "apps/ollyscale-ui": "1.2.2",
   "apps/opamp-server": "2.1.0",
   "apps/demo": "0.1.2",
   "apps/demo-otel-agent": "0.1.4",
-  "charts/ollyscale": "0.1.7",
+  "charts/ollyscale": "0.1.8",
   "charts/ollyscale-demos": "1.2.0",
   "charts/ollyscale-otel-agent": "1.2.0"
 }

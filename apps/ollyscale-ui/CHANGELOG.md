@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.2](https://github.com/ryanfaircloth/ollyscale/compare/ollyscale-ui-v1.2.1...ollyscale-ui-v1.2.2) (2026-01-20)
+
+
+### Bug Fixes
+
+* **ollyscale-ui:** update description to trigger artifact rebuild ([a57dbfb](https://github.com/ryanfaircloth/ollyscale/commit/a57dbfbb3b77d95c5b8784f00de54d177de56b4e))
+
 ## [1.2.1](https://github.com/ryanfaircloth/ollyscale/compare/ollyscale-ui-v1.2.0...ollyscale-ui-v1.2.1) (2026-01-20)
 
 
