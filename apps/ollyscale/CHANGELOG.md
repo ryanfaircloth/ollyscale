@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.3](https://github.com/ryanfaircloth/ollyscale/compare/ollyscale-v2.3.2...ollyscale-v2.3.3) (2026-01-20)
+
+
+### Documentation
+
+* **ollyscale:** clarify CI/CD pipeline documentation ([ad60f86](https://github.com/ryanfaircloth/ollyscale/commit/ad60f868c74dabf5e52ebdf9ffbbd7514e815129))
+
 ## [2.3.2](https://github.com/ryanfaircloth/ollyscale/compare/ollyscale-v2.3.1...ollyscale-v2.3.2) (2026-01-20)
 
 
