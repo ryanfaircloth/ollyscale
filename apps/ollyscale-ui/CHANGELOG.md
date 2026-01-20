@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/ryanfaircloth/ollyscale/compare/ollyscale-ui-v1.1.0...ollyscale-ui-v1.2.0) (2026-01-20)
+
+
+### Features
+
+* **ollyscale-ui:** enhance package description ([8b41fd0](https://github.com/ryanfaircloth/ollyscale/commit/8b41fd0c6a8a2f42bb658f0517173d6aa6985206))
+
 ## [1.1.0](https://github.com/ryanfaircloth/ollyscale/compare/ollyscale-ui-v1.0.0...ollyscale-ui-v1.1.0) (2026-01-19)
 
 
