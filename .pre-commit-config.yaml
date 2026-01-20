@@ -102,6 +102,26 @@ repos:
       - id: terraform_validate
         exclude: ^\.kind/modules/registry/
 
+  # Node.js dependency validation
+  - repo: local
+    hooks:
+      - id: npm-lockfile-check
+        name: Check npm lockfile sync
+        entry: scripts/precommit-npm-check.sh
+        language: script
+        pass_filenames: false
+        files: ^apps/ollyscale-ui/(package\.json|package-lock\.json)$
+
+  # Python Poetry dependency validation
+  - repo: local
+    hooks:
+      - id: poetry-check
+        name: Check Poetry files
+        entry: scripts/precommit-poetry-check.sh
+        language: script
+        pass_filenames: false
+        files: ^apps/(ollyscale|demo|demo-otel-agent)/(pyproject\.toml|poetry\.lock)$
+
 # Configuration
 default_language_version:
   python: python3.12
