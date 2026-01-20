@@ -263,7 +263,7 @@ frontend:
   replicaCount: 1
   image:
     repository: ghcr.io/ryanfaircloth/ollyscale
-    tag: 0.1.1
+    tag: 0.1.2
     pullPolicy: ''
   serviceAccount:
     create: true
@@ -321,7 +321,7 @@ webui:
   replicaCount: 1
   image:
     repository: ghcr.io/ryanfaircloth/ollyscale/ollyscale-ui
-    tag: 0.1.1
+    tag: 0.1.2
     pullPolicy: ''
   serviceAccount:
     create: true
@@ -387,7 +387,7 @@ opampServer:
   replicaCount: 1
   image:
     repository: ghcr.io/ryanfaircloth/ollyscale/opamp-server
-    tag: 0.1.1
+    tag: 0.1.2
     pullPolicy: ''
   serviceAccount:
     create: true
@@ -447,7 +447,7 @@ otlpReceiver:
   replicaCount: 1
   image:
     repository: ghcr.io/ryanfaircloth/ollyscale/ollyscale
-    tag: 0.1.1
+    tag: 0.1.2
     pullPolicy: ''
   serviceAccount:
     create: true

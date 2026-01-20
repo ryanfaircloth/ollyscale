@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.1](https://github.com/ryanfaircloth/ollyscale/compare/ollyscale-v2.3.0...ollyscale-v2.3.1) (2026-01-20)
+
+
+### Documentation
+
+* **ollyscale:** improve module docstring for clarity ([130202d](https://github.com/ryanfaircloth/ollyscale/commit/130202d9c4d1e4267ff0cd2d9db3b88e1eee24cb))
+
 ## [2.3.0](https://github.com/ryanfaircloth/ollyscale/compare/ollyscale-v2.2.0...ollyscale-v2.3.0) (2026-01-19)
 
 
