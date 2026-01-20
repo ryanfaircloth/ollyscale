@@ -251,16 +251,17 @@ export function renderServiceMap(graph) {
             }
         ],
         layout: {
-            name: 'grid',
-            rows: Math.ceil(Math.sqrt(graph.nodes.length)),
-            cols: Math.ceil(graph.nodes.length / Math.ceil(Math.sqrt(graph.nodes.length))),
-            position: function(node) {
-                // Deterministic: order by array index
-                const idx = graph.nodes.findIndex(n => n.id === node.id());
-                return { row: Math.floor(idx / Math.ceil(Math.sqrt(graph.nodes.length))), col: idx % Math.ceil(Math.sqrt(graph.nodes.length)) };
-            },
+            name: 'breadthfirst',
+            directed: true,
+            padding: 40,
+            spacingFactor: 1.2,
+            animate: true,
             avoidOverlap: true,
-            animate: true
+            circle: false,
+            grid: false,
+            roots: graph.nodes.length ? [graph.nodes[0].id] : [],
+            // top-to-bottom orientation for clear edge direction
+            orientation: 'vertical'
         },
         minZoom: 0.5,
         maxZoom: 3,
