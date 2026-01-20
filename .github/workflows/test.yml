@@ -65,8 +65,8 @@ jobs:
           echo "::warning::Pre-commit checks failed. Run 'make lint' locally to see details."
           echo "::warning::To auto-fix issues, run 'make lint-fix' and commit the changes."
 
-  test-ui:
-    name: Test ollyScale UI
+  test-frontend:
+    name: Test ollyScale Frontend Services
     runs-on: ubuntu-latest
 
     steps:
