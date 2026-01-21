@@ -1,5 +1,4 @@
 import os
-from typing import Any
 
 import asyncpg
 
@@ -15,40 +14,100 @@ class Storage:
         self.pg_password = os.environ.get("PG_PASSWORD", "postgres")
         self.pg_db = os.environ.get("PG_DB", "postgres")
 
-    async def store_trace(self, trace: Any) -> None:
+    async def store_trace(self, trace: dict) -> None:
+        """
+        Store a span/trace in spans_fact, mapping OTEL fields to columns.
+        Expects trace dict with OTEL fields and attributes.
+        """
         dsn = (
             self.pg_dsn or f"postgresql://{self.pg_user}:{self.pg_password}@{self.pg_host}:{self.pg_port}/{self.pg_db}"
         )
         async with asyncpg.create_pool(dsn=dsn, min_size=1, max_size=2) as pool, pool.acquire() as conn:
             await conn.execute(
                 """
-                    INSERT INTO trace (data) VALUES ($1)
-                    """,
-                trace,
+                INSERT INTO spans_fact (
+                    trace_id, span_id, parent_span_id, service_id, operation_id, resource_id,
+                    start_time_unix_nano, end_time_unix_nano, status_code, kind, tenant_id, connection_id,
+                    attributes, events, links
+                ) VALUES (
+                    $1, $2, $3, $4, $5, $6,
+                    $7, $8, $9, $10, $11, $12,
+                    $13, $14, $15
+                )
+                """,
+                trace.get("trace_id"),
+                trace.get("span_id"),
+                trace.get("parent_span_id"),
+                trace.get("service_id"),
+                trace.get("operation_id"),
+                trace.get("resource_id"),
+                trace.get("start_time_unix_nano"),
+                trace.get("end_time_unix_nano"),
+                trace.get("status_code"),
+                trace.get("kind"),
+                trace.get("tenant_id"),
+                trace.get("connection_id"),
+                trace.get("attributes"),
+                trace.get("events"),
+                trace.get("links"),
             )
 
-    async def store_log(self, log: Any) -> None:
+    async def store_log(self, log: dict) -> None:
+        """
+        Store a log in logs_fact, mapping OTEL fields to columns.
+        Expects log dict with OTEL fields and attributes.
+        """
         dsn = (
             self.pg_dsn or f"postgresql://{self.pg_user}:{self.pg_password}@{self.pg_host}:{self.pg_port}/{self.pg_db}"
         )
         async with asyncpg.create_pool(dsn=dsn, min_size=1, max_size=2) as pool, pool.acquire() as conn:
             await conn.execute(
                 """
-                    INSERT INTO log (data) VALUES ($1)
-                    """,
-                log,
+                INSERT INTO logs_fact (
+                    trace_id, span_id, service_id, resource_id, time_unix_nano, severity_text, body,
+                    tenant_id, connection_id, attributes
+                ) VALUES (
+                    $1, $2, $3, $4, $5, $6, $7,
+                    $8, $9, $10
+                )
+                """,
+                log.get("trace_id"),
+                log.get("span_id"),
+                log.get("service_id"),
+                log.get("resource_id"),
+                log.get("time_unix_nano"),
+                log.get("severity_text"),
+                log.get("body"),
+                log.get("tenant_id"),
+                log.get("connection_id"),
+                log.get("attributes"),
             )
 
-    async def store_metric(self, metric: Any) -> None:
+    async def store_metric(self, metric: dict) -> None:
+        """
+        Store a metric in metrics_fact, mapping OTEL fields to columns.
+        Expects metric dict with OTEL fields and attributes.
+        """
         dsn = (
             self.pg_dsn or f"postgresql://{self.pg_user}:{self.pg_password}@{self.pg_host}:{self.pg_port}/{self.pg_db}"
         )
         async with asyncpg.create_pool(dsn=dsn, min_size=1, max_size=2) as pool, pool.acquire() as conn:
             await conn.execute(
                 """
-                    INSERT INTO metric (data) VALUES ($1)
-                    """,
-                metric,
+                INSERT INTO metrics_fact (
+                    service_id, resource_id, name, time_unix_nano, value, tenant_id, connection_id, attributes
+                ) VALUES (
+                    $1, $2, $3, $4, $5, $6, $7, $8
+                )
+                """,
+                metric.get("service_id"),
+                metric.get("resource_id"),
+                metric.get("name"),
+                metric.get("time_unix_nano"),
+                metric.get("value"),
+                metric.get("tenant_id"),
+                metric.get("connection_id"),
+                metric.get("attributes"),
             )
 
     async def health(self) -> dict:
