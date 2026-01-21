@@ -58,14 +58,19 @@ export function initSidebar() {
 
 export function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
-    if (!sidebar) return;
+    const toggleIcon = document.getElementById('sidebar-toggle-icon');
+    if (!sidebar || !toggleIcon) return;
 
     sidebarCollapsed = !sidebarCollapsed;
 
     if (sidebarCollapsed) {
         sidebar.classList.add('collapsed');
+        // ChevronRight for expand
+        toggleIcon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
     } else {
         sidebar.classList.remove('collapsed');
+        // ChevronLeft for collapse
+        toggleIcon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>';
     }
 
     // Save state to localStorage

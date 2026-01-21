@@ -224,11 +224,13 @@ function updateAutoRefreshButton() {
     if (!btn || !icon) return;
 
     if (autoRefreshEnabled) {
-        icon.textContent = '⏸';
+        // Pause icon
+        icon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>';
         btn.title = 'Pause auto-refresh';
         btn.style.background = 'var(--primary)';
     } else {
-        icon.textContent = '▶';
+        // Play icon
+        icon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>';
         btn.title = 'Resume auto-refresh';
         btn.style.background = '#6b7280';
     }

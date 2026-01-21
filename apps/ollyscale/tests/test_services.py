@@ -71,6 +71,20 @@ class TestServiceCatalog:
 
 
 class TestServiceGraph:
+    @pytest.mark.asyncio
+    async def test_service_graph_edges_are_unique(self, storage):
+        """Test that service graph edges are unique per source-target pair."""
+        # This test is valid for the Redis backend
+        graph = await storage.get_service_graph(limit=100)
+        edge_pairs = set()
+        duplicates = []
+        for edge in graph.get("edges", []):
+            pair = (edge["source"], edge["target"])
+            if pair in edge_pairs:
+                duplicates.append(pair)
+            edge_pairs.add(pair)
+        assert not duplicates, f"Duplicate edges found: {duplicates}"
+
     """Tests for service dependency graph."""
 
     @pytest.mark.asyncio

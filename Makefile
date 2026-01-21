@@ -77,27 +77,28 @@ up:
 
 ## Build local images and deploy to cluster
 deploy:
-	@if ! kind get clusters 2>/dev/null | grep -q "^$(ACTIVE_CLUSTER_NAME)$$"; then \
+	@set -e; \
+	if ! kind get clusters 2>/dev/null | grep -q "^$(ACTIVE_CLUSTER_NAME)$$"; then \
 		echo "❌ Cluster not found. Run 'make up' first!"; \
 		exit 1; \
-	fi
-	@echo "🔨 Building local images..."
-	@VERSION="0.0.$$(date +%s)"; \
+	fi; \
+	echo "🔨 Building local images..."; \
+	VERSION="0.0.$$(date +%s)"; \
 	cd $(CURDIR)/charts && ./build-and-push-local.sh "$$VERSION"; \
-	echo "" && \
-	echo "✅ Images built and pushed: version $$VERSION" && \
-	echo "" && \
-	echo "🔄 Creating terraform auto vars file..." && \
+	echo ""; \
+	echo "✅ Images built and pushed: version $$VERSION"; \
+	echo ""; \
+	echo "🔄 Creating terraform auto vars file..."; \
 	BASE_CHART_VERSION=$$(grep "^version:" $(CURDIR)/charts/ollyscale/Chart.yaml | awk '{print $$2}' | cut -d'-' -f1); \
-	echo "ollyscale_chart_tag = \"$$BASE_CHART_VERSION-$$VERSION\"" > $(CURDIR)/.kind/terraform.auto.tfvars && \
-	echo "ollyscale_tag = \"$$VERSION\"" >> $(CURDIR)/.kind/terraform.auto.tfvars && \
-	echo "opamp_tag = \"$$VERSION\"" >> $(CURDIR)/.kind/terraform.auto.tfvars && \
-	echo "🔄 Updating ArgoCD application..." && \
-	cd $(CURDIR)/.kind && \
-	terraform apply -auto-approve && \
-	echo "" && \
-	echo "⏳ Waiting for ollyscale to sync..." && \
-	echo "   This may take a few minutes on first deployment or major upgrades." && \
+	echo "ollyscale_chart_tag = \"$$BASE_CHART_VERSION-$$VERSION\"" > $(CURDIR)/.kind/terraform.auto.tfvars; \
+	echo "ollyscale_tag = \"$$VERSION\"" >> $(CURDIR)/.kind/terraform.auto.tfvars; \
+	echo "opamp_tag = \"$$VERSION\"" >> $(CURDIR)/.kind/terraform.auto.tfvars; \
+	echo "🔄 Updating ArgoCD application..."; \
+	cd $(CURDIR)/.kind; \
+	terraform apply -auto-approve; \
+	echo ""; \
+	echo "⏳ Waiting for ollyscale to sync..."; \
+	echo "   This may take a few minutes on first deployment or major upgrades."; \
 	for i in 1 2 3 4 5 6 7 8 9 10 11 12; do \
 		SYNC_STATUS=$$(kubectl get application ollyscale -n argocd -o jsonpath='{.status.sync.status}' 2>/dev/null || echo "NotFound"); \
 		HEALTH_STATUS=$$(kubectl get application ollyscale -n argocd -o jsonpath='{.status.health.status}' 2>/dev/null || echo "Unknown"); \
@@ -112,12 +113,12 @@ deploy:
 			break; \
 		fi; \
 		sleep 10; \
-	done && \
-	echo "" && \
-	echo "✅ Deployment complete!" && \
-	echo "" && \
-	echo "📋 Access $(PROJECT_NAME):" && \
-	echo "  UI: https://ollyscale.ollyscale.test:49443" && \
+	done; \
+	echo ""; \
+	echo "✅ Deployment complete!"; \
+	echo ""; \
+	echo "📋 Access $(PROJECT_NAME):"; \
+	echo "  UI: https://ollyscale.ollyscale.test:49443"; \
 	echo ""
 
 ## Destroy KIND cluster and registry

@@ -34,9 +34,11 @@
 
         <!-- Sidebar Toggle -->
         <div class="sidebar-toggle-wrapper">
-            <button class="sidebar-toggle" id="sidebar-toggle" onclick="window.toggleSidebar()" title="Toggle sidebar">
-                <span class="toggle-icon">☰</span>
-            </button>
+                        <button class="sidebar-toggle" id="sidebar-toggle" onclick="window.toggleSidebar()" title="Toggle sidebar">
+                                <span class="toggle-icon" id="sidebar-toggle-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                                </span>
+                        </button>
         </div>
 
         <!-- Primary Navigation -->
@@ -218,31 +220,7 @@
         <div id="map-content" class="tab-content">
             <div class="map-container" style="background: #fff; border: 1px solid #ddd; border-radius: 4px; height: 600px; position: relative; overflow: hidden;">
                 <div id="service-map-cy" style="width: 100%; height: 100%; display: block;"></div>
-                <div id="map-legend" style="position: absolute; top: 10px; right: 10px; background: rgba(255, 255, 255, 0.9); padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 11px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); z-index: 10;">
-                    <div style="font-weight: 600; margin-bottom: 6px; color: #64748b;">Legend</div>
-                    <div style="display: flex; align-items: center; margin-bottom: 4px;">
-                        <div style="width: 12px; height: 12px; background: #8b5cf6; transform: rotate(45deg); margin-right: 8px; border: 1px solid #7c3aed;"></div>
-                        <span>Client</span>
-                    </div>
-                    <div style="display: flex; align-items: center; margin-bottom: 4px;">
-                        <div style="width: 12px; height: 12px; background: #0066CC; border-radius: 2px; margin-right: 8px; border: 1px solid #0052CC;"></div>
-                        <span>Server</span>
-                    </div>
-                    <div style="display: flex; align-items: center; margin-bottom: 4px;">
-                        <div style="width: 12px; height: 10px; background: #10b981; border-radius: 0 0 2px 2px; border: 1px solid #059669; margin-right: 8px; position: relative;">
-                            <div style="position: absolute; top: -2px; left: -1px; width: 12px; height: 4px; background: #10b981; border: 1px solid #059669; border-radius: 50%;"></div>
-                        </div>
-                        <span>Database</span>
-                    </div>
-                    <div style="display: flex; align-items: center; margin-bottom: 4px;">
-                        <div style="width: 12px; height: 12px; background: #f59e0b; transform: skewX(-20deg); margin-right: 8px; border: 1px solid #d97706;"></div>
-                        <span>Messaging</span>
-                    </div>
-                    <div style="display: flex; align-items: center;">
-                        <div style="width: 12px; height: 12px; background: #94a3b8; border-radius: 50%; margin-right: 8px; border: 1px solid #64748b;"></div>
-                        <span>Isolated (no connections)</span>
-                    </div>
-                </div>
+                <div id="service-map-legend" class="service-map-legend" style="position: absolute; top: 10px; right: 10px; z-index: 10;"></div>
                 <div id="map-loading" class="loading" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255, 255, 255, 0.9); z-index: 5; display: flex; justify-content: center; align-items: center;">
                     <img src="/assets/logo.svg" alt="Loading..." style="height: 48px; width: 48px; animation: spin 1.5s linear infinite;">
                     <div style="margin-top: 12px;">Loading service map...</div>

@@ -13,7 +13,10 @@
   },
   "dependencies": {
     "chart.js": "^4.4.1",
-    "cytoscape": "^3.28.1"
+    "chartjs-adapter-date-fns": "^3.0.0",
+    "cytoscape": "^3.28.1",
+    "d3": "^7.9.0",
+    "dagre-d3": "^0.6.4"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.53.0",

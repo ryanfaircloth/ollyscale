@@ -9,11 +9,14 @@
 /**
  * Service Map Module - Renders service dependency graph using Cytoscape.js
  */
-let cy = null;
+
+import * as d3 from "d3";
+import * as dagreD3 from "dagre-d3";
 
 export function renderServiceMap(graph) {
-    const container = document.getElementById('service-map-cy');
+    const container = document.getElementById("service-map-cy");
     if (!container) return;
+    container.innerHTML = "";
 
     // Central node type/shape/color/label mapping (single source of truth)
     const NODE_TYPE_MAP = [
@@ -85,17 +88,12 @@ export function renderServiceMap(graph) {
         console.error('Invalid graph data:', graph);
         container.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-muted);">Invalid service map data</div>';
         return;
-    }
+   }
 
-    // Destroy existing Cytoscape instance if it exists
-    if (cy) {
-        cy.destroy();
-        cy = null;
-    }
 
     // Hide loading spinner
-    const loadingEl = document.getElementById('map-loading');
-    if (loadingEl) loadingEl.style.display = 'none';
+    const loadingEl = document.getElementById("map-loading");
+    if (loadingEl) loadingEl.style.display = "none";
 
     // Calculate node types (Root, Leaf, Intermediate)
     const incoming = new Map();
@@ -114,245 +112,268 @@ export function renderServiceMap(graph) {
         });
     }
 
-    // Transform data for Cytoscape
-    const elements = [];
-                        graph.nodes.forEach(node => {
-                            const inCount = incoming.get(node.id) || 0;
-                            const outCount = outgoing.get(node.id) || 0;
-                            let nodeType = (node.type || '').toLowerCase();
-                            // Infer type if not set
-                            if (!nodeType) {
-                                if (inCount === 0 && outCount === 0) nodeType = 'isolated';
-                                else nodeType = 'service';
-                            }
-                            let { shape, color, label } = getNodeTypeInfo(nodeType);
-                            // Health coloring overrides
-                            const metrics = node.metrics || {};
-                            if (metrics.error_rate && metrics.error_rate > 5) {
-                                color = '#ef4444';
-                            } else if (metrics.error_rate && metrics.error_rate > 0) {
-                                color = '#f59e0b';
-                            }
-                            elements.push({
-                                group: 'nodes',
-                                data: {
-                                    id: node.id,
-                                    label: node.label,
-                                    shape: shape,
-                                    type: label,
-                                    color: color,
-                                    metrics: metrics
-                                }
-                            });
-                        });
 
-    // Edges
-    if (graph.edges && Array.isArray(graph.edges)) {
-        graph.edges.forEach(edge => {
-            elements.push({
-                group: 'edges',
-                data: {
-                    id: `${edge.source}-${edge.target}`,
-                    source: edge.source,
-                    target: edge.target,
-                    label: edge.p95 ? `${edge.p95}ms` : '',
-                    p95: edge.p95,
-                    weight: edge.value
-                }
-            });
-        });
+    // --- Dagre-D3 Migration ---
+    // Create Dagre-D3 graph
+    // We want top-down for flow, but left-right for nodes at the same level (rank)
+    // We'll assign a 'rank' to each node based on its distance from the root(s)
+    // Nodes at the same rank will be laid out left-right
+    // Dagre-D3 expects shape to be one of: 'rect', 'ellipse', 'circle', 'diamond', 'hexagon', 'triangle'
+    // Map our custom shape names to dagre-d3 supported shapes
+    function mapShape(shape) {
+        switch (shape) {
+            case 'rectangle': return 'rect';
+            case 'ellipse': return 'ellipse';
+            case 'diamond': return 'diamond';
+            case 'hexagon': return 'hexagon';
+            case 'triangle': return 'triangle';
+            default: return 'ellipse';
+        }
     }
 
-    // If we already have a cytoscape instance, perform incremental update
-    if (cy) {
-        cy.batch(() => {
-            const currentNodes = new Set(cy.nodes().map(n => n.id()));
-            const currentEdges = new Set(cy.edges().map(e => e.id()));
+    // Create Dagre-D3 graph
+    const g = new dagreD3.graphlib.Graph().setGraph({
+        rankdir: "TB", // Top-Bottom for flow
+        nodesep: 40,
+        ranksep: 80,
+        marginx: 20,
+        marginy: 20
+    });
 
-            // Update Nodes
-            elements.filter(e => e.group === 'nodes').forEach(ele => {
-                if (currentNodes.has(ele.data.id)) {
-                    cy.$id(ele.data.id).data(ele.data);
-                    currentNodes.delete(ele.data.id);
-                } else {
-                    cy.add(ele);
-                }
-            });
-
-            // Update Edges
-            elements.filter(e => e.group === 'edges').forEach(ele => {
-                if (currentEdges.has(ele.data.id)) {
-                    cy.$id(ele.data.id).data(ele.data);
-                    currentEdges.delete(ele.data.id);
-                } else {
-                    cy.add(ele);
-                }
-            });
-
-            // Remove orphans
-            currentNodes.forEach(nodeId => cy.$id(nodeId).remove());
-            currentEdges.forEach(edgeId => cy.$id(edgeId).remove());
+    // Helper: BFS to assign rank (level) to each node
+    function assignRanks(nodes, edges) {
+        const ranks = {};
+        const visited = new Set();
+        // Find roots (nodes with no incoming edges)
+        const nodeIds = nodes.map(n => n.id);
+        const incomingCounts = Object.fromEntries(nodeIds.map(id => [id, 0]));
+        edges.forEach(e => {
+            incomingCounts[e.target] = (incomingCounts[e.target] || 0) + 1;
         });
+        const roots = nodeIds.filter(id => incomingCounts[id] === 0);
+        // BFS from roots
+        const queue = roots.map(id => ({ id, rank: 0 }));
+        while (queue.length) {
+            const { id, rank } = queue.shift();
+            if (visited.has(id)) continue;
+            visited.add(id);
+            ranks[id] = rank;
+            // Find children
+            edges.filter(e => e.source === id).forEach(e => {
+                queue.push({ id: e.target, rank: rank + 1 });
+            });
+        }
+        // Fallback: assign rank 0 to any unvisited node
+        nodeIds.forEach(id => {
+            if (!(id in ranks)) ranks[id] = 0;
+        });
+        return ranks;
+    }
+
+    const ranks = assignRanks(graph.nodes, graph.edges || []);
+
+    // Add nodes
+    graph.nodes.forEach((node) => {
+        const inCount = incoming.get(node.id) || 0;
+        const outCount = outgoing.get(node.id) || 0;
+        let nodeType = (node.type || "").toLowerCase();
+        if (!nodeType) {
+            if (inCount === 0 && outCount === 0) nodeType = "isolated";
+            else nodeType = "service";
+        }
+        let { shape, color, label } = getNodeTypeInfo(nodeType);
+        // Health coloring overrides
+        const metrics = node.metrics || {};
+        if (metrics.error_rate && metrics.error_rate > 5) {
+            color = "#ef4444";
+        } else if (metrics.error_rate && metrics.error_rate > 0) {
+            color = "#f59e0b";
+        }
+        g.setNode(node.id, {
+            label: node.label,
+            shape: mapShape(shape),
+            type: label,
+            color: color,
+            metrics: metrics,
+            class: "service-map-node",
+            style: `fill: ${color}; stroke: #fff; stroke-width: 2px;`,
+            labelStyle: "font-weight:600; font-size:12px; font-family:Inter,sans-serif; fill:#334155;",
+            rank: ranks[node.id]
+        });
+    });
+
+    // Add edges
+    if (graph.edges && Array.isArray(graph.edges)) {
+        // Deduplicate edges by source-target pair
+        const edgeMap = new Map();
+        graph.edges.forEach((edge) => {
+            const key = `${edge.source}__${edge.target}`;
+            if (!edgeMap.has(key)) {
+                edgeMap.set(key, { ...edge });
+            } else {
+                // Aggregate metrics if needed (e.g., max p95 latency)
+                const existing = edgeMap.get(key);
+                if (edge.p95 && (!existing.p95 || edge.p95 > existing.p95)) {
+                    existing.p95 = edge.p95;
+                }
+                // Optionally aggregate other metrics here
+            }
+        });
+        // Add only unique edges to the graph
+        for (const edge of edgeMap.values()) {
+            g.setEdge(edge.source, edge.target, {
+                label: edge.p95 ? `${edge.p95}ms` : "",
+                style: "stroke: #cbd5e1; stroke-width: 2px;", // Remove shadow
+                arrowheadStyle: "fill: #cbd5e1;",
+                weight: edge.value || 1,
+            });
+        }
+    }
+
+    // For each rank, set left-right layout for nodes at the same rank
+    // This is handled by Dagre-D3's default layout, but we can visually annotate or group if needed
+    // Optionally, you can add custom x/y for nodes at the same rank for more control
+
+    // Render with Dagre-D3
+    const svg = d3.select(container)
+        .append("svg")
+        .attr("width", "100%")
+        .attr("height", 600)
+        .attr("role", "img")
+        .attr("aria-label", "Service Dependency Map");
+
+    const inner = svg.append("g");
+    const render = new dagreD3.render();
+
+        render(inner, g);
+
+        // Fix Dagre-D3 double arrowhead/black infill bug
+
+        d3.select(container)
+            .selectAll("marker")
+            .attr("fill", "#cbd5e1")
+            .attr("stroke", "#cbd5e1");
+
+        // Remove any black fill from edge paths
+        d3.select(container)
+            .selectAll(".edgePath path")
+            .attr("fill", "none");
+
+        // Force only one marker per edge to prevent double arrowheads
+        d3.select(container)
+            .selectAll('.edgePath path')
+            .attr('marker-end', function() {
+                // Find the first marker defined in the SVG and use it
+                const svg = d3.select(container).select('svg');
+                const marker = svg.select('marker').attr('id');
+                return marker ? `url(#${marker})` : null;
+            });
+
+    // Center graph
+    const graphWidth = g.graph().width || 800;
+    const graphHeight = g.graph().height || 600;
+    svg.attr("viewBox", `0 0 ${graphWidth} ${graphHeight}`);
+
+    // Accessibility: Add title/desc
+    svg.append("title").text("Service Dependency Map");
+    svg.append("desc").text("Top-down flow for dependencies, left-right for parallel nodes at the same time/rank");
+
+    // Click handler for details panel
+    inner.selectAll(".service-map-node")
+        .on("click", function (event, nodeId) {
+            const nodeData = g.node(nodeId);
+            const metrics = nodeData.metrics || {};
+            const panel = document.getElementById("service-details-panel");
+            const title = document.getElementById("details-title");
+            const content = document.getElementById("details-content");
+            if (!panel || !title || !content) return;
+            title.textContent = nodeData.label;
+            let html = `
+                <div style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #f1f5f9;">
+                    <span style="background: ${nodeData.color}; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; text-transform: uppercase;">${nodeData.type}</span>
+                </div>
+            `;
+            if (metrics.span_count !== undefined) {
+                html += `<div style="margin-bottom: 4px; display: flex; justify-content: space-between;"><span>Total Spans:</span> <strong>${metrics.span_count}</strong></div>`;
+            }
+            if (metrics.rate !== undefined && metrics.rate !== null) {
+                html += `<div style="margin-bottom: 4px; display: flex; justify-content: space-between;"><span>Rate:</span> <strong>${metrics.rate} req/s</strong></div>`;
+            }
+            if (metrics.error_rate !== undefined && metrics.error_rate !== null) {
+                const color = metrics.error_rate > 0 ? "#ef4444" : "#10b981";
+                html += `<div style="margin-bottom: 4px; display: flex; justify-content: space-between;"><span>Error Rate:</span> <strong style="color: ${color}">${metrics.error_rate}%</strong></div>`;
+            }
+            if (metrics.duration_p50) {
+                html += `
+                    <div style="margin-top: 12px; font-weight: 600; margin-bottom: 6px; color: #334155;">Latency (ms)</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; text-align: center; background: #f8fafc; padding: 8px; border-radius: 4px;">
+                        <div>
+                            <div style="font-size: 10px; color: #64748b;">P50</div>
+                            <div style="font-weight: 600;">${metrics.duration_p50}</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 10px; color: #64748b;">P95</div>
+                            <div style="font-weight: 600;">${metrics.duration_p95}</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 10px; color: #64748b;">P99</div>
+                            <div style="font-weight: 600;">${metrics.duration_p99}</div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                html += `<div style="margin-top: 12px; color: #94a3b8; font-style: italic;">No latency data available</div>`;
+            }
+            // Add navigation buttons
+            const safeLabel = nodeData.label.replace(/'/g, "\\'");
+            html += `
+                <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #f1f5f9; display: flex; flex-direction: column; gap: 8px;">
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="window.viewServiceSpans('${safeLabel}');"
+                            style="flex: 1; padding: 6px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 4px; transition: all 0.2s;">
+                            <span>Spans</span>
+                        </button>
+                        <button onclick="window.viewServiceLogs('${safeLabel}');"
+                            style="flex: 1; padding: 6px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 4px; transition: all 0.2s;">
+                            <span>Logs</span>
+                        </button>
+                    </div>
+                    <button onclick="window.viewMetricsForService('${safeLabel}');"
+                        style="width: 100%; padding: 6px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 500; transition: all 0.2s;">
+                        <span>Metrics</span>
+                    </button>
+                </div>
+            `;
+            content.innerHTML = html;
+            panel.style.display = "block";
+        });
+
+    // Hide panel when clicking background
+    svg.on("click", function (event) {
+        if (event.target === svg.node()) {
+            const panel = document.getElementById("service-details-panel");
+            if (panel) panel.style.display = "none";
+        }
+    });
+
+    // Debug: Log graph data for troubleshooting
+    console.log("Service Map Graph Data:", graph);
+    // Debug: Log nodes and edges
+    console.log("Nodes:", graph.nodes);
+    console.log("Edges:", graph.edges);
+
+    // Remove the empty data check hack, but keep the feature for true empty cases
+    // Only show the message if graph.nodes and graph.edges are both present and truly empty
+    if (Array.isArray(graph.nodes) && Array.isArray(graph.edges) && graph.nodes.length === 0 && graph.edges.length === 0) {
+        container.innerHTML += '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#94a3b8;font-size:18px;text-align:center;">No service map data available</div>';
         return;
     }
 
-    // Initialize Cytoscape (First Load)
-    cy = cytoscape({
-        container: container,
-        elements: elements,
-        style: [
-            {
-                selector: 'node',
-                style: {
-                    'background-color': 'data(color)',
-                    'label': 'data(label)',
-                    'shape': 'data(shape)',
-                    'color': '#64748b',
-                    'font-size': '12px',
-                    'font-family': 'Inter, sans-serif',
-                    'font-weight': '600',
-                    'text-valign': 'bottom',
-                    'text-margin-y': 8,
-                    'width': 40,
-                    'height': 40,
-                    'border-width': 2,
-                    'border-color': '#ffffff',
-                    'overlay-opacity': 0,
-                    'transition-property': 'background-color, width, height',
-                    'transition-duration': '0.3s'
-                }
-            },
-            {
-                selector: 'edge',
-                style: {
-                    'width': 2,
-                    'line-color': '#cbd5e1',
-                    'target-arrow-color': '#cbd5e1',
-                    'target-arrow-shape': 'triangle',
-                    'curve-style': 'bezier',
-                    'label': 'data(label)',
-                    'font-size': '10px',
-                    'color': '#64748b',
-                    'text-background-opacity': 1,
-                    'text-background-color': '#ffffff',
-                    'text-background-padding': 2,
-                    'text-background-shape': 'roundrectangle',
-                    'text-border-width': 1,
-                    'text-border-color': '#e2e8f0',
-                    'text-border-opacity': 1
-                }
-            },
-            {
-                selector: 'node:selected',
-                style: {
-                    'border-width': 4,
-                    'border-color': '#bfdbfe'
-                }
-            }
-        ],
-        layout: {
-            name: 'breadthfirst',
-            directed: true,
-            padding: 40,
-            spacingFactor: 1.2,
-            animate: true,
-            avoidOverlap: true,
-            circle: false,
-            grid: false,
-            roots: graph.nodes.length ? [graph.nodes[0].id] : [],
-            // top-to-bottom orientation for clear edge direction
-            orientation: 'vertical'
-        },
-        minZoom: 0.5,
-        maxZoom: 3,
-        wheelSensitivity: 0.2
-    });
-
-    // Click Handler for Details Panel
-    cy.on('tap', 'node', function (evt) {
-        const node = evt.target;
-        const data = node.data();
-        const metrics = data.metrics || {};
-
-        const panel = document.getElementById('service-details-panel');
-        const title = document.getElementById('details-title');
-        const content = document.getElementById('details-content');
-
-        if (!panel || !title || !content) return;
-
-        title.textContent = data.label;
-
-        let html = `
-            <div style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #f1f5f9;">
-                <span style="background: ${data.color}; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; text-transform: uppercase;">${data.type}</span>
-            </div>
-        `;
-
-        if (metrics.span_count !== undefined) {
-            html += `<div style="margin-bottom: 4px; display: flex; justify-content: space-between;"><span>Total Spans:</span> <strong>${metrics.span_count}</strong></div>`;
-        }
-
-        if (metrics.rate !== undefined && metrics.rate !== null) {
-            html += `<div style="margin-bottom: 4px; display: flex; justify-content: space-between;"><span>Rate:</span> <strong>${metrics.rate} req/s</strong></div>`;
-        }
-
-        if (metrics.error_rate !== undefined && metrics.error_rate !== null) {
-            const color = metrics.error_rate > 0 ? '#ef4444' : '#10b981';
-            html += `<div style="margin-bottom: 4px; display: flex; justify-content: space-between;"><span>Error Rate:</span> <strong style="color: ${color}">${metrics.error_rate}%</strong></div>`;
-        }
-
-        if (metrics.duration_p50) {
-            html += `
-                <div style="margin-top: 12px; font-weight: 600; margin-bottom: 6px; color: #334155;">Latency (ms)</div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; text-align: center; background: #f8fafc; padding: 8px; border-radius: 4px;">
-                    <div>
-                        <div style="font-size: 10px; color: #64748b;">P50</div>
-                        <div style="font-weight: 600;">${metrics.duration_p50}</div>
-                    </div>
-                    <div>
-                        <div style="font-size: 10px; color: #64748b;">P95</div>
-                        <div style="font-weight: 600;">${metrics.duration_p95}</div>
-                    </div>
-                    <div>
-                        <div style="font-size: 10px; color: #64748b;">P99</div>
-                        <div style="font-weight: 600;">${metrics.duration_p99}</div>
-                    </div>
-                </div>
-            `;
-        } else {
-            html += `<div style="margin-top: 12px; color: #94a3b8; font-style: italic;">No latency data available</div>`;
-        }
-
-        // Add navigation buttons
-        const safeLabel = data.label.replace(/'/g, "\\'");
-        html += `
-            <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #f1f5f9; display: flex; flex-direction: column; gap: 8px;">
-                <div style="display: flex; gap: 8px;">
-                    <button onclick="window.viewServiceSpans('${safeLabel}');"
-                        style="flex: 1; padding: 6px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 4px; transition: all 0.2s;">
-                        <span>Spans</span>
-                    </button>
-                    <button onclick="window.viewServiceLogs('${safeLabel}');"
-                        style="flex: 1; padding: 6px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 4px; transition: all 0.2s;">
-                        <span>Logs</span>
-                    </button>
-                </div>
-                <button onclick="window.viewMetricsForService('${safeLabel}');"
-                    style="width: 100%; padding: 6px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 500; transition: all 0.2s;">
-                    <span>Metrics</span>
-                </button>
-            </div>
-        `;
-
-        content.innerHTML = html;
-        panel.style.display = 'block';
-    });
-
-    // Hide panel when clicking background
-    cy.on('tap', function (evt) {
-        if (evt.target === cy) {
-            const panel = document.getElementById('service-details-panel');
-            if (panel) panel.style.display = 'none';
-        }
-    });
+    // Remove edge shadow via CSS override for dagre-d3
+    // Move this to CSS: Add to your main CSS file (e.g., serviceMap.css)
+    // .service-map-cy svg .edgePath path {
+    //     filter: none !important;
+    //     stroke: #cbd5e1 !important;
+    //     stroke-width: 2px !important;
+    // }
 }

@@ -1291,44 +1291,42 @@ class Storage:
                 end = int(span.get("endTimeUnixNano", span.get("end_time", 0)))
                 duration_ms = (end - start) / 1_000_000 if end > start else 0
 
-                # 1. Check for External Calls
-                target_node = None
-                node_type = None
-
+                # Determine all possible targets for this span
+                targets = []
+                # External/database/messaging
                 db_system = get_attr_value(span, ["db.system"])
                 if db_system:
                     db_name = get_attr_value(span, ["db.name"]) or db_system
-                    target_node = db_name
-                    node_type = "database"
-
+                    targets.append((db_name, "database"))
                 messaging_system = get_attr_value(span, ["messaging.system"])
                 if messaging_system:
                     dest = get_attr_value(span, ["messaging.destination"]) or messaging_system
-                    target_node = dest
-                    node_type = "messaging"
+                    targets.append((dest, "messaging"))
 
-                if target_node:
-                    if target_node not in nodes:
-                        nodes[target_node] = {"type": node_type, "metrics": {}}
-
-                    key = (service, target_node)
-                    if key not in edges:
-                        edges[key] = {"count": 0, "durations": []}
-                    edges[key]["count"] += 1
-                    edges[key]["durations"].append(duration_ms)
-
-                # 2. Check for Service-to-Service Calls
+                # Service-to-service (parent-child)
                 parent_id = span.get("parentSpanId", span.get("parent_span_id"))
                 if parent_id and parent_id in span_map:
                     parent = span_map[parent_id]
                     parent_service = parent.get("serviceName", "unknown")
-
                     if parent_service not in (service, "unknown") and service != "unknown":
-                        key = (parent_service, service)
-                        if key not in edges:
-                            edges[key] = {"count": 0, "durations": []}
-                        edges[key]["count"] += 1
-                        edges[key]["durations"].append(duration_ms)
+                        targets.append((service, "service", parent_service))
+
+                # Add edges for all targets, deduplicating by (source, target)
+                for target in targets:
+                    if len(target) == 2:
+                        target_node, node_type = target
+                        if target_node not in nodes:
+                            nodes[target_node] = {"type": node_type, "metrics": {}}
+                        key = (service, target_node)
+                    else:
+                        # Service-to-service
+                        source_node, node_type, parent_service = target
+                        key = (parent_service, source_node)
+
+                    if key not in edges:
+                        edges[key] = {"count": 0, "durations": []}
+                    edges[key]["count"] += 1
+                    edges[key]["durations"].append(duration_ms)
 
         # Format for frontend
         graph_nodes = []
