@@ -8,6 +8,67 @@ from app.storage import PostgresStorage
 
 @pytest.mark.asyncio
 class TestPostgresStorage:
+    @patch("app.storage.asyncpg.create_pool", new_callable=AsyncMock)
+    async def test_store_log(self, mock_create_pool):
+        mock_conn = AsyncMock()
+
+        class AcquireCtx:
+            async def __aenter__(self):
+                return mock_conn
+
+            async def __aexit__(self, exc_type, exc, tb):
+                pass
+
+        self.storage.pool.acquire = AcquireCtx
+        log = {
+            "time_unix_nano": 123,
+            "observed_time": 124,
+            "traceId": "abc",
+            "spanId": "def",
+            "severityNumber": 9,
+            "severityText": "INFO",
+            "body": "test log",
+            "attributes": {"foo": "bar"},
+            "resource": {"env": "dev"},
+            "flags": 0,
+            "droppedAttributesCount": 0,
+            "service_name": "svc",
+            "operation_name": "op",
+        }
+        # Patch upsert_service, upsert_operation, upsert_resource
+        self.storage.upsert_service = AsyncMock(return_value=1)
+        self.storage.upsert_operation = AsyncMock(return_value=2)
+        self.storage.upsert_resource = AsyncMock(return_value=3)
+        await self.storage.store_log(log)
+        mock_conn.execute.assert_awaited()
+
+    @patch("app.storage.asyncpg.create_pool", new_callable=AsyncMock)
+    async def test_store_metric(self, mock_create_pool):
+        mock_conn = AsyncMock()
+
+        class AcquireCtx:
+            async def __aenter__(self):
+                return mock_conn
+
+            async def __aexit__(self, exc_type, exc, tb):
+                pass
+
+        self.storage.pool.acquire = AcquireCtx
+        metric = {
+            "name": "cpu.usage",
+            "type": "gauge",
+            "unit": "percent",
+            "description": "CPU usage",
+            "dataPoints": [{"value": 0.5}],
+            "attributes": {"host": "localhost"},
+            "resource": {"env": "dev"},
+            "time_unix_nano": 123,
+            "start_time_unix_nano": 100,
+        }
+        self.storage.upsert_resource = AsyncMock(return_value=5)
+        await self.storage.store_metric(metric)
+        mock_conn.execute.assert_awaited()
+
     @pytest.fixture(autouse=True)
     def setup_storage(self):
         self.storage = PostgresStorage(dsn="postgresql://postgres:postgres@localhost:5432/ollyscale")
