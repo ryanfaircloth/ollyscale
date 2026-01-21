@@ -8,11 +8,29 @@ from app.storage import Storage
 @pytest.mark.asyncio
 async def test_store_trace_calls_db():
     storage = Storage()
-    fake_trace = {"foo": "bar"}
+    fake_trace = {
+        "trace_id": "abc",
+        "span_id": "def",
+        "parent_span_id": "ghi",
+        "service_name": "svc",
+        "operation_name": "op",
+        "resource_jsonb": {"foo": "bar"},
+        "start_time_unix_nano": 1,
+        "end_time_unix_nano": 2,
+        "status_code": 0,
+        "kind": 1,
+        "tenant_id": "t",
+        "connection_id": "c",
+        "attributes": {},
+        "events": [],
+        "links": [],
+    }
 
     mock_execute = AsyncMock()
+    mock_fetchrow = AsyncMock(side_effect=[{"service_id": 1}, {"operation_id": 2}, {"resource_id": 3}])
     mock_conn = MagicMock()
     mock_conn.execute = mock_execute
+    mock_conn.fetchrow = mock_fetchrow
     acquire_cm = MagicMock()
     acquire_cm.__aenter__ = AsyncMock(return_value=mock_conn)
     acquire_cm.__aexit__ = AsyncMock(return_value=None)
@@ -32,11 +50,24 @@ async def test_store_trace_calls_db():
 @pytest.mark.asyncio
 async def test_store_log_calls_db():
     storage = Storage()
-    fake_log = {"bar": "baz"}
+    fake_log = {
+        "trace_id": "abc",
+        "span_id": "def",
+        "service_name": "svc",
+        "resource_jsonb": {"foo": "bar"},
+        "time_unix_nano": 1,
+        "severity_text": "INFO",
+        "body": "msg",
+        "tenant_id": "t",
+        "connection_id": "c",
+        "attributes": {},
+    }
 
     mock_execute = AsyncMock()
+    mock_fetchrow = AsyncMock(side_effect=[{"service_id": 1}, {"resource_id": 2}])
     mock_conn = MagicMock()
     mock_conn.execute = mock_execute
+    mock_conn.fetchrow = mock_fetchrow
     acquire_cm = MagicMock()
     acquire_cm.__aenter__ = AsyncMock(return_value=mock_conn)
     acquire_cm.__aexit__ = AsyncMock(return_value=None)
@@ -56,11 +87,22 @@ async def test_store_log_calls_db():
 @pytest.mark.asyncio
 async def test_store_metric_calls_db():
     storage = Storage()
-    fake_metric = {"baz": "qux"}
+    fake_metric = {
+        "service_name": "svc",
+        "resource_jsonb": {"foo": "bar"},
+        "name": "cpu",
+        "time_unix_nano": 1,
+        "value": 42.0,
+        "tenant_id": "t",
+        "connection_id": "c",
+        "attributes": {},
+    }
 
     mock_execute = AsyncMock()
+    mock_fetchrow = AsyncMock(side_effect=[{"service_id": 1}, {"resource_id": 2}])
     mock_conn = MagicMock()
     mock_conn.execute = mock_execute
+    mock_conn.fetchrow = mock_fetchrow
     acquire_cm = MagicMock()
     acquire_cm.__aenter__ = AsyncMock(return_value=mock_conn)
     acquire_cm.__aexit__ = AsyncMock(return_value=None)

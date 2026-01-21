@@ -6,6 +6,42 @@ import asyncpg
 class Storage:
     """Abstract storage interface for traces, logs, metrics."""
 
+    async def upsert_service(self, conn, service_name: str) -> int:
+        row = await conn.fetchrow(
+            """
+            INSERT INTO service_dim (service_name)
+            VALUES ($1)
+            ON CONFLICT (service_name) DO UPDATE SET service_name=EXCLUDED.service_name
+            RETURNING service_id
+            """,
+            service_name,
+        )
+        return row["service_id"]
+
+    async def upsert_operation(self, conn, operation_name: str) -> int:
+        row = await conn.fetchrow(
+            """
+            INSERT INTO operation_dim (operation_name)
+            VALUES ($1)
+            ON CONFLICT (operation_name) DO UPDATE SET operation_name=EXCLUDED.operation_name
+            RETURNING operation_id
+            """,
+            operation_name,
+        )
+        return row["operation_id"]
+
+    async def upsert_resource(self, conn, resource_jsonb) -> int:
+        row = await conn.fetchrow(
+            """
+            INSERT INTO resource_dim (resource_jsonb)
+            VALUES ($1)
+            ON CONFLICT (resource_jsonb) DO UPDATE SET resource_jsonb=EXCLUDED.resource_jsonb
+            RETURNING resource_id
+            """,
+            resource_jsonb,
+        )
+        return row["resource_id"]
+
     def __init__(self):
         self.pg_dsn = os.environ.get("PG_DSN")
         self.pg_host = os.environ.get("PG_HOST", "localhost")
@@ -17,12 +53,16 @@ class Storage:
     async def store_trace(self, trace: dict) -> None:
         """
         Store a span/trace in spans_fact, mapping OTEL fields to columns.
+        Upserts service, operation, resource dimensions as needed.
         Expects trace dict with OTEL fields and attributes.
         """
         dsn = (
             self.pg_dsn or f"postgresql://{self.pg_user}:{self.pg_password}@{self.pg_host}:{self.pg_port}/{self.pg_db}"
         )
         async with asyncpg.create_pool(dsn=dsn, min_size=1, max_size=2) as pool, pool.acquire() as conn:
+            service_id = await self.upsert_service(conn, trace["service_name"])
+            operation_id = await self.upsert_operation(conn, trace["operation_name"])
+            resource_id = await self.upsert_resource(conn, trace["resource_jsonb"])
             await conn.execute(
                 """
                 INSERT INTO spans_fact (
@@ -38,9 +78,9 @@ class Storage:
                 trace.get("trace_id"),
                 trace.get("span_id"),
                 trace.get("parent_span_id"),
-                trace.get("service_id"),
-                trace.get("operation_id"),
-                trace.get("resource_id"),
+                service_id,
+                operation_id,
+                resource_id,
                 trace.get("start_time_unix_nano"),
                 trace.get("end_time_unix_nano"),
                 trace.get("status_code"),
@@ -55,12 +95,15 @@ class Storage:
     async def store_log(self, log: dict) -> None:
         """
         Store a log in logs_fact, mapping OTEL fields to columns.
+        Upserts service and resource dimensions as needed.
         Expects log dict with OTEL fields and attributes.
         """
         dsn = (
             self.pg_dsn or f"postgresql://{self.pg_user}:{self.pg_password}@{self.pg_host}:{self.pg_port}/{self.pg_db}"
         )
         async with asyncpg.create_pool(dsn=dsn, min_size=1, max_size=2) as pool, pool.acquire() as conn:
+            service_id = await self.upsert_service(conn, log["service_name"])
+            resource_id = await self.upsert_resource(conn, log["resource_jsonb"])
             await conn.execute(
                 """
                 INSERT INTO logs_fact (
@@ -73,8 +116,8 @@ class Storage:
                 """,
                 log.get("trace_id"),
                 log.get("span_id"),
-                log.get("service_id"),
-                log.get("resource_id"),
+                service_id,
+                resource_id,
                 log.get("time_unix_nano"),
                 log.get("severity_text"),
                 log.get("body"),
@@ -86,12 +129,15 @@ class Storage:
     async def store_metric(self, metric: dict) -> None:
         """
         Store a metric in metrics_fact, mapping OTEL fields to columns.
+        Upserts service and resource dimensions as needed.
         Expects metric dict with OTEL fields and attributes.
         """
         dsn = (
             self.pg_dsn or f"postgresql://{self.pg_user}:{self.pg_password}@{self.pg_host}:{self.pg_port}/{self.pg_db}"
         )
         async with asyncpg.create_pool(dsn=dsn, min_size=1, max_size=2) as pool, pool.acquire() as conn:
+            service_id = await self.upsert_service(conn, metric["service_name"])
+            resource_id = await self.upsert_resource(conn, metric["resource_jsonb"])
             await conn.execute(
                 """
                 INSERT INTO metrics_fact (
@@ -100,8 +146,8 @@ class Storage:
                     $1, $2, $3, $4, $5, $6, $7, $8
                 )
                 """,
-                metric.get("service_id"),
-                metric.get("resource_id"),
+                service_id,
+                resource_id,
                 metric.get("name"),
                 metric.get("time_unix_nano"),
                 metric.get("value"),
