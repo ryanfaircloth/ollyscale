@@ -57,9 +57,9 @@ DELIVERABLE: OCI Container Images
 
 **Built from**:
 
-- **Dockerfile**: `apps/ollyscale/Dockerfile`
+- **Dockerfile**: `apps/frontend/Dockerfile`
 - **Base image**: `python:3.14-slim`
-- **Source files** (all from `apps/ollyscale/`):
+- **Source files** (all from `apps/frontend/`):
   - `main.py` - Entry point that selects mode
   - `models.py` - Pydantic data models
   - `requirements.txt` - Python dependencies
@@ -67,19 +67,19 @@ DELIVERABLE: OCI Container Images
   - `receiver/` - gRPC receiver for receiver mode
   - `common/` - Shared utilities (storage, OTLP parsing)
 docker buildx build --platform linux/amd64,linux/arm64 \
-  -f apps/ollyscale/Dockerfile \
+  -f apps/frontend/Dockerfile \
   -t ghcr.io/ryanfaircloth/ollyscale/ollyscale:v2.1.8 \
-  --push apps/ollyscale/
+  --push apps/frontend/
 
 # Local dev (single-arch)
-podman build -f apps/ollyscale/Dockerfile \
+podman build -f apps/frontend/Dockerfile \
   -t registry.ollyscale.test:49443/ollyscale/ollyscale:v2.1.x-feature \
-  apps/ollyscale/
+  apps/frontend/
 ```
 
 **Rebuild triggers**:
 
-- Change to any file in `apps/ollyscale/`
+- Change to any file in `apps/frontend/`
 - Change to `requirements.txt`
 - Change to Dockerfile
 

@@ -32,10 +32,49 @@
 
 /** Utils Module - Shared formatting and data manipulation functions across all UI modules */
 
-/** Converts nanosecond timestamp to HH:mm:ss.SSS format */
-export function formatTime(ns) {
-    const d = new Date(ns / 1000000);
-    return d.toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit', fractionalSecondDigits: 3 });
+/** Formats a Date object as RFC3339 with local timezone offset (e.g., 2026-01-29T11:14:58.830-07:00) */
+function toRFC3339Local(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    const ms = String(date.getMilliseconds()).padStart(3, '0');
+
+    // Get timezone offset in minutes and format as +HH:MM or -HH:MM
+    const tzOffset = -date.getTimezoneOffset(); // negative because getTimezoneOffset returns UTC-local
+    const tzHours = String(Math.floor(Math.abs(tzOffset) / 60)).padStart(2, '0');
+    const tzMins = String(Math.abs(tzOffset) % 60).padStart(2, '0');
+    const tzSign = tzOffset >= 0 ? '+' : '-';
+
+    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${ms}${tzSign}${tzHours}:${tzMins}`;
+}
+
+/** Converts nanosecond timestamp or RFC3339 string to RFC3339 format with local timezone */
+export function formatTime(timeValue) {
+    let d;
+    if (typeof timeValue === 'string') {
+        // RFC3339 string (e.g., '2026-01-25T17:30:45.123456789Z')
+        d = new Date(timeValue);
+    } else {
+        // Nanoseconds
+        d = new Date(timeValue / 1000000);
+    }
+    return toRFC3339Local(d);
+}
+
+/** Converts nanosecond timestamp or RFC3339 string to full RFC3339 format with local timezone */
+export function formatDateTime(timeValue) {
+    let d;
+    if (typeof timeValue === 'string') {
+        // RFC3339 string
+        d = new Date(timeValue);
+    } else {
+        // Nanoseconds
+        d = new Date(timeValue / 1000000);
+    }
+    return toRFC3339Local(d);
 }
 
 /** Strips leading zeros from trace/span IDs for cleaner display */
@@ -43,8 +82,12 @@ export function formatTraceId(id) {
     return id.replace(/^0+(?=.)/, '');
 }
 
-/** Formats duration in ms to appropriate unit (µs/ms/s) */
-export function formatDuration(ms) {
+/** Formats duration in ms or seconds to appropriate unit (µs/ms/s) */
+export function formatDuration(value, unit = 'ms') {
+    // Convert to milliseconds if needed
+    let ms = unit === 'seconds' || unit === 's' ? value * 1000 : value;
+
+    if (isNaN(ms) || ms == null) return '-';
     if (ms < 1) return `${(ms * 1000).toFixed(0)}µs`;
     if (ms < 1000) return `${ms.toFixed(0)}ms`;
     return `${(ms / 1000).toFixed(2)}s`;
@@ -130,15 +173,15 @@ export function loadChartJs() {
     return chartJsPromise;
 }
 
-/** Converts Unix seconds timestamp to HH:mm:ss.SSS format */
-export function formatTimestamp(seconds) {
-    return new Date(seconds * 1000).toLocaleTimeString([], {
-        hour12: false,
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        fractionalSecondDigits: 3
-    });
+/** Converts timestamp (ISO 8601 string or Unix nanoseconds) to RFC3339 format with local timezone */
+export function formatTimestamp(timestamp) {
+    // Handle ISO 8601 string from API (e.g., "2026-01-26T14:02:04.604222720Z")
+    if (typeof timestamp === 'string') {
+        return toRFC3339Local(new Date(timestamp));
+    }
+    // Handle nanoseconds (legacy format)
+    const milliseconds = timestamp / 1_000_000;
+    return toRFC3339Local(new Date(milliseconds));
 }
 
 /** Returns color for HTTP status code (green=2xx/3xx, orange=4xx, red=5xx) */
@@ -154,23 +197,47 @@ export function getStatusCodeColor(status) {
 /** Formats span route/URL with styled protocol/host prefix and pathname */
 export function formatRoute(span) {
     // Handle trace root span object structure which might have different keys
+    // Priority: url > route > name
     const urlStr = span.url || span.root_span_url;
+    const route = span.route || span.root_span_route;
+    const name = span.name || span.root_span_name;
     const serverName = span.server_name || span.host || span.root_span_server_name || span.root_span_host;
     const scheme = span.scheme || span.root_span_scheme;
-    const target = span.target || span.route || span.root_span_target || span.root_span_route;
+    const target = span.target || span.root_span_target;
 
+    // Priority 1: Full URL
     if (urlStr) {
         try {
             const url = new URL(urlStr);
             return `<span style="color: var(--text-muted); font-weight: normal;">${url.protocol}//${url.host}</span>${url.pathname}${url.search}`;
         } catch (e) {
+            // If URL parsing fails, return as-is
             return urlStr;
         }
-    } else if (serverName) {
-        const schemeStr = scheme ? scheme + '://' : '';
-        return `<span style="color: var(--text-muted); font-weight: normal;">${schemeStr}${serverName}</span>${target || ''}`;
     }
-    return span.route || span.name || span.root_span_route || span.root_span_name || '';
+
+    // Priority 2: Route with server name
+    if (route) {
+        if (serverName) {
+            const schemeStr = scheme ? scheme + '://' : '';
+            return `<span style="color: var(--text-muted); font-weight: normal;">${schemeStr}${serverName}</span>${route}`;
+        }
+        return route;
+    }
+
+    // Priority 3: Target/path with server name
+    if (target && serverName) {
+        const schemeStr = scheme ? scheme + '://' : '';
+        return `<span style="color: var(--text-muted); font-weight: normal;">${schemeStr}${serverName}</span>${target}`;
+    }
+
+    // Priority 4: Just target/path
+    if (target) {
+        return target;
+    }
+
+    // Final fallback: span name
+    return name || '';
 }
 
 /** Renders JSON data in styled detail view with title and action buttons */

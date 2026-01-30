@@ -89,7 +89,7 @@ export function renderTraces(traces) {
                 <div class="trace-service text-truncate" style="flex: 0 0 120px;" title="${serviceName}">${serviceName}</div>
                 <div class="trace-id text-mono text-muted" style="flex: 0 0 260px; font-size: 0.9em;">${displayTraceId}</div>
                 <div class="trace-spans text-muted" style="flex: 0 0 60px; text-align: right;">${trace.span_count}</div>
-                <div class="trace-duration text-muted" style="flex: 0 0 80px; text-align: right;">${formatDuration(trace.duration_ms)}</div>
+                <div class="trace-duration text-muted" style="flex: 0 0 80px; text-align: right;">${formatDuration(trace.duration_seconds, 'seconds')}</div>
                 <div class="trace-method text-primary font-bold text-truncate" style="flex: 0 0 70px;">${method}</div>
                 <div class="trace-name font-medium text-truncate" style="flex: 1;">${route}</div>
                 <div class="trace-status font-medium" style="flex: 0 0 60px; text-align: right; color: ${statusColor};">${status || '-'}</div>
@@ -279,12 +279,13 @@ async function renderWaterfall(trace) {
     const spans = isLargeTrace ? allSpans.slice(0, MAX_INITIAL_SPANS) : allSpans;
 
     // Find trace bounds (use all spans for accurate timeline)
-    const startTimes = spans.map(s => s.startTimeUnixNano || s.start_time || 0);
-    const endTimes = spans.map(s => s.endTimeUnixNano || s.end_time || 0);
+    // Convert RFC3339 strings to milliseconds since epoch for calculations
+    const startTimes = spans.map(s => new Date(s.start_time).getTime());
+    const endTimes = spans.map(s => new Date(s.end_time).getTime());
     const traceStart = Math.min(...startTimes);
     const traceEnd = Math.max(...endTimes);
-    const traceDuration = traceEnd - traceStart;
-    const traceDurationMs = traceDuration / 1_000_000;
+    const traceDuration = traceEnd - traceStart; // milliseconds
+    const traceDurationMs = traceDuration;
 
     const container = document.getElementById('trace-detail-container');
     const displayTraceId = formatTraceId(trace.trace_id);
@@ -292,9 +293,24 @@ async function renderWaterfall(trace) {
     // Fetch logs for this trace
     let traceLogs = [];
     try {
-        const response = await fetch(`/api/logs?trace_id=${trace.trace_id}`);
+        const requestBody = {
+            time_range: {
+                start_time: new Date(0).toISOString(),
+                end_time: new Date(Date.now() + 86400000).toISOString()
+            },
+            filters: [
+                { field: 'trace_id', operator: 'eq', value: trace.trace_id }
+            ],
+            pagination: { limit: 100, cursor: null }
+        };
+        const response = await fetch('/api/logs/search', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+        });
         if (response.ok) {
-            traceLogs = await response.json();
+            const result = await response.json();
+            traceLogs = result.logs || [];
         }
     } catch (e) {
         console.error('Error fetching trace logs:', e);
@@ -351,7 +367,18 @@ async function renderWaterfall(trace) {
             </div>
             <div style="max-height: 200px; overflow-y: auto;">
                 ${traceLogs.map(log => {
-        const timestamp = new Date(log.timestamp * 1000).toLocaleTimeString();
+        // Handle both RFC3339 strings and Unix timestamps - convert to local timezone
+        let d;
+        if (typeof log.timestamp === 'string') {
+            d = new Date(log.timestamp);
+        } else {
+            d = new Date(log.timestamp * 1000);
+        }
+        const timestamp = d.toLocaleString('en-US', {
+            year: 'numeric', month: '2-digit', day: '2-digit',
+            hour: '2-digit', minute: '2-digit', second: '2-digit',
+            hour12: false, fractionalSecondDigits: 3
+        });
         const severity = log.severity || 'INFO';
         const severityColors = {
             'ERROR': '#ef4444',
@@ -364,7 +391,7 @@ async function renderWaterfall(trace) {
                         <div style="padding: 6px; border-bottom: 1px solid var(--border-color); font-size: 11px; display: flex; gap: 12px; align-items: start;">
                             <span style="font-family: monospace; color: var(--text-muted); white-space: nowrap;">${timestamp}</span>
                             <span style="font-weight: 600; color: ${color}; min-width: 50px;">${severity}</span>
-                            <span style="flex: 1; color: var(--text-main);">${log.message || ''}</span>
+                            <span style="flex: 1; color: var(--text-main);">${log.body || ''}</span>
                         </div>
                     `;
     }).join('')}
@@ -377,9 +404,10 @@ async function renderWaterfall(trace) {
         ${logsHtml}
         <div class="waterfall">
             ${spans.map((span, idx) => {
-        const startTime = span.startTimeUnixNano || span.start_time || 0;
-        const endTime = span.endTimeUnixNano || span.end_time || 0;
-        const duration = endTime - startTime;
+        // Convert RFC3339 to milliseconds for calculations
+        const startTime = new Date(span.start_time).getTime();
+        const endTime = new Date(span.end_time).getTime();
+        const duration = endTime - startTime; // milliseconds
         const offset = startTime - traceStart;
 
         const leftPercent = (offset / traceDuration) * 100;
@@ -391,10 +419,10 @@ async function renderWaterfall(trace) {
                             <div class="span-name" title="${span.name}">${span.name}</div>
                             <div class="span-timeline">
                                 <div class="span-bar" data-span-index="${idx}" style="left: ${leftPercent}%; width: ${widthPercent}%;">
-                                    ${duration > traceDuration * 0.1 ? (duration / 1_000_000).toFixed(2) + 'ms' : ''}
+                                    ${duration > traceDuration * 0.1 ? duration.toFixed(2) + 'ms' : ''}
                                 </div>
                             </div>
-                            <div class="span-duration">${(duration / 1_000_000).toFixed(2)}ms</div>
+                            <div class="span-duration">${duration.toFixed(2)}ms</div>
                         </div>
                     </div>
                 `;
@@ -445,7 +473,7 @@ function showSpanJson(spanIndex) {
     const title = `
         Span: ${span.name}
         <span style="font-weight: normal; color: var(--text-muted); font-size: 0.9em; margin-left: 8px; font-family: 'JetBrains Mono', monospace;">
-            (spanId: ${span.spanId || span.span_id})
+            (spanId: ${span.span_id})
         </span>
     `;
 
@@ -457,8 +485,7 @@ function showSpanJson(spanIndex) {
     };
 
     document.getElementById('download-span-json-btn').onclick = () => {
-        const spanId = span.spanId || span.span_id;
-        downloadTelemetryJson(span, 'span', spanId);
+        downloadTelemetryJson(span, 'span', span.span_id);
     };
 
     document.getElementById('close-span-json-btn').onclick = () => {
@@ -479,7 +506,7 @@ function viewMetricsForTrace(trace) {
     let serviceName = extractServiceName(rootSpan);
 
     // Calculate time range (±5 minutes around trace)
-    const traceStartNano = rootSpan.startTimeUnixNano || rootSpan.start_time || 0;
+    const traceStartNano = rootSpan.start_time || 0;
     const traceStartSec = traceStartNano / 1_000_000_000;
     const fiveMinutes = 5 * 60;
 

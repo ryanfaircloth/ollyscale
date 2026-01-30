@@ -207,6 +207,11 @@ instrumentation:
         value: content-.*,x-.*
       - name: OTEL_PYTHON_EXCLUDED_URLS
         value: /health,/metrics,ready,PING
+      # SQLAlchemy instrumentation configuration - reduce trace noise
+      - name: OTEL_INSTRUMENTATION_SQLALCHEMY_ENABLE_COMMENTER
+        value: 'false'
+      - name: OTEL_PYTHON_SQLALCHEMY_INSTRUMENT_ALL_ENGINES
+        value: 'true'
     resources:
       limits:
         cpu: 500m
@@ -259,10 +264,10 @@ ebpfAgent:
   nodeSelector: {}
   tolerations: []
   affinity: {}
-frontend:
+api:
   replicaCount: 1
   image:
-    repository: ghcr.io/ryanfaircloth/ollyscale
+    repository: docker-registry.registry.svc.cluster.local:5000/ollyscale/api
     tag: 0.1.10
     pullPolicy: ''
   serviceAccount:
@@ -282,8 +287,8 @@ frontend:
     readOnlyRootFilesystem: false
   service:
     type: ClusterIP
-    port: 5002
-    targetPort: 5002
+    port: 8000
+    targetPort: 8000
     nodePort: null
     annotations: {}
   httpRoute:
@@ -296,23 +301,21 @@ frontend:
       memory: 256Mi
   livenessProbe:
     httpGet:
-      path: /health
-      port: 5002
+      path: /health/
+      port: 8000
     initialDelaySeconds: 30
     periodSeconds: 10
     timeoutSeconds: 5
     failureThreshold: 3
   readinessProbe:
     httpGet:
-      path: /health
-      port: 5002
+      path: /health/
+      port: 8000
     initialDelaySeconds: 10
     periodSeconds: 5
     timeoutSeconds: 3
     failureThreshold: 3
   env:
-    - name: MODE
-      value: ui
     - name: DEPLOYMENT_ENV
       value: kubernetes
     - name: OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED
@@ -490,13 +493,62 @@ otlpReceiver:
     timeoutSeconds: 3
     failureThreshold: 3
   env:
-    - name: MODE
-      value: receiver
-    - name: PORT
-      value: '4343'
     - name: OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED
       value: 'true'
   extraEnv: {}
   nodeSelector: {}
   tolerations: []
   affinity: {}
+
+# Postgresql database for v2 API backend (required)
+postgresql:
+  teamId: ollyscale
+  numberOfInstances: 2
+  volume:
+    size: 10Gi
+    storageClass: ''
+  databases:
+    ollyscale: ollyscale
+  users:
+    ollyscale:
+      - superuser
+      - createdb
+  postgresql:
+    version: '17'
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+  patroni:
+    synchronous_mode: true
+    synchronous_mode_strict: false
+
+# Database migration job (runs Alembic before deployments)
+migration:
+  resources:
+    limits:
+      memory: 256Mi
+    requests:
+      cpu: 50m
+      memory: 128Mi
+  nodeSelector: {}
+  tolerations: []
+
+# Partition maintenance CronJob (creates future partitions, drops old ones)
+partitionMaintenance:
+  enabled: true
+  # Run at 2 AM every day
+  schedule: "0 2 * * *"
+  # Create partitions this many days ahead
+  daysAhead: 7
+  resources:
+    limits:
+      memory: 256Mi
+    requests:
+      cpu: 50m
+      memory: 128Mi
+  nodeSelector: {}
+  tolerations: []

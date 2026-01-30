@@ -69,19 +69,19 @@ echo ""
 # Navigate to repo root
 cd "$SCRIPT_DIR/.."
 
-echo "Step 1/4: Building $IMAGE_ORG (API backend + OTLP receiver)"
+echo "Step 1/6: Building API Backend (v2 PostgreSQL backend)"
 echo "-----------------------------------------------------------"
 $CONTAINER_CMD build \
-  -f apps/ollyscale/Dockerfile \
-  -t $IMAGE_ORG/ollyscale:latest \
-  -t $IMAGE_ORG/ollyscale:$VERSION \
-  -t $EXTERNAL_REGISTRY/$IMAGE_ORG/ollyscale:latest \
-  -t $EXTERNAL_REGISTRY/$IMAGE_ORG/ollyscale:$VERSION \
-  apps/ollyscale/
-echo "✓ $PROJECT_NAME backend image built"
+  -f apps/api/Dockerfile \
+  -t $IMAGE_ORG/api:latest \
+  -t $IMAGE_ORG/api:$VERSION \
+  -t $EXTERNAL_REGISTRY/$IMAGE_ORG/api:latest \
+  -t $EXTERNAL_REGISTRY/$IMAGE_ORG/api:$VERSION \
+  apps/api/
+echo "✓ API Backend image built"
 echo ""
 
-echo "Step 2/4: Building $IMAGE_ORG-ui (static frontend)"
+echo "Step 2/6: Building $IMAGE_ORG-ui (static web UI)"
 echo "-----------------------------------------------------------"
 $CONTAINER_CMD build \
   -f apps/ollyscale-ui/Dockerfile \
@@ -93,7 +93,7 @@ $CONTAINER_CMD build \
 echo "✓ $IMAGE_ORG-ui image built"
 echo ""
 
-echo "Step 3/4: Building OpAMP Server"
+echo "Step 3/6: Building OpAMP Server"
 echo "-----------------------------------------------------------"
 $CONTAINER_CMD build \
   -f apps/opamp-server/Dockerfile \
@@ -105,7 +105,7 @@ $CONTAINER_CMD build \
 echo "✓ OpAMP Server image built"
 echo ""
 
-echo "Step 4/4: Building Unified Demo Image"
+echo "Step 4/6: Building Unified Demo Image"
 echo "-----------------------------------------------------------"
 $CONTAINER_CMD build \
   -f apps/demo/Dockerfile \
@@ -117,14 +117,26 @@ $CONTAINER_CMD build \
 echo "✓ Unified Demo image built"
 echo ""
 
+echo "Step 5/6: Building AI Agent Demo Image"
+echo "-----------------------------------------------------------"
+$CONTAINER_CMD build \
+  -f apps/demo-otel-agent/Dockerfile \
+  -t $IMAGE_ORG/demo-otel-agent:latest \
+  -t $IMAGE_ORG/demo-otel-agent:$VERSION \
+  -t $EXTERNAL_REGISTRY/$IMAGE_ORG/demo-otel-agent:latest \
+  -t $EXTERNAL_REGISTRY/$IMAGE_ORG/demo-otel-agent:$VERSION \
+  apps/demo-otel-agent/
+echo "✓ AI Agent Demo image built"
+echo ""
+
 echo "📤 Pushing Container Images to Registry"
 echo "=========================================="
 echo ""
 
-echo "Pushing $PROJECT_NAME backend..."
-$CONTAINER_CMD push $PUSH_FLAGS $EXTERNAL_REGISTRY/$IMAGE_ORG/ollyscale:latest
-$CONTAINER_CMD push $PUSH_FLAGS $EXTERNAL_REGISTRY/$IMAGE_ORG/ollyscale:$VERSION
-echo "✓ $PROJECT_NAME backend pushed"
+echo "Pushing API Backend..."
+$CONTAINER_CMD push $PUSH_FLAGS $EXTERNAL_REGISTRY/$IMAGE_ORG/api:latest
+$CONTAINER_CMD push $PUSH_FLAGS $EXTERNAL_REGISTRY/$IMAGE_ORG/api:$VERSION
+echo "✓ API Backend pushed"
 echo ""
 
 echo "Pushing $IMAGE_ORG-ui..."
@@ -145,8 +157,14 @@ $CONTAINER_CMD push $PUSH_FLAGS $EXTERNAL_REGISTRY/$IMAGE_ORG/demo:$VERSION
 echo "✓ Unified Demo pushed"
 echo ""
 
+echo "Pushing AI Agent Demo..."
+$CONTAINER_CMD push $PUSH_FLAGS $EXTERNAL_REGISTRY/$IMAGE_ORG/demo-otel-agent:latest
+$CONTAINER_CMD push $PUSH_FLAGS $EXTERNAL_REGISTRY/$IMAGE_ORG/demo-otel-agent:$VERSION
+echo "✓ AI Agent Demo pushed"
+echo ""
+
 # ==========================================
-# PART 2: Package and Push Helm Chart
+# PART 2: Package and Push Helm Charts
 # ==========================================
 
 echo "📦 PART 2: Packaging Helm Chart"
@@ -190,13 +208,10 @@ cat > "$SCRIPT_DIR/values-local-dev.yaml" <<EOF
 # Version: $VERSION
 # Uses INTERNAL registry for cluster access
 
-frontend:
+api:
   image:
-    repository: $INTERNAL_REGISTRY/$IMAGE_ORG/ollyscale
+    repository: $INTERNAL_REGISTRY/$IMAGE_ORG/api
     tag: $VERSION
-  env:
-    - name: MODE
-      value: "ui"
 
 webui:
   image:
@@ -210,7 +225,7 @@ opampServer:
 
 otlpReceiver:
   image:
-    repository: $INTERNAL_REGISTRY/$IMAGE_ORG/ollyscale
+    repository: $INTERNAL_REGISTRY/$IMAGE_ORG/api
     tag: $VERSION
   env:
     - name: MODE
@@ -263,6 +278,64 @@ else
     exit 1
 fi
 echo ""
+
+# Package and push ollyscale-otel-agent chart
+echo "📦 Packaging ollyscale-otel-agent chart..."
+echo "-----------------------------------------------------------"
+AGENT_CHART_DIR="$SCRIPT_DIR/ollyscale-otel-agent"
+AGENT_CHART_YAML="$AGENT_CHART_DIR/Chart.yaml"
+
+if [ -d "$AGENT_CHART_DIR" ]; then
+    # Extract current chart version
+    CURRENT_AGENT_VERSION=$(grep "^version:" "$AGENT_CHART_YAML" | awk '{print $2}')
+    echo "Current ollyscale-otel-agent chart version: $CURRENT_AGENT_VERSION"
+
+    # Auto-increment chart version with timestamp for local builds
+    BASE_AGENT_VERSION=$(echo "$CURRENT_AGENT_VERSION" | cut -d'-' -f1)
+    NEW_AGENT_VERSION="${BASE_AGENT_VERSION}-${VERSION}"
+    echo "New ollyscale-otel-agent chart version: $NEW_AGENT_VERSION"
+    echo ""
+
+    # Update Chart.yaml with new version
+    echo "📝 Updating Chart.yaml version..."
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        sed -i '' "s/^version: .*/version: $NEW_AGENT_VERSION/" "$AGENT_CHART_DIR/Chart.yaml"
+    else
+        sed -i "s/^version: .*/version: $NEW_AGENT_VERSION/" "$AGENT_CHART_DIR/Chart.yaml"
+    fi
+    echo "✓ Updated Chart.yaml to version $NEW_AGENT_VERSION"
+    echo ""
+
+    # Lint the chart
+    echo "🔍 Linting Helm chart..."
+    helm lint "$AGENT_CHART_DIR"
+    echo "✓ Chart linted successfully"
+    echo ""
+
+    # Package the chart
+    echo "📦 Packaging chart..."
+    helm package "$AGENT_CHART_DIR" -d "$SCRIPT_DIR"
+    AGENT_CHART_PACKAGE="$SCRIPT_DIR/ollyscale-otel-agent-${NEW_AGENT_VERSION}.tgz"
+    echo "✓ Chart packaged: $(basename "$AGENT_CHART_PACKAGE")"
+    echo ""
+
+    # Push to OCI registry
+    echo "📤 Pushing Helm chart to OCI registry..."
+    echo "   Registry: oci://$CHART_REGISTRY"
+    echo ""
+
+    # Push the chart
+    echo "Pushing chart with: helm push $AGENT_CHART_PACKAGE oci://$CHART_REGISTRY"
+    if helm push "$AGENT_CHART_PACKAGE" "oci://$CHART_REGISTRY" --insecure-skip-tls-verify; then
+        echo "✓ AI Agent chart pushed successfully"
+    else
+        echo "⚠️  Warning: AI Agent chart push failed (non-fatal)"
+    fi
+    echo ""
+else
+    echo "ℹ️  Skipping ollyscale-otel-agent chart (directory not found)"
+    echo ""
+fi
 
 # ==========================================
 # Summary

@@ -5,14 +5,14 @@
 
 version: 2
 updates:
-  # Main ollyScale app (Python)
+  # Frontend API (Python)
   - package-ecosystem: "pip"
-    directory: "/apps/ollyscale"
+    directory: "/apps/frontend"
     schedule:
       interval: "weekly"
     labels:
       - "dependencies"
-      - "ollyscale"
+      - "frontend"
 
   # OpAMP server (Go)
   - package-ecosystem: "gomod"
@@ -61,7 +61,7 @@ updates:
 
   # Docker base images
   - package-ecosystem: "docker"
-    directory: "/apps/ollyscale"
+    directory: "/apps/frontend"
     schedule:
       interval: "weekly"
     labels:

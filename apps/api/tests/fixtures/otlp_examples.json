@@ -1,0 +1,106 @@
+{
+  "comment": "Real OTLP JSON examples from OpenTelemetry specification",
+  "sources": ["https://opentelemetry.io/docs/specs/otlp/", "https://github.com/open-telemetry/opentelemetry-proto"],
+  "traces": {
+    "simple_span": {
+      "description": "Single span with base64-encoded IDs as per OTLP/JSON spec",
+      "resourceSpans": [
+        {
+          "resource": {
+            "attributes": [
+              {
+                "key": "service.name",
+                "value": {
+                  "stringValue": "test-service"
+                }
+              }
+            ]
+          },
+          "scopeSpans": [
+            {
+              "scope": {
+                "name": "test-scope"
+              },
+              "spans": [
+                {
+                  "traceId": "AAECAwQFBgcICQoLDA0ODxA=",
+                  "spanId": "AAECAwQFBgcI",
+                  "name": "test-span",
+                  "kind": 1,
+                  "startTimeUnixNano": "1609459200000000000",
+                  "endTimeUnixNano": "1609459200100000000",
+                  "attributes": [
+                    {
+                      "key": "http.method",
+                      "value": {
+                        "stringValue": "GET"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "expected": {
+        "trace_id_hex": "000102030405060708090a0b0c0d0e0f10",
+        "span_id_hex": "0001020304050607"
+      }
+    },
+    "parent_child_spans": {
+      "description": "Parent-child span relationship",
+      "resourceSpans": [
+        {
+          "resource": {
+            "attributes": [
+              {
+                "key": "service.name",
+                "value": {
+                  "stringValue": "test-service"
+                }
+              }
+            ]
+          },
+          "scopeSpans": [
+            {
+              "spans": [
+                {
+                  "traceId": "5B8EFFF798038103D269B633813FC60C",
+                  "spanId": "EEE19B7EC3C1B174",
+                  "name": "parent-span",
+                  "kind": 2,
+                  "startTimeUnixNano": "1609459200000000000",
+                  "endTimeUnixNano": "1609459200500000000"
+                },
+                {
+                  "traceId": "5B8EFFF798038103D269B633813FC60C",
+                  "spanId": "EEE19B7EC3C1B175",
+                  "parentSpanId": "EEE19B7EC3C1B174",
+                  "name": "child-span",
+                  "kind": 1,
+                  "startTimeUnixNano": "1609459200100000000",
+                  "endTimeUnixNano": "1609459200400000000"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "expected": {
+        "trace_id_hex": "5b8efff798038103d269b633813fc60c",
+        "parent_span_id_hex": "eee19b7ec3c1b174",
+        "child_span_id_hex": "eee19b7ec3c1b175"
+      }
+    },
+    "base64_ids": {
+      "description": "Valid base64-encoded IDs from actual OTel instrumentation",
+      "trace_id_base64": "AAECAwQFBgcICQoLDA0ODxA=",
+      "span_id_base64": "AAECAwQFBgcI",
+      "parent_span_id_base64": "AQIDBAUGBwgJ",
+      "expected_trace_id_hex": "000102030405060708090a0b0c0d0e0f10",
+      "expected_span_id_hex": "0001020304050607",
+      "expected_parent_span_id_hex": "01020304050607080"
+    }
+  }
+}

@@ -12,6 +12,7 @@ resource "kubectl_manifest" "observability_applications" {
       custom_demo_backend_tag    = var.custom_demo_backend_tag
       ai_agent_image             = var.ai_agent_image
       ai_agent_tag               = var.ai_agent_tag
+      ai_agent_chart_tag         = var.ai_agent_chart_tag
     }
   )
 }

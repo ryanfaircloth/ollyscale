@@ -76,12 +76,12 @@ spec:
                   sinks:
                     - type: OpenTelemetry
                       openTelemetry:
-                        host: agent-collector.opentelemetry-operator-system.svc.cluster.local
+                        host: agent-collector.ollyscale.svc.cluster.local
                         port: 4317
                 tracing:
                   samplingRate: 100
                   provider:
-                    host: agent-collector.opentelemetry-operator-system.svc.cluster.local
+                    host: agent-collector.ollyscale.svc.cluster.local
                     port: 4317
                     type: OpenTelemetry
                     serviceName: "envoy-cluster-gateway"
@@ -109,7 +109,7 @@ spec:
                       sinks:
                         - type: OpenTelemetry
                           openTelemetry:
-                            host: agent-collector.opentelemetry-operator-system.svc.cluster.local
+                            host: agent-collector.ollyscale.svc.cluster.local
                             port: 4317
           -
             apiVersion: gateway.networking.k8s.io/v1

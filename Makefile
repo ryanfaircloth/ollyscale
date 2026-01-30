@@ -90,16 +90,20 @@ deploy:
 	echo ""; \
 	echo "🔄 Creating terraform auto vars file..."; \
 	BASE_CHART_VERSION=$$(grep "^version:" $(CURDIR)/charts/ollyscale/Chart.yaml | awk '{print $$2}' | cut -d'-' -f1); \
+	AGENT_BASE_CHART_VERSION=$$(grep "^version:" $(CURDIR)/charts/ollyscale-otel-agent/Chart.yaml | awk '{print $$2}' | cut -d'-' -f1); \
 	echo "ollyscale_chart_tag = \"$$BASE_CHART_VERSION-$$VERSION\"" > $(CURDIR)/.kind/terraform.auto.tfvars; \
 	echo "ollyscale_tag = \"$$VERSION\"" >> $(CURDIR)/.kind/terraform.auto.tfvars; \
 	echo "opamp_tag = \"$$VERSION\"" >> $(CURDIR)/.kind/terraform.auto.tfvars; \
+	echo "ai_agent_chart_tag = \"$$AGENT_BASE_CHART_VERSION-$$VERSION\"" >> $(CURDIR)/.kind/terraform.auto.tfvars; \
+	echo "ai_agent_image = \"docker-registry.registry.svc.cluster.local:5000/ollyscale/demo-otel-agent\"" >> $(CURDIR)/.kind/terraform.auto.tfvars; \
+	echo "ai_agent_tag = \"$$VERSION\"" >> $(CURDIR)/.kind/terraform.auto.tfvars; \
 	echo "🔄 Updating ArgoCD application..."; \
 	cd $(CURDIR)/.kind; \
 	terraform apply -auto-approve; \
 	echo ""; \
 	echo "⏳ Waiting for ollyscale to sync..."; \
 	echo "   This may take a few minutes on first deployment or major upgrades."; \
-	for i in 1 2 3 4 5 6 7 8 9 10 11 12; do \
+	for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do \
 		SYNC_STATUS=$$(kubectl get application ollyscale -n argocd -o jsonpath='{.status.sync.status}' 2>/dev/null || echo "NotFound"); \
 		HEALTH_STATUS=$$(kubectl get application ollyscale -n argocd -o jsonpath='{.status.health.status}' 2>/dev/null || echo "Unknown"); \
 		if [ "$$SYNC_STATUS" = "Synced" ] && [ "$$HEALTH_STATUS" = "Healthy" ]; then \
@@ -112,7 +116,7 @@ deploy:
 			echo "     kubectl get application ollyscale -n argocd"; \
 			break; \
 		fi; \
-		sleep 10; \
+		sleep 15; \
 	done; \
 	echo ""; \
 	echo "✅ Deployment complete!"; \

@@ -33,7 +33,7 @@
 /**
  * Service Catalog Module - Displays services with RED metrics and inline charts
  */
-import { formatTime, formatDuration, loadChartJs, escapeHtml, attachHoverEffects, renderEmptyState, sortItems, getSortIndicator, destroyChart, closeAllExpandedItems, formatCount, renderActionButton } from './utils.js';
+import { formatDateTime, formatDuration, loadChartJs, escapeHtml, attachHoverEffects, renderEmptyState, sortItems, getSortIndicator, destroyChart, closeAllExpandedItems, formatCount, renderActionButton } from './utils.js';
 
 const chartInstances = {};
 const openCharts = new Map(); // Track which charts are open: serviceName -> {metricType, metricName, metricTypeLabel}
@@ -69,15 +69,15 @@ export function renderServiceCatalog(services) {
     `;
 
     const servicesHtml = services.map((service, index) => {
-        const firstSeen = formatTime(service.first_seen);
-        const lastSeen = formatTime(service.last_seen);
+        const firstSeen = formatDateTime(service.first_seen);
+        const lastSeen = formatDateTime(service.last_seen);
         const serviceId = `service-${index}`;
 
-        // Format RED metrics
-        const rate = service.rate !== null ? `${service.rate}/s` : '-';
+        // Format RED metrics - map API field names to display
+        const rate = service.request_count !== null ? `${(service.request_count / 30).toFixed(1)}/s` : '-'; // Assuming 30s window
         const errorRate = service.error_rate !== null ? `${service.error_rate}%` : '-';
-        const p50 = service.duration_p50 !== null ? formatDuration(service.duration_p50) : '-';
-        const p95 = service.duration_p95 !== null ? formatDuration(service.duration_p95) : '-';
+        const p50 = service.p50_latency_ms !== null ? formatDuration(service.p50_latency_ms, 'ms') : '-';
+        const p95 = service.p95_latency_ms !== null ? formatDuration(service.p95_latency_ms, 'ms') : '-';
 
         // Color code error rate
         let errorColor = 'var(--text-main)';
@@ -95,8 +95,8 @@ export function renderServiceCatalog(services) {
                     <div data-metric="calls" data-service="${escapeHtml(service.name)}" class="text-mono font-semibold cursor-pointer" style="flex: 0 0 70px; text-align: right; color: ${errorColor}; text-decoration: underline; text-decoration-style: dotted;" title="Click to view metric">${errorRate}</div>
                     <div data-metric="duration" data-service="${escapeHtml(service.name)}" class="text-main text-mono cursor-pointer" style="flex: 0 0 70px; text-align: right; text-decoration: underline; text-decoration-style: dotted;" title="Click to view metric">${p50}</div>
                     <div data-metric="duration" data-service="${escapeHtml(service.name)}" class="text-main text-mono cursor-pointer" style="flex: 0 0 70px; text-align: right; text-decoration: underline; text-decoration-style: dotted;" title="Click to view metric">${p95}</div>
-                    <div class="text-muted text-mono" style="flex: 0 0 80px; text-align: right;">${formatCount(service.span_count)}</div>
-                    <div class="text-muted text-mono" style="flex: 0 0 80px; text-align: right;">${formatCount(service.trace_count)}</div>
+                    <div class="text-muted text-mono" style="flex: 0 0 80px; text-align: right;">${formatCount(service.request_count)}</div>
+                    <div class="text-muted text-mono" style="flex: 0 0 80px; text-align: right;">-</div>
                     <div class="text-muted text-mono" style="flex: 0 0 100px; font-size: 10px;">${firstSeen}</div>
                     <div class="text-muted text-mono" style="flex: 0 0 100px; font-size: 10px;">${lastSeen}</div>
                     <div style="flex: 1; display: flex; gap: 8px;">
@@ -312,7 +312,19 @@ async function renderServiceMetricChart(canvas, metricName, serviceName, service
         const endTime = Date.now() / 1000;
         const startTime = endTime - 600; // Last 10 minutes
 
-        const response = await fetch(`/api/metrics/${metricName}?start=${startTime}&end=${endTime}`);
+        const response = await fetch(`/api/metrics/${metricName}/detail`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                time_range: {
+                    start_time: new Date(startTime * 1000).toISOString(),
+                    end_time: new Date(endTime * 1000).toISOString()
+                },
+                filters: null,
+                pagination: null,
+                include_attributes: false
+            })
+        });
         const data = await response.json();
 
         if (!data.series || data.series.length === 0) {

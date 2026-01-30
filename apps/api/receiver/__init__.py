@@ -1,0 +1,1 @@
+"""OTLP Receiver package."""

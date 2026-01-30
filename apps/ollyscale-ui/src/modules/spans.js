@@ -75,8 +75,10 @@ export function renderSpans(spans) {
         const status = span.status_code || (span.status ? (span.status.code === 1 ? 'OK' : (span.status.code === 2 ? 'ERR' : '')) : '');
         const statusColor = getStatusCodeColor(status);
 
-        // Extract service name
-        const serviceName = span.service_name || '-';
+        // Extract service name - check both direct property and resource attributes
+        const serviceName = span.service_name ||
+                           (span.resource && span.resource['service.name']) ||
+                           '-';
 
         return `
             <div class="span-row-wrapper">
@@ -85,7 +87,7 @@ export function renderSpans(spans) {
                     <div class="span-service text-truncate" style="flex: 0 0 120px;" title="${serviceName}">${serviceName}</div>
                     <div class="trace-id text-mono text-muted" style="flex: 0 0 260px; font-size: 0.9em;">${displayTraceId}</div>
                     <div class="span-id text-mono text-muted" style="flex: 0 0 180px; font-size: 0.9em;">${displaySpanId}</div>
-                    <div class="trace-duration text-muted" style="flex: 0 0 80px; text-align: right;">${formatDuration(span.duration_ms)}</div>
+                    <div class="trace-duration text-muted" style="flex: 0 0 80px; text-align: right;">${formatDuration(span.duration_seconds, 'seconds')}</div>
                     <div class="trace-method text-primary font-bold text-truncate" style="flex: 0 0 70px;">${method}</div>
                     <div class="trace-name font-medium text-truncate" style="flex: 1;">${route}</div>
                     <div class="trace-status font-medium" style="flex: 0 0 60px; text-align: right; color: ${statusColor};">${status || '-'}</div>

@@ -87,45 +87,45 @@ app: ollyscale-ui
 {{- end }}
 
 {{/*
-Frontend component name (renamed from ui)
+API backend component name
 */}}
-{{- define "ollyscale.frontend.name" -}}
-{{ include "ollyscale.fullname" . }}-frontend
+{{- define "ollyscale.api.name" -}}
+{{ include "ollyscale.fullname" . }}-api
 {{- end }}
 
 {{/*
-Frontend component fullname (for service references)
+API backend component fullname (for service references)
 */}}
-{{- define "ollyscale.frontend.fullname" -}}
-{{ include "ollyscale.fullname" . }}-frontend
+{{- define "ollyscale.api.fullname" -}}
+{{ include "ollyscale.fullname" . }}-api
 {{- end }}
 
 {{/*
-Frontend service account name
+API backend service account name
 */}}
-{{- define "ollyscale.frontend.serviceAccountName" -}}
-{{- if .Values.frontend.serviceAccount.create }}
-{{- default (include "ollyscale.frontend.name" .) .Values.frontend.serviceAccount.name }}
+{{- define "ollyscale.api.serviceAccountName" -}}
+{{- if .Values.api.serviceAccount.create }}
+{{- default (include "ollyscale.api.name" .) .Values.api.serviceAccount.name }}
 {{- else }}
-{{- default "default" .Values.frontend.serviceAccount.name }}
+{{- default "default" .Values.api.serviceAccount.name }}
 {{- end }}
 {{- end }}
 
 {{/*
-Frontend component labels
+API backend component labels
 */}}
-{{- define "ollyscale.frontend.labels" -}}
+{{- define "ollyscale.api.labels" -}}
 {{ include "ollyscale.labels" . }}
-app.kubernetes.io/component: frontend
+app.kubernetes.io/component: api
 {{- end }}
 
 {{/*
-Frontend selector labels
+API backend selector labels
 */}}
-{{- define "ollyscale.frontend.selectorLabels" -}}
+{{- define "ollyscale.api.selectorLabels" -}}
 {{ include "ollyscale.selectorLabels" . }}
-app.kubernetes.io/component: frontend
-app: ollyscale-frontend
+app.kubernetes.io/component: api
+app: ollyscale-api
 {{- end }}
 
 {{/*

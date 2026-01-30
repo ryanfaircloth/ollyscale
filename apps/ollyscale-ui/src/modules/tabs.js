@@ -33,7 +33,8 @@
 /**
  * Tabs Module - Manages tab switching, auto-refresh, and browser history
  */
-import { loadLogs, loadSpans, loadTraces, loadMetrics, loadServiceMap, loadServiceCatalog, loadCollector, initCollector } from './api.js';
+import { loadLogs, loadSpans, loadTraces, loadMetrics, loadServiceMap, loadServiceCatalog } from './api.js';
+import { loadOpampStatus, initCollector } from './collector.js';
 import { showTracesList, isSpanDetailOpen } from './render.js';
 import { clearMetricSearch } from './metrics.js';
 import { initSidebar } from './sidebar.js';
@@ -132,7 +133,8 @@ export function switchTab(tabName, element, fromHistory = false) {
     else if (tabName === 'map') loadServiceMap();
     else if (tabName === 'collector') {
         initCollector();
-        loadCollector();
+        loadOpampStatus();
+        initCollector();
     }
     else if (tabName === 'ai-agents') {
         import('./aiAgents.js').then(module => module.loadAISessions());
@@ -191,7 +193,7 @@ export function startAutoRefresh() {
         // Don't auto-refresh collector tab - user is editing config
 
         // Also refresh stats
-        import('./api.js').then(module => module.loadStats());
+        // Stats tab removed - no longer needed
 
     }, 5000);
 }

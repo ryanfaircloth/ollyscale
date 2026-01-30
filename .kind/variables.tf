@@ -47,6 +47,24 @@ variable "demo_agent_tag" {
   default     = "latest"
 }
 
+variable "ai_agent_chart_tag" {
+  description = "AI agent demo chart tag"
+  type        = string
+  default     = "latest"
+}
+
+variable "ai_agent_image" {
+  description = "AI agent demo image repository"
+  type        = string
+  default     = "docker-registry.registry.svc.cluster.local:5000/ollyscale/demo-otel-agent"
+}
+
+variable "ai_agent_tag" {
+  description = "AI agent demo image tag"
+  type        = string
+  default     = "latest"
+}
+
 # Demo application settings
 variable "custom_demo_frontend_image" {
   description = "Custom demo frontend image repository (unified demo image)"

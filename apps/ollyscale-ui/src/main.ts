@@ -26,7 +26,7 @@ import './modules/api.js';
 import './modules/theme.js';
 import './modules/sidebar.js';
 import './modules/tabs.js';
-import './modules/filter.js';
+import './modules/namespaceFilter.js';
 import './modules/utils.js';
 import './modules/render.js';
 import './modules/logs.js';
