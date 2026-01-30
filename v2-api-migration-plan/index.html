@@ -1,0 +1,1904 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="BYOL (Bring Your Own Laptop) Observability Platform for OpenTelemetry">
+      
+      
+        <meta name="author" content="ollyScale">
+      
+      
+        <link rel="canonical" href="https://ryanfaircloth.github.io/ollyscale/v2-api-migration-plan/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../images/logo.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+    
+    
+      
+        <title>V2 api migration plan - ollyScale Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/css/custom.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#ollyscale-postgres-otel-migration-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="ollyScale Documentation" class="md-header__button md-logo" aria-label="ollyScale Documentation" data-md-component="logo">
+      
+  <img src="../images/logo.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            ollyScale Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              V2 api migration plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/ryanfaircloth/ollyscale" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    ryanfaircloth/ollyscale
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="ollyScale Documentation" class="md-nav__button md-logo" aria-label="ollyScale Documentation" data-md-component="logo">
+      
+  <img src="../images/logo.svg" alt="logo">
+
+    </a>
+    ollyScale Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/ryanfaircloth/ollyscale" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    ryanfaircloth/ollyscale
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quick Start
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deployment
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Deployment
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../docker.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docker
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../kubernetes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kubernetes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../otel-collector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    OpenTelemetry Collector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Demo Applications
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Demo Applications
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../demos/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../demos/custom-demo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Custom Demo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../demos/otel-demo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    OpenTelemetry Demo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Advanced Demos
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Advanced Demos
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ebpf/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    eBPF Zero-Code Tracing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ai-agent/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI Agent with Ollama
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../metrics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Metrics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    REST API & Examples
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Advanced
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Advanced
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build-system/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Build System
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CARDINALITY-PROTECTION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cardinality Protection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../licensing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Licensing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#implementation-status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Implementation Status
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Implementation Status">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#completed-phases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ✅ Completed Phases
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#refactoring-complete" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔧 Refactoring Complete
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#remaining-phases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📋 Remaining Phases
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-11-status-update-january-21-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 11 Status Update (January 21, 2026)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#key-technical-decisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Technical Decisions
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#0-scope-guardrails" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0. Scope &amp; Guardrails
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-project-setup-docs-structure-only" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Project Setup (Docs &amp; Structure Only)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-postgres-infrastructure-zalando-operator-via-terraform" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Postgres Infrastructure (Zalando Operator via Terraform)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-otel-aligned-data-model-schema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. OTEL-Aligned Data Model &amp; Schema
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-retention-partitioning" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Retention &amp; Partitioning
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-frontend-app-api-design-new-v2-app" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Frontend App API Design (New “v2” App)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-storage-layer-abstraction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Storage Layer Abstraction
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-query-semantics-time-filtering-pagination" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Query Semantics: Time, Filtering, Pagination
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-exposure-via-kubernetes-gateway-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Exposure via Kubernetes Gateway API
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-migrations-deployment-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Migrations &amp; Deployment Integration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-unit-testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. Unit Testing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#11-integration-testing-final-testing-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11. Integration Testing (Final Testing Layer)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#12-observability-performance-indexing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12. Observability, Performance &amp; Indexing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#13-documentation-follow-up-cleanup-phase" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        13. Documentation &amp; Follow-Up (Cleanup Phase)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#14-copilot-automation-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        14. Copilot / Automation Rules
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<!-- markdownlint-disable MD013 MD052 MD036 -->
+
+<p>Below is a revised <strong>single plan file</strong> with your corrections baked in:</p>
+<ul>
+<li>Assumes <strong>you create/manage the branch</strong> (no branch-creation steps in the plan).</li>
+<li>The <strong>new frontend app <em>is</em> v2</strong>; no <code>v2</code> prefixes/markings inside the code.</li>
+<li>Exposure is via <strong>Kubernetes Gateway API</strong> (not classic Ingress wording).[1][2][3]</li>
+<li>Markdown is structured so you can paste it directly into the repo as <code>docs/ollyscale-postgres-plan.md</code>.</li>
+</ul>
+<p>All OTEL / Postgres / operator references remain aligned with current practices.[4][5][6][7][8]</p>
+<hr />
+<h1 id="ollyscale-postgres-otel-migration-plan">ollyScale Postgres &amp; OTEL Migration Plan</h1>
+<h2 id="implementation-status">Implementation Status</h2>
+<p><strong>Branch:</strong> <code>storage-improvements</code><br />
+<strong>Progress:</strong> Phases 1-10 Complete (as of January 21, 2026)</p>
+<h3 id="completed-phases">✅ Completed Phases</h3>
+<table>
+<thead>
+<tr>
+<th>Phase</th>
+<th>Status</th>
+<th>Commits</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Phase 1: Frontend Skeleton</strong></td>
+<td>✅ Complete</td>
+<td>a79d7fc</td>
+<td>FastAPI structure, StorageBackend, OTEL models</td>
+</tr>
+<tr>
+<td><strong>Phase 2: PostgreSQL Infrastructure</strong></td>
+<td>✅ Complete</td>
+<td>1968d7f</td>
+<td>Zalando Operator, Postgresql CR (2 replicas + PgBouncer)</td>
+</tr>
+<tr>
+<td><strong>Phase 3: Alembic OTEL Schema</strong></td>
+<td>✅ Complete</td>
+<td>96ee885, 0143588</td>
+<td>Async Alembic, partitioned fact tables, dimension tables</td>
+</tr>
+<tr>
+<td><strong>Phase 4: Partition Management</strong></td>
+<td>✅ Complete</td>
+<td>d773d6b</td>
+<td>create_partitions(), drop_old_partitions(), daily CronJob</td>
+</tr>
+<tr>
+<td><strong>Phase 5: PostgresStorage Backend</strong></td>
+<td>✅ Complete</td>
+<td>4a62d83</td>
+<td>Database session manager, full StorageBackend implementation</td>
+</tr>
+<tr>
+<td><strong>Phase 6: Query API</strong></td>
+<td>✅ Complete</td>
+<td>e289095</td>
+<td>Dependency injection, all query endpoints implemented</td>
+</tr>
+<tr>
+<td><strong>Phase 7: Ingestion API</strong></td>
+<td>✅ Complete</td>
+<td>af670d3</td>
+<td>Ingest endpoints with validation, error handling</td>
+</tr>
+<tr>
+<td><strong>Phase 8: Migration Job</strong></td>
+<td>✅ Complete</td>
+<td>0143588</td>
+<td>Helm pre-upgrade Job runs Alembic migrations</td>
+</tr>
+<tr>
+<td><strong>Phase 9: Testing</strong></td>
+<td>✅ Complete</td>
+<td>a89e9de, 19e55ef</td>
+<td>22 unit tests passing, 6 integration tests (require live DB)</td>
+</tr>
+<tr>
+<td><strong>Phase 10: Documentation</strong></td>
+<td>✅ Complete</td>
+<td>1327624, 19e55ef</td>
+<td>Status table, testing strategy documented</td>
+</tr>
+</tbody>
+</table>
+<h3 id="refactoring-complete">🔧 Refactoring Complete</h3>
+<ul>
+<li><strong>InMemoryStorage Removal</strong> | a89e9de | Removed dual-mode operation, PostgresStorage required in production</li>
+<li><strong>Bug Fixes</strong> | 19e55ef | Fixed TimeRange attribute names (start_time/end_time), fixed _upsert methods</li>
+</ul>
+<h3 id="remaining-phases">📋 Remaining Phases</h3>
+<ul>
+<li><strong>Phase 11:</strong> Integration Testing - API contract tests with FastAPI TestClient (see section 11 below)</li>
+<li><strong>Phase 12:</strong> Performance Benchmarking - Load test ingestion/queries, optimize indexes</li>
+<li><strong>Phase 13:</strong> Observability - Add metrics for storage operations, partition status</li>
+<li><strong>Phase 14:</strong> Deployment &amp; Rollback - Deploy to test environment, verify migration</li>
+</ul>
+<h3 id="phase-11-status-update-january-21-2026">Phase 11 Status Update (January 21, 2026)</h3>
+<p><strong>Integration Testing Framework Added:</strong></p>
+<ul>
+<li><strong>Test Fixtures</strong> (<code>tests/fixtures.py</code>): Reusable OTLP data generators for ResourceSpans, ResourceLogs, ResourceMetrics</li>
+<li><strong>Ingestion Tests</strong> (<code>tests/test_api_ingest.py</code>): 17 tests covering POST /api/traces, /api/logs, /api/metrics - ALL PASSING ✅</li>
+<li><strong>Query Tests</strong> (<code>tests/test_api_query.py</code>): 21 tests for search endpoints, pagination, filters (mock data structure fixes needed)</li>
+<li><strong>Error Tests</strong> (<code>tests/test_api_errors.py</code>): 26 tests for error handling, large payloads, concurrent requests</li>
+<li><strong>Health Tests</strong> (<code>tests/test_health.py</code>): 18 comprehensive health endpoint tests - ALL PASSING ✅</li>
+</ul>
+<p><strong>Testing Philosophy:</strong></p>
+<ul>
+<li><strong>Unit Tests</strong>: Mock database completely, test business logic and error handling</li>
+<li><strong>Integration Tests</strong>: Use FastAPI TestClient with mocked StorageBackend to test API contracts</li>
+<li><strong>Dependency Override Pattern</strong>: <code>app.dependency_overrides[get_storage] = lambda: mock_storage</code></li>
+<li><strong>No Live DB Required</strong>: All tests use AsyncMock for storage, fast execution (~0.5s for 108 tests)</li>
+</ul>
+<p><strong>Current Status:</strong></p>
+<ul>
+<li>86 tests passing, 22 tests need mock data structure fixes to match Pydantic models</li>
+<li>Deprecation warning fixed: <code>HTTP_422_UNPROCESSABLE_ENTITY</code> → <code>HTTP_422_UNPROCESSABLE_CONTENT</code></li>
+<li>Removed obsolete <code>test_storage.py</code> (tested removed InMemoryStorage)</li>
+</ul>
+<p><strong>Next Steps:</strong></p>
+<ul>
+<li>Fix mock data structures in query/error tests to match actual Service, Metric, ServiceMapNode models</li>
+<li>Add test coverage for edge cases (time range validation, pagination cursors)</li>
+<li>Consider adding property-based testing with Hypothesis for OTLP data validation</li>
+</ul>
+<h3 id="key-technical-decisions">Key Technical Decisions</h3>
+<p><strong>Storage Architecture:</strong></p>
+<ul>
+<li>Single-mode operation: PostgresStorage required (DATABASE_HOST must be set)</li>
+<li>InMemoryStorage removed for production safety (was not in original plan)</li>
+<li>Dependency injection pattern with <code>get_storage()</code> for clean separation</li>
+<li>PostgreSQL 18 with native partitioning (daily intervals on <code>time_unix_nano</code>)</li>
+</ul>
+<p><strong>Schema Design:</strong></p>
+<ul>
+<li>Partitioned fact tables: <code>spans_fact</code>, <code>logs_fact</code>, <code>metrics_fact</code></li>
+<li>Dimension tables: <code>service_dim</code>, <code>operation_dim</code>, <code>resource_dim</code></li>
+<li>JSONB attributes with GIN indexes for flexible querying</li>
+<li>Foreign keys with indexes for fast joins</li>
+</ul>
+<p><strong>Partition Management:</strong></p>
+<ul>
+<li>Automated creation of future partitions (7-day lookahead)</li>
+<li>Automated cleanup of old partitions (30-day retention)</li>
+<li>CronJob running daily at 2 AM with comprehensive error handling</li>
+</ul>
+<p><strong>Testing:</strong></p>
+<ul>
+<li>25 unit tests passing (InMemoryStorage)</li>
+<li>6 integration tests require live PostgreSQL (validated in Kubernetes)</li>
+<li>Pre-commit hooks ensure code quality (ruff, pytest, yamlfmt, hadolint)</li>
+</ul>
+<p><strong>Dependencies:</strong></p>
+<ul>
+<li>FastAPI 0.115+, Pydantic 2.10+, SQLAlchemy[asyncio] 2.0.36+</li>
+<li>asyncpg 0.30+ for high-performance async Postgres</li>
+<li>Alembic 1.14+ for schema migrations</li>
+</ul>
+<hr />
+<p><strong>Goal:</strong> Introduce an OTEL-aligned, Postgres-backed version of the ollyScale frontend app (replacing Redis-based storage) using the Zalando Postgres Operator, exposed via Kubernetes Gateway API.[2][5][6][1][4]</p>
+<p><strong>Constraints:</strong></p>
+<ul>
+<li>The <strong>new frontend app is the “v2”</strong>; no <code>v2</code> prefixes in module names, URLs, or directories inside that app.</li>
+<li>All new work happens under:</li>
+<li><code>apps/frontend/app</code></li>
+<li><code>apps/frontend/tests</code></li>
+<li><code>apps/ollyscale/</code> is effectively frozen:</li>
+<li>Only minimal bug/operational fixes are allowed.</li>
+<li>No new “v2” logic, models, or storage added there.</li>
+<li>No legacy data migration/ETL is required; all deployments are clean installs.</li>
+</ul>
+<hr />
+<h2 id="0-scope-guardrails">0. Scope &amp; Guardrails</h2>
+<ul>
+<li>Replace Redis-backed storage for traces, logs, and metrics with Postgres in the <strong>new frontend application</strong>, while keeping the legacy ollyscale app intact for this phase.[5][6][9]</li>
+<li>The new frontend app:</li>
+<li>Implements OTEL-aligned ingest and query APIs.</li>
+<li>Is exposed to clients via Gateway API HTTPRoutes.</li>
+<li>A follow-up phase will:</li>
+<li>Remove unused Redis and legacy code.</li>
+<li>Finalize cut-over and decommission Redis.</li>
+</ul>
+<p><strong>Guardrail rules for implementation:</strong></p>
+<ul>
+<li>Do not rename internal modules to include <code>v2</code> (e.g., avoid <code>routers/v2/*</code>); the whole app is the new version.</li>
+<li>Before every commit:</li>
+<li>Verify that <code>apps/ollyscale/</code> has no unintended changes.</li>
+<li>Ensure all new code is under <code>apps/frontend/</code> paths.</li>
+</ul>
+<hr />
+<h2 id="1-project-setup-docs-structure-only">1. Project Setup (Docs &amp; Structure Only)</h2>
+<ul>
+<li>Add plan and architecture docs:</li>
+<li><code>docs/ollyscale-postgres-plan.md</code> (this file).</li>
+<li>Optionally <code>docs/ollyscale-postgres-architecture.md</code> for diagrams and schema.</li>
+<li>Under <code>apps/frontend/app</code>:</li>
+<li>Ensure there is a clear app entrypoint (e.g., <code>main.py</code>) and standard FastAPI layout.[8][10]</li>
+<li>Add top-level packages:<ul>
+<li><code>routers/</code> for HTTP endpoints.</li>
+<li><code>models/</code> for Pydantic request/response models.</li>
+<li><code>storage/</code> for storage abstraction and implementations.</li>
+<li><code>db/</code> for DB session/connection utilities (if needed).</li>
+</ul>
+</li>
+</ul>
+<p><em>(Branch creation is assumed to be handled manually by the developer, not by this plan.)</em></p>
+<hr />
+<h2 id="2-postgres-infrastructure-zalando-operator-via-terraform">2. Postgres Infrastructure (Zalando Operator via Terraform)</h2>
+<ul>
+<li>Use Terraform to deploy <strong>Zalando Postgres Operator</strong> and a Postgres cluster:[11][12][13][4]</li>
+<li>Operator:<ul>
+<li>Install in namespace like <code>postgres-operator</code>.</li>
+<li>Ensure required CRDs and RBAC are applied.</li>
+</ul>
+</li>
+<li>Cluster:<ul>
+<li>Create an <code>acid.zalan.do/v1</code> <code>postgresql</code> manifest for a single-node internal cluster.</li>
+<li>Parameterize storage size and class (e.g., 30GB default; overridable).</li>
+<li>Restrict network access so only the frontend app namespace(s) and migration Jobs can reach it.</li>
+</ul>
+</li>
+<li>Credentials and connectivity:</li>
+<li>Use the operator-managed Secret for DB credentials.</li>
+<li>Mount credentials into:<ul>
+<li>Frontend app Deployment/Pod.</li>
+<li>Alembic migration Job.</li>
+</ul>
+</li>
+<li>Document:<ul>
+<li>Secret names.</li>
+<li>Connection URI format.</li>
+<li>How credentials are mapped into environment variables.</li>
+</ul>
+</li>
+</ul>
+<hr />
+<h2 id="3-otel-aligned-data-model-schema">3. OTEL-Aligned Data Model &amp; Schema</h2>
+<ul>
+<li>Design schema aligned with OpenTelemetry’s data model and semantic conventions for logs, metrics, and traces:[6][7][14][15][5]</li>
+<li>Signals:<ul>
+<li>Traces (spans).</li>
+<li>Logs.</li>
+<li>Metrics (time-series points).</li>
+</ul>
+</li>
+<li>Fact tables (examples to adjust as needed):</li>
+<li><code>spans_fact</code>:<ul>
+<li>Keys: <code>tenant_id</code>, <code>connection_id</code>, <code>trace_id</code>, <code>span_id</code>, <code>parent_span_id</code>, <code>service_id</code>, <code>operation_id</code>.</li>
+<li>Time: <code>start_time_unix_nano</code>, <code>end_time_unix_nano</code>, <code>duration</code>.</li>
+<li>Fields: <code>status_code</code>, <code>kind</code>, <code>resource_id</code>, <code>attributes JSONB</code>, <code>events JSONB</code>, <code>links JSONB</code>.</li>
+</ul>
+</li>
+<li><code>logs_fact</code>:<ul>
+<li>Keys: <code>id</code>, <code>tenant_id</code>, <code>connection_id</code>.</li>
+<li>Time: <code>time_unix_nano</code>, <code>observed_time_unix_nano</code>.</li>
+<li>OTEL: <code>trace_id</code>, <code>span_id</code>, <code>severity_number</code>, <code>severity_text</code>, <code>body JSONB</code>, <code>attributes JSONB</code>, <code>resource JSONB</code>, <code>flags</code>, <code>dropped_attributes_count</code>.</li>
+</ul>
+</li>
+<li><code>metrics_fact</code>:<ul>
+<li>Keys: <code>id</code>, <code>tenant_id</code>, <code>connection_id</code>.</li>
+<li>OTEL: <code>resource JSONB</code>, <code>scope JSONB</code>, <code>metric_name</code>, <code>metric_type</code>, <code>unit</code>, <code>description</code>, <code>data_points JSONB</code>, <code>attributes JSONB</code>, <code>time_unix_nano</code>, <code>start_time_unix_nano</code>.[16][5]</li>
+</ul>
+</li>
+<li>Dimensions:</li>
+<li><code>service_dim</code>, <code>operation_dim</code>, <code>resource_dim</code>, optional <code>time_dim</code>.</li>
+<li>Conventions:</li>
+<li>Snake_case for all identifiers.</li>
+<li>JSONB for flexible attributes with planned GIN indexes for common keys (e.g., service name, environment).[7]</li>
+<li>Time-based partitioning on fact tables (details next section).</li>
+<li>Implement via Alembic migrations under <code>apps/frontend/migrations/</code>.</li>
+</ul>
+<hr />
+<h2 id="4-retention-partitioning">4. Retention &amp; Partitioning</h2>
+<ul>
+<li>Retention configuration:</li>
+<li>Create <code>retention_policy</code> table with:<ul>
+<li>Tenant identifier.</li>
+<li>Signal type (trace/log/metric).</li>
+<li>Retention period (e.g., days).</li>
+</ul>
+</li>
+<li>Provide a simple API/CLI path for reading/updating retention policies.</li>
+<li>Partitioning:</li>
+<li>Use native Postgres partitioning on time columns (<code>time_unix_nano</code> or truncated timestamp).</li>
+<li>Choose an initial interval (daily or weekly) and document why.</li>
+<li>Enforcement:</li>
+<li>Implement either:<ul>
+<li><code>pg_cron</code> jobs within Postgres, or</li>
+<li>K8s CronJobs calling a management script.</li>
+</ul>
+</li>
+<li>Logic:<ul>
+<li>Drop expired partitions or run <code>DELETE</code> on old rows (for tables not yet partitioned).</li>
+<li>Log actions for audit.</li>
+</ul>
+</li>
+<li>Document future-proofing and volume assumptions in <code>docs/ollyscale-postgres-architecture.md</code>.</li>
+</ul>
+<hr />
+<h2 id="5-frontend-app-api-design-new-v2-app">5. Frontend App API Design (New “v2” App)</h2>
+<p><em>(In this plan, “v2” refers to the entire new frontend app; internal names remain clean.)</em></p>
+<ul>
+<li>Endpoints:</li>
+<li>Ingest:<ul>
+<li><code>/api/traces</code></li>
+<li><code>/api/logs</code></li>
+<li><code>/api/metrics</code></li>
+</ul>
+</li>
+<li>Query:<ul>
+<li><code>/api/traces/search</code></li>
+<li><code>/api/logs/search</code></li>
+<li><code>/api/metrics/search</code></li>
+<li><code>/api/service-map</code></li>
+</ul>
+</li>
+<li>Models:</li>
+<li>Create Pydantic models in <code>apps/frontend/app/models/</code> that:<ul>
+<li>Are compatible with OTEL structures but simplified for HTTP JSON.</li>
+<li>Represent ingest payloads and query responses clearly.</li>
+</ul>
+</li>
+<li>Decoupling:</li>
+<li>The frontend app must not import code from <code>apps/ollyscale/</code>.</li>
+<li>The legacy app remains separate in deployment and routing.</li>
+</ul>
+<hr />
+<h2 id="6-storage-layer-abstraction">6. Storage Layer Abstraction</h2>
+<ul>
+<li>Define a storage abstraction in <code>apps/frontend/app/storage/</code>:</li>
+<li>Interfaces:<ul>
+<li><code>store_traces(payload)</code></li>
+<li><code>store_logs(payload)</code></li>
+<li><code>store_metrics(payload)</code></li>
+<li><code>search_traces(query)</code></li>
+<li><code>search_logs(query)</code></li>
+<li><code>search_metrics(query)</code></li>
+<li><code>get_service_map(params)</code></li>
+</ul>
+</li>
+<li>Implementation phases:</li>
+<li>Phase A (stub):<ul>
+<li>Implement an in-memory or no-op backend for early unit testing.</li>
+</ul>
+</li>
+<li>Phase B (Postgres):<ul>
+<li>Implement Postgres-backed storage using an async driver (e.g., async SQLAlchemy or asyncpg) and a pooled connection.[10][17][8]</li>
+<li>Encapsulate all SQL and query-building logic inside this layer.</li>
+</ul>
+</li>
+</ul>
+<hr />
+<h2 id="7-query-semantics-time-filtering-pagination">7. Query Semantics: Time, Filtering, Pagination</h2>
+<ul>
+<li>Time:</li>
+<li>All search endpoints require <code>start_time</code> and <code>end_time</code> parameters.</li>
+<li>Limits:</li>
+<li><code>limit</code> parameter with default (e.g., 50–100) and hard maximum.</li>
+<li>Pagination:</li>
+<li>Prefer cursor-based pagination (opaque cursor capturing time and id).</li>
+<li>Accept offset/limit as a fallback if needed, but design for cursor-first.</li>
+<li>Filtering:</li>
+<li>Accept structured filters (field, operator, value).</li>
+<li>Validate filters and construct safe SQL WHERE clauses in the storage layer.</li>
+<li>Support common fields such as: tenant, service, operation, severity, status, trace_id, environment.</li>
+<li>Response signals:</li>
+<li>Include <code>has_more</code> or <code>next_cursor</code> when additional results are available.</li>
+<li>Enforce the hard cap on rows per query server-side.</li>
+</ul>
+<hr />
+<h2 id="8-exposure-via-kubernetes-gateway-api">8. Exposure via Kubernetes Gateway API</h2>
+<ul>
+<li>Use Gateway API to expose the new frontend app:[3][18][1][2]</li>
+<li>Create a <code>Gateway</code> object (or use an existing one) for HTTP traffic.</li>
+<li>Create <code>HTTPRoute</code> objects that:<ul>
+<li>Match hostnames/paths for the new app (e.g., <code>api.ziggiz.ai</code> with <code>/olly</code> prefix, adjust as needed).</li>
+<li>Forward traffic to the Service backing the new frontend Deployment.</li>
+</ul>
+</li>
+<li>Routing rules:</li>
+<li>Treat the new frontend app as the <strong>authoritative “v2”</strong> API for new clients.</li>
+<li>Keep legacy routes pointing at the existing ollyscale app until cut-over.</li>
+<li>Document:</li>
+<li>Which hostnames/paths route to the new frontend app.</li>
+<li>Any header-based routing or canary/A/B patterns if used.[19][20]</li>
+</ul>
+<hr />
+<h2 id="9-migrations-deployment-integration">9. Migrations &amp; Deployment Integration</h2>
+<ul>
+<li>Alembic:</li>
+<li>Configure Alembic (and SQLAlchemy if used) for Postgres migrations.[8][10]</li>
+<li>Store migration scripts in <code>apps/frontend/migrations/</code>.</li>
+<li>Migration Job:</li>
+<li>Add a dedicated K8s Job that:<ul>
+<li>Runs <code>alembic upgrade head</code> on deploy/upgrade.</li>
+<li>Uses DB credentials from the operator Secret.</li>
+<li>Is idempotent and fails fast on errors.</li>
+</ul>
+</li>
+<li>App readiness:</li>
+<li>Implement readiness checks so the frontend app:<ul>
+<li>Verifies DB connectivity.</li>
+<li>Confirms required migrations are applied (via Alembic version table).</li>
+</ul>
+</li>
+<li>Health endpoints:</li>
+<li><code>/health</code> and <code>/health/db</code>:<ul>
+<li>Return 200 when the app is ready and DB is healthy.</li>
+<li>Return 503 (with structured body) when DB is down or migrations are running.</li>
+</ul>
+</li>
+</ul>
+<hr />
+<h2 id="10-unit-testing">10. Unit Testing</h2>
+<ul>
+<li>Add unit tests in <code>apps/frontend/tests/</code> for:</li>
+<li>Pydantic models: validation, defaults, required fields.</li>
+<li>Routers: status codes, error handling, payload shapes.</li>
+<li>Storage abstraction:<ul>
+<li>Stub behavior.</li>
+<li>Filter parsing and SQL generation (where possible without hitting real DB).</li>
+</ul>
+</li>
+<li>Retention logic (computations and selection of partitions to drop).</li>
+<li>Ensure the unit test suite can run without a live Postgres instance (stubs/mocks).[21]</li>
+</ul>
+<hr />
+<h2 id="11-integration-testing-final-testing-layer">11. Integration Testing (Final Testing Layer)</h2>
+<ul>
+<li>API integration tests:</li>
+<li>Use FastAPI <code>TestClient</code> with a test Postgres instance (e.g., Dockerized DB) and migrations applied.</li>
+<li>Cover:<ul>
+<li>Ingest flows for traces/logs/metrics.</li>
+<li>Query flows with time range, filters, and pagination.</li>
+<li>Behavior when DB is unavailable or migrations are incomplete.</li>
+</ul>
+</li>
+<li>UI integration/E2E:</li>
+<li>Exercise:<ul>
+<li>Query builder behavior.</li>
+<li>Pagination/infinite scroll.</li>
+<li>Error and maintenance banners when <code>/health</code> or <code>/health/db</code> indicate problems.</li>
+</ul>
+</li>
+<li>Integration tests must be run <strong>after</strong> unit tests are passing and are treated as the last verification layer before commit/merge.[22]</li>
+</ul>
+<hr />
+<h2 id="12-observability-performance-indexing">12. Observability, Performance &amp; Indexing</h2>
+<ul>
+<li>Observability:</li>
+<li>Emit telemetry for the new frontend app using OTEL (traces, metrics, logs) with appropriate sampling.[9][14][23]</li>
+<li>Monitor:<ul>
+<li>DB health and resource usage.</li>
+<li>Migration Job success/failure.</li>
+<li>API latency, error rates, and throughput.</li>
+</ul>
+</li>
+<li>Indexing:</li>
+<li>Add indexes on:<ul>
+<li>Time columns for partition pruning.</li>
+<li><code>trace_id</code>, <code>span_id</code>.</li>
+<li>Foreign keys such as <code>service_id</code>, <code>operation_id</code>.</li>
+<li>JSONB attributes used frequently in filters (GIN indexes).[7]</li>
+</ul>
+</li>
+<li>Performance:</li>
+<li>Capture slow queries and iteratively tune indexes and query patterns.</li>
+<li>Adjust partitioning strategy if needed based on actual load.</li>
+</ul>
+<hr />
+<h2 id="13-documentation-follow-up-cleanup-phase">13. Documentation &amp; Follow-Up (Cleanup Phase)</h2>
+<ul>
+<li>Documentation:</li>
+<li>Keep <code>docs/ollyscale-postgres-plan.md</code> and architecture docs up to date as implementation details change.</li>
+<li>Include:<ul>
+<li>Schema diagrams, table descriptions.</li>
+<li>Retention and partitioning details.</li>
+<li>Deployment &amp; migration steps.</li>
+<li>Troubleshooting guides.</li>
+</ul>
+</li>
+<li>Future cleanup phase (out of scope for this plan):</li>
+<li>Identify and remove unused Redis and legacy ollyscale code paths.</li>
+<li>Plan and execute final cut-over from legacy to new frontend app as the single source of truth.</li>
+<li>Decommission Redis and any unused infrastructure.</li>
+</ul>
+<hr />
+<h2 id="14-copilot-automation-rules">14. Copilot / Automation Rules</h2>
+<p>For <strong>each incremental change</strong> within these phases:</p>
+<ol>
+<li>Implement the minimal set of changes needed for that step.</li>
+<li>Run the <strong>full test suite</strong> (unit + integration + UI tests if configured).</li>
+<li>If any tests fail:</li>
+<li>Fix the issues.</li>
+<li>Re-run tests until green.</li>
+<li>Before committing:</li>
+<li>Ensure <strong>no new v2 logic</strong> has been added under <code>apps/ollyscale/</code>.</li>
+<li>Confirm all changes are under <code>apps/frontend/</code> (plus allowed infra/docs tweaks).</li>
+<li>Only when all tests pass and guardrails are satisfied:</li>
+<li>Format code as needed.</li>
+<li>Commit with a descriptive message referencing the phase/step.</li>
+<li>Continue autonomously to the next step in the plan, maintaining the same discipline.[24][25][22]</li>
+</ol>
+<p>Sources
+[1] Kubernetes Gateway API: Introduction <a href="https://gateway-api.sigs.k8s.io">https://gateway-api.sigs.k8s.io</a>
+[2] Gateway API - Kubernetes <a href="https://kubernetes.io/docs/concepts/services-networking/gateway/">https://kubernetes.io/docs/concepts/services-networking/gateway/</a>
+[3] What Is the Kubernetes Gateway API? - Tetrate <a href="https://tetrate.io/learn/what-is-kubernetes-gateway-api">https://tetrate.io/learn/what-is-kubernetes-gateway-api</a>
+[4] Zalando Postgres operator - The Blue Book <a href="https://lyz-code.github.io/blue-book/zalando_postgres_operator/">https://lyz-code.github.io/blue-book/zalando_postgres_operator/</a>
+[5] Metrics Data Model | OpenTelemetry <a href="https://opentelemetry.io/docs/specs/otel/metrics/data-model/">https://opentelemetry.io/docs/specs/otel/metrics/data-model/</a>
+[6] Logs Data Model | OpenTelemetry <a href="https://opentelemetry.io/docs/specs/otel/logs/data-model/">https://opentelemetry.io/docs/specs/otel/logs/data-model/</a>
+[7] OpenTelemetry Logging Explained: Concepts and Data Model · Dash0 <a href="https://www.dash0.com/knowledge/opentelemetry-logging-explained">https://www.dash0.com/knowledge/opentelemetry-logging-explained</a>
+[8] FastAPI with Async SQLAlchemy, SQLModel, and Alembic <a href="https://testdriven.io/blog/fastapi-sqlmodel/">https://testdriven.io/blog/fastapi-sqlmodel/</a>
+[9] OpenTelemetry Signals Overview: Logs vs Metrics vs Traces - Dash0 <a href="https://www.dash0.com/knowledge/logs-metrics-and-traces-observability">https://www.dash0.com/knowledge/logs-metrics-and-traces-observability</a>
+[10] Adding a production-grade database to your FastAPI project <a href="https://python.plainenglish.io/adding-a-production-grade-database-to-your-fastapi-project-local-setup-50107b10d539">https://python.plainenglish.io/adding-a-production-grade-database-to-your-fastapi-project-local-setup-50107b10d539</a>
+[11] zalando/postgres-operator - GitHub <a href="https://github.com/zalando/postgres-operator">https://github.com/zalando/postgres-operator</a>
+[12] Zalando's Postgres Operator <a href="https://opensource.zalando.com/postgres-operator/docs/quickstart.html">https://opensource.zalando.com/postgres-operator/docs/quickstart.html</a>
+[13] Postgres Operator - Read the Docs <a href="https://postgres-operator.readthedocs.io">https://postgres-operator.readthedocs.io</a>
+[14] OpenTelemetry Logging <a href="https://opentelemetry.io/docs/specs/otel/logs/">https://opentelemetry.io/docs/specs/otel/logs/</a>
+[15] Inside OpenTelemetry: Understanding Its Data Model - LinkedIn <a href="https://www.linkedin.com/pulse/opentelemetry-series-6-deep-dive-opentelemetrys-data-model-kulkarni-rzmmf">https://www.linkedin.com/pulse/opentelemetry-series-6-deep-dive-opentelemetrys-data-model-kulkarni-rzmmf</a>
+[16] Understanding OpenTelemetry Metrics: Types, Model, Collection ... <a href="https://edgedelta.com/company/blog/understanding-opentelemetry-metrics">https://edgedelta.com/company/blog/understanding-opentelemetry-metrics</a>
+[17] FastAPI SQLAlchemy 2, Alembic and PostgreSQL Setup Tutorial 2025 <a href="https://www.youtube.com/watch?v=gg7AX1iRnmg">https://www.youtube.com/watch?v=gg7AX1iRnmg</a>
+[18] API Overview - Kubernetes Gateway API <a href="https://gateway-api.sigs.k8s.io/concepts/api-overview/">https://gateway-api.sigs.k8s.io/concepts/api-overview/</a>
+[19] Understanding Kubernetes Gateway API: A Modern Approach to ... <a href="https://www.cncf.io/blog/2025/05/02/understanding-kubernetes-gateway-api-a-modern-approach-to-traffic-management/">https://www.cncf.io/blog/2025/05/02/understanding-kubernetes-gateway-api-a-modern-approach-to-traffic-management/</a>
+[20] Kubernetes Gateway API in action | Containers - AWS <a href="https://aws.amazon.com/blogs/containers/kubernetes-gateway-api-in-action/">https://aws.amazon.com/blogs/containers/kubernetes-gateway-api-in-action/</a>
+[21] How to use PostgreSQL test database in async FastAPI tests? <a href="https://stackoverflow.com/questions/70752806/how-to-use-postgresql-test-database-in-async-fastapi-tests">https://stackoverflow.com/questions/70752806/how-to-use-postgresql-test-database-in-async-fastapi-tests</a>
+[22] Automation Pipeline and CI/CD: A Guide to Testing Best Practices <a href="https://www.browserstack.com/guide/automation-pipeline">https://www.browserstack.com/guide/automation-pipeline</a>
+[23] What is OpenTelemetry? An open-source standard for logs, metrics ... <a href="https://www.dynatrace.com/news/blog/what-is-opentelemetry/">https://www.dynatrace.com/news/blog/what-is-opentelemetry/</a>
+[24] Run Tests Before Commit - JetBrains Guide <a href="https://www.jetbrains.com/guide/go/tips/vcs-run-tests-before-commit/">https://www.jetbrains.com/guide/go/tips/vcs-run-tests-before-commit/</a>
+[25] pre-commit vs. CI - Sebastian Witowski <a href="https://switowski.com/blog/pre-commit-vs-ci/">https://switowski.com/blog/pre-commit-vs-ci/</a>
+[26] Kubernetes Gateway API: What Is It And Why Do You Need It? <a href="https://traefik.io/glossary/kubernetes-gateway-api">https://traefik.io/glossary/kubernetes-gateway-api</a>
+[27] Getting started with Gateway API <a href="https://gateway-api.sigs.k8s.io/guides/">https://gateway-api.sigs.k8s.io/guides/</a>
+[28] Collect logs, metrics, and traces with OpenTelemetry - Open Liberty <a href="https://openliberty.io/docs/latest/microprofile-telemetry.html">https://openliberty.io/docs/latest/microprofile-telemetry.html</a>
+[29] Postgres operator doesn't place the user secrets in the defined ... <a href="https://github.com/zalando/postgres-operator/issues/1827">https://github.com/zalando/postgres-operator/issues/1827</a></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/ryanfaircloth/ollyscale" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+    <a href="https://github.com/ryanfaircloth/ollyscale/issues" target="_blank" rel="noopener" title="Issues" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.index", "navigation.sections", "navigation.expand", "navigation.instant", "navigation.tracking", "search.suggest", "search.highlight", "content.tabs", "content.code.annotate"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -1297,9 +1297,9 @@
 </ul>
 <p><strong>Built from</strong>:</p>
 <ul>
-<li><strong>Dockerfile</strong>: <code>apps/ollyscale/Dockerfile</code></li>
+<li><strong>Dockerfile</strong>: <code>apps/frontend/Dockerfile</code></li>
 <li><strong>Base image</strong>: <code>python:3.14-slim</code></li>
-<li><strong>Source files</strong> (all from <code>apps/ollyscale/</code>):</li>
+<li><strong>Source files</strong> (all from <code>apps/frontend/</code>):</li>
 <li><code>main.py</code> - Entry point that selects mode</li>
 <li><code>models.py</code> - Pydantic data models</li>
 <li><code>requirements.txt</code> - Python dependencies</li>
@@ -1307,17 +1307,17 @@
 <li><code>receiver/</code> - gRPC receiver for receiver mode</li>
 <li><code>common/</code> - Shared utilities (storage, OTLP parsing)
 docker buildx build --platform linux/amd64,linux/arm64 \
-  -f apps/ollyscale/Dockerfile \
+  -f apps/frontend/Dockerfile \
   -t ghcr.io/ryanfaircloth/ollyscale/ollyscale:v2.1.8 \
-  --push apps/ollyscale/</li>
+  --push apps/frontend/</li>
 </ul>
 <h1 id="local-dev-single-arch">Local dev (single-arch)</h1>
-<p>podman build -f apps/ollyscale/Dockerfile \
+<p>podman build -f apps/frontend/Dockerfile \
   -t registry.ollyscale.test:49443/ollyscale/ollyscale:v2.1.x-feature \
-  apps/ollyscale/
+  apps/frontend/
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>**Rebuild triggers**:
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>- Change to any file in `apps/ollyscale/`
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>- Change to any file in `apps/frontend/`
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>- Change to `requirements.txt`
 <a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>- Change to Dockerfile
 <a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>

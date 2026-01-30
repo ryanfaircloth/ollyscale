@@ -12,7 +12,7 @@
         <meta name="author" content="ollyScale">
       
       
-        <link rel="canonical" href="https://ryanfaircloth.github.io/ollyscale/precommit/">
+        <link rel="canonical" href="https://ryanfaircloth.github.io/ollyscale/database-connection-pooling/">
       
       
       
@@ -25,7 +25,7 @@
     
     
       
-        <title>Pre-commit Configuration for ollyScale - ollyScale Documentation</title>
+        <title>Database Connection Pooling and Star Schema ETL Pattern - ollyScale Documentation</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#pre-commit-configuration-for-ollyscale" class="md-skip">
+        <a href="#database-connection-pooling-and-star-schema-etl-pattern" class="md-skip">
           Skip to content
         </a>
       
@@ -113,7 +113,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Pre-commit Configuration for ollyScale
+              Database Connection Pooling and Star Schema ETL Pattern
             
           </span>
         </div>
@@ -1029,10 +1029,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#quick-start" class="md-nav__link">
+  <a href="#overview" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Quick Start
+        Overview
       
     </span>
   </a>
@@ -1040,22 +1040,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#what-gets-checked" class="md-nav__link">
+  <a href="#star-schema-architecture" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What Gets Checked
+        Star Schema Architecture
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="What Gets Checked">
+    <nav class="md-nav" aria-label="Star Schema Architecture">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#python" class="md-nav__link">
+  <a href="#multi-process-transaction-strategy" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Python
+        Multi-Process Transaction Strategy
       
     </span>
   </a>
@@ -1063,98 +1063,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#yaml" class="md-nav__link">
+  <a href="#testing-implications" class="md-nav__link">
     <span class="md-ellipsis">
       
-        YAML
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#json" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        JSON
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#shell-scripts" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Shell Scripts
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#docker" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Docker
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#helm" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Helm
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#go" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Go
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#markdown" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Markdown
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#terraform" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Terraform
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#general" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        General
+        Testing Implications
       
     </span>
   </a>
@@ -1167,22 +1079,33 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#usage" class="md-nav__link">
+  <a href="#connection-pool-configuration" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Usage
+        Connection Pool Configuration
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Usage">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#session-management-pattern" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Session Management Pattern
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Session Management Pattern">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#automatic-recommended" class="md-nav__link">
+  <a href="#correct-star-schema-two-phase-pattern" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Automatic (Recommended)
+        ✅ CORRECT: Star Schema Two-Phase Pattern
       
     </span>
   </a>
@@ -1190,21 +1113,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#manual" class="md-nav__link">
+  <a href="#incorrect-multiple-commits-per-request" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Manual
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#skip-hooks-not-recommended" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Skip Hooks (Not Recommended)
+        ❌ INCORRECT: Multiple Commits Per Request
       
     </span>
   </a>
@@ -1217,13 +1129,80 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#configuration-files" class="md-nav__link">
+  <a href="#trace-impact" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Configuration Files
+        Trace Impact
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Trace Impact">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#before-fix-multiple-commits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Before Fix (Multiple Commits)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#after-fix-single-transaction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        After Fix (Single Transaction)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opentelemetry-auto-instrumentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OpenTelemetry Auto-Instrumentation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="OpenTelemetry Auto-Instrumentation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sqlalchemy-instrumentation-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SQLAlchemy Instrumentation Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trace-span-reduction-strategies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trace Span Reduction Strategies
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1240,10 +1219,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#hooks-fail-on-first-run" class="md-nav__link">
+  <a href="#symptom-many-connect-spans-per-request" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Hooks fail on first run
+        Symptom: Many "connect" spans per request
       
     </span>
   </a>
@@ -1251,10 +1230,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#command-not-found-pre-commit" class="md-nav__link">
+  <a href="#symptom-begincommitrollback-span-noise" class="md-nav__link">
     <span class="md-ellipsis">
       
-        "command not found: pre-commit"
+        Symptom: BEGIN/COMMIT/ROLLBACK span noise
       
     </span>
   </a>
@@ -1262,10 +1241,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#hook-installation-fails" class="md-nav__link">
+  <a href="#symptom-connection-already-being-used-errors" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Hook installation fails
+        Symptom: "connection already being used" errors
       
     </span>
   </a>
@@ -1273,10 +1252,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#specific-hook-keeps-failing" class="md-nav__link">
+  <a href="#symptom-connection-pool-exhausted-warnings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Specific hook keeps failing
+        Symptom: "connection pool exhausted" warnings
       
     </span>
   </a>
@@ -1289,10 +1268,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#adding-new-hooks" class="md-nav__link">
+  <a href="#references" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Adding New Hooks
+        References
       
     </span>
   </a>
@@ -1300,65 +1279,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ci-integration" class="md-nav__link">
+  <a href="#related" class="md-nav__link">
     <span class="md-ellipsis">
       
-        CI Integration
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#performance" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Performance
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#best-practices" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Best Practices
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#ruff-configuration-highlights" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Ruff Configuration Highlights
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#docker-linting-highlights" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Docker Linting Highlights
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#support" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Support
+        Related
       
     </span>
   </a>
@@ -1385,189 +1309,218 @@
   
 
 
-<h1 id="pre-commit-configuration-for-ollyscale">Pre-commit Configuration for ollyScale</h1>
-<p>This project uses <a href="https://pre-commit.com/">pre-commit</a> to maintain code quality and consistency across all languages and tools.</p>
-<h2 id="quick-start">Quick Start</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Install and setup hooks</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>make<span class="w"> </span>precommit-setup
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Or manually</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>pip<span class="w"> </span>install<span class="w"> </span>pre-commit
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>pre-commit<span class="w"> </span>install
+<h1 id="database-connection-pooling-and-star-schema-etl-pattern">Database Connection Pooling and Star Schema ETL Pattern</h1>
+<h2 id="overview">Overview</h2>
+<p>ollyScale uses SQLAlchemy with asyncpg for high-performance async PostgreSQL access with a
+<strong>star schema</strong> dimensional model. This document covers connection pooling, transaction
+management, and the ETL pattern used to avoid deadlocks in multi-process environments.</p>
+<h2 id="star-schema-architecture">Star Schema Architecture</h2>
+<p>ollyScale implements a dimensional model with:</p>
+<ul>
+<li><strong>Dimension tables</strong>: <code>namespace_dim</code>, <code>service_dim</code>, <code>operation_dim</code>, <code>resource_dim</code></li>
+<li><strong>Fact tables</strong>: <code>spans_fact</code>, <code>logs_fact</code>, <code>metrics_fact</code></li>
+</ul>
+<h3 id="multi-process-transaction-strategy">Multi-Process Transaction Strategy</h3>
+<p>In multi-process/multi-threaded environments, traditional single-transaction upserts cause
+<strong>deadlocks</strong> when multiple processes try to insert the same dimensions simultaneously.</p>
+<p><strong>Solution - Two-Phase ETL Pattern</strong>:</p>
+<p><strong>Phase 1 - Dimension Upserts</strong> (Independent, Auto-Commit):</p>
+<ul>
+<li>Each dimension upsert commits immediately after INSERT</li>
+<li>Idempotent operations (<code>INSERT ON CONFLICT DO UPDATE</code>)</li>
+<li>No locks held between dimension operations</li>
+<li>If batch fails and retries, dimensions already exist (safe)</li>
+<li>Works from outer edge inward: namespace → service → operation</li>
+</ul>
+<p><strong>Phase 2 - Fact Inserts</strong> (Single Transaction):</p>
+<ul>
+<li>After ALL dimensions committed, insert facts in one transaction</li>
+<li>Facts reference dimensions via foreign keys</li>
+<li>Dimensions guaranteed to exist from Phase 1</li>
+</ul>
+<p><strong>Benefits</strong>:</p>
+<ul>
+<li>No deadlocks from concurrent dimension upserts</li>
+<li>Idempotent retries (dimensions survive batch failures)</li>
+<li>Better concurrency (no long-held locks)</li>
+<li>Connection pool efficiency maintained</li>
+</ul>
+<h3 id="testing-implications">Testing Implications</h3>
+<p><strong>Important</strong>: Dimension auto-commits affect test isolation.</p>
+<p><strong>Problem</strong>: Standard test patterns using transaction rollback don't work:</p>
+<ul>
+<li>Dimensions commit immediately (not rolled back)</li>
+<li>Test data leaks between tests</li>
+<li>Non-deterministic dimension IDs</li>
+</ul>
+<p><strong>Solution</strong>: <code>clean_database</code> fixture must truncate dimensions AND facts:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nd">@pytest_asyncio</span><span class="o">.</span><span class="n">fixture</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">clean_database</span><span class="p">(</span><span class="n">postgres_session</span><span class="p">):</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Clean dimensions AND facts for test isolation.&quot;&quot;&quot;</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="k">await</span> <span class="n">postgres_session</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>        <span class="s2">&quot;TRUNCATE TABLE spans_fact, logs_fact, metrics_fact, &quot;</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>        <span class="s2">&quot;namespace_dim, service_dim, operation_dim, resource_dim &quot;</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>        <span class="s2">&quot;CASCADE&quot;</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="p">)</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="k">await</span> <span class="n">postgres_session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
 </code></pre></div>
-<h2 id="what-gets-checked">What Gets Checked</h2>
-<h3 id="python">Python</h3>
-<ul>
-<li><strong>ruff</strong>: Linting and formatting (replaces black, isort, flake8, pylint)</li>
-<li>Auto-fixes import sorting, formatting, and common issues</li>
-<li>Config: <a href="pyproject.toml"><code>pyproject.toml</code></a></li>
-</ul>
-<h3 id="yaml">YAML</h3>
-<ul>
-<li><strong>yamlfmt</strong>: Formatting and style consistency</li>
-<li><strong>check-yaml</strong>: Syntax validation</li>
-<li>Config: <a href=".yamlfmt"><code>.yamlfmt</code></a></li>
-</ul>
-<h3 id="json">JSON</h3>
-<ul>
-<li><strong>prettier</strong>: Formatting</li>
-<li><strong>check-json</strong>: Syntax validation</li>
-</ul>
-<h3 id="shell-scripts">Shell Scripts</h3>
-<ul>
-<li><strong>shellcheck</strong>: Linting for bash/sh scripts</li>
-<li>Catches common bugs and anti-patterns</li>
-</ul>
-<h3 id="docker">Docker</h3>
-<ul>
-<li><strong>hadolint</strong>: Dockerfile linting</li>
-<li>Enforces best practices (layer caching, security, maintainability)</li>
-<li>Config: <a href=".hadolint.yaml"><code>.hadolint.yaml</code></a></li>
-</ul>
-<h3 id="helm">Helm</h3>
-<ul>
-<li><strong>helmlint</strong>: Validates Helm chart structure and templates</li>
-<li>Runs on all charts in <code>charts/</code></li>
-</ul>
-<h3 id="go">Go</h3>
-<ul>
-<li><strong>golangci-lint</strong>: Comprehensive Go linting</li>
-<li>Auto-fixes when possible</li>
-</ul>
-<h3 id="markdown">Markdown</h3>
-<ul>
-<li><strong>markdownlint</strong>: Style and syntax checking</li>
-<li>Config: <a href=".markdownlint.yaml"><code>.markdownlint.yaml</code></a></li>
-</ul>
-<h3 id="terraform">Terraform</h3>
-<ul>
-<li><strong>terraform fmt</strong>: Format HCL files</li>
-<li><strong>terraform validate</strong>: Validate configuration</li>
-</ul>
-<h3 id="general">General</h3>
-<ul>
-<li>Trailing whitespace removal</li>
-<li>End-of-file fixer</li>
-<li>Large file detection (&gt;1MB)</li>
-<li>Private key detection</li>
-<li>Merge conflict detection</li>
-</ul>
-<h2 id="usage">Usage</h2>
-<h3 id="automatic-recommended">Automatic (Recommended)</h3>
-<p>Hooks run automatically on <code>git commit</code>. If checks fail, the commit is blocked:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>git<span class="w"> </span>add<span class="w"> </span>.
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat: add new feature&quot;</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="c1"># Pre-commit runs, auto-fixes issues, then commits</span>
+<p>See <code>tests/conftest.py</code> for complete fixture implementation.</p>
+<h2 id="connection-pool-configuration">Connection Pool Configuration</h2>
+<p>Connection pool settings in <code>app/db/session.py</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="bp">self</span><span class="o">.</span><span class="n">engine</span> <span class="o">=</span> <span class="n">create_async_engine</span><span class="p">(</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    <span class="n">url</span><span class="p">,</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    <span class="n">pool_size</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>              <span class="c1"># Base pool size (concurrent connections)</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="n">max_overflow</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>           <span class="c1"># Additional connections beyond pool_size</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    <span class="n">pool_pre_ping</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>        <span class="c1"># Verify connections before use</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="n">pool_recycle</span><span class="o">=</span><span class="mi">3600</span><span class="p">,</span>         <span class="c1"># Recycle connections after 1 hour</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="p">)</span>
 </code></pre></div>
-<h3 id="manual">Manual</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Run all checks</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>make<span class="w"> </span>lint
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1"># Or: pre-commit run --all-files</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="c1"># Run specific hook</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>pre-commit<span class="w"> </span>run<span class="w"> </span>ruff<span class="w"> </span>--all-files
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>pre-commit<span class="w"> </span>run<span class="w"> </span>hadolint-docker<span class="w"> </span>--all-files
+<p><strong>Environment variables</strong>:</p>
+<ul>
+<li><code>DATABASE_POOL_SIZE</code> - Base pool size (default: 10)</li>
+<li><code>DATABASE_MAX_OVERFLOW</code> - Additional overflow connections (default: 20)</li>
+</ul>
+<h2 id="session-management-pattern">Session Management Pattern</h2>
+<h3 id="correct-star-schema-two-phase-pattern">✅ CORRECT: Star Schema Two-Phase Pattern</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">store_traces</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">resource_spans</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Store OTLP traces - star schema ETL pattern.&quot;&quot;&quot;</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="k">async</span> <span class="k">with</span> <span class="n">AsyncSession</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="p">)</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>        <span class="c1"># Phase 1: Dimension upserts (each commits immediately)</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>        <span class="n">namespace_id</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_upsert_namespace</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">namespace</span><span class="p">)</span>  <span class="c1"># COMMITS</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>        <span class="n">service_id</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_upsert_service</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">namespace_id</span><span class="p">)</span>  <span class="c1"># COMMITS</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>        <span class="n">operation_id</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_upsert_operation</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">service_id</span><span class="p">,</span> <span class="n">op_name</span><span class="p">,</span> <span class="n">kind</span><span class="p">)</span>  <span class="c1"># COMMITS</span>
 <a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="c1"># Run on specific files</span>
-<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>pre-commit<span class="w"> </span>run<span class="w"> </span>--files<span class="w"> </span>apps/frontend/main.py<span class="w"> </span>apps/demo/backend.py
-<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>
-<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="c1"># Update hooks to latest versions</span>
-<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>pre-commit<span class="w"> </span>autoupdate
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>        <span class="c1"># Phase 2: Fact inserts (single transaction after dimensions exist)</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>        <span class="n">session</span><span class="o">.</span><span class="n">add_all</span><span class="p">(</span><span class="n">spans_to_insert</span><span class="p">)</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>        <span class="k">await</span> <span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>  <span class="c1"># Final commit for facts</span>
 </code></pre></div>
-<h3 id="skip-hooks-not-recommended">Skip Hooks (Not Recommended)</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Skip all hooks (emergency only)</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>git<span class="w"> </span>commit<span class="w"> </span>--no-verify<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;hotfix&quot;</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="c1"># Skip specific files by adding to exclude in .pre-commit-config.yaml</span>
-</code></pre></div>
-<h2 id="configuration-files">Configuration Files</h2>
+<p><strong>Benefits</strong>:</p>
 <ul>
-<li><a href=".pre-commit-config.yaml"><code>.pre-commit-config.yaml</code></a> - Main hook configuration</li>
-<li><a href="pyproject.toml"><code>pyproject.toml</code></a> - Python/ruff settings</li>
-<li><a href=".hadolint.yaml"><code>.hadolint.yaml</code></a> - Docker linting rules</li>
-<li><a href=".markdownlint.yaml"><code>.markdownlint.yaml</code></a> - Markdown style rules</li>
-<li><a href=".yamlfmt"><code>.yamlfmt</code></a> - YAML formatting rules</li>
+<li>✅ No deadlocks in multi-process environments</li>
+<li>✅ Idempotent dimension upserts survive retries</li>
+<li>✅ Clean traces with minimal transaction control spans</li>
+<li>✅ Better performance (fewer round-trips)</li>
 </ul>
+<h3 id="incorrect-multiple-commits-per-request">❌ INCORRECT: Multiple Commits Per Request</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_upsert_service</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">session</span><span class="p">:</span> <span class="n">AsyncSession</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;BAD: Committing inside helper method.&quot;&quot;&quot;</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    <span class="n">stmt</span> <span class="o">=</span> <span class="n">insert</span><span class="p">(</span><span class="n">ServiceDim</span><span class="p">)</span><span class="o">.</span><span class="n">values</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>    <span class="k">await</span> <span class="n">session</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">stmt</span><span class="p">)</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>    <span class="k">await</span> <span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>  <span class="c1"># ❌ WRONG - breaks connection reuse</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>    <span class="k">return</span> <span class="n">service_id</span>
+</code></pre></div>
+<p><strong>Problems</strong>:</p>
+<ul>
+<li>❌ Connection returned to pool after each commit</li>
+<li>❌ Next operation may get different connection</li>
+<li>❌ Multiple BEGIN/COMMIT/ROLLBACK cycles</li>
+<li>❌ Auto-instrumentation creates span for each transaction control</li>
+<li>❌ Trace noise: 20+ BEGIN/COMMIT/ROLLBACK spans instead of 1-2</li>
+</ul>
+<h2 id="trace-impact">Trace Impact</h2>
+<h3 id="before-fix-multiple-commits">Before Fix (Multiple Commits)</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>gRPC Export (215ms)
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>├─ connect #1 (5ms)
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>│  ├─ BEGIN
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>│  ├─ SELECT tenant_dim
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>│  └─ COMMIT
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>├─ connect #2 (5ms)
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>│  ├─ BEGIN
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>│  ├─ INSERT namespace_dim
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>│  ├─ COMMIT
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>│  ├─ BEGIN
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>│  ├─ SELECT namespace_dim
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>│  └─ ROLLBACK
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>├─ connect #3 (5ms)
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>│  ├─ BEGIN
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a>│  ├─ INSERT service_dim
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a>│  ├─ COMMIT
+<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a>│  ├─ BEGIN
+<a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a>│  └─ ROLLBACK
+<a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a>... (8 total connections) ...
+<a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a>└─ connect #8 (5ms)
+<a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a>   ├─ BEGIN
+<a id="__codelineno-4-22" name="__codelineno-4-22" href="#__codelineno-4-22"></a>   ├─ INSERT logs_fact (24 records)
+<a id="__codelineno-4-23" name="__codelineno-4-23" href="#__codelineno-4-23"></a>   └─ COMMIT
+</code></pre></div>
+<p><strong>Issues</strong>:</p>
+<ul>
+<li>8 separate connections in single request</li>
+<li>20+ transaction control spans (BEGIN, COMMIT, ROLLBACK)</li>
+<li>Connection pool thrashing</li>
+<li>Excessive trace noise</li>
+</ul>
+<h3 id="after-fix-single-transaction">After Fix (Single Transaction)</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>gRPC Export (180ms) - 35ms faster!
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>└─ connect (5ms)
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>   ├─ BEGIN
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>   ├─ SELECT tenant_dim
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>   ├─ INSERT namespace_dim
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>   ├─ SELECT namespace_dim
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>   ├─ INSERT service_dim
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>   ├─ SELECT service_dim
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>   ├─ INSERT operation_dim
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>   ├─ SELECT operation_dim
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>   ├─ INSERT logs_fact (24 records)
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>   └─ COMMIT
+</code></pre></div>
+<p><strong>Benefits</strong>:</p>
+<ul>
+<li>✅ 1 connection per request</li>
+<li>✅ 2 transaction control spans (BEGIN, COMMIT)</li>
+<li>✅ Clean, readable trace</li>
+<li>✅ 17% performance improvement</li>
+</ul>
+<h2 id="opentelemetry-auto-instrumentation">OpenTelemetry Auto-Instrumentation</h2>
+<h3 id="sqlalchemy-instrumentation-configuration">SQLAlchemy Instrumentation Configuration</h3>
+<p>In <code>charts/ollyscale/values.yaml</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nt">instrumentation</span><span class="p">:</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="nt">python</span><span class="p">:</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">    </span><span class="nt">env</span><span class="p">:</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">      </span><span class="c1"># Disable SQL comment injection (reduces overhead)</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OTEL_INSTRUMENTATION_SQLALCHEMY_ENABLE_COMMENTER</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">        </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;false&#39;</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="w">      </span><span class="c1"># Instrument all engines automatically</span>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OTEL_PYTHON_SQLALCHEMY_INSTRUMENT_ALL_ENGINES</span>
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="w">        </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;true&#39;</span>
+</code></pre></div>
+<h3 id="trace-span-reduction-strategies">Trace Span Reduction Strategies</h3>
+<ol>
+<li><strong>Remove intermediate commits</strong> - Covered above ✅</li>
+<li><strong>Use batch inserts</strong> - <code>session.add_all()</code> instead of loops</li>
+<li><strong>Disable SQL commenter</strong> - Reduces per-query overhead</li>
+<li><strong>Connection pooling</strong> - Reuse connections across requests</li>
+</ol>
 <h2 id="troubleshooting">Troubleshooting</h2>
-<h3 id="hooks-fail-on-first-run">Hooks fail on first run</h3>
-<p>This is normal. Pre-commit will auto-fix many issues. Run again:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>git<span class="w"> </span>add<span class="w"> </span>.
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;fix: apply pre-commit auto-fixes&quot;</span>
-</code></pre></div>
-<h3 id="command-not-found-pre-commit">"command not found: pre-commit"</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>pip<span class="w"> </span>install<span class="w"> </span>pre-commit
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>pre-commit<span class="w"> </span>install
-</code></pre></div>
-<h3 id="hook-installation-fails">Hook installation fails</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># Clear cache and reinstall</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>pre-commit<span class="w"> </span>clean
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>pre-commit<span class="w"> </span>install<span class="w"> </span>--install-hooks
-</code></pre></div>
-<h3 id="specific-hook-keeps-failing">Specific hook keeps failing</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="c1"># Run in verbose mode for debugging</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>pre-commit<span class="w"> </span>run<span class="w"> </span>&lt;hook-id&gt;<span class="w"> </span>--all-files<span class="w"> </span>--verbose
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="c1"># Temporarily skip hook (not recommended)</span>
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="nv">SKIP</span><span class="o">=</span>&lt;hook-id&gt;<span class="w"> </span>git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;message&quot;</span>
-</code></pre></div>
-<h2 id="adding-new-hooks">Adding New Hooks</h2>
+<h3 id="symptom-many-connect-spans-per-request">Symptom: Many "connect" spans per request</h3>
+<p><strong>Diagnosis</strong>: Check for intermediate <code>session.commit()</code> calls in helper methods.</p>
+<p><strong>Fix</strong>: Remove commits from <code>_upsert_*</code> methods, let caller handle single commit.</p>
+<h3 id="symptom-begincommitrollback-span-noise">Symptom: BEGIN/COMMIT/ROLLBACK span noise</h3>
+<p><strong>Diagnosis</strong>: Multiple transactions per request due to intermediate commits.</p>
+<p><strong>Fix</strong>: Same as above - one transaction per request.</p>
+<h3 id="symptom-connection-already-being-used-errors">Symptom: "connection already being used" errors</h3>
+<p><strong>Diagnosis</strong>: Session being used from multiple coroutines (not thread-safe).</p>
+<p><strong>Fix</strong>: Each async task needs its own session. Don't share sessions across <code>asyncio.create_task()</code> calls.</p>
+<h3 id="symptom-connection-pool-exhausted-warnings">Symptom: "connection pool exhausted" warnings</h3>
+<p><strong>Diagnosis</strong>: Connection leaks or insufficient pool size.</p>
+<p><strong>Fix</strong>:</p>
 <ol>
-<li>Find the hook at <a href="https://pre-commit.com/hooks.html">pre-commit.com hooks</a></li>
-<li>Add to <code>.pre-commit-config.yaml</code>:</li>
+<li>Verify all sessions use <code>async with</code> context manager</li>
+<li>Increase <code>DATABASE_POOL_SIZE</code> or <code>DATABASE_MAX_OVERFLOW</code></li>
+<li>Check for long-running transactions blocking pool</li>
 </ol>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">repo</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">https://github.com/org/repo</span>
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="nt">rev</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">v1.0.0</span>
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span><span class="nt">hooks</span><span class="p">:</span>
-<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hook-name</span>
-<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">      </span><span class="nt">args</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">--option</span><span class="p p-Indicator">]</span>
-</code></pre></div>
-<ol>
-<li>Install: <code>pre-commit install --install-hooks</code></li>
-<li>Test: <code>pre-commit run hook-name --all-files</code></li>
-</ol>
-<h2 id="ci-integration">CI Integration</h2>
-<p>Pre-commit checks run in GitHub Actions workflows. See <a href=".github/workflows/"><code>.github/workflows/</code></a>.</p>
-<h2 id="performance">Performance</h2>
+<h2 id="references">References</h2>
 <ul>
-<li><strong>First run</strong>: Slower (downloads and caches tools)</li>
-<li><strong>Subsequent runs</strong>: Fast (only changed files)</li>
-<li><strong>Full run</strong>: <code>pre-commit run --all-files</code> takes ~2-5 minutes</li>
+<li><a href="https://docs.sqlalchemy.org/en/20/orm/extensions/asyncio.html">SQLAlchemy Async Documentation</a></li>
+<li><a href="https://magicstack.github.io/asyncpg/current/api/index.html#connection-pools">asyncpg Pool Configuration</a></li>
+<li><a href="https://opentelemetry-python-contrib.readthedocs.io/en/latest/instrumentation/sqlalchemy/sqlalchemy.html">OpenTelemetry SQLAlchemy Instrumentation</a></li>
 </ul>
-<h2 id="best-practices">Best Practices</h2>
-<ol>
-<li><strong>Run before pushing</strong>: <code>make lint</code> or <code>pre-commit run --all-files</code></li>
-<li><strong>Commit auto-fixes separately</strong>: Let pre-commit fix, then review changes</li>
-<li><strong>Keep hooks updated</strong>: <code>pre-commit autoupdate</code> monthly</li>
-<li><strong>Don't skip hooks</strong>: They catch real issues before code review</li>
-<li><strong>Fix root causes</strong>: If a hook fails repeatedly, fix the underlying issue</li>
-</ol>
-<h2 id="ruff-configuration-highlights">Ruff Configuration Highlights</h2>
+<h2 id="related">Related</h2>
 <ul>
-<li><strong>Target</strong>: Python 3.11+</li>
-<li><strong>Line length</strong>: 120 characters</li>
-<li><strong>Enabled checks</strong>:</li>
-<li>Code quality (pyflakes, pycodestyle)</li>
-<li>Import sorting (isort)</li>
-<li>Security (bandit subset)</li>
-<li>Complexity (pylint subset)</li>
-<li>Modern Python (pyupgrade)</li>
-<li><strong>Auto-fix</strong>: Most issues fixed automatically</li>
-<li><strong>Config</strong>: <a href="pyproject.toml"><code>pyproject.toml</code></a></li>
-</ul>
-<h2 id="docker-linting-highlights">Docker Linting Highlights</h2>
-<ul>
-<li><strong>Ignored rules</strong>:</li>
-<li>DL3008: Pin apt versions (handled by base images)</li>
-<li>DL3013: Pin pip versions (requirements.txt handles this)</li>
-<li><strong>Trusted registries</strong>: docker.io, ghcr.io, gcr.io, registry.k8s.io</li>
-<li><strong>Config</strong>: <a href=".hadolint.yaml"><code>.hadolint.yaml</code></a></li>
-</ul>
-<h2 id="support">Support</h2>
-<ul>
-<li>Pre-commit docs: <a href="https://pre-commit.com">https://pre-commit.com</a></li>
-<li>Ruff docs: <a href="https://docs.astral.sh/ruff">https://docs.astral.sh/ruff</a></li>
-<li>Hadolint docs: <a href="https://github.com/hadolint/hadolint">https://github.com/hadolint/hadolint</a></li>
-<li>Project issues: <a href="https://github.com/ryanfaircloth/ollyscale/issues">https://github.com/ryanfaircloth/ollyscale/issues</a></li>
+<li><a href="../technical/">Technical Architecture</a></li>
+<li><a href="../postgres-infrastructure/">PostgreSQL Infrastructure</a></li>
+<li><a href="../precommit/">Pre-commit Configuration</a></li>
 </ul>
 
 
