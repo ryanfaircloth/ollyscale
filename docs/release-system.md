@@ -13,7 +13,7 @@ The repository contains multiple components that are released independently:
 
 **Applications (Container Images):**
 
-- `apps/ollyscale` - Python backend → `ghcr.io/ryanfaircloth/ollyscale/ollyscale`
+- `apps/frontend` - Python backend → `ghcr.io/ryanfaircloth/ollyscale/ollyscale`
 - `apps/ollyscale-ui` - TypeScript frontend → `ghcr.io/ryanfaircloth/ollyscale/ollyscale-ui`
 - `apps/opamp-server` - Go OpAMP server → `ghcr.io/ryanfaircloth/ollyscale/opamp-server`
 - `apps/demo` - Demo application → `ghcr.io/ryanfaircloth/ollyscale/demo`
@@ -46,7 +46,7 @@ dependencies are released. This is configured in `release-please-config.json`:
 }
 ```
 
-When `apps/ollyscale` gets a new release:
+When `apps/frontend` gets a new release:
 
 1. The app's version is bumped (e.g., `v2.1.9` → `v2.1.10`)
 2. The app updates `charts/ollyscale/values.yaml` with `frontend.image.tag: v2.1.10`
@@ -120,7 +120,7 @@ Tracks the current version of each component. This file is automatically updated
 
 ```json
 {
-  "apps/ollyscale": "2.1.9",
+  "apps/frontend": "2.1.9",
   "apps/ollyscale-ui": "0.0.0",
   "charts/ollyscale": "0.1.0"
 }
@@ -240,7 +240,7 @@ Check GitHub Actions logs:
 
 ```bash
 # Build locally
-cd apps/ollyscale
+cd apps/frontend
 docker build -t ollyscale:dev -f Dockerfile .
 
 # Test Helm chart

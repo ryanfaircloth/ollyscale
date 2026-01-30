@@ -95,7 +95,7 @@ pre-commit run ruff --all-files
 pre-commit run hadolint-docker --all-files
 
 # Run on specific files
-pre-commit run --files apps/ollyscale/main.py apps/demo/backend.py
+pre-commit run --files apps/frontend/main.py apps/demo/backend.py
 
 # Update hooks to latest versions
 pre-commit autoupdate

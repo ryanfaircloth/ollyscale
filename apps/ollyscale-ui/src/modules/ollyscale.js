@@ -31,9 +31,9 @@
  */
 
 import { initTabs, startAutoRefresh, switchTab, toggleAutoRefresh } from './tabs.js';
-import { loadStats, loadLogs, loadSpans } from './api.js';
+import { loadLogs, loadSpans } from './api.js';
 import { initTheme, toggleTheme } from './theme.js';
-import { initHideOllyScaleToggle, toggleHideOllyScale } from './filter.js';
+import { initNamespaceFilter, startNamespaceRefresh } from './namespaceFilter.js';
 import {
     showTraceDetail,
     showTracesList,
@@ -55,7 +55,6 @@ import { debounce } from './utils.js';
 window.switchTab = switchTab;
 window.toggleTheme = toggleTheme;
 window.toggleAutoRefresh = toggleAutoRefresh;
-window.toggleHideOllyScale = toggleHideOllyScale;
 window.showTraceDetail = showTraceDetail;
 window.showTracesList = showTracesList;
 window.toggleTraceJSON = toggleTraceJSON;
@@ -80,11 +79,13 @@ window.onerror = function (message, source, lineno, colno, error) {
 document.addEventListener('DOMContentLoaded', () => {
     try {
         initTheme();
-        initHideollyScaleToggle();
+        initNamespaceFilter();
 
         // Tab initialization now handles URL parameters internally
         initTabs();
-        loadStats();
+
+        // Start namespace auto-refresh (60 second interval)
+        startNamespaceRefresh();
 
         // Attach log search event listener with debounce
         const logSearch = document.getElementById('log-search');

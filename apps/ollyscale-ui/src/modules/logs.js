@@ -103,15 +103,15 @@ function renderLogList(container, logsToShow, totalLogs) {
     const logsHtml = logsToShow.map((log, index) => {
         const timestamp = formatTimestamp(log.timestamp);
 
-        const severity = log.severity || 'INFO';
+        const severity = log.severity_text || log.severity || 'INFO';
         const severityColor = getSeverityColor(severity);
-        const traceId = log.traceId || log.trace_id;
-        const spanId = log.spanId || log.span_id;
+        const traceId = log.trace_id;
+        const spanId = log.span_id;
 
         return `
             <div class="log-row data-table-row" data-log-index="${index}">
                 <div class="log-timestamp text-mono" style="flex: 0 0 100px;">${timestamp}</div>
-                <div class="text-main font-medium text-truncate" style="flex: 0 0 120px;" title="${log.service_name || log.service || ''}">${log.service_name || log.service || '-'}</div>
+                <div class="text-main font-medium text-truncate" style="flex: 0 0 120px;" title="${log.service_name || ''}">${log.service_name || '-'}</div>
                 <div class="log-severity ${severity}" style="flex: 0 0 60px;">${severity}</div>
                 <div class="text-mono text-truncate" style="flex: 0 0 180px; font-size: 10px;" title="${traceId || ''}">
                     ${traceId ? `<a class="log-trace-link text-mono" data-trace-id="${traceId}">${formatTraceId(traceId)}</a>` : '<span class="text-muted">-</span>'}
@@ -119,7 +119,7 @@ function renderLogList(container, logsToShow, totalLogs) {
                 <div class="text-mono text-truncate" style="flex: 0 0 140px; font-size: 10px;" title="${spanId || ''}">
                     ${spanId ? `<a class="log-span-link text-mono" data-span-id="${spanId}">${formatTraceId(spanId)}</a>` : '<span class="text-muted">-</span>'}
                 </div>
-                <div class="text-main" style="flex: 1; min-width: 200px; word-break: break-word;">${log.message || ''}</div>
+                <div class="text-main" style="flex: 1; min-width: 200px; word-break: break-word;">${log.body || ''}</div>
             </div>
         `;
     }).join('');
@@ -238,7 +238,7 @@ function showLogJson(index) {
     const title = `
         Log Details
         <span style="font-weight: normal; color: var(--text-muted); font-size: 0.9em; margin-left: 8px; font-family: 'JetBrains Mono', monospace;">
-            ${new Date(log.timestamp * 1000).toLocaleString()}
+            ${new Date(log.timestamp).toLocaleString()}
         </span>
     `;
 

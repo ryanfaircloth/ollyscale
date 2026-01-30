@@ -5,10 +5,10 @@
   "bump-minor-pre-major": true,
   "bump-patch-for-minor-pre-major": true,
   "packages": {
-    "apps/ollyscale": {
-      "component": "ollyscale",
+    "apps/api": {
+      "component": "api",
       "release-type": "python",
-      "package-name": "@ollyscale/ollyscale"
+      "package-name": "api"
     },
     "apps/ollyscale-ui": {
       "component": "ollyscale-ui",
@@ -18,35 +18,35 @@
     "apps/opamp-server": {
       "component": "opamp-server",
       "release-type": "simple",
-      "package-name": "@ollyscale/opamp-server"
+      "package-name": "opamp-server"
     },
     "apps/demo": {
       "component": "demo",
       "release-type": "python",
-      "package-name": "@ollyscale/demo"
+      "package-name": "demo"
     },
     "apps/demo-otel-agent": {
       "component": "demo-otel-agent",
       "release-type": "python",
-      "package-name": "@ollyscale/demo-otel-agent"
+      "package-name": "demo-otel-agent"
     },
     "charts/ollyscale": {
       "component": "chart-ollyscale",
       "release-type": "helm",
-      "package-name": "ollyscale",
+      "package-name": "chart-ollyscale",
       "extra-files": [
         {
           "type": "yaml",
           "path": "values.yaml",
-          "jsonpath": "$.frontend.image.tag",
-          "component": "ollyscale",
+          "jsonpath": "$.api.image.tag",
+          "component": "api",
           "bumpDependents": true
         },
         {
           "type": "yaml",
           "path": "values.yaml",
           "jsonpath": "$.otlpReceiver.image.tag",
-          "component": "ollyscale",
+          "component": "api",
           "bumpDependents": true
         },
         {
@@ -68,12 +68,12 @@
     "charts/ollyscale-demos": {
       "component": "chart-ollyscale-demos",
       "release-type": "helm",
-      "package-name": "ollyscale-demos"
+      "package-name": "chart-ollyscale-demos"
     },
     "charts/ollyscale-otel-agent": {
       "component": "chart-ollyscale-otel-agent",
       "release-type": "helm",
-      "package-name": "ollyscale-otel-agent"
+      "package-name": "chart-ollyscale-otel-agent"
     }
   },
   "plugins": []

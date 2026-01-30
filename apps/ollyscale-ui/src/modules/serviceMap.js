@@ -190,7 +190,7 @@ export function renderServiceMap(graph) {
             color = "#f59e0b";
         }
         g.setNode(node.id, {
-            label: node.label,
+            label: node.name,  // Use name as display label
             shape: mapShape(shape),
             type: label,
             color: color,
@@ -221,11 +221,20 @@ export function renderServiceMap(graph) {
         });
         // Add only unique edges to the graph
         for (const edge of edgeMap.values()) {
+            // Build label with call count and average duration
+            let label = "";
+            if (edge.call_count) {
+                label += `${edge.call_count} calls`;
+            }
+            if (edge.avg_duration_ms) {
+                label += label ? ` / ${edge.avg_duration_ms}ms` : `${edge.avg_duration_ms}ms`;
+            }
+
             g.setEdge(edge.source, edge.target, {
-                label: edge.p95 ? `${edge.p95}ms` : "",
+                label: label,
                 style: "stroke: #cbd5e1; stroke-width: 2px;", // Remove shadow
                 arrowheadStyle: "fill: #cbd5e1;",
-                weight: edge.value || 1,
+                weight: edge.value || edge.call_count || 1,
             });
         }
     }

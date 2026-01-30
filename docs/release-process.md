@@ -38,7 +38,7 @@ ollyScale uses [release-please](https://github.com/googleapis/release-please) fo
 
 **Container Components:**
 
-- `ollyscale` - Core platform (apps/ollyscale)
+- `ollyscale` - Core platform (apps/frontend)
 - `opamp` - OpAMP server (apps/opamp-server)
 - `demo` - Demo application (apps/demo)
 - `ai-agent` - AI agent demo (apps/ai-agent-demo)
@@ -138,8 +138,8 @@ Components to be released:
 - helm-ollyscale: 0.1.1 → 0.2.0
 
 Changes:
-- Updated apps/ollyscale/VERSION
-- Updated apps/ollyscale/CHANGELOG.md
+- Updated apps/frontend/VERSION
+- Updated apps/frontend/CHANGELOG.md
 - Updated apps/opamp-server/VERSION
 - Updated apps/opamp-server/CHANGELOG.md
 - Updated charts/ollyscale/Chart.yaml
@@ -218,7 +218,7 @@ vim .release-please-manifest.json
 
 # Change version for component:
 {
-  "apps/ollyscale": "2.3.0",  # Bump this
+  "apps/frontend": "2.3.0",  # Bump this
   ...
 }
 

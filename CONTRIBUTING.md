@@ -128,7 +128,7 @@ async def my_function(param: str) -> dict:
 ### Python Tests
 
 ```bash
-cd apps/ollyscale
+cd apps/frontend
 poetry install --with test
 poetry run pytest
 ```

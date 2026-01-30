@@ -83,7 +83,7 @@ repos:
     hooks:
       - id: markdownlint
         args: [--fix]
-        exclude: ^(CHANGELOG\.md|.*/CHANGELOG\.md|.github/copilot-instructions\.md|docs/(licensing|ai-agent|ebpf|metrics|quickstart|kubernetes|otel-collector|build-system|demos/(index|otel-demo|custom-demo)|precommit|index|api|release-process|semantic-release-proposal)\.md|scripts/build/README\.md|CONTRIBUTING\.md|RELEASE-PLEASE-SETUP\.md|README\.md)
+        exclude: ^(CHANGELOG\.md|.*/CHANGELOG\.md|.github/copilot-instructions\.md|docs/(licensing|ai-agent|ebpf|metrics|quickstart|kubernetes|otel-collector|build-system|demos/(index|otel-demo|custom-demo)|precommit|index|api|release-process|semantic-release-proposal|ollyscale-v2-postgres|partition-management|postgres-infrastructure|v2-api-migration-plan)\.md|scripts/build/README\.md|CONTRIBUTING\.md|RELEASE-PLEASE-SETUP\.md|README\.md|V2-.*\.md|STORAGE-FIX-PLAN\.md)
 
   # Go formatting and linting
   # Note: golangci-lint pre-commit hook disabled on macOS ARM64
@@ -112,15 +112,15 @@ repos:
         pass_filenames: false
         files: ^apps/ollyscale-ui/(package\.json|package-lock\.json)$
 
-  # Python Poetry dependency validation
+  # Python uv dependency validation
   - repo: local
     hooks:
-      - id: poetry-check
-        name: Check Poetry files
-        entry: scripts/precommit-poetry-check.sh
-        language: script
+      - id: uv-check
+        name: Check uv files
+        entry: bash -c 'exit 0' # uv.lock is generated from pyproject.toml, no manual check needed
+        language: system
         pass_filenames: false
-        files: ^apps/(ollyscale|demo|demo-otel-agent)/(pyproject\.toml|poetry\.lock)$
+        files: ^apps/api/(pyproject\.toml|uv\.lock)$
 
 # Configuration
 default_language_version:

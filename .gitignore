@@ -38,3 +38,8 @@ node_modules/
 dist/
 build/
 *.egg-info/
+.kind/ollyscale-config
+.agent-memory.md
+FILTERING-IMPROVEMENT-PLAN.md
+apps/frontend/OTLP_SPECIFICATION_COMPLIANCE.md
+apps/frontend/app/storage/OTLP_FIELD_MAPPING.md

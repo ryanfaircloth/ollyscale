@@ -13,7 +13,7 @@ WORKDIR /app
 
 # Copy Poetry configuration and source files
 COPY pyproject.toml poetry.lock ./
-COPY agent.py ./
+COPY *.py ./
 
 # Install dependencies into project venv
 RUN poetry config virtualenvs.in-project true && poetry install --only=main && rm -rf $POETRY_CACHE_DIR
@@ -24,7 +24,7 @@ FROM python:3.14-slim as runtime
 # Copy virtual environment from builder stage
 ENV VIRTUAL_ENV=/app/.venv \
     PATH="/app/.venv/bin:$PATH"
-COPY --from=builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
+COPY --from=builder /app /app
 
 WORKDIR /app
 

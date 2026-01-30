@@ -99,10 +99,6 @@
                 <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></span>
                 <span class="nav-label">API</span>
             </a>
-            <button class="sidebar-footer-btn" onclick="window.toggleHideOllyScale()" id="hide-ollyscale-btn" title="Hide OllyScale's own telemetry">
-                <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></span>
-                <span class="nav-label" id="hide-ollyscale-text">Show Own</span>
-            </button>
         </div>
     </aside>
 
@@ -110,6 +106,9 @@
     <main class="main-content" id="main-content">
         <!-- Content Container -->
         <div class="content-wrapper">
+
+        <!-- Namespace Filter (common across all tabs) -->
+        <div id="namespace-filter-container"></div>
 
         <!-- Logs Tab -->
         <div id="logs-content" class="tab-content active">
@@ -225,7 +224,10 @@
                     <img src="/assets/logo.svg" alt="Loading..." style="height: 48px; width: 48px; animation: spin 1.5s linear infinite;">
                     <div style="margin-top: 12px;">Loading service map...</div>
                 </div>
-                <div id="service-details-panel" style="display: none; position: absolute; top: 10px; left: 10px; width: 250px; background: rgba(255, 255, 255, 0.95); padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 20; backdrop-filter: blur(4px);"></div>
+                <div id="service-details-panel" style="display: none; position: absolute; top: 10px; left: 10px; width: 250px; background: rgba(255, 255, 255, 0.95); padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 20; backdrop-filter: blur(4px);">
+                    <h3 id="details-title" style="margin: 0 0 12px 0; font-size: 14px; font-weight: 600; color: #1e293b;"></h3>
+                    <div id="details-content"></div>
+                </div>
             </div>
         </div>
 

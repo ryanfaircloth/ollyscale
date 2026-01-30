@@ -31,11 +31,17 @@ variable "custom_demo_backend_tag" {
 variable "ai_agent_image" {
   description = "AI agent demo image"
   type        = string
-  default     = "docker-registry.registry.svc.cluster.local:5000/ollyscale/ai-agent-demo"
+  default     = "docker-registry.registry.svc.cluster.local:5000/ollyscale/demo-otel-agent"
 }
 
 variable "ai_agent_tag" {
   description = "AI agent demo tag"
+  type        = string
+  default     = "latest"
+}
+
+variable "ai_agent_chart_tag" {
+  description = "AI agent demo chart tag"
   type        = string
   default     = "latest"
 }

@@ -15,8 +15,9 @@ locals {
   chart_registry = local.use_local_registry ? "docker-registry.registry.svc.cluster.local:5000/ollyscale/charts" : "oci://ghcr.io/ryanfaircloth/ollyscale/charts"
 
   # Image tags
-  ollyscale_tag  = var.ollyscale_tag
-  opamp_tag      = var.opamp_tag
-  demo_tag       = var.demo_tag
-  demo_agent_tag = var.demo_agent_tag
+  ollyscale_tag      = var.ollyscale_tag
+  opamp_tag          = var.opamp_tag
+  demo_tag           = var.demo_tag
+  demo_agent_tag     = var.demo_agent_tag
+  ai_agent_chart_tag = var.ai_agent_chart_tag
 }

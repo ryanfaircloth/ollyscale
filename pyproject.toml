@@ -112,14 +112,14 @@ known-first-party = ["ollyscale", "app", "common", "receiver"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-testpaths = ["apps/ollyscale/tests"]
+testpaths = ["apps/frontend/tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = "-v --tb=short"
 
 [tool.coverage.run]
-source = ["apps/ollyscale"]
+source = ["apps/frontend"]
 omit = [
     "*/tests/*",
     "*/test_*.py",

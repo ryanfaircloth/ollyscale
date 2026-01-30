@@ -25,7 +25,7 @@ spec:
       valuesObject:
         frontend:
           image:
-            repository: ${image_registry}/ollyscale
+            repository: ${image_registry}/frontend
             tag: ${ollyscale_tag}
 
           resources:
@@ -63,7 +63,7 @@ spec:
 
         otlpReceiver:
           image:
-            repository: ${image_registry}/ollyscale
+            repository: ${image_registry}/frontend
             tag: ${ollyscale_tag}
 
           resources:

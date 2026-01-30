@@ -63,7 +63,7 @@ OTel SDK → Collector (4317/4318) → OTLP Receiver (4343) → Redis (6379) ←
 
 ### Shared Code
 
-Shared utilities are in `apps/ollyscale/common/`:
+Shared utilities are in `apps/frontend/common/`:
 
 - **storage.py**: Redis operations with ZSTD compression, msgpack serialization
 - **otlp_utils.py**: Centralized OTLP attribute parsing (use `get_attr_value()`, `parse_attributes()`)
@@ -92,11 +92,11 @@ Shared utilities are in `apps/ollyscale/common/`:
 
 - **PRODUCER spans** (kind=4): Edge direction is `source → target` (normal)
 - **CONSUMER spans** (kind=5): Edge direction is **reversed** `target ← source` for messaging systems
-- See [storage.py](apps/ollyscale/common/storage.py) `build_service_graph()` for implementation
+- See [storage.py](apps/frontend/common/storage.py) `build_service_graph()` for implementation
 
 ### Code Organization
 
-**Backend (`apps/ollyscale/`)**:
+**Backend (`apps/frontend/`)**:
 
 - **Routers**: `app/routers/` (ingest, query, services, admin, system, opamp)
 - **Models**: `models.py` (Pydantic schemas)
@@ -270,7 +270,7 @@ export TF_VAR_bootstrap=false && terraform apply -auto-approve
 
 ### Testing
 
-- **Backend tests**: `apps/ollyscale/tests/`
+- **Backend tests**: `apps/frontend/tests/`
 - Use pytest with async support: `pytest-asyncio`
 - Test Redis operations with real Redis instance (not mocked)
 - Use fixtures from `conftest.py` for Redis setup
@@ -343,7 +343,7 @@ kubectl exec -n ollyscale deployment/ollyscale-redis -- redis-cli -p 6379 FLUSHD
 
 ollyScale uses **OpAMP** (OpenTelemetry Agent Management Protocol) for remote OTel Collector configuration:
 
-- Server: Go implementation at `docker/apps/ollyscale-opamp-server/main.go`
+- Server: Go implementation at `apps/opamp-server/main.go`
 - Validation: Uses `otelcol-contrib validate` binary in UI container
 - Templates: YAML configs in `otelcol-configs/` and `otelcol-templates/`
 - REST API: `/opamp/*` endpoints in `app/routers/opamp.py`

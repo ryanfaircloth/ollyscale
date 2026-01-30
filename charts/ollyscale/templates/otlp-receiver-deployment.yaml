@@ -48,12 +48,30 @@ spec:
           containerPort: {{ .Values.otlpReceiver.service.targetPort }}
           protocol: TCP
         env:
-        - name: REDIS_HOST
-          value: {{ .Values.redis.host | quote }}
-        - name: REDIS_PORT
-          value: {{ .Values.redis.port | quote }}
+        - name: MODE
+          value: "receiver"
+        - name: PORT
+          value: {{ .Values.otlpReceiver.service.targetPort | quote }}
+        - name: DATABASE_HOST
+          value: "{{ include "ollyscale.fullname" . }}-db-rw"
+        - name: DATABASE_PORT
+          value: "5432"
+        - name: DATABASE_NAME
+          value: "ollyscale"
+        - name: DATABASE_USER
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "ollyscale.fullname" . }}-db-app
+              key: username
+        - name: DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "ollyscale.fullname" . }}-db-app
+              key: password
         - name: OTEL_SERVICE_NAME
           value: "ollyscale-otlp-receiver"
+        - name: OTEL_PYTHON_DISABLED_INSTRUMENTATIONS
+          value: "psycopg2"
         {{- range .Values.otlpReceiver.env }}
         - name: {{ .name }}
           value: {{ .value | quote }}

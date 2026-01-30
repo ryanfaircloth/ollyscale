@@ -1,0 +1,123 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ollyscale.api.name" . }}
+  labels:
+    {{- include "ollyscale.api.labels" . | nindent 4 }}
+  {{- with .Values.commonAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.api.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "ollyscale.api.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        {{- if and .Values.instrumentation.enabled .Values.instrumentation.selfObservability }}
+        # Self-observability: ollyScale api instruments itself (demo mode)
+        instrumentation.opentelemetry.io/inject-python: "{{ .Release.Namespace }}/{{ .Values.instrumentation.name }}"
+        {{- end }}
+        {{- with .Values.api.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "ollyscale.api.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.image.pullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "ollyscale.api.serviceAccountName" . }}
+      {{- with .Values.api.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+      - name: ollyscale-api-backend
+        {{- with .Values.api.securityContext }}
+        securityContext:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        image: "{{ .Values.api.image.repository }}:{{ .Values.api.image.tag }}"
+        imagePullPolicy: {{ include "ollyscale.imagePullPolicy" (dict "component" .Values.api.image "global" .) }}
+        ports:
+        - name: http
+          containerPort: {{ .Values.api.service.targetPort }}
+          protocol: TCP
+        env:
+        - name: MODE
+          value: "api"
+        - name: PORT
+          value: {{ .Values.api.service.targetPort | quote }}
+        - name: REDIS_HOST
+          value: {{ .Values.redis.host | quote }}
+        - name: REDIS_PORT
+          value: {{ .Values.redis.port | quote }}
+        - name: DATABASE_HOST
+          value: "{{ include "ollyscale.fullname" . }}-db-rw"
+        - name: DATABASE_PORT
+          value: "5432"
+        - name: DATABASE_NAME
+          value: "ollyscale"
+        - name: DATABASE_USER
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "ollyscale.fullname" . }}-db-app
+              key: username
+        - name: DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "ollyscale.fullname" . }}-db-app
+              key: password
+        - name: OTEL_SERVICE_NAME
+          value: "ollyscale-api-backend"
+        - name: OPAMP_SERVER_URL
+          value: "http://{{ include "ollyscale.opampServer.name" . }}:{{ .Values.opampServer.service.httpPort }}"
+        {{- range .Values.api.env }}
+        - name: {{ .name }}
+          value: {{ .value | quote }}
+        {{- end }}
+        {{- range $key, $value := .Values.api.extraEnv }}
+        - name: {{ $key }}
+          value: {{ $value | quote }}
+        {{- end }}
+        volumeMounts:
+        - name: otelcol-templates-vol
+          mountPath: /app/otelcol-templates
+        {{- with .Values.api.volumeMounts }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.api.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with .Values.api.livenessProbe }}
+        livenessProbe:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with .Values.api.readinessProbe }}
+        readinessProbe:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+      volumes:
+      - name: otelcol-templates-vol
+        configMap:
+          name: {{ include "ollyscale.fullname" . }}-otelcol-templates
+      {{- with .Values.api.volumes }}
+        {{- toYaml . | nindent 6 }}
+      {{- end }}
+      {{- with .Values.api.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.api.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.api.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
