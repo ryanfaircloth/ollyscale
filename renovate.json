@@ -50,10 +50,10 @@
       "groupName": "opamp-server Go dependencies"
     },
     {
-      "description": "Group ollyscale-ui npm dependencies",
+      "description": "Group web-ui npm dependencies",
       "matchManagers": ["npm"],
-      "matchFileNames": ["apps/ollyscale-ui/**"],
-      "groupName": "ollyscale-ui npm dependencies"
+      "matchFileNames": ["apps/web-ui/**"],
+      "groupName": "web-ui npm dependencies"
     },
     {
       "description": "Group all Docker base images",

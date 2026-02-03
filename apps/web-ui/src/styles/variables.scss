@@ -1,0 +1,55 @@
+// Theme Variables
+// Primary colors
+$primary: #0d6efd;
+$secondary: #6c757d;
+$success: #198754;
+$danger: #dc3545;
+$warning: #ffc107;
+$info: #0dcaf0;
+
+// Dark theme
+$dark-bg: #1a1a1a;
+$dark-surface: #2d2d2d;
+$dark-border: #404040;
+$dark-text: #e0e0e0;
+
+// Light theme
+$light-bg: #ffffff;
+$light-surface: #f8f9fa;
+$light-border: #dee2e6;
+$light-text: #212529;
+
+// Trace status colors
+$status-ok: #10b981;
+$status-error: #ef4444;
+$status-unset: #6b7280;
+
+// Export as CSS variables for dynamic theming
+:root {
+  --bs-primary: #{$primary};
+  --bs-secondary: #{$secondary};
+  --bs-success: #{$success};
+  --bs-danger: #{$danger};
+  --bs-warning: #{$warning};
+  --bs-info: #{$info};
+
+  --status-ok: #{$status-ok};
+  --status-error: #{$status-error};
+  --status-unset: #{$status-unset};
+}
+
+// Light theme (default)
+[data-bs-theme="light"] {
+  --app-bg: #{$light-bg};
+  --app-surface: #{$light-surface};
+  --app-border: #{$light-border};
+  --app-text: #{$light-text};
+}
+
+// Dark theme
+[data-bs-theme="dark"] {
+  --app-bg: #{$dark-bg};
+  --app-surface: #{$dark-surface};
+  --app-border: #{$dark-border};
+  --app-text: #{$dark-text};
+}

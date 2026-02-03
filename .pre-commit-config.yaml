@@ -110,7 +110,7 @@ repos:
         entry: scripts/precommit-npm-check.sh
         language: script
         pass_filenames: false
-        files: ^apps/ollyscale-ui/(package\.json|package-lock\.json)$
+        files: ^apps/web-ui/(package\.json|package-lock\.json)$
 
   # Python uv dependency validation
   - repo: local

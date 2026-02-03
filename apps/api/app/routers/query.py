@@ -1,5 +1,7 @@
 """Query endpoints for traces, logs, and metrics."""
 
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.dependencies import get_storage
@@ -20,6 +22,7 @@ from app.models.api import (
 from app.storage import StorageBackend
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 @router.post("/traces/search", response_model=TraceSearchResponse)
@@ -95,6 +98,7 @@ def search_spans(request: SpanSearchRequest, storage: StorageBackend = Depends(g
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Failed to search spans: {e!s}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to search spans: {e!s}",

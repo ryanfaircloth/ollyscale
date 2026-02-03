@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ollyscale.webui.name" . }}
+  labels:
+    {{- include "ollyscale.webui.labels" . | nindent 4 }}
+  {{- with .Values.webui.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.webui.service.type }}
+  {{- if and (eq .Values.webui.service.type "NodePort") .Values.webui.service.nodePort }}
+  ports:
+  - port: {{ .Values.webui.service.port }}
+    targetPort: {{ .Values.webui.service.targetPort }}
+    protocol: TCP
+    name: http
+    nodePort: {{ .Values.webui.service.nodePort }}
+  {{- else }}
+  ports:
+  - port: {{ .Values.webui.service.port }}
+    targetPort: {{ .Values.webui.service.targetPort }}
+    protocol: TCP
+    name: http
+  {{- end }}
+  selector:
+    {{- include "ollyscale.webui.selectorLabels" . | nindent 4 }}

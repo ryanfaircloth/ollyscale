@@ -45,3 +45,13 @@ variable "ai_agent_chart_tag" {
   type        = string
   default     = "latest"
 }
+
+variable "ollyscale_demos_chart_tag" {
+  description = "ollyScale demos chart tag"
+  type        = string
+}
+
+variable "ollyscale_demos_image_tag" {
+  description = "ollyScale demos image tag"
+  type        = string
+}
