@@ -4,7 +4,10 @@ This document describes the Ollyscale data model for storing and querying OpenTe
 
 ## Overview
 
-The Ollyscale data model is inspired by the [OTEL Arrow Data Model](otel-arrow-data-model.md), which provides an efficient columnar representation optimized for compression and analytical queries. Our implementation adapts these concepts for PostgreSQL storage while maintaining compatibility with OTLP standards.
+The Ollyscale data model is inspired by the [OTEL Arrow Data Model](otel-arrow-data-model.md), which
+provides an efficient columnar representation optimized for compression and analytical queries. Our
+implementation adapts these concepts for PostgreSQL storage while maintaining compatibility with OTLP
+standards.
 
 ## Design Principles
 
@@ -570,11 +573,13 @@ The Ollyscale data model implements a **hybrid constellation schema** that combi
 - **Hierarchical relationships** (resource → scope → signal → detail)
 - **Type-specific attribute storage** for optimized queries and storage
 
-This architecture is more sophisticated than a traditional star schema, providing multi-level analytical capabilities while maintaining efficient storage and query performance.
+This architecture is more sophisticated than a traditional star schema, providing multi-level
+analytical capabilities while maintaining efficient storage and query performance.
 
 ### PostgreSQL Adaptation
 
-While the [OTEL Arrow Data Model](otel-arrow-data-model.md) uses Arrow/Parquet columnar formats, Ollyscale adapts these concepts for PostgreSQL:
+While the [OTEL Arrow Data Model](otel-arrow-data-model.md) uses Arrow/Parquet columnar formats,
+Ollyscale adapts these concepts for PostgreSQL:
 
 - **Table partitioning**: Time-based partitioning for efficient data lifecycle management
 - **Hybrid attribute storage**: Combination of typed tables and JSONB for flexibility
@@ -585,7 +590,8 @@ While the [OTEL Arrow Data Model](otel-arrow-data-model.md) uses Arrow/Parquet c
 
 #### The Challenge
 
-OpenTelemetry attributes can have high cardinality and variable types. Storing all attributes in a generic EAV (Entity-Attribute-Value) structure or JSONB leads to:
+OpenTelemetry attributes can have high cardinality and variable types. Storing all attributes in a
+generic EAV (Entity-Attribute-Value) structure or JSONB leads to:
 
 - Poor query performance on frequently-accessed attributes
 - Inefficient storage with many NULL columns
@@ -596,7 +602,7 @@ OpenTelemetry attributes can have high cardinality and variable types. Storing a
 
 Ollyscale uses a **hybrid approach** that optimizes for both common and rare attributes:
 
-**1. Well-Known Attribute Dimension Table**
+#### 1. Well-Known Attribute Dimension Table
 
 ```sql
 -- Registry of attribute keys with metadata
@@ -618,7 +624,7 @@ INSERT INTO attribute_keys (key, value_type, is_indexed, is_searchable) VALUES
   ('telemetry.sdk.version', 'string', false, false);
 ```
 
-**2. Type-Specific Attribute Tables**
+#### 2. Type-Specific Attribute Tables
 
 Instead of a single table with multiple optional columns, use separate tables per type:
 
@@ -666,7 +672,7 @@ CREATE TABLE resource_attrs_bytes (
 );
 ```
 
-**3. Catch-All for Rare Attributes**
+#### 3. Catch-All for Rare Attributes
 
 ```sql
 -- JSONB storage for attributes not in the registry
@@ -677,7 +683,7 @@ CREATE TABLE resource_attrs_other (
 CREATE INDEX idx_resource_attrs_other_gin ON resource_attrs_other USING GIN(attributes);
 ```
 
-**4. Unified View for Application Layer**
+#### 4. Unified View for Application Layer
 
 ```sql
 -- Unified view presenting all attributes together
@@ -806,7 +812,8 @@ $$;
 
 #### The Challenge
 
-Metric metadata (name, type, unit, aggregation_temporality, is_monotonic) has low cardinality but gets repeated for every data point batch. Additionally, the **description field is problematic**:
+Metric metadata (name, type, unit, aggregation_temporality, is_monotonic) has low cardinality but gets
+repeated for every data point batch. Additionally, the **description field is problematic**:
 
 - Multiple sources may use different wording for semantically identical descriptions
 - Different teams may provide conflicting descriptions for the same metric
@@ -962,13 +969,15 @@ This hybrid storage pattern applies to:
 - **Link attributes**: Span link metadata
 - **OTLP enum dimensions**: Span kinds, status codes, severity numbers, metric types, temporalities, body types
 
-Each attribute level can have its own set of promoted keys based on query patterns and cardinality. Enum dimensions provide explicit schema documentation and improved query readability.
+Each attribute level can have its own set of promoted keys based on query patterns and cardinality.
+Enum dimensions provide explicit schema documentation and improved query readability.
 
 ### OTLP Enum Dimension Tables
 
 #### The Challenge
 
-OTLP defines several enum types with fixed value sets (SpanKind, StatusCode, SeverityNumber, MetricType, etc.). Storing these as raw integers leads to:
+OTLP defines several enum types with fixed value sets (SpanKind, StatusCode, SeverityNumber,
+MetricType, etc.). Storing these as raw integers leads to:
 
 - Unclear schema (what do the magic numbers mean?)
 - Complex queries requiring CASE statements for human-readable output
@@ -1186,7 +1195,8 @@ This means:
 - Exemplars might be collected before their associated span is exported
 - Trace context is passed through systems but data arrives asynchronously
 
-**We cannot enforce foreign key constraints** on trace_id/span_id relationships because the referenced span might not exist yet.
+**We cannot enforce foreign key constraints** on trace_id/span_id relationships because the
+referenced span might not exist yet.
 
 #### Solution: Non-Enforced Logical Foreign Keys
 
@@ -1293,7 +1303,8 @@ WHERE e.span_id IS NOT NULL
   );
 ```
 
-These orphaned records are **expected** in distributed tracing (sampling, data retention policies, partial traces), but monitoring their count helps detect data pipeline issues.
+These orphaned records are **expected** in distributed tracing (sampling, data retention policies,
+partial traces), but monitoring their count helps detect data pipeline issues.
 
 ### Schema Evolution
 
