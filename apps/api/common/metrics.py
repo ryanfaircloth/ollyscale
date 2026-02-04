@@ -13,7 +13,7 @@ import logging
 from typing import Any
 
 from opentelemetry import metrics
-from opentelemetry.metrics import Counter, Histogram, ObservableGauge, UpDownCounter
+from opentelemetry.metrics import Counter, Histogram, ObservableGauge, Observation, UpDownCounter
 
 logger = logging.getLogger(__name__)
 
@@ -256,32 +256,32 @@ def register_partition_health_callbacks(callback_func: Any) -> None:
     """
     global partition_count_gauge, partition_size_gauge, oldest_partition_age_gauge
 
-    def partition_count_callback(_) -> None:
+    def partition_count_callback(_):
         """Callback to report partition count."""
         try:
             stats = callback_func()
-            return [(stats.get("partition_count", 0), {})]
+            yield Observation(value=stats.get("partition_count", 0))
         except Exception as e:
             logger.error("Error in partition count callback: %s", e)
-            return [(0, {})]
+            yield Observation(value=0)
 
-    def partition_size_callback(_) -> None:
+    def partition_size_callback(_):
         """Callback to report total partition size in bytes."""
         try:
             stats = callback_func()
-            return [(stats.get("total_size_bytes", 0), {})]
+            yield Observation(value=stats.get("total_size_bytes", 0))
         except Exception as e:
             logger.error("Error in partition size callback: %s", e)
-            return [(0, {})]
+            yield Observation(value=0)
 
-    def oldest_partition_age_callback(_) -> None:
+    def oldest_partition_age_callback(_):
         """Callback to report oldest partition age in days."""
         try:
             stats = callback_func()
-            return [(stats.get("oldest_partition_age_days", 0), {})]
+            yield Observation(value=stats.get("oldest_partition_age_days", 0))
         except Exception as e:
             logger.error("Error in oldest partition age callback: %s", e)
-            return [(0, {})]
+            yield Observation(value=0)
 
     partition_count_gauge = meter.create_observable_gauge(
         name="storage.partitions.count",

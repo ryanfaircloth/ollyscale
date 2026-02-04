@@ -5,7 +5,7 @@ set -e
 echo "Checking Poetry files..."
 
 # shellcheck disable=SC2043
-for dir in apps/frontend apps/demo apps/demo-otel-agent; do
+for dir in apps/api apps/demo apps/demo-otel-agent; do
     if [ -f "$dir/pyproject.toml" ]; then
         echo "Checking $dir..."
         cd "$dir" || exit 1

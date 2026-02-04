@@ -173,6 +173,56 @@ gatewayCollector:
             - batch
           exporters:
             - otlp/to
+browserCollector:
+  enabled: true
+  namespace: ollyscale
+  replicas: 1
+  podAnnotations: {}
+  resources:
+    limits:
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+  config:
+    receivers:
+      otlp:
+        protocols:
+          http:
+            endpoint: 0.0.0.0:4318
+            # No CORS configuration needed:
+            # - Production: Same-origin requests via HTTPRoute (no CORS)
+            # - Local dev: Browser sends to localhost:5002 API, not to K8s collector
+    processors:
+      batch:
+        timeout: 1s  # Shorter timeout for browser responsiveness
+        send_batch_size: 100
+      # Add resource attributes to identify browser traces
+      resource:
+        attributes:
+          - key: telemetry.source
+            value: browser
+            action: upsert
+    exporters:
+      loadbalancing/gateway:
+        resolver:
+          dns:
+            hostname: gateway-collector-headless.ollyscale.svc.cluster.local
+            port: '4317'
+        protocol:
+          otlp:
+            tls:
+              insecure: true
+    service:
+      pipelines:
+        traces:
+          receivers:
+            - otlp
+          processors:
+            - resource
+            - batch
+          exporters:
+            - loadbalancing/gateway
 instrumentation:
   enabled: true
   selfObservability: true
@@ -323,7 +373,7 @@ api:
 webui:
   replicaCount: 1
   image:
-    repository: ghcr.io/ryanfaircloth/ollyscale/ollyscale-ui
+    repository: ghcr.io/ryanfaircloth/ollyscale/web-ui
     tag: 0.1.10
     pullPolicy: ''
   serviceAccount:
@@ -343,8 +393,8 @@ webui:
     readOnlyRootFilesystem: false
   service:
     type: ClusterIP
-    port: 8000
-    targetPort: 8000
+    port: 8080
+    targetPort: 8080
     nodePort: null
     annotations: {}
   httpRoute:
@@ -365,16 +415,16 @@ webui:
       memory: 64Mi
   livenessProbe:
     httpGet:
-      path: /health
-      port: 8000
+      path: /
+      port: 8080
     initialDelaySeconds: 10
     periodSeconds: 10
     timeoutSeconds: 3
     failureThreshold: 3
   readinessProbe:
     httpGet:
-      path: /health
-      port: 8000
+      path: /
+      port: 8080
     initialDelaySeconds: 5
     periodSeconds: 5
     timeoutSeconds: 2
@@ -449,7 +499,7 @@ opampServer:
 otlpReceiver:
   replicaCount: 1
   image:
-    repository: ghcr.io/ryanfaircloth/ollyscale/ollyscale
+    repository: docker-registry.registry.svc.cluster.local:5000/ollyscale/api
     tag: 0.1.10
     pullPolicy: ''
   serviceAccount:

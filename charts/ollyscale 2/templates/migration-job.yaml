@@ -1,0 +1,65 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "ollyscale.fullname" . }}-migration-{{ printf "%s:%s" .Values.api.image.repository .Values.api.image.tag | sha256sum | trunc 8 }}
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "ollyscale.labels" . | nindent 4 }}
+    app.kubernetes.io/component: migration
+spec:
+  ttlSecondsAfterFinished: 300  # Clean up after 5 minutes
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        {{- include "ollyscale.labels" . | nindent 8 }}
+        app.kubernetes.io/component: migration
+    spec:
+      restartPolicy: Never
+      {{- with .Values.image.pullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "ollyscale.fullname" . }}-migration
+      containers:
+      - name: alembic-migration
+        image: "{{ .Values.api.image.repository }}:{{ .Values.api.image.tag }}"
+        imagePullPolicy: {{ include "ollyscale.imagePullPolicy" (dict "component" .Values.api.image "global" .) }}
+        command:
+          - /bin/sh
+          - -c
+          - |
+            set -e
+            echo "Starting database migration..."
+            cd /app
+            alembic upgrade head
+            echo "Migration completed successfully!"
+        env:
+        - name: DATABASE_HOST
+          value: "{{ include "ollyscale.fullname" . }}-db-rw"
+        - name: DATABASE_PORT
+          value: "5432"
+        - name: DATABASE_NAME
+          value: "ollyscale"
+        - name: DATABASE_USER
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "ollyscale.fullname" . }}-db-app
+              key: username
+        - name: DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "ollyscale.fullname" . }}-db-app
+              key: password
+        {{- if .Values.migration.resources }}
+        resources:
+          {{- toYaml .Values.migration.resources | nindent 10 }}
+        {{- end }}
+      {{- with .Values.migration.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.migration.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

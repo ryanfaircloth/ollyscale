@@ -1,0 +1,567 @@
+global:
+  namespace: ollyscale
+replicaCount: 1
+image:
+  pullPolicy: Always
+  pullSecrets: []
+commonLabels: {}
+commonAnnotations: {}
+redis:
+  host: ollyscale-redis
+  port: 6379
+otelCollector:
+  enabled: false
+  serviceName: gateway-collector
+  port: 4318
+agentCollector:
+  enabled: true
+  namespace: ollyscale
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+    processors:
+      batch:
+        timeout: 5s
+        send_batch_size: 256
+    exporters:
+      loadbalancing/gateway:
+        resolver:
+          dns:
+            hostname: gateway-collector-headless.ollyscale.svc.cluster.local
+            port: '4317'
+        protocol:
+          otlp:
+            tls:
+              insecure: true
+    service:
+      pipelines:
+        traces:
+          receivers:
+            - otlp
+          processors:
+            - batch
+          exporters:
+            - loadbalancing/gateway
+        metrics:
+          receivers:
+            - otlp
+          processors:
+            - batch
+          exporters:
+            - loadbalancing/gateway
+        logs:
+          receivers:
+            - otlp
+          processors:
+            - batch
+          exporters:
+            - loadbalancing/gateway
+gatewayCollector:
+  enabled: true
+  namespace: ollyscale
+  replicas: 1
+  podAnnotations: {}
+  resources:
+    limits:
+      memory: 1Gi
+    requests:
+      cpu: 200m
+      memory: 512Mi
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+    processors:
+      batch:
+        timeout: 5s
+        send_batch_size: 256
+      tail_sampling:
+        decision_wait: 10s
+        num_traces: 50000
+        expected_new_traces_per_sec: 100
+        policies:
+          # Sample 5% of successful receiver spans only
+          - name: sample-receiver-success
+            type: and
+            and:
+              and_sub_policy:
+                - name: receiver-service
+                  type: string_attribute
+                  string_attribute:
+                    key: service.name
+                    values:
+                      - ollyscale-otlp-receiver
+                - name: is-success
+                  type: status_code
+                  status_code:
+                    status_codes:
+                      - OK
+                      - UNSET
+                - name: probabilistic
+                  type: probabilistic
+                  probabilistic:
+                    sampling_percentage: 5
+          # Keep ALL other spans by default
+          - name: keep-all
+            type: always_sample
+    exporters:
+      otlp/to:
+        endpoint: ollyscale-otlp-receiver.ollyscale.svc.cluster.local:4343
+        tls:
+          insecure: true
+    service:
+      pipelines:
+        traces:
+          receivers:
+            - otlp
+          processors:
+            - tail_sampling
+            - batch
+          exporters:
+            - otlp/to
+        metrics:
+          receivers:
+            - otlp
+          processors:
+            - batch
+          exporters:
+            - otlp/to
+        logs:
+          receivers:
+            - otlp
+          processors:
+            - batch
+          exporters:
+            - otlp/to
+browserCollector:
+  enabled: true
+  namespace: ollyscale
+  replicas: 1
+  podAnnotations: {}
+  resources:
+    limits:
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+  config:
+    receivers:
+      otlp:
+        protocols:
+          http:
+            endpoint: 0.0.0.0:4318
+            # No CORS configuration needed:
+            # - Production: Same-origin requests via HTTPRoute (no CORS)
+            # - Local dev: Browser sends to localhost:5002 API, not to K8s collector
+    processors:
+      batch:
+        timeout: 1s  # Shorter timeout for browser responsiveness
+        send_batch_size: 100
+      # Add resource attributes to identify browser traces
+      resource:
+        attributes:
+          - key: telemetry.source
+            value: browser
+            action: upsert
+    exporters:
+      loadbalancing/gateway:
+        resolver:
+          dns:
+            hostname: gateway-collector-headless.ollyscale.svc.cluster.local
+            port: '4317'
+        protocol:
+          otlp:
+            tls:
+              insecure: true
+    service:
+      pipelines:
+        traces:
+          receivers:
+            - otlp
+          processors:
+            - resource
+            - batch
+          exporters:
+            - loadbalancing/gateway
+instrumentation:
+  enabled: true
+  selfObservability: true
+  name: python-instrumentation
+  exporter:
+    endpoint: http://agent-collector.ollyscale.svc.cluster.local:4318
+  propagators:
+    - tracecontext
+    - baggage
+  sampler:
+    type: always_on
+  resource:
+    addK8sUIDAttributes: true
+    attributes:
+      deployment.environment: development
+  python:
+    image:
+      repository: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python
+      tag: 0.60b0
+    env:
+      - name: OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED
+        value: 'true'
+      - name: OTEL_PYTHON_LOGGING_INJECTION_ENABLED
+        value: 'true'
+      - name: OTEL_PYTHON_LOG_LEVEL
+        value: INFO
+      - name: OTEL_PYTHON_LOG_CORRELATION
+        value: 'true'
+      - name: OTEL_INSTRUMENTATION_HTTP_CAPTURE_HEADERS_SERVER_REQUEST
+        value: content-.*,x-.*
+      - name: OTEL_INSTRUMENTATION_HTTP_CAPTURE_HEADERS_SERVER_RESPONSE
+        value: content-.*,x-.*
+      - name: OTEL_PYTHON_EXCLUDED_URLS
+        value: /health,/metrics,ready,PING
+      # SQLAlchemy instrumentation configuration - reduce trace noise
+      - name: OTEL_INSTRUMENTATION_SQLALCHEMY_ENABLE_COMMENTER
+        value: 'false'
+      - name: OTEL_PYTHON_SQLALCHEMY_INSTRUMENT_ALL_ENGINES
+        value: 'true'
+    resources:
+      limits:
+        cpu: 500m
+        memory: 256Mi
+      requests:
+        cpu: 50m
+        memory: 64Mi
+  go:
+    image:
+      repository: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-go
+      tag: v0.15.0-alpha
+    env:
+      - name: OTEL_GO_AUTO_TARGET_EXE
+        value: /app/ollyscale-opamp-server
+      - name: OTEL_SERVICE_NAME
+        value: ollyscale-opamp-server
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: http://agent-collector.ollyscale.svc.cluster.local:4318
+    resources:
+      limits:
+        cpu: 500m
+        memory: 256Mi
+      requests:
+        cpu: 50m
+        memory: 64Mi
+ebpfAgent:
+  enabled: false
+  namespace: ollyscale
+  image:
+    repository: docker.io/otel/ebpf-instrument
+    tag: v0.4.1
+    pullPolicy: Always
+  podAnnotations: {}
+  podSecurityContext:
+    hostPID: true
+  securityContext:
+    privileged: true
+    runAsUser: 0
+    readOnlyRootFilesystem: false
+  resources:
+    limits:
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+  config:
+    otlpEndpoint: http://gateway-collector.ollyscale.svc.cluster.local:4317
+    openPorts: '5000'
+    serviceName: ebpf-demo
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+api:
+  replicaCount: 1
+  image:
+    repository: docker-registry.registry.svc.cluster.local:5000/ollyscale/api
+    tag: 0.1.10
+    pullPolicy: ''
+  serviceAccount:
+    create: true
+    name: ''
+    annotations: {}
+  podAnnotations: {}
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: false
+  service:
+    type: ClusterIP
+    port: 8000
+    targetPort: 8000
+    nodePort: null
+    annotations: {}
+  httpRoute:
+    enabled: false
+  resources:
+    limits:
+      memory: 1Gi
+    requests:
+      cpu: 200m
+      memory: 256Mi
+  livenessProbe:
+    httpGet:
+      path: /health/
+      port: 8000
+    initialDelaySeconds: 45
+    periodSeconds: 10
+    timeoutSeconds: 10
+    failureThreshold: 3
+  readinessProbe:
+    httpGet:
+      path: /health/
+      port: 8000
+    initialDelaySeconds: 20
+    periodSeconds: 5
+    timeoutSeconds: 10
+    failureThreshold: 3
+  env:
+    - name: DEPLOYMENT_ENV
+      value: kubernetes
+    - name: OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED
+      value: 'true'
+webui:
+  replicaCount: 1
+  image:
+    repository: ghcr.io/ryanfaircloth/ollyscale/web-ui
+    tag: 0.1.0
+    pullPolicy: ''
+  serviceAccount:
+    create: true
+    name: ''
+    annotations: {}
+  podAnnotations: {}
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 101
+    fsGroup: 101
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: false
+  service:
+    type: ClusterIP
+    port: 8080
+    targetPort: 8080
+    nodePort: null
+    annotations: {}
+  httpRoute:
+    enabled: true
+    annotations: {}
+    parentRefs:
+      - name: management-gateway
+        namespace: envoy-gateway-system
+    hosts:
+      - host: ollyscale.local.gd
+        path: /
+        pathType: PathPrefix
+  resources:
+    limits:
+      memory: 256Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: 8080
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+  readinessProbe:
+    httpGet:
+      path: /health
+      port: 8080
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    timeoutSeconds: 2
+    failureThreshold: 3
+
+opampServer:
+  replicaCount: 1
+  image:
+    repository: ghcr.io/ryanfaircloth/ollyscale/opamp-server
+    tag: 0.1.10
+    pullPolicy: ''
+  serviceAccount:
+    create: true
+    name: ''
+    annotations: {}
+  podAnnotations: {}
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: false
+  service:
+    type: ClusterIP
+    websocketPort: 4320
+    httpPort: 4321
+    annotations: {}
+  resources:
+    limits: {}
+    requests:
+      cpu: 50m
+      memory: 128Mi
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: 4321
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  readinessProbe:
+    httpGet:
+      path: /health
+      port: 4321
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3
+  env:
+    - name: OPAMP_PORT
+      value: '4320'
+    - name: HTTP_PORT
+      value: '4321'
+    - name: COLLECTOR_CONFIG_PATH
+      value: /etc/otel-collector-config.yaml
+  extraEnv: {}
+  volumeMounts: []
+  volumes: []
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+otlpReceiver:
+  replicaCount: 1
+  image:
+    repository: ghcr.io/ryanfaircloth/ollyscale/ollyscale
+    tag: 0.1.10
+    pullPolicy: ''
+  serviceAccount:
+    create: true
+    name: ''
+    annotations: {}
+  podAnnotations: {}
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: false
+  service:
+    type: ClusterIP
+    port: 4343
+    targetPort: 4343
+    annotations: {}
+  resources:
+    limits:
+      memory: 512Mi
+    requests:
+      cpu: 200m
+      memory: 256Mi
+  livenessProbe:
+    tcpSocket:
+      port: 4343
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  readinessProbe:
+    tcpSocket:
+      port: 4343
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3
+  env:
+    - name: OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED
+      value: 'true'
+  extraEnv: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# Postgresql database for v2 API backend (required)
+postgresql:
+  teamId: ollyscale
+  numberOfInstances: 1
+  volume:
+    size: 10Gi
+    storageClass: ''
+  databases:
+    ollyscale: ollyscale
+  users:
+    ollyscale:
+      - superuser
+      - createdb
+  postgresql:
+    version: '17'
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+  patroni:
+    synchronous_mode: true
+    synchronous_mode_strict: false
+
+# Database migration job (runs Alembic before deployments)
+migration:
+  resources:
+    limits:
+      memory: 256Mi
+    requests:
+      cpu: 50m
+      memory: 128Mi
+  nodeSelector: {}
+  tolerations: []
+
+# Partition maintenance CronJob (creates future partitions, drops old ones)
+partitionMaintenance:
+  enabled: true
+  # Run at 2 AM every day
+  schedule: "0 2 * * *"
+  # Create partitions this many days ahead
+  daysAhead: 7
+  resources:
+    limits:
+      memory: 256Mi
+    requests:
+      cpu: 50m
+      memory: 128Mi
+  nodeSelector: {}
+  tolerations: []

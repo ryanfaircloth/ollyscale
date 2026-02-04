@@ -277,6 +277,13 @@ class ServiceMapNode(BaseModel):
     name: str
     type: str = Field(..., description="service, database, external, messaging")
     attributes: dict[str, Any] | None = None
+    # OTEL semantic convention attributes for accurate type detection
+    db_system: str | None = Field(
+        None, description="Database system from db.system attribute (postgresql, mysql, redis, mongodb, etc.)"
+    )
+    messaging_system: str | None = Field(
+        None, description="Messaging system from messaging.system attribute (rabbitmq, kafka, etc.)"
+    )
 
 
 class ServiceMapEdge(BaseModel):

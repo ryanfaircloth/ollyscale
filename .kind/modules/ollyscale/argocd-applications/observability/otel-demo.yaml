@@ -456,7 +456,7 @@ spec:
             - name: LOCUST_WEB_PORT
               value: "8089"
             - name: LOCUST_USERS
-              value: "10"
+              value: "3"  # Reduced from 10
             - name: LOCUST_SPAWN_RATE
               value: "1"
             - name: LOCUST_HOST
@@ -466,7 +466,7 @@ spec:
             - name: LOCUST_AUTOSTART
               value: "true"
             - name: LOCUST_BROWSER_TRAFFIC_ENABLED
-              value: "true"
+              value: "false"  # Disabled browser traffic
             - name: PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION
               value: python
             - name: FLAGD_HOST
@@ -477,7 +477,7 @@ spec:
               value: "8016"
           resources:
             limits:
-              memory: 1500Mi
+              memory: 300Mi  # Reduced from 1500Mi
 
         payment:
           enabled: true
@@ -728,14 +728,14 @@ spec:
               value: 1@kafka:9093
           resources:
             limits:
-              memory: 600Mi
+              memory: 300Mi
           securityContext:
             runAsUser: 1000 # appuser
             runAsGroup: 1000
             runAsNonRoot: true
 
         llm:
-          enabled: true
+          enabled: false  # Disabled to save memory
           useDefault:
             env: true
           service:

@@ -48,7 +48,17 @@ from sqlalchemy.dialects.postgresql import INTEGER, insert
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
-from app.models.api import LogRecord, Metric, Service, ServiceMapEdge, ServiceMapNode, Span, SpanAttribute
+from app.models.api import (
+    LogRecord,
+    Metric,
+    Service,
+    ServiceMapEdge,
+    ServiceMapNode,
+    Span,
+    SpanAttribute,
+    SpanEvent,
+    SpanLink,
+)
 from app.models.database import (
     LogsFact,
     MetricsFact,
@@ -60,6 +70,8 @@ from app.models.database import (
     TenantDim,
 )
 from common import metrics as storage_metrics
+
+logger = logging.getLogger(__name__)
 
 
 def _timestamp_to_rfc3339(ts: datetime, nanos_fraction: int = 0) -> str:
@@ -232,11 +244,12 @@ class PostgresStorage:
             with Session(self.engine) as session:
                 # Query partition information from pg_inherits and pg_class
                 # This gets child tables (partitions) of spans_fact, logs_fact, metrics_fact
+                # Note: relcreated doesn't exist in PostgreSQL, using pg_stat_user_tables instead
                 query = """
                 SELECT
-                    COUNT(*) as partition_count,
+                    COUNT(DISTINCT c.oid) as partition_count,
                     COALESCE(SUM(pg_total_relation_size(c.oid)), 0) as total_size_bytes,
-                    COALESCE(EXTRACT(EPOCH FROM (NOW() - MIN(c.relcreated))) / 86400, 0) as oldest_partition_age_days
+                    0 as oldest_partition_age_days
                 FROM pg_class c
                 JOIN pg_namespace n ON n.oid = c.relnamespace
                 WHERE c.relkind = 'r'
@@ -1902,6 +1915,60 @@ class PostgresStorage:
                     span.start_timestamp, span.start_nanos_fraction, span.end_timestamp, span.end_nanos_fraction
                 )
 
+                # Convert events from JSONB dict format to SpanEvent models
+                events_list = []
+                if span.events:
+                    for event_dict in span.events:
+                        # Convert event attributes (stored as list of dicts with key/value)
+                        event_attrs = []
+                        if event_dict.get("attributes"):
+                            attrs = event_dict["attributes"]
+                            if isinstance(attrs, list):
+                                # OTLP format: list of {key: "name", value: "val"}
+                                for attr in attrs:
+                                    event_attrs.append(
+                                        SpanAttribute(key=attr.get("key", ""), value=attr.get("value", ""))
+                                    )
+                            elif isinstance(attrs, dict):
+                                # Dict format: {key: value}
+                                for key, value in attrs.items():
+                                    event_attrs.append(SpanAttribute(key=key, value=value))
+
+                        events_list.append(
+                            SpanEvent(
+                                name=event_dict.get("name", ""),
+                                timestamp=event_dict.get("timestamp", ""),
+                                attributes=event_attrs if event_attrs else None,
+                            )
+                        )
+
+                # Convert links from JSONB dict format to SpanLink models
+                links_list = []
+                if span.links:
+                    for link_dict in span.links:
+                        # Convert link attributes (stored as list of dicts with key/value)
+                        link_attrs = []
+                        if link_dict.get("attributes"):
+                            attrs = link_dict["attributes"]
+                            if isinstance(attrs, list):
+                                # OTLP format: list of {key: "name", value: "val"}
+                                for attr in attrs:
+                                    link_attrs.append(
+                                        SpanAttribute(key=attr.get("key", ""), value=attr.get("value", ""))
+                                    )
+                            elif isinstance(attrs, dict):
+                                # Dict format: {key: value}
+                                for key, value in attrs.items():
+                                    link_attrs.append(SpanAttribute(key=key, value=value))
+
+                        links_list.append(
+                            SpanLink(
+                                trace_id=link_dict.get("trace_id", ""),
+                                span_id=link_dict.get("span_id", ""),
+                                attributes=link_attrs if link_attrs else None,
+                            )
+                        )
+
                 span_obj = Span(
                     trace_id=self._bytes_to_hex(span.trace_id),
                     span_id=self._bytes_to_hex(span.span_id),
@@ -1912,14 +1979,15 @@ class PostgresStorage:
                     end_time=end_time,
                     duration_seconds=duration_seconds,
                     attributes=attributes_list,
-                    events=span.events if span.events else [],
-                    links=span.links if span.links else [],
+                    events=events_list if events_list else None,
+                    links=links_list if links_list else None,
                     status={"code": span.status_code, "message": span.status_message}
                     if span.status_code is not None
                     else None,
                     resource=span.resource if span.resource else {},
                     service_name=service_name,
                     service_namespace=service_namespace,
+                    scope=span.scope if span.scope else None,
                 )
                 spans.append(span_obj)
 
@@ -2419,7 +2487,13 @@ class PostgresStorage:
     def get_service_map(self, time_range: Any | None = None, filters: list | None = None) -> tuple[list, list]:
         """Get service dependency map from spans using ORM.
 
-        Determines node types from span attributes:
+        Builds service map edges based on OpenTelemetry span kinds:
+        - CLIENT (3): Extract target from peer.service, server.address, or http.url → edge: client → target
+        - PRODUCER (4): Extract messaging.destination → edge: producer → queue/topic
+        - CONSUMER (5): Extract messaging.source → edge: queue/topic → consumer (reversed!)
+        - SERVER (2), INTERNAL (1), UNSPECIFIED (0): Use parent-child relationships
+
+        Node types determined from span attributes:
         - database: spans with db.system attribute
         - messaging: spans with messaging.system attribute
         - service: default for services
@@ -2517,6 +2591,9 @@ class PostgresStorage:
             for span_data in span_map.values():
                 service = str(span_data["service_name"])  # Ensure string
                 attributes = span_data["attributes"]
+                span_kind = span_data.get(
+                    "kind", 0
+                )  # 0=UNSPECIFIED, 1=INTERNAL, 2=SERVER, 3=CLIENT, 4=PRODUCER, 5=CONSUMER
 
                 # Calculate span duration in milliseconds
                 duration_ms = None
@@ -2530,53 +2607,131 @@ class PostgresStorage:
                 if service not in nodes_dict:
                     nodes_dict[service] = {"type": "service"}
 
-                # Check for database targets
-                db_system = extract_attr_value(attributes.get("db.system"))
-                if db_system:
-                    db_name = extract_attr_value(attributes.get("db.name"))
-                    # Only create database node if we have an explicit db.name
-                    # This filters out internal cache operations (redis without db.name)
-                    if db_name:
-                        db_name = str(db_name)  # Ensure string
-                        if db_name not in nodes_dict:
-                            nodes_dict[db_name] = {"type": "database"}
-                        edge_key = (service, db_name)
+                # Handle CLIENT spans (kind=3): outgoing calls from this service
+                # Create edges based on target extraction, not parent-child relationships
+                if span_kind == 3:  # CLIENT
+                    target_service = None
+
+                    # Check for database client calls
+                    db_system = extract_attr_value(attributes.get("db.system"))
+                    if db_system:
+                        db_name = extract_attr_value(attributes.get("db.name"))
+                        if db_name:
+                            target_service = str(db_name)
+                            if target_service not in nodes_dict:
+                                nodes_dict[target_service] = {"type": "database", "db_system": str(db_system)}
+
+                    # Check for HTTP client calls - extract target service from attributes
+                    if not target_service:
+                        # Try peer.service first (recommended OTel attribute for target service)
+                        peer_service = extract_attr_value(attributes.get("peer.service"))
+                        if peer_service:
+                            target_service = str(peer_service)
+                        else:
+                            # Try to extract from server.address or net.peer.name
+                            server_address = extract_attr_value(attributes.get("server.address")) or extract_attr_value(
+                                attributes.get("net.peer.name")
+                            )
+                            if server_address:
+                                # Use hostname as target service (strip port if present)
+                                target_service = str(server_address).split(":")[0]
+                            else:
+                                # Last resort: try to extract from http.url
+                                http_url = extract_attr_value(attributes.get("http.url")) or extract_attr_value(
+                                    attributes.get("url.full")
+                                )
+                                if http_url:
+                                    # Parse hostname from URL
+                                    try:
+                                        parsed = urlparse(str(http_url))
+                                        if parsed.hostname:
+                                            target_service = parsed.hostname
+                                    except Exception:
+                                        pass
+
+                    # Create edge from client to target
+                    if target_service:
+                        # Ensure target service node exists (if not already a database node)
+                        if target_service not in nodes_dict:
+                            nodes_dict[target_service] = {"type": "service"}
+
+                        edge_key = (service, target_service)
                         if edge_key not in edges_dict:
                             edges_dict[edge_key] = {"count": 0, "durations": []}
                         edges_dict[edge_key]["count"] += 1
                         if duration_ms:
                             edges_dict[edge_key]["durations"].append(duration_ms)
 
-                # Check for messaging targets
-                messaging_system = extract_attr_value(attributes.get("messaging.system"))
-                if messaging_system:
-                    dest = extract_attr_value(attributes.get("messaging.destination")) or messaging_system
-                    dest = str(dest)  # Ensure string
-                    if dest not in nodes_dict:
-                        nodes_dict[dest] = {"type": "messaging"}
-                    edge_key = (service, dest)
-                    if edge_key not in edges_dict:
-                        edges_dict[edge_key] = {"count": 0, "durations": []}
-                    edges_dict[edge_key]["count"] += 1
-                    if duration_ms:
-                        edges_dict[edge_key]["durations"].append(duration_ms)
+                # Handle PRODUCER spans (kind=4): sending messages to queue/topic
+                elif span_kind == 4:  # PRODUCER
+                    messaging_system = extract_attr_value(attributes.get("messaging.system"))
+                    if messaging_system:
+                        dest = extract_attr_value(attributes.get("messaging.destination.name")) or extract_attr_value(
+                            attributes.get("messaging.destination")
+                        )
+                        if dest:
+                            dest = str(dest)
+                            if dest not in nodes_dict:
+                                nodes_dict[dest] = {"type": "messaging", "messaging_system": str(messaging_system)}
+                            # Edge from producer to messaging destination
+                            edge_key = (service, dest)
+                            if edge_key not in edges_dict:
+                                edges_dict[edge_key] = {"count": 0, "durations": []}
+                            edges_dict[edge_key]["count"] += 1
+                            if duration_ms:
+                                edges_dict[edge_key]["durations"].append(duration_ms)
 
-                # Check for service-to-service edges (parent-child relationships)
-                parent_span_id = span_data["parent_span_id"]
-                if parent_span_id and parent_span_id in span_map:
-                    parent = span_map[parent_span_id]
-                    parent_service = str(parent["service_name"])  # Ensure string
-                    # Only create edge if different services
-                    if parent_service != service:
-                        edge_key = (parent_service, service)
-                        if edge_key not in edges_dict:
-                            edges_dict[edge_key] = {"count": 0, "durations": []}
-                        edges_dict[edge_key]["count"] += 1
-                        if duration_ms:
-                            edges_dict[edge_key]["durations"].append(duration_ms)
+                # Handle CONSUMER spans (kind=5): receiving messages from queue/topic
+                # NOTE: Edge direction is REVERSED - from messaging source to consumer
+                elif span_kind == 5:  # CONSUMER
+                    messaging_system = extract_attr_value(attributes.get("messaging.system"))
+                    if messaging_system:
+                        source = (
+                            extract_attr_value(attributes.get("messaging.source.name"))
+                            or extract_attr_value(attributes.get("messaging.destination.name"))
+                            or extract_attr_value(attributes.get("messaging.destination"))
+                        )
+                        if source:
+                            source = str(source)
+                            if source not in nodes_dict:
+                                nodes_dict[source] = {"type": "messaging", "messaging_system": str(messaging_system)}
+                            # Edge from messaging source to consumer (REVERSED)
+                            edge_key = (source, service)
+                            if edge_key not in edges_dict:
+                                edges_dict[edge_key] = {"count": 0, "durations": []}
+                            edges_dict[edge_key]["count"] += 1
+                            if duration_ms:
+                                edges_dict[edge_key]["durations"].append(duration_ms)
+
+                # Handle SERVER and INTERNAL spans (kind=2, 1, 0): use parent-child relationships
+                else:  # SERVER, INTERNAL, or UNSPECIFIED
+                    parent_span_id = span_data["parent_span_id"]
+                    if parent_span_id and parent_span_id in span_map:
+                        parent = span_map[parent_span_id]
+                        parent_service = str(parent["service_name"])
+                        parent_kind = parent.get("kind", 0)
+
+                        # Only create edge if different services
+                        # Skip if parent is CLIENT (CLIENT spans create their own edges)
+                        if parent_service != service and parent_kind != 3:
+                            edge_key = (parent_service, service)
+                            if edge_key not in edges_dict:
+                                edges_dict[edge_key] = {"count": 0, "durations": []}
+                            edges_dict[edge_key]["count"] += 1
+                            if duration_ms:
+                                edges_dict[edge_key]["durations"].append(duration_ms)
 
             # Convert to API models
-            nodes = [ServiceMapNode(id=name, name=name, type=data["type"]) for name, data in nodes_dict.items()]
+            nodes = [
+                ServiceMapNode(
+                    id=name,
+                    name=name,
+                    type=data["type"],
+                    db_system=data.get("db_system"),
+                    messaging_system=data.get("messaging_system"),
+                )
+                for name, data in nodes_dict.items()
+            ]
 
             edges = [
                 ServiceMapEdge(

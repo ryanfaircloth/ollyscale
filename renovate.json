@@ -28,13 +28,13 @@
     {
       "description": "Group Python packages by app",
       "matchManagers": ["pip_requirements"],
-      "matchFileNames": ["apps/ollyscale/**"],
-      "groupName": "ollyscale Python dependencies"
+      "matchFileNames": ["apps/api/**"],
+      "groupName": "api Python dependencies"
     },
     {
       "description": "Group demo app dependencies separately",
       "matchManagers": ["pip_requirements"],
-      "matchFileNames": ["apps/demo/**", "apps/ai-agent-demo/**"],
+      "matchFileNames": ["apps/demo/**", "apps/demo-otel-agent/**"],
       "groupName": "demo apps Python dependencies"
     },
     {
@@ -50,10 +50,10 @@
       "groupName": "opamp-server Go dependencies"
     },
     {
-      "description": "Group ollyscale-ui npm dependencies",
+      "description": "Group web-ui npm dependencies",
       "matchManagers": ["npm"],
-      "matchFileNames": ["apps/ollyscale-ui/**"],
-      "groupName": "ollyscale-ui npm dependencies"
+      "matchFileNames": ["apps/web-ui/**"],
+      "groupName": "web-ui npm dependencies"
     },
     {
       "description": "Group all Docker base images",
@@ -68,15 +68,15 @@
       "dependencyDashboardApproval": true
     },
     {
-      "description": "Pin Redis version (critical for data)",
-      "matchPackageNames": ["redis"],
+      "description": "Pin PostgreSQL version (critical for data)",
+      "matchPackageNames": ["postgres", "postgresql"],
       "matchDatasources": ["docker"],
       "enabled": false
     },
     {
       "description": "Auto-merge non-major Python packages in dev apps",
       "matchManagers": ["pip_requirements"],
-      "matchFileNames": ["apps/demo/**", "apps/ai-agent-demo/**"],
+      "matchFileNames": ["apps/demo/**", "apps/demo-otel-agent/**"],
       "matchUpdateTypes": ["patch", "minor"],
       "automerge": true,
       "automergeType": "pr"

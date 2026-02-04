@@ -79,3 +79,13 @@ variable "ollyscale_chart_tag" {
   description = "Version of the OllyScale Helm chart to deploy"
   type        = string
 }
+
+variable "ollyscale_demos_chart_tag" {
+  description = "Version of the OllyScale Demos Helm chart to deploy"
+  type        = string
+}
+
+variable "ollyscale_demos_image_tag" {
+  description = "Docker image tag for OllyScale demo applications"
+  type        = string
+}

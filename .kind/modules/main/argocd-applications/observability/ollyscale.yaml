@@ -23,9 +23,9 @@ spec:
     targetRevision: ${ollyscale_chart_tag}
     helm:
       valuesObject:
-        frontend:
+        api:
           image:
-            repository: ${image_registry}/frontend
+            repository: ${image_registry}/api
             tag: ${ollyscale_tag}
 
           resources:
@@ -36,7 +36,7 @@ spec:
 
         webui:
           image:
-            repository: ${image_registry}/ollyscale-ui
+            repository: ${image_registry}/web-ui
             tag: ${ollyscale_tag}
 
           resources:
@@ -63,7 +63,7 @@ spec:
 
         otlpReceiver:
           image:
-            repository: ${image_registry}/frontend
+            repository: ${image_registry}/api
             tag: ${ollyscale_tag}
 
           resources:

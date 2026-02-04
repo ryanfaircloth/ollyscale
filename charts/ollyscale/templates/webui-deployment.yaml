@@ -32,7 +32,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       containers:
-      - name: ollyscale-ui
+      - name: web-ui
         {{- with .Values.webui.securityContext }}
         securityContext:
           {{- toYaml . | nindent 10 }}
@@ -41,7 +41,7 @@ spec:
         imagePullPolicy: {{ include "ollyscale.imagePullPolicy" (dict "component" .Values.webui.image "global" .) }}
         ports:
         - name: http
-          containerPort: 8000
+          containerPort: 8080
           protocol: TCP
         env:
         {{- range .Values.webui.env }}

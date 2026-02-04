@@ -12,6 +12,7 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 # Copy dependency files and source code (needed for editable install)
 COPY pyproject.toml uv.lock* ./
 COPY app/ app/
+COPY common/ common/
 COPY receiver/ receiver/
 COPY main.py .
 
@@ -31,6 +32,7 @@ ENV PATH="/app/.venv/bin:$PATH"
 
 # Copy application code, receiver, and migrations
 COPY --chown=1000:1000 app/ app/
+COPY --chown=1000:1000 common/ common/
 COPY --chown=1000:1000 receiver/ receiver/
 COPY --chown=1000:1000 alembic/ alembic/
 COPY --chown=1000:1000 alembic.ini .

@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ollyscale.opampServer.name" . }}
+  labels:
+    {{- include "ollyscale.opampServer.labels" . | nindent 4 }}
+  {{- with .Values.opampServer.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.opampServer.service.type }}
+  ports:
+  - name: websocket
+    port: {{ .Values.opampServer.service.websocketPort }}
+    targetPort: {{ .Values.opampServer.service.websocketPort }}
+    protocol: TCP
+  - name: http
+    port: {{ .Values.opampServer.service.httpPort }}
+    targetPort: {{ .Values.opampServer.service.httpPort }}
+    protocol: TCP
+  selector:
+    {{- include "ollyscale.opampServer.selectorLabels" . | nindent 4 }}

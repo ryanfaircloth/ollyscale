@@ -26,10 +26,10 @@ fi
 case "$COMPONENT" in
     ollyscale)
         echo "Updating ollyscale image tag to $VERSION in charts/ollyscale/values.yaml"
-        yq eval ".frontend.image.tag = \"$VERSION\"" -i charts/ollyscale/values.yaml
+        yq eval ".api.image.tag = \"$VERSION\"" -i charts/ollyscale/values.yaml
         ;;
-    ollyscale-ui)
-        echo "Updating ollyscale-ui image tag to $VERSION in charts/ollyscale/values.yaml"
+    web-ui)
+        echo "Updating web-ui image tag to $VERSION in charts/ollyscale/values.yaml"
         yq eval ".webui.image.tag = \"$VERSION\"" -i charts/ollyscale/values.yaml
         ;;
     opamp-server)

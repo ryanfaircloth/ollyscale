@@ -1,0 +1,29 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: {{ include "ollyscale.fullname" . }}-browser
+  namespace: {{ .Values.browserCollector.namespace }}
+  labels:
+    {{- include "ollyscale.labels" . | nindent 4 }}
+    app.kubernetes.io/component: otel-browser
+  {{- with .Values.commonAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  mode: deployment
+  serviceAccount: gateway  # Reuse gateway service account
+  replicas: {{ .Values.browserCollector.replicas }}
+
+  {{- with .Values.browserCollector.resources }}
+  resources:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+
+  {{- with .Values.browserCollector.podAnnotations }}
+  podAnnotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+
+  config:
+    {{- toYaml .Values.browserCollector.config | nindent 4 }}

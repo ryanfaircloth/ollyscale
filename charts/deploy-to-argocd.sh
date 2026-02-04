@@ -82,7 +82,7 @@ if kubectl get application ollyscale -n argocd &>/dev/null; then
               },
               \"webui\": {
                 \"image\": {
-                  \"repository\": \"$INTERNAL_REGISTRY/ollyscale/ollyscale-ui\",
+                  \"repository\": \"$INTERNAL_REGISTRY/ollyscale/web-ui\",
                   \"tag\": \"$IMAGE_VERSION\"
                 }
               },
@@ -146,7 +146,7 @@ fi
 
 echo "📋 Image versions being deployed:"
 echo "  • Frontend (API):  $INTERNAL_REGISTRY/ollyscale/ollyscale:$IMAGE_VERSION"
-echo "  • WebUI (nginx):   $INTERNAL_REGISTRY/ollyscale/ollyscale-ui:$IMAGE_VERSION"
+echo "  • WebUI (nginx):   $INTERNAL_REGISTRY/ollyscale/web-ui:$IMAGE_VERSION"
 echo "  • OpAMP Server:    $INTERNAL_REGISTRY/ollyscale/opamp-server:$IMAGE_VERSION"
 echo "  • OTLP Receiver:   $INTERNAL_REGISTRY/ollyscale/ollyscale:$IMAGE_VERSION (MODE=receiver)"
 echo ""

@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ollyscale.opampServer.name" . }}
+  labels:
+    {{- include "ollyscale.opampServer.labels" . | nindent 4 }}
+  {{- with .Values.commonAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.opampServer.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "ollyscale.opampServer.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        {{- if .Values.instrumentation.enabled }}
+        instrumentation.opentelemetry.io/inject-go: "{{ .Release.Namespace }}/{{ .Values.instrumentation.name }}"
+        {{- end }}
+        {{- with .Values.opampServer.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "ollyscale.opampServer.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.image.pullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "ollyscale.opampServer.serviceAccountName" . }}
+      {{- with .Values.opampServer.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+      - name: ollyscale-opamp-server
+        {{- with .Values.opampServer.securityContext }}
+        securityContext:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        image: "{{ .Values.opampServer.image.repository }}:{{ .Values.opampServer.image.tag }}"
+        imagePullPolicy: {{ include "ollyscale.imagePullPolicy" (dict "component" .Values.opampServer.image "global" .) }}
+        ports:
+        - name: websocket
+          containerPort: {{ .Values.opampServer.service.websocketPort }}
+          protocol: TCP
+        - name: http
+          containerPort: {{ .Values.opampServer.service.httpPort }}
+          protocol: TCP
+        env:
+        - name: OTEL_SERVICE_NAME
+          value: "ollyscale-opamp-server"
+        {{- range .Values.opampServer.env }}
+        - name: {{ .name }}
+          value: {{ .value | quote }}
+        {{- end }}
+        {{- range $key, $value := .Values.opampServer.extraEnv }}
+        - name: {{ $key }}
+          value: {{ $value | quote }}
+        {{- end }}
+        {{- with .Values.opampServer.volumeMounts }}
+        volumeMounts:
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.opampServer.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with .Values.opampServer.livenessProbe }}
+        livenessProbe:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with .Values.opampServer.readinessProbe }}
+        readinessProbe:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+      {{- with .Values.opampServer.volumes }}
+      volumes:
+        {{- toYaml . | nindent 6 }}
+      {{- end }}
+      {{- with .Values.opampServer.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.opampServer.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.opampServer.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

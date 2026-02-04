@@ -10,10 +10,10 @@
       "release-type": "python",
       "package-name": "api"
     },
-    "apps/ollyscale-ui": {
-      "component": "ollyscale-ui",
+    "apps/web-ui": {
+      "component": "web-ui",
       "release-type": "node",
-      "package-name": "ollyscale-ui"
+      "package-name": "web-ui"
     },
     "apps/opamp-server": {
       "component": "opamp-server",
@@ -53,7 +53,7 @@
           "type": "yaml",
           "path": "values.yaml",
           "jsonpath": "$.webui.image.tag",
-          "component": "ollyscale-ui",
+          "component": "web-ui",
           "bumpDependents": true
         },
         {

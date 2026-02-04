@@ -1,18 +1,13 @@
-# To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
-# Please see the documentation for all configuration options:
-# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
-
 version: 2
 updates:
-  # Frontend API (Python)
+  # API Backend (Python with Poetry)
   - package-ecosystem: "pip"
-    directory: "/apps/frontend"
+    directory: "/apps/api"
     schedule:
       interval: "weekly"
     labels:
       - "dependencies"
-      - "frontend"
+      - "api"
 
   # OpAMP server (Go)
   - package-ecosystem: "gomod"
@@ -23,7 +18,7 @@ updates:
       - "dependencies"
       - "opamp-server"
 
-  # Demo app (Python)
+  # Demo app (Python with Poetry)
   - package-ecosystem: "pip"
     directory: "/apps/demo"
     schedule:
@@ -32,14 +27,23 @@ updates:
       - "dependencies"
       - "demo"
 
-  # AI Agent demo (Python)
+  # AI Agent demo (Python with Poetry)
   - package-ecosystem: "pip"
-    directory: "/apps/ai-agent-demo"
+    directory: "/apps/demo-otel-agent"
     schedule:
       interval: "weekly"
     labels:
       - "dependencies"
       - "ai-agent"
+
+  # Web UI (npm)
+  - package-ecosystem: "npm"
+    directory: "/apps/web-ui"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "web-ui"
 
   # Documentation (Python)
   - package-ecosystem: "pip"
@@ -59,15 +63,16 @@ updates:
       - "dependencies"
       - "github-actions"
 
-  # Docker base images
+  # Docker base images - API
   - package-ecosystem: "docker"
-    directory: "/apps/frontend"
+    directory: "/apps/api"
     schedule:
       interval: "weekly"
     labels:
       - "dependencies"
       - "docker"
 
+  # Docker base images - OpAMP server
   - package-ecosystem: "docker"
     directory: "/apps/opamp-server"
     schedule:
@@ -76,6 +81,7 @@ updates:
       - "dependencies"
       - "docker"
 
+  # Docker base images - Demo
   - package-ecosystem: "docker"
     directory: "/apps/demo"
     schedule:
@@ -84,8 +90,18 @@ updates:
       - "dependencies"
       - "docker"
 
+  # Docker base images - AI Agent
   - package-ecosystem: "docker"
     directory: "/apps/demo-otel-agent"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "docker"
+
+  # Docker base images - Web UI
+  - package-ecosystem: "docker"
+    directory: "/apps/web-ui"
     schedule:
       interval: "weekly"
     labels:

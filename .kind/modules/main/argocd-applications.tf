@@ -6,16 +6,18 @@ locals {
 
   # Common template variables passed to all applications
   template_vars = {
-    kafka_nodeport      = var.kafka_nodeport
-    https_nodeport      = var.https_nodeport
-    mgmt_https_nodeport = var.mgmt_https_nodeport
-    gateway_dns_suffix  = var.gateway_dns_suffix
-    use_local_registry  = var.use_local_registry
-    image_registry      = var.image_registry
-    chart_registry      = var.chart_registry
-    ollyscale_tag       = var.ollyscale_tag
-    opamp_tag           = var.opamp_tag
-    ollyscale_chart_tag = var.ollyscale_chart_tag
+    kafka_nodeport            = var.kafka_nodeport
+    https_nodeport            = var.https_nodeport
+    mgmt_https_nodeport       = var.mgmt_https_nodeport
+    gateway_dns_suffix        = var.gateway_dns_suffix
+    use_local_registry        = var.use_local_registry
+    image_registry            = var.image_registry
+    chart_registry            = var.chart_registry
+    ollyscale_tag             = var.ollyscale_tag
+    opamp_tag                 = var.opamp_tag
+    ollyscale_chart_tag       = var.ollyscale_chart_tag
+    ollyscale_demos_chart_tag = var.ollyscale_demos_chart_tag
+    ollyscale_demos_image_tag = var.ollyscale_demos_image_tag
   }
 }
 

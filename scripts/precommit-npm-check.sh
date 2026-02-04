@@ -6,7 +6,7 @@ set -e
 FAILED=0
 
 # shellcheck disable=SC2043  # Single directory is intentional
-for dir in apps/ollyscale-ui; do
+for dir in apps/web-ui; do
     if [ ! -f "$dir/package.json" ]; then
         continue
     fi

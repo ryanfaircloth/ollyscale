@@ -83,7 +83,7 @@ UI selector labels
 {{- define "ollyscale.ui.selectorLabels" -}}
 {{ include "ollyscale.selectorLabels" . }}
 app.kubernetes.io/component: ui
-app: ollyscale-ui
+app: web-ui
 {{- end }}
 
 {{/*

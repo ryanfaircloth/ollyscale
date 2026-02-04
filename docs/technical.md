@@ -11,7 +11,7 @@
 ## Data Storage
 
 - **Format**: Full OpenTelemetry (OTEL) format for traces, logs, and metrics
-- **Redis**: All telemetry stored with 30-minute TTL (compressed with ZSTD + msgpack)
+- **Postgress**: All telemetry stored
 - **Sorted Sets**: Time-series data indexed by timestamp
 - **Correlation**: Native trace-metric-log correlation via trace/span IDs
 - **Cardinality Protection**: Prevents metric explosion

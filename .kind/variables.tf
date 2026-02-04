@@ -89,3 +89,15 @@ variable "custom_demo_backend_tag" {
   type        = string
   default     = "latest"
 }
+
+variable "ollyscale_demos_chart_tag" {
+  description = "ollyscale-demos Helm chart version"
+  type        = string
+  default     = "latest"
+}
+
+variable "ollyscale_demos_image_tag" {
+  description = "ollyscale-demos image tag"
+  type        = string
+  default     = "latest"
+}

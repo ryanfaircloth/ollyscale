@@ -84,13 +84,13 @@ echo ""
 echo "Step 2/6: Building $IMAGE_ORG-ui (static web UI)"
 echo "-----------------------------------------------------------"
 $CONTAINER_CMD build \
-  -f apps/ollyscale-ui/Dockerfile \
-  -t $IMAGE_ORG/ollyscale-ui:latest \
-  -t $IMAGE_ORG/ollyscale-ui:$VERSION \
-  -t $EXTERNAL_REGISTRY/$IMAGE_ORG/ollyscale-ui:latest \
-  -t $EXTERNAL_REGISTRY/$IMAGE_ORG/ollyscale-ui:$VERSION \
-  apps/ollyscale-ui/
-echo "✓ $IMAGE_ORG-ui image built"
+  -f apps/web-ui/Dockerfile \
+  -t $IMAGE_ORG/web-ui:latest \
+  -t $IMAGE_ORG/web-ui:$VERSION \
+  -t $EXTERNAL_REGISTRY/$IMAGE_ORG/web-ui:latest \
+  -t $EXTERNAL_REGISTRY/$IMAGE_ORG/web-ui:$VERSION \
+  apps/web-ui/
+echo "✓ web-ui image built"
 echo ""
 
 echo "Step 3/6: Building OpAMP Server"
@@ -139,10 +139,10 @@ $CONTAINER_CMD push $PUSH_FLAGS $EXTERNAL_REGISTRY/$IMAGE_ORG/api:$VERSION
 echo "✓ API Backend pushed"
 echo ""
 
-echo "Pushing $IMAGE_ORG-ui..."
-$CONTAINER_CMD push $PUSH_FLAGS $EXTERNAL_REGISTRY/$IMAGE_ORG/ollyscale-ui:latest
-$CONTAINER_CMD push $PUSH_FLAGS $EXTERNAL_REGISTRY/$IMAGE_ORG/ollyscale-ui:$VERSION
-echo "✓ $IMAGE_ORG-ui pushed"
+echo "Pushing web-ui..."
+$CONTAINER_CMD push $PUSH_FLAGS $EXTERNAL_REGISTRY/$IMAGE_ORG/web-ui:latest
+$CONTAINER_CMD push $PUSH_FLAGS $EXTERNAL_REGISTRY/$IMAGE_ORG/web-ui:$VERSION
+echo "✓ web-ui pushed"
 echo ""
 
 echo "Pushing OpAMP Server..."
@@ -215,7 +215,7 @@ api:
 
 webui:
   image:
-    repository: $INTERNAL_REGISTRY/$IMAGE_ORG/ollyscale-ui
+    repository: $INTERNAL_REGISTRY/$IMAGE_ORG/web-ui
     tag: $VERSION
 
 opampServer:

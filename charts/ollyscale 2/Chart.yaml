@@ -1,0 +1,39 @@
+annotations:
+  artifacthub.io/changes: |
+    - kind: added
+      description: Initial Helm chart release
+    - kind: added
+      description: OpenTelemetry eBPF agent support for zero-code instrumentation
+  artifacthub.io/links: |
+    - name: Documentation
+      url: https://ollyscale.dev/docs
+    - name: GitHub
+      url: https://github.com/ryanfaircloth/ollyscale
+  org.opencontainers.image.description: Lightweight OpenTelemetry observability platform
+  org.opencontainers.image.documentation: https://ollyscale.dev/docs
+  org.opencontainers.image.licenses: AGPL-3.0
+  org.opencontainers.image.source: https://github.com/ryanfaircloth/ollyscale
+  org.opencontainers.image.title: OllyScale
+  org.opencontainers.image.vendor: Ryan Faircloth
+apiVersion: v2
+appVersion: v30.0.1
+description: Desktop-first OpenTelemetry observability platform for local development
+home: https://github.com/ryanfaircloth/ollyscale
+icon: https://ollyscale.dev/assets/logo.svg
+keywords:
+- observability
+- opentelemetry
+- tracing
+- metrics
+- logs
+- otlp
+- ebpf
+- zero-code-instrumentation
+maintainers:
+- email: ryan@faircloth.dev
+  name: Ryan Faircloth
+name: ollyscale
+sources:
+- https://github.com/ryanfaircloth/ollyscale
+type: application
+version: 0.1.10-0.0.1770151035
