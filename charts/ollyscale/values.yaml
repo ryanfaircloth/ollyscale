@@ -236,12 +236,13 @@ instrumentation:
     type: always_on
   resource:
     addK8sUIDAttributes: true
-    attributes:
-      deployment.environment: development
   python:
+<<<<<<< HEAD
     image:
       repository: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python
       tag: 0.60b1
+=======
+>>>>>>> ce51719 (refactor(charts): move app-specific OTel config to deployments)
     env:
       - name: OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED
         value: 'true'
@@ -255,35 +256,12 @@ instrumentation:
         value: content-.*,x-.*
       - name: OTEL_INSTRUMENTATION_HTTP_CAPTURE_HEADERS_SERVER_RESPONSE
         value: content-.*,x-.*
-      - name: OTEL_PYTHON_EXCLUDED_URLS
-        value: /health,/metrics,ready,PING
-      # SQLAlchemy instrumentation configuration - reduce trace noise
-      - name: OTEL_INSTRUMENTATION_SQLALCHEMY_ENABLE_COMMENTER
-        value: 'false'
-      - name: OTEL_PYTHON_SQLALCHEMY_INSTRUMENT_ALL_ENGINES
-        value: 'true'
     resources:
-      limits:
-        cpu: 500m
-        memory: 256Mi
       requests:
         cpu: 50m
         memory: 64Mi
   go:
-    image:
-      repository: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-go
-      tag: v0.15.0-alpha
-    env:
-      - name: OTEL_GO_AUTO_TARGET_EXE
-        value: /app/ollyscale-opamp-server
-      - name: OTEL_SERVICE_NAME
-        value: ollyscale-opamp-server
-      - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: http://agent-collector.ollyscale.svc.cluster.local:4318
     resources:
-      limits:
-        cpu: 500m
-        memory: 256Mi
       requests:
         cpu: 50m
         memory: 64Mi

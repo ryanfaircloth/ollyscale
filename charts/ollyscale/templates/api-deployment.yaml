@@ -74,6 +74,12 @@ spec:
               key: password
         - name: OTEL_SERVICE_NAME
           value: "ollyscale-api-backend"
+        - name: OTEL_PYTHON_EXCLUDED_URLS
+          value: "/health,/metrics,ready,PING"
+        - name: OTEL_PYTHON_SQLALCHEMY_INSTRUMENT_ALL_ENGINES
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_SQLALCHEMY_ENABLE_COMMENTER
+          value: "false"
         - name: OPAMP_SERVER_URL
           value: "http://{{ include "ollyscale.opampServer.name" . }}:{{ .Values.opampServer.service.httpPort }}"
         {{- range .Values.api.env }}

@@ -72,6 +72,12 @@ spec:
           value: "ollyscale-otlp-receiver"
         - name: OTEL_PYTHON_DISABLED_INSTRUMENTATIONS
           value: "psycopg2"
+        - name: OTEL_PYTHON_EXCLUDED_URLS
+          value: "/health,/metrics,ready,PING"
+        - name: OTEL_PYTHON_SQLALCHEMY_INSTRUMENT_ALL_ENGINES
+          value: "true"
+        - name: OTEL_INSTRUMENTATION_SQLALCHEMY_ENABLE_COMMENTER
+          value: "false"
         {{- range .Values.otlpReceiver.env }}
         - name: {{ .name }}
           value: {{ .value | quote }}
