@@ -10,7 +10,7 @@ MD013:
   heading_line_length: 120
   code_block_line_length: 120
   code_blocks: false
-  tables: true # Allow long lines in tables
+  tables: false # Allow long lines in tables (skip line length checks)
   headings: true
   strict: false
   stern: false

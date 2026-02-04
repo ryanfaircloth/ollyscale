@@ -237,12 +237,9 @@ instrumentation:
   resource:
     addK8sUIDAttributes: true
   python:
-<<<<<<< HEAD
     image:
       repository: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python
       tag: 0.60b1
-=======
->>>>>>> ce51719 (refactor(charts): move app-specific OTel config to deployments)
     env:
       - name: OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED
         value: 'true'
