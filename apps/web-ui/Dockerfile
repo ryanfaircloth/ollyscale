@@ -6,7 +6,7 @@
 # Multi-stage build: Node.js build + Alpine nginx runtime
 
 # Stage 1: Build frontend assets
-FROM node:24-alpine AS builder
+FROM node:25-alpine AS builder
 
 WORKDIR /build
 
