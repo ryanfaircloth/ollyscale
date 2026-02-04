@@ -27,14 +27,14 @@ spec:
       backendRefs:
       - name: {{ include "ollyscale.api.fullname" . }}
         port: {{ .Values.api.service.port }}
-    # OTLP ingest endpoints - route to api backend
+    # OTLP browser ingest endpoints (/v1/traces, /v1/logs, /v1/metrics) - route to browser-collector
     - matches:
       - path:
           type: PathPrefix
           value: /v1/
       backendRefs:
-      - name: {{ include "ollyscale.api.fullname" . }}
-        port: {{ .Values.api.service.port }}
+      - name: {{ include "ollyscale.fullname" . }}-browser-collector
+        port: 4318
     # OpenAPI docs - route to api backend
     - matches:
       - path:
