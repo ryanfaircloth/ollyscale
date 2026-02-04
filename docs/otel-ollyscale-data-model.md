@@ -46,6 +46,9 @@ erDiagram
     ATTRIBUTE_KEYS ||--o{ RESOURCE_ATTRS_BOOL : refs
     ATTRIBUTE_KEYS ||--o{ SCOPE_ATTRS_STRING : refs
     ATTRIBUTE_KEYS ||--o{ SCOPE_ATTRS_INT : refs
+    METRIC_TYPES ||--o{ METRICS_DIM : defines
+    AGGREGATION_TEMPORALITIES ||--o{ METRICS_DIM : defines
+    METRICS_DIM ||--o{ METRICS : defines
     METRICS ||--o{ RESOURCE_ATTRS_STRING : has
     METRICS ||--o{ RESOURCE_ATTRS_INT : has
     METRICS ||--o{ RESOURCE_ATTRS_DOUBLE : has
@@ -202,22 +205,35 @@ erDiagram
         dp_id u32 PK
         attributes jsonb
     }
+    METRIC_TYPES{
+        metric_type_id smallint PK
+        name string
+        description string
+    }
+    AGGREGATION_TEMPORALITIES{
+        temporality_id smallint PK
+        name string
+        description string
+    }
+    METRICS_DIM{
+        metric_id bigint PK
+        metric_hash varchar64
+        metric_identity_hash varchar64
+        name string
+        metric_type_id smallint FK
+        unit string
+        aggregation_temporality_id smallint FK
+        is_monotonic bool
+        description string
+        schema_url string
+        first_seen timestamptz
+        last_seen timestamptz
+    }
     METRICS{
         id u16
+        metric_id bigint FK
         resource_id u16 "optional"
-        resource_schema_url string "optional"
-        resource_dropped_attributes_count u32 "optional"
         scope_id u16 "optional"
-        scope_name string "optional"
-        scope_version string "optional"
-        scope_dropped_attributes_count u32 "optional"
-        schema_url string "optional"
-        metric_type u8
-        name string
-        description string "optional"
-        unit string "optional"
-        aggregation_temporality i32 "optional"
-        is_monotonic bool "optional"
     }
     HISTOGRAM_DP_ATTRS_STRING{
         dp_id u32 PK
@@ -287,6 +303,8 @@ erDiagram
     ATTRIBUTE_KEYS ||--o{ SCOPE_ATTRS_STRING : refs
     ATTRIBUTE_KEYS ||--o{ LOG_ATTRS_STRING : refs
     ATTRIBUTE_KEYS ||--o{ LOG_ATTRS_INT : refs
+    LOG_SEVERITY_NUMBERS ||--o{ LOGS : defines
+    LOG_BODY_TYPES ||--o{ LOGS : defines
     LOGS ||--o{ RESOURCE_ATTRS_STRING : has
     LOGS ||--o{ RESOURCE_ATTRS_INT : has
     LOGS ||--o{ RESOURCE_ATTRS_OTHER : has
@@ -347,6 +365,16 @@ erDiagram
         log_id bigint PK
         attributes jsonb
     }
+    LOG_SEVERITY_NUMBERS{
+        severity_number smallint PK
+        name string
+        description string
+        display_order smallint
+    }
+    LOG_BODY_TYPES{
+        body_type_id smallint PK
+        name string
+    }
     LOGS{
         id u16 "optional"
         resource_id u16 "optional"
@@ -361,9 +389,9 @@ erDiagram
         observed_time_unix_nano timestamp
         trace_id bytes[16] "optional"
         span_id bytes[8] "optional"
-        severity_number i32 "optional"
+        severity_number smallint FK "optional"
         severity_text string "optional"
-        body_type u8
+        body_type_id smallint FK
         body_str string
         body_int i64 "optional"
         body_double f64 "optional"
@@ -394,6 +422,8 @@ erDiagram
     ATTRIBUTE_KEYS ||--o{ SPAN_ATTRS_INT : refs
     ATTRIBUTE_KEYS ||--o{ SPAN_EVENT_ATTRS_STRING : refs
     ATTRIBUTE_KEYS ||--o{ SPAN_LINK_ATTRS_STRING : refs
+    SPAN_KINDS ||--o{ SPANS : defines
+    STATUS_CODES ||--o{ SPANS : defines
     SPANS ||--o{ RESOURCE_ATTRS_STRING : has
     SPANS ||--o{ RESOURCE_ATTRS_INT : has
     SPANS ||--o{ RESOURCE_ATTRS_OTHER : has
@@ -478,6 +508,16 @@ erDiagram
         link_id bigint PK
         attributes jsonb
     }
+    SPAN_KINDS{
+        kind_id smallint PK
+        name string
+        description string
+    }
+    STATUS_CODES{
+        status_code_id smallint PK
+        name string
+        description string
+    }
     SPANS{
         id u16 "optional"
         resource_id u16 "optional"
@@ -495,12 +535,12 @@ erDiagram
         trace_state string "optional"
         parent_span_id bytes[8] "optional"
         name string
-        kind i32 "optional"
+        kind_id smallint FK "optional"
         dropped_attributes_count u32 "optional"
         dropped_events_count u32 "optional"
         dropped_links_count u32 "optional"
-        status_code i32 "optional"
-        status_status_message string "optional"
+        status_code_id smallint FK "optional"
+        status_message string "optional"
     }
     SPAN_EVENTS{
         id u32 "optional"
@@ -762,19 +802,498 @@ END;
 $$;
 ```
 
+### Metric Dimension Deduplication
+
+#### The Challenge
+
+Metric metadata (name, type, unit, aggregation_temporality, is_monotonic) has low cardinality but gets repeated for every data point batch. Additionally, the **description field is problematic**:
+
+- Multiple sources may use different wording for semantically identical descriptions
+- Different teams may provide conflicting descriptions for the same metric
+- Rarely, the same metric name might represent truly different metrics with different descriptions
+
+#### Solution: Metric Dimension with Description Variants
+
+```sql
+CREATE TABLE metrics_dim (
+  metric_id BIGSERIAL PRIMARY KEY,
+
+  -- Full hash including description (allows multiple rows per metric identity)
+  metric_hash VARCHAR(64) NOT NULL UNIQUE,
+
+  -- Identity hash excluding description (groups variants together)
+  metric_identity_hash VARCHAR(64) NOT NULL,
+
+  -- Metric identification (stable across description changes)
+  name TEXT NOT NULL,
+  metric_type_id SMALLINT NOT NULL REFERENCES metric_types(metric_type_id),
+  unit TEXT,
+  aggregation_temporality_id SMALLINT REFERENCES aggregation_temporalities(temporality_id),
+  is_monotonic BOOLEAN,
+
+  -- Description can vary for same metric identity
+  description TEXT,
+
+  -- Temporal tracking
+  first_seen TIMESTAMPTZ DEFAULT NOW(),
+  last_seen TIMESTAMPTZ DEFAULT NOW(),
+
+  -- Schema versioning
+  schema_url TEXT
+);
+
+-- Index for metric identity lookups (groups all description variants)
+CREATE INDEX idx_metrics_dim_identity ON metrics_dim(metric_identity_hash);
+CREATE INDEX idx_metrics_dim_name ON metrics_dim(name);
+```
+
+#### Upsert Logic: Allow Multiple Descriptions
+
+```python
+def get_or_create_metric(name, type_id, unit, agg_temp_id, is_monotonic, description, schema_url):
+    # Hash 1: Identity (without description) - for grouping variants
+    metric_identity_hash = compute_hash({
+        'name': name,
+        'type_id': type_id,
+        'unit': unit,
+        'aggregation_temporality_id': agg_temp_id,
+        'is_monotonic': is_monotonic
+    })
+
+    # Hash 2: Full hash (with description) - unique per variant
+    metric_hash = compute_hash({
+        'name': name,
+        'type_id': type_id,
+        'unit': unit,
+        'aggregation_temporality_id': agg_temp_id,
+        'is_monotonic': is_monotonic,
+        'description': description or ''  # Include description in hash
+    })
+
+    with db.cursor() as cur:
+        cur.execute("""
+            INSERT INTO metrics_dim (
+                metric_hash, metric_identity_hash,
+                name, metric_type_id, unit,
+                aggregation_temporality_id, is_monotonic,
+                description, schema_url,
+                first_seen, last_seen
+            )
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
+            ON CONFLICT (metric_hash) DO UPDATE SET
+                last_seen = NOW(),
+                schema_url = COALESCE(EXCLUDED.schema_url, metrics_dim.schema_url)
+            RETURNING metric_id
+        """, (
+            metric_hash, metric_identity_hash,
+            name, type_id, unit, agg_temp_id, is_monotonic,
+            description, schema_url
+        ))
+
+        metric_id = cur.fetchone()[0]
+        return metric_id
+```
+
+#### Benefits
+
+1. **Storage Efficiency**: Metric metadata stored once per unique variant instead of per data point
+2. **Description Preservation**: All description variants are preserved for future analysis
+3. **Metric Catalog**: Easy to query "what metrics exist" and see all description variants
+4. **Alias Management Ready**: Can later build views/procedures to merge semantically equivalent descriptions
+5. **Temporal Tracking**: Know when each metric variant first/last appeared
+
+#### Future: Metric Alias Management
+
+To handle description variants, a future enhancement could add:
+
+```sql
+-- Table to map metric variants to canonical metric
+CREATE TABLE metric_aliases (
+  canonical_metric_id BIGINT REFERENCES metrics_dim(metric_id),
+  alias_metric_id BIGINT REFERENCES metrics_dim(metric_id),
+  reason TEXT,  -- 'same_meaning', 'typo_fix', 'translation', etc.
+  created_by TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  PRIMARY KEY (canonical_metric_id, alias_metric_id)
+);
+
+-- View that resolves aliases
+CREATE VIEW metrics_dim_resolved AS
+SELECT
+  COALESCE(ma.canonical_metric_id, md.metric_id) as resolved_metric_id,
+  md.*
+FROM metrics_dim md
+LEFT JOIN metric_aliases ma ON md.metric_id = ma.alias_metric_id;
+```
+
+#### Example: Finding Description Variants
+
+```sql
+-- Find all description variants for a metric identity
+SELECT
+  metric_id,
+  name,
+  description,
+  first_seen,
+  last_seen,
+  COUNT(*) OVER (PARTITION BY metric_identity_hash) as variant_count
+FROM metrics_dim
+WHERE name = 'http.server.request.duration'
+ORDER BY first_seen;
+
+-- Result:
+-- metric_id | name                          | description                           | variant_count
+-- 101       | http.server.request.duration  | Duration of HTTP requests             | 3
+-- 102       | http.server.request.duration  | Duration of HTTP server requests      | 3  
+-- 103       | http.server.request.duration  | Time taken to process HTTP requests   | 3
+```
+
 ### Schema Pattern Application
 
 This hybrid storage pattern applies to:
 
 - **Resource attributes**: Service identity, deployment context
 - **Scope attributes**: Instrumentation library metadata  
-- **Metric attributes**: Metric-specific dimensions
+- **Metric dimension**: Metric metadata with description variants (new)
+- **Metric attributes**: Metric-specific dimensions (data point level)
 - **Log attributes**: Log-specific context
 - **Span attributes**: Request/operation metadata
 - **Event attributes**: Span event details
 - **Link attributes**: Span link metadata
+- **OTLP enum dimensions**: Span kinds, status codes, severity numbers, metric types, temporalities, body types
 
-Each attribute level can have its own set of promoted keys based on query patterns and cardinality.
+Each attribute level can have its own set of promoted keys based on query patterns and cardinality. Enum dimensions provide explicit schema documentation and improved query readability.
+
+### OTLP Enum Dimension Tables
+
+#### The Challenge
+
+OTLP defines several enum types with fixed value sets (SpanKind, StatusCode, SeverityNumber, MetricType, etc.). Storing these as raw integers leads to:
+
+- Unclear schema (what do the magic numbers mean?)
+- Complex queries requiring CASE statements for human-readable output
+- No constraint enforcement on valid values
+- Difficult to extend with metadata (descriptions, display order)
+
+#### Solution: Seeded Dimension Tables
+
+Create small dimension tables for each enum type, pre-populated with OTLP specification values:
+
+```sql
+-- Span kinds (OTLP specification)
+CREATE TABLE span_kinds (
+  kind_id SMALLINT PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE,
+  description TEXT
+);
+
+INSERT INTO span_kinds (kind_id, name, description) VALUES
+  (0, 'UNSPECIFIED', 'Unspecified span kind'),
+  (1, 'INTERNAL', 'Internal operation within an application'),
+  (2, 'SERVER', 'Server-side handling of synchronous RPC or HTTP request'),
+  (3, 'CLIENT', 'Client-side call to remote service'),
+  (4, 'PRODUCER', 'Parent of asynchronous message sent to broker'),
+  (5, 'CONSUMER', 'Child of asynchronous message received from broker');
+
+-- Status codes (OTLP specification)
+CREATE TABLE status_codes (
+  status_code_id SMALLINT PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE,
+  description TEXT
+);
+
+INSERT INTO status_codes (status_code_id, name, description) VALUES
+  (0, 'UNSET', 'The default status'),
+  (1, 'OK', 'The operation completed successfully'),
+  (2, 'ERROR', 'The operation contains an error');
+
+-- Log severity numbers (OTLP specification)
+CREATE TABLE log_severity_numbers (
+  severity_number SMALLINT PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE,
+  description TEXT,
+  display_order SMALLINT
+);
+
+INSERT INTO log_severity_numbers (severity_number, name, description, display_order) VALUES
+  (0, 'UNSPECIFIED', 'Unspecified severity', 0),
+  (1, 'TRACE', 'Trace level', 1),
+  (2, 'TRACE2', 'Trace level 2', 2),
+  (3, 'TRACE3', 'Trace level 3', 3),
+  (4, 'TRACE4', 'Trace level 4', 4),
+  (5, 'DEBUG', 'Debug level', 5),
+  (6, 'DEBUG2', 'Debug level 2', 6),
+  (7, 'DEBUG3', 'Debug level 3', 7),
+  (8, 'DEBUG4', 'Debug level 4', 8),
+  (9, 'INFO', 'Informational', 9),
+  (10, 'INFO2', 'Informational 2', 10),
+  (11, 'INFO3', 'Informational 3', 11),
+  (12, 'INFO4', 'Informational 4', 12),
+  (13, 'WARN', 'Warning', 13),
+  (14, 'WARN2', 'Warning 2', 14),
+  (15, 'WARN3', 'Warning 3', 15),
+  (16, 'WARN4', 'Warning 4', 16),
+  (17, 'ERROR', 'Error', 17),
+  (18, 'ERROR2', 'Error 2', 18),
+  (19, 'ERROR3', 'Error 3', 19),
+  (20, 'ERROR4', 'Error 4', 20),
+  (21, 'FATAL', 'Fatal', 21),
+  (22, 'FATAL2', 'Fatal 2', 22),
+  (23, 'FATAL3', 'Fatal 3', 23),
+  (24, 'FATAL4', 'Fatal 4', 24);
+
+-- Metric types (OTLP specification)
+CREATE TABLE metric_types (
+  metric_type_id SMALLINT PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE,
+  description TEXT
+);
+
+INSERT INTO metric_types (metric_type_id, name, description) VALUES
+  (1, 'GAUGE', 'Gauge metric - instantaneous measurement'),
+  (2, 'SUM', 'Sum metric - cumulative or delta aggregation'),
+  (3, 'HISTOGRAM', 'Histogram - distribution with fixed buckets'),
+  (4, 'EXPONENTIAL_HISTOGRAM', 'Exponential histogram - distribution with exponential buckets'),
+  (5, 'SUMMARY', 'Summary - quantiles over sliding time window');
+
+-- Aggregation temporality (OTLP specification)
+CREATE TABLE aggregation_temporalities (
+  temporality_id SMALLINT PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE,
+  description TEXT
+);
+
+INSERT INTO aggregation_temporalities (temporality_id, name, description) VALUES
+  (0, 'UNSPECIFIED', 'Unspecified temporality'),
+  (1, 'DELTA', 'Delta aggregation - value since last export'),
+  (2, 'CUMULATIVE', 'Cumulative aggregation - value since start');
+
+-- Body types for logs (OTLP specification)
+CREATE TABLE log_body_types (
+  body_type_id SMALLINT PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE
+);
+
+INSERT INTO log_body_types (body_type_id, name) VALUES
+  (0, 'EMPTY'),
+  (1, 'STRING'),
+  (2, 'INT'),
+  (3, 'DOUBLE'),
+  (4, 'BOOL'),
+  (5, 'BYTES'),
+  (6, 'ARRAY'),
+  (7, 'KVLIST');
+```
+
+#### Updated Schema References
+
+```sql
+-- Spans table with FK to span_kinds
+CREATE TABLE spans_fact (
+  span_id BIGSERIAL PRIMARY KEY,
+  trace_id VARCHAR(32) NOT NULL,
+  -- ...
+  kind_id SMALLINT REFERENCES span_kinds(kind_id),
+  status_code_id SMALLINT REFERENCES status_codes(status_code_id),
+  -- ...
+);
+
+-- Logs table with FK to severity and body type
+CREATE TABLE logs_fact (
+  log_id BIGSERIAL PRIMARY KEY,
+  -- ...
+  severity_number SMALLINT REFERENCES log_severity_numbers(severity_number),
+  body_type_id SMALLINT REFERENCES log_body_types(body_type_id),
+  -- ...
+);
+
+-- Metrics dimension with FK to metric_type and temporality
+CREATE TABLE metrics_dim (
+  metric_id BIGSERIAL PRIMARY KEY,
+  -- ...
+  metric_type_id SMALLINT REFERENCES metric_types(metric_type_id),
+  aggregation_temporality_id SMALLINT REFERENCES aggregation_temporalities(temporality_id),
+  -- ...
+);
+```
+
+#### Benefits
+
+1. **Self-Documenting Schema**: `SELECT * FROM span_kinds` shows all valid values
+2. **Readable Queries**:
+
+   ```sql
+   SELECT s.name, sk.name as kind
+   FROM spans_fact s
+   JOIN span_kinds sk ON s.kind_id = sk.kind_id
+   WHERE sk.name = 'SERVER';
+   ```
+
+3. **Type Safety**: Foreign key constraint prevents invalid enum values
+4. **Query Optimizer**: Knows exact cardinality (6 span kinds, 3 status codes, etc.)
+5. **Extensibility**: Easy to add descriptions, display order, or other metadata
+6. **OTLP Compliance**: Values match specification exactly, can be updated if spec changes
+
+#### Query Examples
+
+```sql
+-- Top operations by span kind
+SELECT
+  sk.name as span_kind,
+  s.name as operation,
+  COUNT(*) as span_count
+FROM spans_fact s
+JOIN span_kinds sk ON s.kind_id = sk.kind_id
+WHERE s.start_timestamp > NOW() - INTERVAL '1 hour'
+GROUP BY sk.name, s.name
+ORDER BY span_count DESC;
+
+-- Error rate by status
+SELECT
+  sc.name as status,
+  COUNT(*) as count,
+  COUNT(*) * 100.0 / SUM(COUNT(*)) OVER () as percentage
+FROM spans_fact s
+JOIN status_codes sc ON s.status_code_id = sc.status_code_id
+GROUP BY sc.name;
+
+-- Log distribution by severity
+SELECT
+  lsn.name as severity,
+  lsn.display_order,
+  COUNT(*) as log_count
+FROM logs_fact l
+JOIN log_severity_numbers lsn ON l.severity_number = lsn.severity_number
+WHERE l.time_timestamp > NOW() - INTERVAL '1 day'
+GROUP BY lsn.name, lsn.display_order
+ORDER BY lsn.display_order DESC;
+```
+
+### Trace Correlation and Logical Foreign Keys
+
+#### The Challenge
+
+OpenTelemetry signals (logs, metrics, spans) can arrive **out of order** due to:
+
+- Network delays and retries
+- Different collection pipelines
+- Sampling decisions made at different stages
+- Asynchronous processing in collectors
+
+This means:
+
+- Logs referencing span_id might arrive before the span itself
+- Exemplars might be collected before their associated span is exported
+- Trace context is passed through systems but data arrives asynchronously
+
+**We cannot enforce foreign key constraints** on trace_id/span_id relationships because the referenced span might not exist yet.
+
+#### Solution: Non-Enforced Logical Foreign Keys
+
+PostgreSQL allows defining foreign keys with `NOT VALID` which documents the relationship without enforcement:
+
+```sql
+-- Logs reference spans for trace correlation
+CREATE TABLE logs_fact (
+  log_id BIGSERIAL PRIMARY KEY,
+  trace_id VARCHAR(32),
+  span_id VARCHAR(16),
+  -- ... other fields ...
+
+  -- Logical FK: documents relationship, doesn't enforce
+  CONSTRAINT fk_logs_span FOREIGN KEY (trace_id, span_id)
+    REFERENCES spans_fact(trace_id, span_id) NOT VALID
+);
+
+-- Exemplars reference spans for detailed trace correlation
+CREATE TABLE histogram_dp_exemplars (
+  exemplar_id BIGSERIAL PRIMARY KEY,
+  trace_id VARCHAR(32),
+  span_id VARCHAR(16),
+  -- ... other fields ...
+
+  -- Logical FK for query optimizer hints
+  CONSTRAINT fk_exemplar_span FOREIGN KEY (trace_id, span_id)
+    REFERENCES spans_fact(trace_id, span_id) NOT VALID
+);
+```
+
+#### Benefits of NOT VALID Foreign Keys
+
+1. **Query Optimizer Hints**: PostgreSQL's planner can use FK metadata for join optimization
+2. **Documentation**: Schema clearly shows trace correlation relationships
+3. **No Enforcement Overhead**: INSERT/UPDATE operations don't validate the constraint
+4. **Metadata Tools**: ORMs and schema documentation tools can visualize relationships
+5. **Future Validation**: Can run periodic jobs to find orphaned records
+
+#### Trace Correlation Relationships
+
+The following logical relationships exist in the schema:
+
+```sql
+-- Logs → Spans (trace correlation)
+logs_fact.trace_id, logs_fact.span_id → spans_fact.trace_id, spans_fact.span_id
+
+-- Metric Exemplars → Spans (detailed tracing)
+number_dp_exemplars.trace_id, number_dp_exemplars.span_id → spans_fact.trace_id, spans_fact.span_id
+histogram_dp_exemplars.trace_id, histogram_dp_exemplars.span_id → spans_fact.trace_id, spans_fact.span_id
+exp_histogram_dp_exemplars.trace_id, exp_histogram_dp_exemplars.span_id → spans_fact.trace_id, spans_fact.span_id
+
+-- Span Links → Spans (distributed trace relationships)
+span_links.linked_trace_id, span_links.linked_span_id → spans_fact.trace_id, spans_fact.span_id
+
+-- Parent Spans
+spans_fact.trace_id, spans_fact.parent_span_id → spans_fact.trace_id, spans_fact.span_id
+```
+
+#### Indexing for Correlation Queries
+
+Even without FK enforcement, create indexes to support common trace correlation queries:
+
+```sql
+-- Fast lookup of logs by trace/span
+CREATE INDEX idx_logs_trace_span ON logs_fact(trace_id, span_id)
+  WHERE trace_id IS NOT NULL;
+
+-- Fast lookup of exemplars by trace/span
+CREATE INDEX idx_exemplars_trace_span ON histogram_dp_exemplars(trace_id, span_id)
+  WHERE trace_id IS NOT NULL;
+
+-- Fast lookup of spans by trace for full trace reconstruction
+CREATE INDEX idx_spans_trace ON spans_fact(trace_id, start_timestamp);
+
+-- Fast lookup of span children
+CREATE INDEX idx_spans_parent ON spans_fact(trace_id, parent_span_id)
+  WHERE parent_span_id IS NOT NULL;
+```
+
+#### Validation Queries
+
+Periodic validation to find orphaned records:
+
+```sql
+-- Find logs referencing non-existent spans
+SELECT COUNT(*)
+FROM logs_fact l
+WHERE l.span_id IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM spans_fact s
+    WHERE s.trace_id = l.trace_id
+      AND s.span_id = l.span_id
+  );
+
+-- Find exemplars referencing non-existent spans
+SELECT COUNT(*)
+FROM histogram_dp_exemplars e
+WHERE e.span_id IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM spans_fact s
+    WHERE s.trace_id = e.trace_id
+      AND s.span_id = e.span_id
+  );
+```
+
+These orphaned records are **expected** in distributed tracing (sampling, data retention policies, partial traces), but monitoring their count helps detect data pipeline issues.
 
 ### Schema Evolution
 
@@ -785,6 +1304,7 @@ The data model is designed to support schema evolution:
 - Resource and scope relationships allow for efficient deduplication
 - Schema versioning through `schema_url` fields
 - Views abstract storage details from application layer
+- Logical foreign keys document relationships without enforcement overhead
 
 ## See Also
 
