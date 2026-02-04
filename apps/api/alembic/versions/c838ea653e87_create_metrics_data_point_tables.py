@@ -5,32 +5,31 @@ Revises: 60977f9e5982
 Create Date: 2026-02-04 15:43:10.077341
 
 """
-from typing import Sequence, Union
+
+from collections.abc import Sequence
 
 from alembic import op
-import sqlalchemy as sa
-
 
 # revision identifiers, used by Alembic.
-revision: str = 'c838ea653e87'
-down_revision: Union[str, Sequence[str], None] = '60977f9e5982'
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+revision: str = "c838ea653e87"
+down_revision: str | Sequence[str] | None = "60977f9e5982"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
     """Create metrics data point tables for all metric types.
 
     Implements separate tables for each data point type:
-    - metrics_data_points_number: For Gauge and Sum metrics
-    - metrics_data_points_histogram: For Histogram metrics
-    - metrics_data_points_exp_histogram: For ExponentialHistogram metrics
-    - metrics_data_points_summary: For Summary metrics
+    - otel_metrics_data_points_number: For Gauge and Sum metrics
+    - otel_metrics_data_points_histogram: For Histogram metrics
+    - otel_metrics_data_points_exp_histogram: For ExponentialHistogram metrics
+    - otel_metrics_data_points_summary: For Summary metrics
     """
 
     # Number data points (Gauge and Sum)
     op.execute("""
-        CREATE TABLE metrics_data_points_number (
+        CREATE TABLE otel_metrics_data_points_number (
             data_point_id BIGSERIAL PRIMARY KEY,
 
             -- Metric identification
@@ -45,11 +44,11 @@ def upgrade() -> None:
             -- Value
             value_int BIGINT,
             value_double DOUBLE PRECISION,
-            
+
             -- Metadata
             flags INTEGER DEFAULT 0,
             exemplars JSONB,
-            
+
             -- Ensure one value type is set
             CONSTRAINT number_value_check CHECK (
                 (value_int IS NOT NULL AND value_double IS NULL) OR
@@ -60,7 +59,7 @@ def upgrade() -> None:
 
     # Histogram data points
     op.execute("""
-        CREATE TABLE metrics_data_points_histogram (
+        CREATE TABLE otel_metrics_data_points_histogram (
             data_point_id BIGSERIAL PRIMARY KEY,
 
             -- Metric identification
@@ -88,7 +87,7 @@ def upgrade() -> None:
 
     # Exponential histogram data points
     op.execute("""
-        CREATE TABLE metrics_data_points_exp_histogram (
+        CREATE TABLE otel_metrics_data_points_exp_histogram (
             data_point_id BIGSERIAL PRIMARY KEY,
 
             -- Metric identification
@@ -107,7 +106,7 @@ def upgrade() -> None:
             max DOUBLE PRECISION,
             scale INTEGER NOT NULL,
             zero_count BIGINT NOT NULL,
-            
+
             -- Positive and negative buckets
             positive_offset INTEGER,
             positive_bucket_counts BIGINT[],
@@ -122,7 +121,7 @@ def upgrade() -> None:
 
     # Summary data points
     op.execute("""
-        CREATE TABLE metrics_data_points_summary (
+        CREATE TABLE otel_metrics_data_points_summary (
             data_point_id BIGSERIAL PRIMARY KEY,
 
             -- Metric identification
@@ -147,7 +146,7 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     """Drop metrics data point tables."""
-    op.execute("DROP TABLE IF EXISTS metrics_data_points_summary CASCADE")
-    op.execute("DROP TABLE IF EXISTS metrics_data_points_exp_histogram CASCADE")
-    op.execute("DROP TABLE IF EXISTS metrics_data_points_histogram CASCADE")
-    op.execute("DROP TABLE IF EXISTS metrics_data_points_number CASCADE")
+    op.execute("DROP TABLE IF EXISTS otel_metrics_data_points_summary CASCADE")
+    op.execute("DROP TABLE IF EXISTS otel_metrics_data_points_exp_histogram CASCADE")
+    op.execute("DROP TABLE IF EXISTS otel_metrics_data_points_histogram CASCADE")
+    op.execute("DROP TABLE IF EXISTS otel_metrics_data_points_number CASCADE")

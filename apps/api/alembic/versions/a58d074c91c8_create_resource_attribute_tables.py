@@ -24,53 +24,53 @@ def upgrade() -> None:
     for common/promoted attributes and a JSONB catch-all for rare attributes.
     """
 
-    # resource_attrs_string - String attributes (most common type)
+    # otel_resource_attrs_string - String attributes (most common type)
     op.execute("""
-        CREATE TABLE resource_attrs_string (
+        CREATE TABLE otel_resource_attrs_string (
             resource_id BIGINT NOT NULL,
             key_id INT NOT NULL REFERENCES attribute_keys(key_id),
             value TEXT NOT NULL,
             PRIMARY KEY (resource_id, key_id)
         )
     """)
-    op.execute("CREATE INDEX idx_resource_attrs_string_value ON resource_attrs_string(key_id, value)")
+    op.execute("CREATE INDEX idx_otel_resource_attrs_string_value ON otel_resource_attrs_string(key_id, value)")
 
-    # resource_attrs_int - Integer attributes
+    # otel_resource_attrs_int - Integer attributes
     op.execute("""
-        CREATE TABLE resource_attrs_int (
+        CREATE TABLE otel_resource_attrs_int (
             resource_id BIGINT NOT NULL,
             key_id INT NOT NULL REFERENCES attribute_keys(key_id),
             value BIGINT NOT NULL,
             PRIMARY KEY (resource_id, key_id)
         )
     """)
-    op.execute("CREATE INDEX idx_resource_attrs_int_value ON resource_attrs_int(key_id, value)")
+    op.execute("CREATE INDEX idx_otel_resource_attrs_int_value ON otel_resource_attrs_int(key_id, value)")
 
-    # resource_attrs_double - Double precision floating point attributes
+    # otel_resource_attrs_double - Double precision floating point attributes
     op.execute("""
-        CREATE TABLE resource_attrs_double (
+        CREATE TABLE otel_resource_attrs_double (
             resource_id BIGINT NOT NULL,
             key_id INT NOT NULL REFERENCES attribute_keys(key_id),
             value DOUBLE PRECISION NOT NULL,
             PRIMARY KEY (resource_id, key_id)
         )
     """)
-    op.execute("CREATE INDEX idx_resource_attrs_double_value ON resource_attrs_double(key_id, value)")
+    op.execute("CREATE INDEX idx_otel_resource_attrs_double_value ON otel_resource_attrs_double(key_id, value)")
 
-    # resource_attrs_bool - Boolean attributes
+    # otel_resource_attrs_bool - Boolean attributes
     op.execute("""
-        CREATE TABLE resource_attrs_bool (
+        CREATE TABLE otel_resource_attrs_bool (
             resource_id BIGINT NOT NULL,
             key_id INT NOT NULL REFERENCES attribute_keys(key_id),
             value BOOLEAN NOT NULL,
             PRIMARY KEY (resource_id, key_id)
         )
     """)
-    op.execute("CREATE INDEX idx_resource_attrs_bool_value ON resource_attrs_bool(key_id, value)")
+    op.execute("CREATE INDEX idx_otel_resource_attrs_bool_value ON otel_resource_attrs_bool(key_id, value)")
 
-    # resource_attrs_bytes - Binary/bytes attributes
+    # otel_resource_attrs_bytes - Binary/bytes attributes
     op.execute("""
-        CREATE TABLE resource_attrs_bytes (
+        CREATE TABLE otel_resource_attrs_bytes (
             resource_id BIGINT NOT NULL,
             key_id INT NOT NULL REFERENCES attribute_keys(key_id),
             value BYTEA NOT NULL,
@@ -78,21 +78,21 @@ def upgrade() -> None:
         )
     """)
 
-    # resource_attrs_other - JSONB catch-all for unpromoted/complex attributes
+    # otel_resource_attrs_other - JSONB catch-all for unpromoted/complex attributes
     op.execute("""
-        CREATE TABLE resource_attrs_other (
+        CREATE TABLE otel_resource_attrs_other (
             resource_id BIGINT PRIMARY KEY,
             attributes JSONB NOT NULL DEFAULT '{}'
         )
     """)
-    op.execute("CREATE INDEX idx_resource_attrs_other_gin ON resource_attrs_other USING GIN(attributes)")
+    op.execute("CREATE INDEX idx_otel_resource_attrs_other_gin ON otel_resource_attrs_other USING GIN(attributes)")
 
 
 def downgrade() -> None:
     """Drop resource attribute tables."""
-    op.execute("DROP TABLE IF EXISTS resource_attrs_other CASCADE")
-    op.execute("DROP TABLE IF EXISTS resource_attrs_bytes CASCADE")
-    op.execute("DROP TABLE IF EXISTS resource_attrs_bool CASCADE")
-    op.execute("DROP TABLE IF EXISTS resource_attrs_double CASCADE")
-    op.execute("DROP TABLE IF EXISTS resource_attrs_int CASCADE")
-    op.execute("DROP TABLE IF EXISTS resource_attrs_string CASCADE")
+    op.execute("DROP TABLE IF EXISTS otel_resource_attrs_other CASCADE")
+    op.execute("DROP TABLE IF EXISTS otel_resource_attrs_bytes CASCADE")
+    op.execute("DROP TABLE IF EXISTS otel_resource_attrs_bool CASCADE")
+    op.execute("DROP TABLE IF EXISTS otel_resource_attrs_double CASCADE")
+    op.execute("DROP TABLE IF EXISTS otel_resource_attrs_int CASCADE")
+    op.execute("DROP TABLE IF EXISTS otel_resource_attrs_string CASCADE")

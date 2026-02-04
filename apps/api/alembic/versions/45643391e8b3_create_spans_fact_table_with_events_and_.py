@@ -5,31 +5,30 @@ Revises: 151f87bcc9ff
 Create Date: 2026-02-04 15:41:04.937475
 
 """
-from typing import Sequence, Union
+
+from collections.abc import Sequence
 
 from alembic import op
-import sqlalchemy as sa
-
 
 # revision identifiers, used by Alembic.
-revision: str = '45643391e8b3'
-down_revision: Union[str, Sequence[str], None] = '151f87bcc9ff'
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+revision: str = "45643391e8b3"
+down_revision: str | Sequence[str] | None = "151f87bcc9ff"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    """Create spans_fact table with span_events and span_links child tables.
+    """Create otel_spans_fact table with otel_span_events and otel_span_links child tables.
 
     Implements the full span data model with:
-    - Main spans_fact table with all OTLP span fields
-    - span_events for span events (normalized)
-    - span_links for span links (normalized)
+    - Main otel_spans_fact table with all OTLP span fields
+    - otel_span_events for span events (normalized)
+    - otel_span_links for span links (normalized)
     """
 
-    # spans_fact - Main span fact table
+    # otel_spans_fact - Main span fact table
     op.execute("""
-        CREATE TABLE spans_fact (
+        CREATE TABLE otel_spans_fact (
             span_id BIGSERIAL PRIMARY KEY,
 
             -- Resource and scope references
@@ -65,11 +64,11 @@ def upgrade() -> None:
     # Partition by time for efficient data lifecycle management
     # Note: Partitioning strategy will be added in a future migration
 
-    # span_events - Normalized span events
+    # otel_span_events - Normalized span events
     op.execute("""
-        CREATE TABLE span_events (
+        CREATE TABLE otel_span_events (
             event_id BIGSERIAL PRIMARY KEY,
-            span_id BIGINT NOT NULL REFERENCES spans_fact(span_id) ON DELETE CASCADE,
+            span_id BIGINT NOT NULL REFERENCES otel_spans_fact(span_id) ON DELETE CASCADE,
 
             -- Event identification
             name TEXT NOT NULL,
@@ -80,11 +79,11 @@ def upgrade() -> None:
         )
     """)
 
-    # span_links - Normalized span links
+    # otel_span_links - Normalized span links
     op.execute("""
-        CREATE TABLE span_links (
+        CREATE TABLE otel_span_links (
             link_id BIGSERIAL PRIMARY KEY,
-            span_id BIGINT NOT NULL REFERENCES spans_fact(span_id) ON DELETE CASCADE,
+            span_id BIGINT NOT NULL REFERENCES otel_spans_fact(span_id) ON DELETE CASCADE,
 
             -- Linked span identification
             linked_trace_id VARCHAR(32) NOT NULL,
@@ -98,7 +97,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    """Drop spans_fact and related tables."""
-    op.execute("DROP TABLE IF EXISTS span_links CASCADE")
-    op.execute("DROP TABLE IF EXISTS span_events CASCADE")
-    op.execute("DROP TABLE IF EXISTS spans_fact CASCADE")
+    """Drop otel_spans_fact and related tables."""
+    op.execute("DROP TABLE IF EXISTS otel_span_links CASCADE")
+    op.execute("DROP TABLE IF EXISTS otel_span_events CASCADE")
+    op.execute("DROP TABLE IF EXISTS otel_spans_fact CASCADE")

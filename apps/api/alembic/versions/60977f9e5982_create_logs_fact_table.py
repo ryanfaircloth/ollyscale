@@ -5,21 +5,20 @@ Revises: 45643391e8b3
 Create Date: 2026-02-04 15:42:52.073881
 
 """
-from typing import Sequence, Union
+
+from collections.abc import Sequence
 
 from alembic import op
-import sqlalchemy as sa
-
 
 # revision identifiers, used by Alembic.
-revision: str = '60977f9e5982'
-down_revision: Union[str, Sequence[str], None] = '45643391e8b3'
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+revision: str = "60977f9e5982"
+down_revision: str | Sequence[str] | None = "45643391e8b3"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    """Create logs_fact table.
+    """Create otel_logs_fact table.
 
     Implements the log record data model with:
     - All OTLP log record fields
@@ -28,7 +27,7 @@ def upgrade() -> None:
     """
 
     op.execute("""
-        CREATE TABLE logs_fact (
+        CREATE TABLE otel_logs_fact (
             log_id BIGSERIAL PRIMARY KEY,
 
             -- Resource and scope references
@@ -63,5 +62,5 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    """Drop logs_fact table."""
-    op.execute("DROP TABLE IF EXISTS logs_fact CASCADE")
+    """Drop otel_logs_fact table."""
+    op.execute("DROP TABLE IF EXISTS otel_logs_fact CASCADE")
