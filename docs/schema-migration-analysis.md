@@ -1,54 +1,126 @@
-# Schema Migration Analysis: Current → New Data Model
+# Schema Implementation Plan: New Data Model
 
 ## Overview
 
-This document analyzes the migration from the current Ollyscale schema to the new OTEL Arrow-inspired data model with hybrid attribute storage. The new model eliminates tenant/connection multi-tenancy, introduces typed attribute tables, and maintains first_seen/last_seen temporal tracking.
+This document describes the implementation of the new OTEL Arrow-inspired data model with hybrid attribute storage for **new Ollyscale deployments**. Since we're starting fresh with no existing data to preserve, we can implement the complete new schema directly.
 
-## Migration Strategy Summary
+## Implementation Strategy Summary
 
-### Key Changes
+### Key Features
 
-1. **Eliminate Multi-Tenancy**: Remove tenant_id and connection_id from all tables
-2. **Hybrid Attribute Storage**: Split JSONB attributes into typed tables + catch-all JSONB
-3. **Resource/Scope Deduplication**: Use hash-based deduplication with first_seen/last_seen tracking
-4. **Normalized Data Points**: Convert JSONB arrays (events, links, data_points) to normalized tables
-5. **ConfigMap-Driven**: Support dynamic attribute promotion and dropping via Kubernetes ConfigMap
+1. **No Multi-Tenancy**: Single-tenant deployment model per instance
+2. **Hybrid Attribute Storage**: Typed tables (string, int, double, bool) + JSONB catch-all
+3. **OTLP Enum Dimensions**: Seeded dimension tables for span_kinds, status_codes, severity levels, etc.
+4. **Metric Dimension Table**: Deduplication with description variant support
+5. **Trace Correlation**: NOT VALID foreign keys for query hints without enforcement
+6. **Resource/Scope Deduplication**: Hash-based with first_seen/last_seen tracking
+7. **Normalized Data Points**: Separate tables for events, links, exemplars, quantiles
 
-### Migration Phases
+### Implementation Phases
 
-**Phase 1: Schema Extension (Week 1)**
+**Phase 1: Foundation Tables (This PR)**
 
-- Create new tables alongside existing schema
-- Deploy attribute_keys, resources_dim, scopes_dim
-- Deploy typed attribute tables (*_attrs_string,*_attrs_int, etc.)
-- No data migration yet
+- Create OTLP enum dimension tables (span_kinds, status_codes, etc.)
+- Create attribute_keys registry
+- Create typed attribute tables pattern (*_attrs_string, *_attrs_int, etc.)
+- Seed enum tables with OTLP specification values
 
-**Phase 2: Dual-Write (Week 2-3)**
+**Phase 2: Dimension Tables**
 
-- Update receiver to write to both old and new schemas
-- Populate attribute_keys from ConfigMap
-- Extract promoted keys to typed tables
-- Store unpromoted keys in *_attrs_other (JSONB catch-all)
-- Maintain first_seen/last_seen timestamps
+- Create metrics_dim with two-hash strategy
+- Create resources_dim and scopes_dim
+- Create operation_dim for span name caching
 
-**Phase 3: Query Migration (Week 4-5)**
+**Phase 3: Fact Tables**
 
-- Create unified views joining typed and JSONB attributes
-- Update application queries to use new schema
-- Monitor query performance
+- Create spans_fact with normalized events/links
+- Create logs_fact with body type support
+- Create metrics_fact with normalized data points (number, histogram, summary, exponential histogram)
+- Add NOT VALID foreign keys for trace correlation
 
-**Phase 4: Backfill Historical Data (Week 6-7)**
+**Phase 4: Indexes and Constraints**
 
-- Migrate old resource_dim → resources_dim
-- Extract attributes from JSONB → typed tables
-- Preserve first_seen/last_seen timestamps
-- Verify data integrity
+- Add performance indexes
+- Add trace_id/span_id indexes for correlation
+- Create views for attribute unified access
 
-**Phase 5: Cleanup (Week 8)**
+**Phase 5: Receiver Implementation**
 
-- Drop old tenant_dim, connection_dim, resource_dim
-- Remove dual-write logic
-- Optimize indexes
+- Update receiver to write to new schema
+- Implement attribute promotion logic
+- Implement metric dimension deduplication
+- Add trace correlation support
+
+## Implementation Steps
+
+### Step 1: OTLP Enum Dimension Tables
+
+Create seeded dimension tables for all OTLP enums to provide self-documenting schema and enable readable queries.
+
+**Files to Create:**
+- `alembic/versions/XXXXX_create_otlp_enum_dimensions.py`
+
+**Tables:**
+- `span_kinds` (6 values)
+- `status_codes` (3 values)
+- `log_severity_numbers` (25 values)
+- `log_body_types` (8 values)
+- `metric_types` (5 values)
+- `aggregation_temporalities` (3 values)
+
+### Step 2: Attribute Storage Foundation
+
+Create the attribute_keys registry and type-specific attribute tables for all contexts.
+
+**Files to Create:**
+- `alembic/versions/XXXXX_create_attribute_keys.py`
+- `alembic/versions/XXXXX_create_resource_attrs.py`
+- `alembic/versions/XXXXX_create_scope_attrs.py`
+- `alembic/versions/XXXXX_create_span_attrs.py`
+- `alembic/versions/XXXXX_create_log_attrs.py`
+- `alembic/versions/XXXXX_create_metric_attrs.py`
+
+**Pattern per context:** `*_attrs_string`, `*_attrs_int`, `*_attrs_double`, `*_attrs_bool`, `*_attrs_bytes`, `*_attrs_other`
+
+### Step 3: Metric Dimension Table
+
+Create metrics_dim with two-hash strategy for description variant handling.
+
+**Files to Create:**
+- `alembic/versions/XXXXX_create_metrics_dim.py`
+
+### Step 4: Resource and Scope Dimensions
+
+Create dimension tables for resource and scope deduplication.
+
+**Files to Create:**
+- `alembic/versions/XXXXX_create_resources_dim.py`
+- `alembic/versions/XXXXX_create_scopes_dim.py`
+
+### Step 5: Fact Tables
+
+Create fact tables for spans, logs, and metrics with normalized child entities.
+
+**Files to Create:**
+- `alembic/versions/XXXXX_create_spans_fact.py` (includes span_events, span_links, event/link attrs)
+- `alembic/versions/XXXXX_create_logs_fact.py`
+- `alembic/versions/XXXXX_create_metrics_fact.py` (includes data point tables for all metric types)
+
+### Step 6: Indexes and FKs
+
+Add performance indexes and NOT VALID foreign keys for trace correlation.
+
+**Files to Create:**
+- `alembic/versions/XXXXX_create_indexes.py`
+- `alembic/versions/XXXXX_create_trace_correlation_fks.py`
+
+### Step 7: Views and Utility Tables
+
+Create unified views for attribute access and utility tables for operations.
+
+**Files to Create:**
+- `alembic/versions/XXXXX_create_attribute_views.py`
+- `alembic/versions/XXXXX_create_operation_dim.py`
 
 ## Current Schema Summary
 
