@@ -70,6 +70,18 @@
       "matchPackageNames": ["postgres", "postgresql"],
       "matchDatasources": ["docker"],
       "enabled": false
+    },
+    {
+      "description": "Exclude ollyscale containers (managed by release process)",
+      "matchPackagePatterns": ["ghcr.io/ryanfaircloth/ollyscale/*", "ollyscale/*"],
+      "matchDatasources": ["docker"],
+      "enabled": false
+    },
+    {
+      "description": "Exclude ollyscale Helm charts (managed by release process)",
+      "matchPackagePatterns": ["ollyscale*"],
+      "matchDatasources": ["helm"],
+      "enabled": false
     }
   ]
 }
