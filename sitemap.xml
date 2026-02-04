@@ -37,10 +37,6 @@
          <lastmod>2026-02-04</lastmod>
     </url>
     <url>
-         <loc>https://ryanfaircloth.github.io/ollyscale/ollyscale-v2-postgres/</loc>
-         <lastmod>2026-02-04</lastmod>
-    </url>
-    <url>
          <loc>https://ryanfaircloth.github.io/ollyscale/otel-collector/</loc>
          <lastmod>2026-02-04</lastmod>
     </url>
@@ -57,15 +53,7 @@
          <lastmod>2026-02-04</lastmod>
     </url>
     <url>
-         <loc>https://ryanfaircloth.github.io/ollyscale/react-ui-implementation-plan/</loc>
-         <lastmod>2026-02-04</lastmod>
-    </url>
-    <url>
          <loc>https://ryanfaircloth.github.io/ollyscale/technical/</loc>
-         <lastmod>2026-02-04</lastmod>
-    </url>
-    <url>
-         <loc>https://ryanfaircloth.github.io/ollyscale/v2-api-migration-plan/</loc>
          <lastmod>2026-02-04</lastmod>
     </url>
     <url>
@@ -78,6 +66,18 @@
     </url>
     <url>
          <loc>https://ryanfaircloth.github.io/ollyscale/demos/otel-demo/</loc>
+         <lastmod>2026-02-04</lastmod>
+    </url>
+    <url>
+         <loc>https://ryanfaircloth.github.io/ollyscale/plans/ollyscale-v2-postgres/</loc>
+         <lastmod>2026-02-04</lastmod>
+    </url>
+    <url>
+         <loc>https://ryanfaircloth.github.io/ollyscale/plans/react-ui-implementation-plan/</loc>
+         <lastmod>2026-02-04</lastmod>
+    </url>
+    <url>
+         <loc>https://ryanfaircloth.github.io/ollyscale/plans/v2-api-migration-plan/</loc>
          <lastmod>2026-02-04</lastmod>
     </url>
 </urlset>
