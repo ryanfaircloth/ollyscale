@@ -171,7 +171,9 @@ def downgrade() -> None:
     op.execute("ALTER TABLE otel_metrics_data_points_histogram DROP CONSTRAINT IF EXISTS fk_metrics_histogram_metric")
 
     # Metrics - Exponential Histogram
-    op.execute("ALTER TABLE otel_metrics_data_points_exp_histogram DROP CONSTRAINT IF EXISTS fk_metrics_exp_histogram_scope")
+    op.execute(
+        "ALTER TABLE otel_metrics_data_points_exp_histogram DROP CONSTRAINT IF EXISTS fk_metrics_exp_histogram_scope"
+    )
     op.execute(
         "ALTER TABLE otel_metrics_data_points_exp_histogram DROP CONSTRAINT IF EXISTS fk_metrics_exp_histogram_resource"
     )

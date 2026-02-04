@@ -61,6 +61,25 @@ def upgrade() -> None:
     # Index for metric name lookups
     op.execute("CREATE INDEX idx_otel_metrics_dim_name ON otel_metrics_dim(name)")
 
+    # Add table and column comments
+    op.execute("""
+        COMMENT ON TABLE otel_metrics_dim IS
+        'Dimension table for OpenTelemetry metrics metadata with two-hash deduplication strategy supporting description variants';
+
+        COMMENT ON COLUMN otel_metrics_dim.metric_id IS 'Primary key, auto-incrementing surrogate key for metric dimension';
+        COMMENT ON COLUMN otel_metrics_dim.metric_hash IS 'SHA-256 hash including description, unique per variant';
+        COMMENT ON COLUMN otel_metrics_dim.metric_identity_hash IS 'SHA-256 hash excluding description, groups variants of same metric';
+        COMMENT ON COLUMN otel_metrics_dim.name IS 'OTLP metric name as defined by instrumentation';
+        COMMENT ON COLUMN otel_metrics_dim.metric_type_id IS 'Foreign key to metric_types (Gauge, Sum, Histogram, etc.)';
+        COMMENT ON COLUMN otel_metrics_dim.unit IS 'OTLP metric unit (e.g., ms, bytes, 1)';
+        COMMENT ON COLUMN otel_metrics_dim.aggregation_temporality_id IS 'Foreign key to aggregation_temporalities (Delta, Cumulative)';
+        COMMENT ON COLUMN otel_metrics_dim.is_monotonic IS 'For Sum metrics, whether values are monotonically increasing';
+        COMMENT ON COLUMN otel_metrics_dim.description IS 'Metric description, can vary across variants';
+        COMMENT ON COLUMN otel_metrics_dim.schema_url IS 'OTLP schema URL for semantic convention versioning';
+        COMMENT ON COLUMN otel_metrics_dim.first_seen IS 'Timestamp when this metric configuration was first observed';
+        COMMENT ON COLUMN otel_metrics_dim.last_seen IS 'Timestamp when this metric configuration was last observed, updated on ingestion';
+    """)
+
 
 def downgrade() -> None:
     """Drop otel_metrics_dim dimension table."""

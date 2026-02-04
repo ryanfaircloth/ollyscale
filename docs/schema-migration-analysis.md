@@ -22,7 +22,7 @@ This document describes the implementation of the new OTEL Arrow-inspired data m
 
 - Create OTLP enum dimension tables (span_kinds, status_codes, etc.)
 - Create attribute_keys registry
-- Create typed attribute tables pattern (*_attrs_string, *_attrs_int, etc.)
+- Create typed attribute tables pattern (*_attrs_string,*_attrs_int, etc.)
 - Seed enum tables with OTLP specification values
 
 **Phase 2: Dimension Tables**
@@ -58,9 +58,11 @@ This document describes the implementation of the new OTEL Arrow-inspired data m
 Create seeded dimension tables for all OTLP enums to provide self-documenting schema and enable readable queries.
 
 **Files to Create:**
+
 - `alembic/versions/XXXXX_create_otlp_enum_dimensions.py`
 
 **Tables:**
+
 - `span_kinds` (6 values)
 - `status_codes` (3 values)
 - `log_severity_numbers` (25 values)
@@ -73,6 +75,7 @@ Create seeded dimension tables for all OTLP enums to provide self-documenting sc
 Create the attribute_keys registry and type-specific attribute tables for all contexts.
 
 **Files to Create:**
+
 - `alembic/versions/XXXXX_create_attribute_keys.py`
 - `alembic/versions/XXXXX_create_resource_attrs.py`
 - `alembic/versions/XXXXX_create_scope_attrs.py`
@@ -87,6 +90,7 @@ Create the attribute_keys registry and type-specific attribute tables for all co
 Create metrics_dim with two-hash strategy for description variant handling.
 
 **Files to Create:**
+
 - `alembic/versions/XXXXX_create_metrics_dim.py`
 
 ### Step 4: Resource and Scope Dimensions
@@ -94,6 +98,7 @@ Create metrics_dim with two-hash strategy for description variant handling.
 Create dimension tables for resource and scope deduplication.
 
 **Files to Create:**
+
 - `alembic/versions/XXXXX_create_resources_dim.py`
 - `alembic/versions/XXXXX_create_scopes_dim.py`
 
@@ -102,6 +107,7 @@ Create dimension tables for resource and scope deduplication.
 Create fact tables for spans, logs, and metrics with normalized child entities.
 
 **Files to Create:**
+
 - `alembic/versions/XXXXX_create_spans_fact.py` (includes span_events, span_links, event/link attrs)
 - `alembic/versions/XXXXX_create_logs_fact.py`
 - `alembic/versions/XXXXX_create_metrics_fact.py` (includes data point tables for all metric types)
@@ -111,6 +117,7 @@ Create fact tables for spans, logs, and metrics with normalized child entities.
 Add performance indexes and NOT VALID foreign keys for trace correlation.
 
 **Files to Create:**
+
 - `alembic/versions/XXXXX_create_indexes.py`
 - `alembic/versions/XXXXX_create_trace_correlation_fks.py`
 
@@ -119,6 +126,7 @@ Add performance indexes and NOT VALID foreign keys for trace correlation.
 Create unified views for attribute access and utility tables for operations.
 
 **Files to Create:**
+
 - `alembic/versions/XXXXX_create_attribute_views.py`
 - `alembic/versions/XXXXX_create_operation_dim.py`
 

@@ -87,6 +87,38 @@ def upgrade() -> None:
     """)
     op.execute("CREATE INDEX idx_otel_resource_attrs_other_gin ON otel_resource_attrs_other USING GIN(attributes)")
 
+    # Add table and column comments
+    op.execute("""
+        COMMENT ON TABLE otel_resource_attrs_string IS 'String-typed resource attributes stored in dedicated table for query performance';
+        COMMENT ON COLUMN otel_resource_attrs_string.resource_id IS 'Foreign key to otel_resources_dim';
+        COMMENT ON COLUMN otel_resource_attrs_string.key_id IS 'Foreign key to attribute_keys for attribute name';
+        COMMENT ON COLUMN otel_resource_attrs_string.value IS 'String attribute value';
+
+        COMMENT ON TABLE otel_resource_attrs_int IS 'Integer-typed resource attributes stored in dedicated table for query performance';
+        COMMENT ON COLUMN otel_resource_attrs_int.resource_id IS 'Foreign key to otel_resources_dim';
+        COMMENT ON COLUMN otel_resource_attrs_int.key_id IS 'Foreign key to attribute_keys for attribute name';
+        COMMENT ON COLUMN otel_resource_attrs_int.value IS 'Integer attribute value (BIGINT for full range support)';
+
+        COMMENT ON TABLE otel_resource_attrs_double IS 'Double precision floating point resource attributes stored in dedicated table for query performance';
+        COMMENT ON COLUMN otel_resource_attrs_double.resource_id IS 'Foreign key to otel_resources_dim';
+        COMMENT ON COLUMN otel_resource_attrs_double.key_id IS 'Foreign key to attribute_keys for attribute name';
+        COMMENT ON COLUMN otel_resource_attrs_double.value IS 'Double precision floating point attribute value';
+
+        COMMENT ON TABLE otel_resource_attrs_bool IS 'Boolean-typed resource attributes stored in dedicated table for query performance';
+        COMMENT ON COLUMN otel_resource_attrs_bool.resource_id IS 'Foreign key to otel_resources_dim';
+        COMMENT ON COLUMN otel_resource_attrs_bool.key_id IS 'Foreign key to attribute_keys for attribute name';
+        COMMENT ON COLUMN otel_resource_attrs_bool.value IS 'Boolean attribute value';
+
+        COMMENT ON TABLE otel_resource_attrs_bytes IS 'Binary/bytes resource attributes stored in dedicated table';
+        COMMENT ON COLUMN otel_resource_attrs_bytes.resource_id IS 'Foreign key to otel_resources_dim';
+        COMMENT ON COLUMN otel_resource_attrs_bytes.key_id IS 'Foreign key to attribute_keys for attribute name';
+        COMMENT ON COLUMN otel_resource_attrs_bytes.value IS 'Binary attribute value stored as BYTEA';
+
+        COMMENT ON TABLE otel_resource_attrs_other IS 'JSONB catch-all for unpromoted, complex, or array-typed resource attributes';
+        COMMENT ON COLUMN otel_resource_attrs_other.resource_id IS 'Primary key and foreign key to otel_resources_dim';
+        COMMENT ON COLUMN otel_resource_attrs_other.attributes IS 'JSONB object containing all unpromoted attributes for this resource';
+    """)
+
 
 def downgrade() -> None:
     """Drop resource attribute tables."""

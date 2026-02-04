@@ -213,6 +213,99 @@ def upgrade() -> None:
     """)
     op.execute("CREATE INDEX idx_otel_span_link_attrs_other_gin ON otel_span_link_attrs_other USING GIN(attributes)")
 
+    # Add table and column comments for all attribute tables
+    op.execute("""
+        -- Span attributes
+        COMMENT ON TABLE otel_span_attrs_string IS 'String-typed span attributes stored in dedicated table for query performance';
+        COMMENT ON COLUMN otel_span_attrs_string.span_id IS 'Foreign key to otel_spans_fact';
+        COMMENT ON COLUMN otel_span_attrs_string.key_id IS 'Foreign key to attribute_keys for attribute name';
+        COMMENT ON COLUMN otel_span_attrs_string.value IS 'String attribute value';
+
+        COMMENT ON TABLE otel_span_attrs_int IS 'Integer-typed span attributes stored in dedicated table for query performance';
+        COMMENT ON COLUMN otel_span_attrs_int.span_id IS 'Foreign key to otel_spans_fact';
+        COMMENT ON COLUMN otel_span_attrs_int.key_id IS 'Foreign key to attribute_keys for attribute name';
+        COMMENT ON COLUMN otel_span_attrs_int.value IS 'Integer attribute value (BIGINT for full range support)';
+
+        COMMENT ON TABLE otel_span_attrs_double IS 'Double precision floating point span attributes stored in dedicated table for query performance';
+        COMMENT ON COLUMN otel_span_attrs_double.span_id IS 'Foreign key to otel_spans_fact';
+        COMMENT ON COLUMN otel_span_attrs_double.key_id IS 'Foreign key to attribute_keys for attribute name';
+        COMMENT ON COLUMN otel_span_attrs_double.value IS 'Double precision floating point attribute value';
+
+        COMMENT ON TABLE otel_span_attrs_bool IS 'Boolean-typed span attributes stored in dedicated table for query performance';
+        COMMENT ON COLUMN otel_span_attrs_bool.span_id IS 'Foreign key to otel_spans_fact';
+        COMMENT ON COLUMN otel_span_attrs_bool.key_id IS 'Foreign key to attribute_keys for attribute name';
+        COMMENT ON COLUMN otel_span_attrs_bool.value IS 'Boolean attribute value';
+
+        COMMENT ON TABLE otel_span_attrs_bytes IS 'Binary/bytes span attributes stored in dedicated table';
+        COMMENT ON COLUMN otel_span_attrs_bytes.span_id IS 'Foreign key to otel_spans_fact';
+        COMMENT ON COLUMN otel_span_attrs_bytes.key_id IS 'Foreign key to attribute_keys for attribute name';
+        COMMENT ON COLUMN otel_span_attrs_bytes.value IS 'Binary attribute value stored as BYTEA';
+
+        COMMENT ON TABLE otel_span_attrs_other IS 'JSONB catch-all for unpromoted, complex, or array-typed span attributes';
+        COMMENT ON COLUMN otel_span_attrs_other.span_id IS 'Primary key and foreign key to otel_spans_fact';
+        COMMENT ON COLUMN otel_span_attrs_other.attributes IS 'JSONB object containing all unpromoted attributes for this span';
+
+        -- Span event attributes
+        COMMENT ON TABLE otel_span_event_attrs_string IS 'String-typed span event attributes stored in dedicated table for query performance';
+        COMMENT ON COLUMN otel_span_event_attrs_string.event_id IS 'Foreign key to otel_span_events';
+        COMMENT ON COLUMN otel_span_event_attrs_string.key_id IS 'Foreign key to attribute_keys for attribute name';
+        COMMENT ON COLUMN otel_span_event_attrs_string.value IS 'String attribute value';
+
+        COMMENT ON TABLE otel_span_event_attrs_int IS 'Integer-typed span event attributes stored in dedicated table for query performance';
+        COMMENT ON COLUMN otel_span_event_attrs_int.event_id IS 'Foreign key to otel_span_events';
+        COMMENT ON COLUMN otel_span_event_attrs_int.key_id IS 'Foreign key to attribute_keys for attribute name';
+        COMMENT ON COLUMN otel_span_event_attrs_int.value IS 'Integer attribute value (BIGINT for full range support)';
+
+        COMMENT ON TABLE otel_span_event_attrs_double IS 'Double precision floating point span event attributes stored in dedicated table for query performance';
+        COMMENT ON COLUMN otel_span_event_attrs_double.event_id IS 'Foreign key to otel_span_events';
+        COMMENT ON COLUMN otel_span_event_attrs_double.key_id IS 'Foreign key to attribute_keys for attribute name';
+        COMMENT ON COLUMN otel_span_event_attrs_double.value IS 'Double precision floating point attribute value';
+
+        COMMENT ON TABLE otel_span_event_attrs_bool IS 'Boolean-typed span event attributes stored in dedicated table for query performance';
+        COMMENT ON COLUMN otel_span_event_attrs_bool.event_id IS 'Foreign key to otel_span_events';
+        COMMENT ON COLUMN otel_span_event_attrs_bool.key_id IS 'Foreign key to attribute_keys for attribute name';
+        COMMENT ON COLUMN otel_span_event_attrs_bool.value IS 'Boolean attribute value';
+
+        COMMENT ON TABLE otel_span_event_attrs_bytes IS 'Binary/bytes span event attributes stored in dedicated table';
+        COMMENT ON COLUMN otel_span_event_attrs_bytes.event_id IS 'Foreign key to otel_span_events';
+        COMMENT ON COLUMN otel_span_event_attrs_bytes.key_id IS 'Foreign key to attribute_keys for attribute name';
+        COMMENT ON COLUMN otel_span_event_attrs_bytes.value IS 'Binary attribute value stored as BYTEA';
+
+        COMMENT ON TABLE otel_span_event_attrs_other IS 'JSONB catch-all for unpromoted, complex, or array-typed span event attributes';
+        COMMENT ON COLUMN otel_span_event_attrs_other.event_id IS 'Primary key and foreign key to otel_span_events';
+        COMMENT ON COLUMN otel_span_event_attrs_other.attributes IS 'JSONB object containing all unpromoted attributes for this span event';
+
+        -- Span link attributes
+        COMMENT ON TABLE otel_span_link_attrs_string IS 'String-typed span link attributes stored in dedicated table for query performance';
+        COMMENT ON COLUMN otel_span_link_attrs_string.link_id IS 'Foreign key to otel_span_links';
+        COMMENT ON COLUMN otel_span_link_attrs_string.key_id IS 'Foreign key to attribute_keys for attribute name';
+        COMMENT ON COLUMN otel_span_link_attrs_string.value IS 'String attribute value';
+
+        COMMENT ON TABLE otel_span_link_attrs_int IS 'Integer-typed span link attributes stored in dedicated table for query performance';
+        COMMENT ON COLUMN otel_span_link_attrs_int.link_id IS 'Foreign key to otel_span_links';
+        COMMENT ON COLUMN otel_span_link_attrs_int.key_id IS 'Foreign key to attribute_keys for attribute name';
+        COMMENT ON COLUMN otel_span_link_attrs_int.value IS 'Integer attribute value (BIGINT for full range support)';
+
+        COMMENT ON TABLE otel_span_link_attrs_double IS 'Double precision floating point span link attributes stored in dedicated table for query performance';
+        COMMENT ON COLUMN otel_span_link_attrs_double.link_id IS 'Foreign key to otel_span_links';
+        COMMENT ON COLUMN otel_span_link_attrs_double.key_id IS 'Foreign key to attribute_keys for attribute name';
+        COMMENT ON COLUMN otel_span_link_attrs_double.value IS 'Double precision floating point attribute value';
+
+        COMMENT ON TABLE otel_span_link_attrs_bool IS 'Boolean-typed span link attributes stored in dedicated table for query performance';
+        COMMENT ON COLUMN otel_span_link_attrs_bool.link_id IS 'Foreign key to otel_span_links';
+        COMMENT ON COLUMN otel_span_link_attrs_bool.key_id IS 'Foreign key to attribute_keys for attribute name';
+        COMMENT ON COLUMN otel_span_link_attrs_bool.value IS 'Boolean attribute value';
+
+        COMMENT ON TABLE otel_span_link_attrs_bytes IS 'Binary/bytes span link attributes stored in dedicated table';
+        COMMENT ON COLUMN otel_span_link_attrs_bytes.link_id IS 'Foreign key to otel_span_links';
+        COMMENT ON COLUMN otel_span_link_attrs_bytes.key_id IS 'Foreign key to attribute_keys for attribute name';
+        COMMENT ON COLUMN otel_span_link_attrs_bytes.value IS 'Binary attribute value stored as BYTEA';
+
+        COMMENT ON TABLE otel_span_link_attrs_other IS 'JSONB catch-all for unpromoted, complex, or array-typed span link attributes';
+        COMMENT ON COLUMN otel_span_link_attrs_other.link_id IS 'Primary key and foreign key to otel_span_links';
+        COMMENT ON COLUMN otel_span_link_attrs_other.attributes IS 'JSONB object containing all unpromoted attributes for this span link';
+    """)
+
 
 def downgrade() -> None:
     """Drop span attribute tables."""
