@@ -6,26 +6,22 @@
 global:
   # -- Namespace for demos deployment
   namespace: ollyscale-demos
-
 # Frontend configuration
 frontend:
   # -- Number of replicas
   replicaCount: 1
-
   image:
     # -- Image repository (unified demo image for both frontend and backend)
     repository: ghcr.io/ryanfaircloth/ollyscale/demo
     # -- Image tag
-    tag: v0.0.0
+    tag: 0.0.0-dev.1770226204
     # -- Image pull policy
     pullPolicy: Always
-
   service:
     # -- Service type
     type: ClusterIP
     # -- Service port
     port: 5000
-
   # -- Environment variables
   env:
     # -- OTLP endpoint for traces
@@ -34,10 +30,8 @@ frontend:
     otelServiceName: "demo-frontend"
     # -- Prometheus remote write endpoint
     promRemoteWriteEndpoint: "http://gateway-collector.ollyscale.svc.cluster.local:19291/api/v1/write"
-
   # -- Resource limits and requests
   resources: {}
-
   # HTTPRoute configuration
   httpRoute:
     # -- Enable HTTPRoute
@@ -49,32 +43,27 @@ frontend:
         sectionName: mgmt-https-listener
     # -- Hostname for routing
     hostname: demo-frontend.ollyscale.test
-
 # Backend configuration
 backend:
   # -- Number of replicas
   replicaCount: 1
-
   image:
     # -- Image repository (unified demo image for both frontend and backend)
     repository: ghcr.io/ryanfaircloth/ollyscale/demo
     # -- Image tag
-    tag: v0.0.0
+    tag: 0.0.0-dev.1770226204
     # -- Image pull policy
     pullPolicy: Always
-
   service:
     # -- Service type
     type: ClusterIP
     # -- Service port
     port: 5000
-
   # -- Environment variables
   env:
     # -- OTLP endpoint for traces
     otelExporterOtlpEndpoint: "http://gateway-collector.ollyscale.svc.cluster.local:4317"
     # -- Service name for OTLP
     otelServiceName: "demo-backend"
-
   # -- Resource limits and requests
   resources: {}

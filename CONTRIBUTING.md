@@ -136,14 +136,12 @@ uv run pytest
 ### Manual Testing
 
 ```bash
-# Docker deployment
-cd docker
-./01-start-core.sh
+# Create cluster and deploy
+task up       # Create kind cluster
+task deploy   # Build, push, and deploy all components
 
-# Kubernetes deployment
-make up
-cd charts
-./build-and-push-local.sh v2.x.x-test
+# Clean up
+task down     # Tear down cluster
 ```
 
 ## Git Workflow
@@ -255,28 +253,33 @@ See [docs/release-system.md](docs/release-system.md) for complete release proces
 
 ## Building and Testing
 
-### Docker Builds
+### Build System
 
 ```bash
-cd scripts/build
-./01-login.sh                # Login to registry
-./02-build-all.sh            # Build all images
-./03-push-all.sh             # Push to registry
+# Validate code quality
+task validate     # Run linters
+
+# Build images
+task build        # Build all container images
+
+# Push to registry
+task push         # Push images to registry
+
+# Complete workflow
+task deploy       # Validate, build, push, and deploy
 ```
 
 ### Local Kubernetes Testing
 
 ```bash
-# Create/update cluster
-make up
+# Create cluster and deploy
+task up           # Create kind cluster with registry
+task deploy       # Build and deploy all components
 
-# Build and deploy local changes
-cd charts
-./build-and-push-local.sh v2.x.x-dev
-
-# Update ArgoCD
-cd ../.kind
-terraform apply -replace='kubectl_manifest.observability_applications["observability/ollyscale.yaml"]' -auto-approve
+# Verify deployment
+kubectl get pods -n ollyscale
+kubectl port-forward -n gateway svc/envoy-gateway 80:80
+# Access UI at http://ollyscale.test
 
 # Check deployment
 kubectl get pods -n ollyscale

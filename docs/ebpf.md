@@ -54,7 +54,7 @@ Access the UI at `http://localhost:5005`
 # Start ollyScale core first
 minikube start
 cd charts
-./install.sh
+task deploy
 
 # Deploy eBPF demo (pulls pre-built images from Docker Hub)
 cd ../k8s-demo-ebpf

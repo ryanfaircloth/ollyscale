@@ -108,8 +108,8 @@ repos:
     hooks:
       - id: npm-lockfile-check
         name: Check npm lockfile sync
-        entry: scripts/precommit-npm-check.sh
-        language: script
+        entry: bash -c 'cd apps/web-ui && npm ci --dry-run --prefer-offline'
+        language: system
         pass_filenames: false
         files: ^apps/web-ui/(package\.json|package-lock\.json)$
 
@@ -122,6 +122,16 @@ repos:
         language: system
         pass_filenames: false
         files: ^apps/api/(pyproject\.toml|uv\.lock)$
+
+  # Release-please configuration validation
+  - repo: local
+    hooks:
+      - id: validate-release-config
+        name: Validate release-please config
+        entry: scripts/validate-release-config.sh
+        language: script
+        pass_filenames: false
+        files: ^(release-please-config\.json|\.release-please-manifest\.json|charts/.*/Chart\.yaml|charts/.*/values\.yaml)$
 
 # Configuration
 default_language_version:

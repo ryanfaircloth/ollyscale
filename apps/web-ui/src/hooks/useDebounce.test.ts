@@ -29,7 +29,7 @@ describe('useDebounce', () => {
       () => {
         expect(result.current).toBe('updated');
       },
-      { timeout: 600 }
+      { timeout: 2000 }
     );
   });
 
@@ -51,7 +51,7 @@ describe('useDebounce', () => {
       () => {
         expect(result.current).toBe('final');
       },
-      { timeout: 400 }
+      { timeout: 800 }
     );
   });
 

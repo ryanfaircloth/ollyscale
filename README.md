@@ -98,38 +98,35 @@ git clone https://github.com/ryanfaircloth/ollyscale
 
 ### 1. Deploy ollyScale Core (Required)
 
-Start the observability backend (pulls pre-built images from Docker Hub):
+Start the observability backend:
 
 ```bash
-cd docker
-./01-start-core.sh
+task up     # Create kind cluster and deploy ollyScale
 ```
 
 **Deployment time:** ~30 seconds (pulls images from Docker Hub)
 
 **Services:**
 
-- **OTLP Receiver**: `localhost:4343` (gRPC)
-- **OpAMP Server**: `ws://localhost:4320/v1/opamp` (WebSocket), `localhost:4321` (HTTP REST API)
-- **UI**: `http://localhost:5005`
-- **Redis**: `localhost:6379`
-- **OTel Collector**: `localhost:4317` (gRPC), `localhost:4318` (HTTP)
+- **OTLP Receiver**: Cluster IP (gRPC)
+- **OpAMP Server**: WebSocket + HTTP REST API endpoints
+- **UI**: `http://ollyscale.test`
+- **Redis**: Internal service
+- **OTel Collector**: Internal service
 
-**Stop:** `./02-stop-core.sh`
+**Stop:** `task down`
 
 ---
 
 ### 2. Deploy Demo Apps (Optional)
 
 ```bash
-cd docker-demo
-./01-deploy-demo.sh
+task deploy  # Build and deploy demo applications
 ```
 
-Two Flask microservices with automatic traffic generation (pulls from Docker Hub). Wait 30 seconds for telemetry to appear.
+Two Flask microservices with automatic traffic generation. Wait 30 seconds for telemetry to appear.
 
-**For local development:** Use `./01-deploy-demo-local.sh` to build images locally
-**Stop:** `./02-cleanup-demo.sh`
+**Stop:** `task down`
 
 ---
 
@@ -138,8 +135,7 @@ Two Flask microservices with automatic traffic generation (pulls from Docker Hub
 Deploy a demo showing OpenTelemetry eBPF Instrumentation (OBI) - traces captured at the kernel level with zero code changes:
 
 ```bash
-cd docker-demo-ebpf
-./01-deploy-ebpf-demo.sh
+task deploy  # Build and deploy with eBPF agent enabled
 ```
 
 **Deployment time:** ~30 seconds (pulls pre-built images from Docker Hub)
@@ -152,7 +148,7 @@ This demonstrates:
 
 See [eBPF Demo Documentation](docs/ebpf.md) for details on how traces differ from SDK-instrumented apps.
 
-**Stop:** `./02-cleanup.sh`
+**Stop:** `task down`
 
 ---
 
@@ -161,8 +157,7 @@ See [eBPF Demo Documentation](docs/ebpf.md) for details on how traces differ fro
 Deploy an AI agent demo with zero-code OpenTelemetry auto-instrumentation:
 
 ```bash
-cd docker-ai-agent-demo
-./01-deploy-ai-demo.sh
+task deploy  # Build and deploy AI demo with Ollama
 ```
 
 This starts:
@@ -172,9 +167,7 @@ This starts:
 
 View AI traces in the **AI Agents** tab - see prompts, responses, token usage (in/out), and latency for each LLM call.
 
-**For local development:** Use `./01-deploy-ai-demo-local.sh` to build locally
-**Stop:** `./02-stop-ai-demo.sh`
-**Cleanup (remove volumes):** `./03-cleanup-ai-demo.sh`
+**Stop:** `task down`
 
 ---
 
@@ -194,18 +187,17 @@ Point your OpenTelemetry exporter to:
 ### 8. Core-Only Deployment (Use Your Own OTel Collector)
 
 ```bash
-cd docker-core-only
-./01-start-core.sh
+task deploy  # Deploy ollyScale without bundled collector
 ```
 
 Deploys ollyScale without the bundled OTel Collector. Includes:
 
-- **OTLP Receiver**: `localhost:4343` (gRPC only)
-- **OpAMP Server**: `ws://localhost:4320/v1/opamp` (WebSocket), `localhost:4321` (HTTP REST API)
-- **UI**: `http://localhost:5005`
-- **Redis**: `localhost:6379`
+- **OTLP Receiver**: Cluster IP (gRPC)
+- **OpAMP Server**: WebSocket + HTTP REST API
+- **UI**: `http://ollyscale.test`
+- **Redis**: Internal service
 
-Point your external collector to `localhost:4343` for telemetry ingestion.
+Point your external collector to the ollyScale OTLP receiver service for telemetry ingestion.
 
 ## OpAMP Configuration (Optional)
 
@@ -216,7 +208,7 @@ extensions:
   opamp:
     server:
       ws:
-        endpoint: ws://localhost:4320/v1/opamp
+        endpoint: ws://opamp-server.ollyscale.svc.cluster.local/v1/opamp
 
 service:
   extensions: [opamp]
@@ -224,7 +216,7 @@ service:
 
 The default configuration template (located at `config/otelcol/config.yaml`) shows a complete example with OTLP receivers, OpAMP extension, batch processing, and spanmetrics connector. Your collector will connect to the OpAMP server and receive configuration updates through the ollyScale UI.
 
-**Stop:** `./02-stop-core.sh`
+**Stop:** `task down`
 
 ## Kubernetes Deployment
 
@@ -232,7 +224,7 @@ The default configuration template (located at `config/otelcol/config.yaml`) sho
 
 ```bash
 cd charts
-./install.sh  # Installs to Kubernetes using Helm
+task deploy  # Build, push, and deploy to Kubernetes
 ```
 
 **Access UI:**
@@ -266,35 +258,13 @@ kubectl delete namespace ollyscale
 
 ### 2. Demo Applications (Optional)
 
-```bash
-cd k8s-demo
-./02-deploy.sh  # Automatically builds images if needed
-```
-
-**Manual image build (optional):** `cd charts && ./build-and-push-local.sh v2.1.x-demo`
-**Cleanup:** `./03-cleanup.sh`
-
-### 3. eBPF Zero-Code Tracing Demo (Optional)
+Demo applications are automatically deployed with the main ollyScale deployment. To redeploy or update:
 
 ```bash
-cd k8s-demo-ebpf
-./02-deploy.sh
+task deploy  # Build and deploy all components
 ```
 
-Deploys the eBPF demo with traces captured at the kernel level. Images are pulled from Docker Hub (`ryanfaircloth/ollyscale-ebpf-frontend`, `ryanfaircloth/ollyscale-ebpf-backend`).
-
-See [eBPF Demo Documentation](docs/ebpf.md) for details.
-
-**Cleanup:** `./03-cleanup.sh`
-
-### 4. Core-Only Deployment (Use Your Own OTel Collector)
-
-```bash
-cd k8s-core-only
-./01-deploy.sh
-```
-
-**Cleanup:** `./02-cleanup.sh`
+**Cleanup:** `task down`
 
 ---
 

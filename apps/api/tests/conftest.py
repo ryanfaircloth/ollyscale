@@ -33,19 +33,38 @@ def postgres_container():
         return
 
     # Configure testcontainers to use podman (macOS)
-    # Try multiple socket locations in order of preference
-    socket_paths = [
-        Path(f"/run/user/{os.getuid()}/podman/podman.sock"),  # Runtime socket (most reliable)
-        Path.home() / ".local/share/containers/podman/machine/qemu/podman.sock",  # Machine socket
-        Path("/var/run/docker.sock"),  # Docker fallback
-    ]
+    # Disable Ryuk on macOS/podman - it doesn't work with podman socket mounting
+    os.environ["TESTCONTAINERS_RYUK_DISABLED"] = "true"
 
-    for sock_path in socket_paths:
-        if sock_path.exists():
-            os.environ["DOCKER_HOST"] = f"unix://{sock_path}"
-            break
-    else:
-        pytest.skip("No podman/docker socket found. Install podman or set PYTEST_SKIP_TESTCONTAINERS=1")
+    # Try to get podman socket from machine inspect (works on macOS with Apple HyperVisor)
+    try:
+        result = subprocess.run(
+            ["podman", "machine", "inspect", "--format", "{{.ConnectionInfo.PodmanSocket.Path}}"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        socket_path = Path(result.stdout.strip())
+        if socket_path.exists():
+            os.environ["DOCKER_HOST"] = f"unix://{socket_path}"
+        else:
+            raise FileNotFoundError(f"Podman socket not found at {socket_path}")
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        # Fall back to trying common socket locations
+        socket_paths = [
+            Path(f"/run/user/{os.getuid()}/podman/podman.sock"),  # Runtime socket
+            Path.home() / ".local/share/containers/podman/machine/qemu/podman.sock",  # QEMU machine
+            Path("/var/run/docker.sock"),  # Docker fallback
+        ]
+        found = False
+        for sock_path in socket_paths:
+            if sock_path.exists():
+                os.environ["DOCKER_HOST"] = f"unix://{sock_path}"
+                found = True
+                break
+
+        if not found:
+            pytest.skip("No podman/docker socket found. Install podman or set PYTEST_SKIP_TESTCONTAINERS=1")
 
     container = PostgresContainer(
         image="postgres:16-alpine",

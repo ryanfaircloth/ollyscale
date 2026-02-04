@@ -5,31 +5,33 @@
 ### Production/POC Mode (uses ghcr.io)
 
 ```bash
-make up  # Uses ghcr.io/ryanfaircloth/ollyscale images
+task up  # Uses ghcr.io/ryanfaircloth/ollyscale images
 ```
 
 ### Development Mode (uses local registry)
 
 ```bash
 # Build local images with timestamp version (0.0.TIMESTAMP)
-make build
+task deploy
 
-# Deploy with local images
-make up
+# Or just create cluster
+task up
 ```
 
 ## How It Works
 
-1. **`make up`** (default): Uses production images from `ghcr.io/ryanfaircloth/ollyscale`
+1. **`task up`** (default): Uses production images from `ghcr.io/ryanfaircloth/ollyscale`
 
-2. **`make build`**:
+2. **`task deploy`**:
+   - Runs lint and tests first (validation)
    - Builds images locally with version `0.0.$(timestamp)`
    - Pushes to local registry at `registry.ollyscale.test:49443`
    - Creates `.kind/terraform.tfvars` with local configuration (gitignored)
+   - Applies terraform to deploy
 
-3. **`make up`** (after build): Uses local images from `.kind/terraform.tfvars`
+3. **`task up`** (after build): Uses local images from `.kind/terraform.tfvars`
 
-4. **Switch back to production**: Delete `.kind/terraform.tfvars` and run `make up`
+4. **Switch back to production**: Delete `.kind/terraform.tfvars` and run `task up`
 
 ## Implementation Details
 
@@ -46,16 +48,18 @@ make up
    - Uses template variables: `${image_registry}` and `${chart_registry}`
    - Terraform renders templates at apply time
 
-4. **Local Build** (`make build`):
-   - Runs `charts/build-and-push-local.sh` with timestamp version
+4. **Local Build** (`task deploy`):
+   - Runs validation (lint + tests) first
+   - Builds and pushes images with timestamp version
    - Generates `terraform.tfvars` with local configuration
    - File is gitignored to keep git clean
 
 ## Benefits
 
 ✅ **Clean Git**: `terraform.tfvars` is gitignored, no version churn in YAML  
-✅ **Simple Workflow**: `make build` → `make up` for development  
-✅ **POC/Demo Ready**: `make up` works immediately with public images  
+✅ **Simple Workflow**: `task deploy` for full development build  
+✅ **POC/Demo Ready**: `task up` works immediately with public images  
+✅ **Validation**: Lint and tests run before every build  
 ✅ **Timestamp Versions**: `0.0.TIMESTAMP` format for local builds  
 ✅ **Easy Reset**: Delete `terraform.tfvars` to switch back to production
 

@@ -1,0 +1,730 @@
+version: "3"
+
+# OllyScale Build System
+# Unified build configuration for local (Podman) and CI (Docker buildx)
+# Install taskfile: https://taskfile.dev/installation/
+
+vars:
+  # Project configuration (from environment in CI, hardcoded for local)
+  PROJECT_SLUG:
+    sh: echo "${PROJECT_SLUG:-ollyscale}"
+  GH_ORG:
+    sh: echo "${GH_ORG:-ryanfaircloth}"
+
+  # Container runtime detection
+  CONTAINER_RUNTIME:
+    sh: |
+      if command -v podman &> /dev/null; then
+        echo "podman"
+      elif command -v docker &> /dev/null; then
+        echo "docker"
+      else
+        echo "none"
+      fi
+
+  # Registry configuration
+  REGISTRY: ghcr.io
+  REGISTRY_ORG: "{{.GH_ORG}}"
+  IMAGE_PREFIX: "{{.REGISTRY}}/{{.REGISTRY_ORG}}/{{.PROJECT_SLUG}}"
+
+  # Local development registry (KIND cluster)
+  EXTERNAL_REGISTRY: registry.ollyscale.test:49443
+  INTERNAL_REGISTRY: docker-registry.registry.svc.cluster.local:5000
+  EXTERNAL_CHART_REGISTRY: "{{.EXTERNAL_REGISTRY}}/{{.PROJECT_SLUG}}/charts"
+  INTERNAL_CHART_REGISTRY: "{{.INTERNAL_REGISTRY}}/{{.PROJECT_SLUG}}/charts"
+
+  # Build configuration
+  VERSION:
+    sh: echo "${VERSION:-0.0.0-dev.$(date +%s)}"
+
+  # Kubernetes
+  CLUSTER_NAME: "{{.PROJECT_SLUG}}"
+  NAMESPACE: ollyscale
+
+  # Container-specific flags
+  PODMAN_FLAGS: --tls-verify=false
+  DOCKER_FLAGS: ""
+
+  PUSH_FLAGS:
+    sh: |
+      if [ "{{.CONTAINER_RUNTIME}}" = "podman" ]; then
+        echo "--tls-verify=false"
+      else
+        echo ""
+      fi
+
+  # Build platform (local vs CI)
+  BUILD_PLATFORMS:
+    sh: |
+      if [ "${CI:-false}" = "true" ]; then
+        echo "linux/amd64,linux/arm64"
+      else
+        echo "$(uname -m | sed 's/x86_64/linux\/amd64/;s/aarch64/linux\/arm64/;s/arm64/linux\/arm64/')"
+      fi
+
+env:
+  DOCKER_BUILDKIT: 1
+  BUILDKIT_PROGRESS: plain
+
+set:
+  - errexit
+  - pipefail
+  - nounset
+
+tasks:
+  # ====================
+  # Setup & Validation
+  # ====================
+
+  check:
+    desc: Check prerequisites and configuration
+    cmds:
+      - echo "Checking build environment..."
+      - |
+        # Check for required commands
+        MISSING=""
+
+        if ! command -v uv &> /dev/null; then
+          echo "❌ uv not found (required for Python dependency management)"
+          MISSING="$MISSING uv"
+        fi
+
+        if [ "{{.CONTAINER_RUNTIME}}" = "none" ]; then
+          echo "❌ Neither podman nor docker found (required for container builds)"
+          MISSING="$MISSING podman/docker"
+        fi
+
+        if ! command -v helm &> /dev/null; then
+          echo "❌ helm not found (required for chart packaging)"
+          MISSING="$MISSING helm"
+        fi
+
+        if ! command -v yq &> /dev/null; then
+          echo "❌ yq not found (required for YAML manipulation)"
+          MISSING="$MISSING yq"
+        fi
+
+        if ! command -v kubectl &> /dev/null; then
+          echo "❌ kubectl not found (required for Kubernetes operations)"
+          MISSING="$MISSING kubectl"
+        fi
+
+        if ! command -v kind &> /dev/null; then
+          echo "❌ kind not found (required for local cluster)"
+          MISSING="$MISSING kind"
+        fi
+
+        if ! command -v terraform &> /dev/null; then
+          echo "❌ terraform not found (required for infrastructure)"
+          MISSING="$MISSING terraform"
+        fi
+
+        if [ -n "$MISSING" ]; then
+          echo ""
+          echo "Missing required commands:$MISSING"
+          echo ""
+          echo "Install missing tools:"
+          echo "  uv: curl -LsSf https://astral.sh/uv/install.sh | sh"
+          echo "  podman: brew install podman"
+          echo "  helm: brew install helm"
+          echo "  yq: brew install yq"
+          echo "  kubectl: brew install kubectl"
+          echo "  kind: brew install kind"
+          echo "  terraform: brew install terraform"
+          exit 1
+        fi
+      - echo "✓ All required commands available"
+      - 'echo "Container runtime: {{.CONTAINER_RUNTIME}}"'
+      - 'echo "Build version: {{.VERSION}}"'
+      - 'echo "Build platforms: {{.BUILD_PLATFORMS}}"'
+      - 'echo "Registry: {{.EXTERNAL_REGISTRY}}"'
+      - echo "✅ Environment ready"
+
+  install:
+    desc: Install dependencies for all Python projects
+    deps:
+      - install:api
+      - install:demo
+      - install:demo-agent
+      - install:build
+
+  install:api:
+    desc: Install API dependencies
+    dir: apps/api
+    cmds:
+      - echo "📦 Installing API dependencies..."
+      - uv sync --all-extras
+
+  install:demo:
+    desc: Install demo dependencies
+    dir: apps/demo
+    cmds:
+      - echo "📦 Installing demo dependencies..."
+      - uv sync --all-extras
+
+  install:demo-agent:
+    desc: Install demo-agent dependencies
+    dir: apps/demo-otel-agent
+    cmds:
+      - echo "📦 Installing demo-agent dependencies..."
+      - uv sync --all-extras
+
+  install:build:
+    desc: Install build script dependencies
+    dir: scripts/build
+    cmds:
+      - echo "📦 Installing build dependencies..."
+      - uv sync
+
+  # ====================
+  # Testing & Quality
+  # ====================
+
+  lint:
+    desc: Run pre-commit checks (required before build)
+    cmds:
+      - echo "Running pre-commit checks..."
+      - pre-commit run --all-files
+      - echo "Lint checks passed"
+
+  lint-fix:
+    desc: Run pre-commit with auto-fix
+    cmds:
+      - echo "🔧 Running pre-commit with auto-fix..."
+      - pre-commit run --all-files || true
+      - echo "🔧 Auto-fixes applied. Review changes before committing."
+
+  precommit-setup:
+    desc: Install and configure pre-commit hooks
+    cmds:
+      - echo "🔧 Setting up pre-commit hooks for ollyScale..."
+      - |
+        if ! command -v pre-commit &> /dev/null; then
+          echo "📦 Installing pre-commit..."
+          pip install pre-commit
+        else
+          echo "✅ pre-commit is already installed"
+        fi
+      - echo "🔗 Installing git hooks..."
+      - pre-commit install
+      - echo "📝 Installing commit-msg hook..."
+      - pre-commit install --hook-type commit-msg || echo "⚠️  commit-msg hook not configured (optional)"
+      - echo "🧪 Running pre-commit on all files (this may take a while)..."
+      - |
+        pre-commit run --all-files || {
+          echo "⚠️  Some checks failed. This is normal for first-time setup."
+          echo "💡 The hooks will now run automatically on git commit."
+          echo "💡 To run manually: pre-commit run --all-files"
+          echo "💡 To update hooks: pre-commit autoupdate"
+          exit 0
+        }
+      - echo "✨ Pre-commit setup complete!"
+      - echo ""
+      - echo "📚 Usage:"
+      - 'echo "  • Hooks run automatically on: git commit"'
+      - 'echo "  • Run manually on all files: pre-commit run --all-files"'
+      - 'echo "  • Run on specific files: pre-commit run --files <file1> <file2>"'
+      - 'echo "  • Skip hooks (not recommended): git commit --no-verify"'
+      - 'echo "  • Update hooks to latest: pre-commit autoupdate"'
+
+  test:
+    desc: Run all unit tests (required before build)
+    deps:
+      - test:api
+      - test:demo
+      - test:demo-agent
+    cmds:
+      - echo "🧪 Running unit tests..."
+      - echo "✅ All tests passed"
+
+  test:api:
+    desc: Run API unit tests
+    deps: [install:api]
+    dir: apps/api
+    cmds:
+      - |
+        if [ -f "pyproject.toml" ] && grep -q "pytest" pyproject.toml; then
+          echo "Running API tests..."
+          uv run pytest tests/ -v || exit 1
+        else
+          echo "⚠️  No tests configured for API (skipping)"
+        fi
+
+  test:demo:
+    desc: Run demo unit tests
+    deps: [install:demo]
+    dir: apps/demo
+    cmds:
+      - |
+        if [ -f "test_demo.py" ]; then
+          echo "Running demo tests..."
+          uv run pytest test_demo.py -v || exit 1
+        else
+          echo "⚠️  No tests found for demo (skipping)"
+        fi
+
+  test:demo-agent:
+    desc: Run demo-agent unit tests
+    deps: [install:demo-agent]
+    dir: apps/demo-otel-agent
+    cmds:
+      - |
+        if [ -f "test_agent.py" ]; then
+          echo "Running demo-agent tests..."
+          uv run pytest test_agent.py -v || exit 1
+        else
+          echo "⚠️  No tests found for demo-agent (skipping)"
+        fi
+
+  test:web-ui:
+    desc: Run web UI tests
+    dir: apps/web-ui
+    cmds:
+      - |
+        if [ -f "package.json" ] && grep -q "vitest" package.json; then
+          echo "Running web UI tests..."
+          npm install --silent 2>/dev/null || true
+          npm test || exit 1
+        else
+          echo "⚠️  No tests configured for web-ui (skipping)"
+        fi
+
+  validate:
+    desc: Run all validation (lint + tests) before build
+    deps:
+      - lint
+    cmds:
+      - echo "✅ All validation passed"
+
+  # ====================
+  # Container Image Building
+  # ====================
+
+  build:image:
+    desc: Build all container images (runs validation first)
+    deps:
+      - build:image:api
+      - build:image:web-ui
+      - build:image:opamp
+      - build:image:demo
+      - build:image:demo-agent
+
+  build:image:api:
+    desc: Build API backend image
+    deps: [lint, test:api]
+    cmds:
+      - echo "🔨 Building API Backend..."
+      - echo "{{.VERSION}}" > .task-version-api
+      - |
+        {{.CONTAINER_RUNTIME}} build \
+          -f apps/api/Dockerfile \
+          -t {{.PROJECT_SLUG}}/api:{{.VERSION}} \
+          -t {{.EXTERNAL_REGISTRY}}/{{.PROJECT_SLUG}}/api:{{.VERSION}} \
+          --platform {{.BUILD_PLATFORMS}} \
+          apps/api/
+      - echo "✅ API Backend built"
+
+  build:image:web-ui:
+    desc: Build web UI image
+    deps: [lint, test:web-ui]
+    cmds:
+      - echo "🔨 Building Web UI..."
+      - echo "{{.VERSION}}" > .task-version-web-ui
+      - |
+        {{.CONTAINER_RUNTIME}} build \
+          -f apps/web-ui/Dockerfile \
+          -t {{.PROJECT_SLUG}}/web-ui:{{.VERSION}} \
+          -t {{.EXTERNAL_REGISTRY}}/{{.PROJECT_SLUG}}/web-ui:{{.VERSION}} \
+          --platform {{.BUILD_PLATFORMS}} \
+          apps/web-ui/
+      - echo "✅ Web UI built"
+
+  build:image:opamp:
+    desc: Build OpAMP server image
+    deps: [lint]
+    cmds:
+      - echo "🔨 Building OpAMP Server..."
+      - echo "{{.VERSION}}" > .task-version-opamp
+      - |
+        {{.CONTAINER_RUNTIME}} build \
+          -f apps/opamp-server/Dockerfile \
+          -t {{.PROJECT_SLUG}}/opamp-server:{{.VERSION}} \
+          -t {{.EXTERNAL_REGISTRY}}/{{.PROJECT_SLUG}}/opamp-server:{{.VERSION}} \
+          --platform {{.BUILD_PLATFORMS}} \
+          apps/opamp-server/
+      - echo "✅ OpAMP Server built"
+
+  build:image:demo:
+    desc: Build unified demo image
+    deps: [lint, test:demo]
+    cmds:
+      - echo "🔨 Building Unified Demo..."
+      - echo "{{.VERSION}}" > .task-version-demo
+      - |
+        {{.CONTAINER_RUNTIME}} build \
+          -f apps/demo/Dockerfile \
+          -t {{.PROJECT_SLUG}}/demo:{{.VERSION}} \
+          -t {{.EXTERNAL_REGISTRY}}/{{.PROJECT_SLUG}}/demo:{{.VERSION}} \
+          --platform {{.BUILD_PLATFORMS}} \
+          apps/demo/
+      - echo "✅ Unified Demo built"
+
+  build:image:demo-agent:
+    desc: Build AI agent demo image
+    deps: [lint, test:demo-agent]
+    cmds:
+      - echo "🔨 Building AI Agent Demo..."
+      - echo "{{.VERSION}}" > .task-version-demo-agent
+      - |
+        {{.CONTAINER_RUNTIME}} build \
+          -f apps/demo-otel-agent/Dockerfile \
+          -t {{.PROJECT_SLUG}}/demo-otel-agent:{{.VERSION}} \
+          -t {{.EXTERNAL_REGISTRY}}/{{.PROJECT_SLUG}}/demo-otel-agent:{{.VERSION}} \
+          --platform {{.BUILD_PLATFORMS}} \
+          apps/demo-otel-agent/
+      - echo "✅ AI Agent Demo built"
+
+  # ====================
+  # Helm Charts - Build
+  # ====================
+
+  build:chart:
+    desc: Build (package) all Helm charts
+    deps:
+      - build:chart:ollyscale
+      - build:chart:demos
+      - build:chart:otel-agent
+
+  build:chart:ollyscale:
+    desc: Package ollyscale Helm chart
+    deps: [build:image:api, build:image:web-ui, build:image:opamp]
+    dir: charts
+    vars:
+      VERSION:
+        sh: echo "${VERSION:-0.0.0-dev.$(date +%s)}"
+      VERSION_API:
+        sh: cat ../.task-version-api
+      VERSION_WEB_UI:
+        sh: cat ../.task-version-web-ui
+      VERSION_OPAMP:
+        sh: cat ../.task-version-opamp
+      CHART_DIR: ollyscale
+      NEW_VERSION: "0.0.0-{{.VERSION}}"
+    cmds:
+      - echo "{{.VERSION}}" > ../.task-version-chart-ollyscale
+      - echo "📦 Packaging ollyscale Helm chart..."
+      - 'echo "Chart version: {{.NEW_VERSION}}"'
+      - 'echo "API image version: {{.VERSION_API}}"'
+      - 'echo "Web UI image version: {{.VERSION_WEB_UI}}"'
+      - 'echo "OpAMP image version: {{.VERSION_OPAMP}}"'
+      - |
+        if [ -z "${CI:-}" ]; then
+          # Local build: set chart version via helm flags (terraform handles image tag overrides)
+          helm package {{.CHART_DIR}} --version "{{.NEW_VERSION}}" --app-version "{{.VERSION_API}}"
+        else
+          # CI build: release-please already updated Chart.yaml and values.yaml
+          helm package {{.CHART_DIR}}
+        fi
+      - 'echo "✅ Chart packaged: ollyscale-{{.NEW_VERSION}}"'
+
+  build:chart:demos:
+    desc: Package ollyscale-demos Helm chart
+    deps: [build:image:demo]
+    dir: charts
+    vars:
+      VERSION:
+        sh: echo "${VERSION:-0.0.0-dev.$(date +%s)}"
+      VERSION_DEMO:
+        sh: cat ../.task-version-demo
+      CHART_DIR: ollyscale-demos
+      NEW_VERSION: "0.0.0-{{.VERSION}}"
+    cmds:
+      - echo "{{.VERSION}}" > ../.task-version-chart-demos
+      - echo "📦 Packaging ollyscale-demos Helm chart..."
+      - 'echo "Chart version: {{.NEW_VERSION}}"'
+      - 'echo "Demo image version: {{.VERSION_DEMO}}"'
+      - |
+        if [ -z "${CI:-}" ]; then
+          # Local build: set chart version via helm flags (terraform handles image tag overrides)
+          helm package {{.CHART_DIR}} --version "{{.NEW_VERSION}}" --app-version "{{.VERSION_DEMO}}"
+        else
+          # CI build: release-please already updated Chart.yaml and values.yaml
+          helm package {{.CHART_DIR}}
+        fi
+      - 'echo "✅ Chart packaged: ollyscale-demos-{{.NEW_VERSION}}"'
+
+  build:chart:otel-agent:
+    desc: Package ollyscale-otel-agent Helm chart
+    deps: [build:image:demo-agent]
+    dir: charts
+    vars:
+      VERSION:
+        sh: echo "${VERSION:-0.0.0-dev.$(date +%s)}"
+      VERSION_DEMO_AGENT:
+        sh: cat ../.task-version-demo-agent
+      CHART_DIR: ollyscale-otel-agent
+      NEW_VERSION: "0.0.0-{{.VERSION}}"
+    cmds:
+      - echo "{{.VERSION}}" > ../.task-version-chart-otel-agent
+      - echo "📦 Packaging ollyscale-otel-agent Helm chart..."
+      - 'echo "Chart version: {{.NEW_VERSION}}"'
+      - 'echo "Demo agent image version: {{.VERSION_DEMO_AGENT}}"'
+      - |
+        if [ -z "${CI:-}" ]; then
+          # Local build: set chart version via helm flags (terraform handles image tag overrides)
+          helm package {{.CHART_DIR}} --version "{{.NEW_VERSION}}" --app-version "{{.VERSION_DEMO_AGENT}}"
+        else
+          # CI build: release-please already updated Chart.yaml and values.yaml
+          helm package {{.CHART_DIR}}
+        fi
+      - 'echo "✅ Chart packaged: ollyscale-otel-agent-{{.NEW_VERSION}}"'
+
+  # ====================
+  # Build All
+  # ====================
+
+  build:
+    desc: Build all images and charts
+    deps:
+      - build:image
+      - build:chart
+
+  # ====================
+  # Push Images
+  # ====================
+
+  push:image:
+    desc: Push all images to registry
+    deps:
+      - push:image:api
+      - push:image:web-ui
+      - push:image:opamp
+      - push:image:demo
+      - push:image:demo-agent
+
+  push:image:api:
+    desc: Push API image
+    deps: [build:image:api]
+    cmds:
+      - echo "📤 Pushing API Backend..."
+      - "{{.CONTAINER_RUNTIME}} push {{.PUSH_FLAGS}} {{.EXTERNAL_REGISTRY}}/{{.PROJECT_SLUG}}/api:$(cat .task-version-api)"
+      - echo "✅ API Backend pushed"
+
+  push:image:web-ui:
+    desc: Push web UI image
+    deps: [build:image:web-ui]
+    cmds:
+      - echo "📤 Pushing Web UI..."
+      - "{{.CONTAINER_RUNTIME}} push {{.PUSH_FLAGS}} {{.EXTERNAL_REGISTRY}}/{{.PROJECT_SLUG}}/web-ui:$(cat .task-version-web-ui)"
+      - echo "✅ Web UI pushed"
+
+  push:image:opamp:
+    desc: Push OpAMP server image
+    deps: [build:image:opamp]
+    cmds:
+      - echo "📤 Pushing OpAMP Server..."
+      - "{{.CONTAINER_RUNTIME}} push {{.PUSH_FLAGS}} {{.EXTERNAL_REGISTRY}}/{{.PROJECT_SLUG}}/opamp-server:$(cat .task-version-opamp)"
+      - echo "✅ OpAMP Server pushed"
+
+  push:image:demo:
+    desc: Push unified demo image
+    deps: [build:image:demo]
+    cmds:
+      - echo "📤 Pushing Unified Demo..."
+      - "{{.CONTAINER_RUNTIME}} push {{.PUSH_FLAGS}} {{.EXTERNAL_REGISTRY}}/{{.PROJECT_SLUG}}/demo:$(cat .task-version-demo)"
+      - echo "✅ Unified Demo pushed"
+
+  push:image:demo-agent:
+    desc: Push AI agent demo image
+    deps: [build:image:demo-agent]
+    cmds:
+      - echo "📤 Pushing AI Agent Demo..."
+      - "{{.CONTAINER_RUNTIME}} push {{.PUSH_FLAGS}} {{.EXTERNAL_REGISTRY}}/{{.PROJECT_SLUG}}/demo-otel-agent:$(cat .task-version-demo-agent)"
+      - echo "✅ AI Agent Demo pushed"
+
+  # ====================
+  # Helm Charts - Push
+  # ====================
+
+  push:chart:
+    desc: Push all Helm charts to registry
+    deps:
+      - push:chart:ollyscale
+      - push:chart:demos
+      - push:chart:otel-agent
+
+  push:chart:ollyscale:
+    desc: Push ollyscale Helm chart
+    deps: [build:chart:ollyscale]
+    dir: charts
+    cmds:
+      - echo "📤 Pushing ollyscale chart..."
+      - |
+        VERSION=$(cat ../.task-version-chart-ollyscale)
+        helm push ollyscale-0.0.0-${VERSION}.tgz oci://{{.EXTERNAL_CHART_REGISTRY}} --insecure-skip-tls-verify
+        echo "✅ Chart pushed: ollyscale-0.0.0-${VERSION}"
+
+  push:chart:demos:
+    desc: Push ollyscale-demos Helm chart
+    deps: [build:chart:demos]
+    dir: charts
+    cmds:
+      - echo "📤 Pushing ollyscale-demos chart..."
+      - |
+        VERSION=$(cat ../.task-version-chart-demos)
+        helm push ollyscale-demos-0.0.0-${VERSION}.tgz oci://{{.EXTERNAL_CHART_REGISTRY}} --insecure-skip-tls-verify
+        echo "✅ Chart pushed: ollyscale-demos-0.0.0-${VERSION}"
+
+  push:chart:otel-agent:
+    desc: Push ollyscale-otel-agent Helm chart
+    deps: [build:chart:otel-agent]
+    dir: charts
+    cmds:
+      - echo "📤 Pushing ollyscale-otel-agent chart..."
+      - |
+        VERSION=$(cat ../.task-version-chart-otel-agent)
+        helm push ollyscale-otel-agent-0.0.0-${VERSION}.tgz oci://{{.EXTERNAL_CHART_REGISTRY}} --insecure-skip-tls-verify
+        echo "✅ Chart pushed: ollyscale-otel-agent-0.0.0-${VERSION}"
+
+  # ====================
+  # Push All
+  # ====================
+
+  push:
+    desc: Push all images and charts
+    deps:
+      - push:image
+      - push:chart
+
+  # ====================
+  # Complete Build & Deploy
+  # ====================
+
+  build-and-push:
+    desc: Build and push all images and charts (validates first)
+    deps:
+      - push
+    cmds:
+      - echo "✅ Build complete!"
+      - echo ""
+      - echo "Container Images:"
+      - 'echo "  • Built/pushed to: {{.EXTERNAL_REGISTRY}}/{{.PROJECT_SLUG}}/*:{{.VERSION}}"'
+      - echo ""
+      - echo "Helm Charts:"
+      - 'echo "  • External: oci://{{.EXTERNAL_CHART_REGISTRY}}"'
+      - 'echo "  • Internal: oci://{{.INTERNAL_CHART_REGISTRY}}"'
+
+  deploy:
+    desc: Build, push, and deploy to local KIND cluster (replaces make deploy)
+    deps:
+      - build-and-push
+    cmds:
+      - echo "🔄 Updating terraform auto vars..."
+      - |
+        VERSION_CHART_OLLYSCALE=$(cat .task-version-chart-ollyscale)
+        VERSION_CHART_OTEL_AGENT=$(cat .task-version-chart-otel-agent)
+        VERSION_API=$(cat .task-version-api)
+        VERSION_OPAMP=$(cat .task-version-opamp)
+        VERSION_DEMO_AGENT=$(cat .task-version-demo-agent)
+        cat > .kind/terraform.auto.tfvars <<EOF
+        ollyscale_chart_tag = "0.0.0-${VERSION_CHART_OLLYSCALE}"
+        ollyscale_tag = "${VERSION_API}"
+        opamp_tag = "${VERSION_OPAMP}"
+        ai_agent_chart_tag = "0.0.0-${VERSION_CHART_OTEL_AGENT}"
+        ai_agent_image = "{{.INTERNAL_REGISTRY}}/{{.PROJECT_SLUG}}/demo-otel-agent"
+        ai_agent_tag = "${VERSION_DEMO_AGENT}"
+        EOF
+      - echo "🔄 Applying terraform configuration..."
+      - cd .kind && terraform apply -auto-approve
+      - echo "✅ Deployment complete!"
+
+  # ====================
+  # KIND Cluster Management
+  # ====================
+
+  up:
+    desc: Create KIND cluster (replaces make up)
+    dir: .kind
+    cmds:
+      - |
+        if [ ! -f terraform.tfstate ]; then
+          terraform init
+        fi
+      - |
+        if ! kind get clusters 2>/dev/null | grep -q "^{{.CLUSTER_NAME}}$$"; then
+          echo "🚀 Creating new cluster..."
+          export TF_VAR_bootstrap=true
+          terraform apply -auto-approve
+          echo "⏳ Waiting for Gateway API CRDs..."
+          sleep 30
+          for i in {1..10}; do
+            if kubectl get crd gateways.gateway.networking.k8s.io httproutes.gateway.networking.k8s.io 2>/dev/null; then
+              echo "✅ Gateway API CRDs ready!"
+              kubectl wait --for condition=established --timeout=60s crd/gateways.gateway.networking.k8s.io crd/httproutes.gateway.networking.k8s.io
+              break
+            fi
+            echo "  Attempt $i/10: CRDs not found, waiting..."
+            sleep 30
+          done
+          echo "🔄 Second pass to enable HTTPRoutes..."
+          export TF_VAR_bootstrap=false
+          terraform apply -auto-approve
+        else
+          echo "♻️  Updating existing cluster..."
+          export TF_VAR_bootstrap=false
+          terraform apply -auto-approve
+        fi
+      - echo "✅ KIND cluster ready!"
+
+  down:
+    desc: Destroy KIND cluster (replaces make down)
+    cmds:
+      - echo "Deleting KIND cluster..."
+      - kind delete cluster --name {{.CLUSTER_NAME}} || true
+      - rm -f .kind/terraform.tfstate .kind/terraform.tfstate.backup
+      - echo "✅ Cleanup complete!"
+
+  clean:
+    desc: Clean build artifacts and caches
+    cmds:
+      - rm -f charts/*.tgz
+      - echo "✅ Build artifacts cleaned"
+
+  # ====================
+  # CI-specific Tasks
+  # ====================
+
+  ci:build:
+    desc: Build images for CI (uses Docker buildx with multi-arch)
+    deps:
+      - build
+    env:
+      CI: "true"
+
+  ci:push-ghcr:
+    desc: Push images to GitHub Container Registry (CI only)
+    cmds:
+      - echo "📤 Pushing to GitHub Container Registry..."
+      - |
+        for image in api web-ui opamp-server demo demo-otel-agent; do
+          echo "Pushing ${image}..."
+          docker tag {{.PROJECT_SLUG}}/${image}:{{.VERSION}} {{.IMAGE_PREFIX}}/${image}:{{.VERSION}}
+          docker push {{.IMAGE_PREFIX}}/${image}:{{.VERSION}}
+        done
+      - echo "✅ All images pushed to GHCR"
+
+  ci:build-all:
+    desc: Build all images for CI (skips validation)
+    deps:
+      - build:image:api
+      - build:image:web-ui
+      - build:image:opamp
+      - build:image:demo
+      - build:image:demo-agent
+    env:
+      CI: "true"
+
+  default:
+    desc: Show available tasks
+    cmds:
+      - task --list

@@ -1,24 +1,35 @@
-name: build-and-publish
+name: Build and Publish
 
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to build (e.g., 1.2.3)"
+        required: true
+        type: string
 
 permissions:
   contents: read
   packages: write
 
+env:
+  REGISTRY: ghcr.io
+  REGISTRY_ORG: ${{ github.repository_owner }}
+
 jobs:
-  # Container builds - triggered by matching tag patterns
-  build-ollyscale:
-    if: startsWith(github.ref, 'refs/tags/ollyscale-v')
+  build-and-publish:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - name: Checkout code
+        uses: actions/checkout@v6
 
-      - name: Extract version from tag
-        id: version
-        run: echo "version=${GITHUB_REF#refs/tags/ollyscale-v}" >> $GITHUB_OUTPUT
+      - name: Install Task
+        uses: arduino/setup-task@v2
+        with:
+          version: "3.x"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -26,292 +37,135 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          python-version: "3.11"
 
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
-          images: ghcr.io/ryanfaircloth/ollyscale/ollyscale
-          tags: |
-            type=semver,pattern={{version}},value=${{ steps.version.outputs.version }}
-            type=semver,pattern={{major}}.{{minor}},value=${{ steps.version.outputs.version }}
-            type=semver,pattern={{major}},value=${{ steps.version.outputs.version }}
-            type=raw,value=latest,enable=${{ !github.event.release.prerelease }}
+          node-version: "20"
 
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v6
-        with:
-          context: apps/api
-          file: apps/api/Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+      - name: Install dependencies
+        run: |
+          # Python dependencies for testing
+          pip install pytest pytest-cov
 
-  build-web-ui:
-    if: startsWith(github.ref, 'refs/tags/web-ui-v')
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
+          # Web UI dependencies (if tests exist)
+          if [ -f "apps/web-ui/package.json" ]; then
+            cd apps/web-ui
+            npm ci
+            cd ../..
+          fi
 
-      - name: Extract version from tag
-        id: version
-        run: echo "version=${GITHUB_REF#refs/tags/web-ui-v}" >> $GITHUB_OUTPUT
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Run validation (lint + tests)
+        run: task validate
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          registry: ghcr.io
+          registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/ryanfaircloth/ollyscale/web-ui
-          tags: |
-            type=semver,pattern={{version}},value=${{ steps.version.outputs.version }}
-            type=semver,pattern={{major}}.{{minor}},value=${{ steps.version.outputs.version }}
-            type=semver,pattern={{major}},value=${{ steps.version.outputs.version }}
-            type=raw,value=latest,enable=${{ !github.event.release.prerelease }}
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v6
-        with:
-          context: apps/web-ui
-          file: apps/web-ui/Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-  build-opamp-server:
-    if: startsWith(github.ref, 'refs/tags/opamp-server-v')
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Extract version from tag
+      - name: Determine version
         id: version
-        run: echo "version=${GITHUB_REF#refs/tags/opamp-server-v}" >> $GITHUB_OUTPUT
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/ryanfaircloth/ollyscale/opamp-server
-          tags: |
-            type=semver,pattern={{version}},value=${{ steps.version.outputs.version }}
-            type=semver,pattern={{major}}.{{minor}},value=${{ steps.version.outputs.version }}
-            type=semver,pattern={{major}},value=${{ steps.version.outputs.version }}
-            type=raw,value=latest,enable=${{ !github.event.release.prerelease }}
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v6
-        with:
-          context: apps/opamp-server
-          file: apps/opamp-server/Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-  build-demo:
-    if: startsWith(github.ref, 'refs/tags/demo-v')
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Extract version from tag
-        id: version
-        run: echo "version=${GITHUB_REF#refs/tags/demo-v}" >> $GITHUB_OUTPUT
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/ryanfaircloth/ollyscale/demo
-          tags: |
-            type=semver,pattern={{version}},value=${{ steps.version.outputs.version }}
-            type=semver,pattern={{major}}.{{minor}},value=${{ steps.version.outputs.version }}
-            type=semver,pattern={{major}},value=${{ steps.version.outputs.version }}
-            type=raw,value=latest,enable=${{ !github.event.release.prerelease }}
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v6
-        with:
-          context: apps/demo
-          file: apps/demo/Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-  build-demo-otel-agent:
-    if: startsWith(github.ref, 'refs/tags/demo-otel-agent-v')
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Extract version from tag
-        id: version
-        run: echo "version=${GITHUB_REF#refs/tags/demo-otel-agent-v}" >> $GITHUB_OUTPUT
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/ryanfaircloth/ollyscale/demo-otel-agent
-          tags: |
-            type=semver,pattern={{version}},value=${{ steps.version.outputs.version }}
-            type=semver,pattern={{major}}.{{minor}},value=${{ steps.version.outputs.version }}
-            type=semver,pattern={{major}},value=${{ steps.version.outputs.version }}
-            type=raw,value=latest,enable=${{ !github.event.release.prerelease }}
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v6
-        with:
-          context: apps/demo-otel-agent
-          file: apps/demo-otel-agent/Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-  # Helm chart publishing
-  publish-chart-ollyscale:
-    if: startsWith(github.ref, 'refs/tags/chart-ollyscale-v')
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Extract version from tag
-        id: version
-        run: echo "version=${GITHUB_REF#refs/tags/chart-ollyscale-v}" >> $GITHUB_OUTPUT
-
-      - name: Install Helm
-        uses: azure/setup-helm@v4
-        with:
-          version: latest
-
-      - name: Log in to GitHub Container Registry
         run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io --username ${{ github.actor }} --password-stdin
+          if [ "${{ github.event_name }}" = "release" ]; then
+            VERSION="${GITHUB_REF#refs/tags/v}"
+            echo "Building release version: $VERSION"
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ inputs.version }}"
+            echo "Building manual version: $VERSION"
+          else
+            VERSION="0.0.0-${GITHUB_SHA::8}"
+            echo "Building dev version: $VERSION"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
 
-      - name: Package and push Helm chart
+      - name: Set project variables
         run: |
-          cd charts/ollyscale
-          helm package .
-          helm push ollyscale-${{ steps.version.outputs.version }}.tgz oci://ghcr.io/ryanfaircloth/ollyscale/charts
+          echo "PROJECT_SLUG=${{ github.event.repository.name }}" >> $GITHUB_ENV
+          echo "GH_ORG=${{ github.repository_owner }}" >> $GITHUB_ENV
 
-  publish-chart-ollyscale-demos:
-    if: startsWith(github.ref, 'refs/tags/chart-ollyscale-demos-v')
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
+      - name: Check build environment
+        run: task check
 
-      - name: Extract version from tag
-        id: version
-        run: echo "version=${GITHUB_REF#refs/tags/chart-ollyscale-demos-v}" >> $GITHUB_OUTPUT
+      - name: Build all images (validation already passed)
+        env:
+          CI: "true"
+          VERSION: ${{ steps.version.outputs.version }}
+          REGISTRY: ${{ env.REGISTRY }}
+          REGISTRY_ORG: ${{ env.REGISTRY_ORG }}
+          EXTERNAL_REGISTRY: ${{ env.REGISTRY }}/${{ env.REGISTRY_ORG }}
+        run: task ci:build
 
-      - name: Install Helm
-        uses: azure/setup-helm@v4
-        with:
-          version: latest
-
-      - name: Log in to GitHub Container Registry
+      - name: Push images to GHCR
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          REGISTRY: ${{ env.REGISTRY }}
+          REGISTRY_ORG: ${{ env.REGISTRY_ORG }}
         run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io --username ${{ github.actor }} --password-stdin
+          for image in api web-ui opamp-server demo demo-otel-agent; do
+            echo "Pushing ${image}..."
+            docker tag ollyscale/${image}:${VERSION} ${REGISTRY}/${REGISTRY_ORG}/ollyscale/${image}:${VERSION}
+            docker tag ollyscale/${image}:latest ${REGISTRY}/${REGISTRY_ORG}/ollyscale/${image}:latest
+            docker push ${REGISTRY}/${REGISTRY_ORG}/ollyscale/${image}:${VERSION}
+            docker push ${REGISTRY}/${REGISTRY_ORG}/ollyscale/${image}:latest
+          done
 
-      - name: Package and push Helm chart
+      - name: Login to Helm registry
         run: |
-          cd charts/ollyscale-demos
-          helm package .
-          helm push ollyscale-demos-${{ steps.version.outputs.version }}.tgz oci://ghcr.io/ryanfaircloth/ollyscale/charts
+          echo ${{ secrets.GITHUB_TOKEN }} | helm registry login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
 
-  publish-chart-ollyscale-otel-agent:
-    if: startsWith(github.ref, 'refs/tags/chart-ollyscale-otel-agent-v')
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Extract version from tag
-        id: version
-        run: echo "version=${GITHUB_REF#refs/tags/chart-ollyscale-otel-agent-v}" >> $GITHUB_OUTPUT
-
-      - name: Install Helm
-        uses: azure/setup-helm@v4
-        with:
-          version: latest
-
-      - name: Log in to GitHub Container Registry
+      - name: Package and push Helm charts
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          CHART_REGISTRY: ${{ env.REGISTRY }}/${{ env.REGISTRY_ORG }}/charts
         run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io --username ${{ github.actor }} --password-stdin
+          cd charts
 
-      - name: Package and push Helm chart
+          # Package ollyscale chart
+          BASE_VERSION=$(grep "^version:" ollyscale/Chart.yaml | awk '{print $2}' | cut -d'-' -f1)
+          NEW_VERSION="${BASE_VERSION}-${VERSION}"
+
+          if [[ "$OSTYPE" == "darwin"* ]]; then
+            sed -i '' "s/^version: .*/version: ${NEW_VERSION}/" ollyscale/Chart.yaml
+          else
+            sed -i "s/^version: .*/version: ${NEW_VERSION}/" ollyscale/Chart.yaml
+          fi
+
+          helm package ollyscale
+          helm push ollyscale-${NEW_VERSION}.tgz oci://${CHART_REGISTRY}
+
+          # Package ollyscale-otel-agent chart
+          AGENT_BASE_VERSION=$(grep "^version:" ollyscale-otel-agent/Chart.yaml | awk '{print $2}' | cut -d'-' -f1)
+          AGENT_NEW_VERSION="${AGENT_BASE_VERSION}-${VERSION}"
+
+          if [[ "$OSTYPE" == "darwin"* ]]; then
+            sed -i '' "s/^version: .*/version: ${AGENT_NEW_VERSION}/" ollyscale-otel-agent/Chart.yaml
+          else
+            sed -i "s/^version: .*/version: ${AGENT_NEW_VERSION}/" ollyscale-otel-agent/Chart.yaml
+          fi
+
+          helm package ollyscale-otel-agent
+          helm push ollyscale-otel-agent-${AGENT_NEW_VERSION}.tgz oci://${CHART_REGISTRY}
+
+      - name: Build summary
         run: |
-          cd charts/ollyscale-otel-agent
-          helm package .
-          helm push ollyscale-otel-agent-${{ steps.version.outputs.version }}.tgz oci://ghcr.io/ryanfaircloth/ollyscale/charts
+          echo "## Build Complete! 🎉" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Version: ${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Images Published" >> $GITHUB_STEP_SUMMARY
+          echo "- \`${REGISTRY}/${REGISTRY_ORG}/ollyscale/api:${{ steps.version.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`${REGISTRY}/${REGISTRY_ORG}/ollyscale/web-ui:${{ steps.version.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`${REGISTRY}/${REGISTRY_ORG}/ollyscale/opamp-server:${{ steps.version.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`${REGISTRY}/${REGISTRY_ORG}/ollyscale/demo:${{ steps.version.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`${REGISTRY}/${REGISTRY_ORG}/ollyscale/demo-otel-agent:${{ steps.version.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Helm Charts Published" >> $GITHUB_STEP_SUMMARY
+          echo "- \`oci://${REGISTRY}/${REGISTRY_ORG}/charts/ollyscale\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`oci://${REGISTRY}/${REGISTRY_ORG}/charts/ollyscale-otel-agent\`" >> $GITHUB_STEP_SUMMARY

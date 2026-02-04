@@ -43,3 +43,5 @@ build/
 FILTERING-IMPROVEMENT-PLAN.md
 apps/frontend/OTLP_SPECIFICATION_COMPLIANCE.md
 apps/frontend/app/storage/OTLP_FIELD_MAPPING.md
+.task-version
+.task-version-*
