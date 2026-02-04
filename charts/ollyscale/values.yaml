@@ -190,14 +190,10 @@ browserCollector:
         protocols:
           http:
             endpoint: 0.0.0.0:4318
-            # No CORS configuration needed:
-            # - Production: Same-origin requests via HTTPRoute (no CORS)
-            # - Local dev: Browser sends to localhost:5002 API, not to K8s collector
     processors:
       batch:
-        timeout: 1s  # Shorter timeout for browser responsiveness
+        timeout: 1s
         send_batch_size: 100
-      # Add resource attributes to identify browser traces
       resource:
         attributes:
           - key: telemetry.source
@@ -293,7 +289,7 @@ api:
   replicaCount: 1
   image:
     repository: docker-registry.registry.svc.cluster.local:5000/ollyscale/api
-    tag: 0.1.10
+    tag: 0.2.0
     pullPolicy: ''
   serviceAccount:
     create: true
@@ -349,7 +345,7 @@ webui:
   replicaCount: 1
   image:
     repository: ghcr.io/ryanfaircloth/ollyscale/web-ui
-    tag: 0.1.10
+    tag: 0.2.0
     pullPolicy: ''
   serviceAccount:
     create: true
@@ -415,7 +411,7 @@ opampServer:
   replicaCount: 1
   image:
     repository: ghcr.io/ryanfaircloth/ollyscale/opamp-server
-    tag: 0.1.10
+    tag: 0.2.0
     pullPolicy: ''
   serviceAccount:
     create: true
@@ -475,7 +471,7 @@ otlpReceiver:
   replicaCount: 1
   image:
     repository: docker-registry.registry.svc.cluster.local:5000/ollyscale/api
-    tag: 0.1.10
+    tag: 0.2.0
     pullPolicy: ''
   serviceAccount:
     create: true
@@ -524,8 +520,6 @@ otlpReceiver:
   nodeSelector: {}
   tolerations: []
   affinity: {}
-
-# Postgresql database for v2 API backend (required)
 postgresql:
   teamId: ollyscale
   numberOfInstances: 2
@@ -550,8 +544,6 @@ postgresql:
   patroni:
     synchronous_mode: true
     synchronous_mode_strict: false
-
-# Database migration job (runs Alembic before deployments)
 migration:
   resources:
     limits:
@@ -561,13 +553,9 @@ migration:
       memory: 128Mi
   nodeSelector: {}
   tolerations: []
-
-# Partition maintenance CronJob (creates future partitions, drops old ones)
 partitionMaintenance:
   enabled: true
-  # Run at 2 AM every day
-  schedule: "0 2 * * *"
-  # Create partitions this many days ahead
+  schedule: 0 2 * * *
   daysAhead: 7
   resources:
     limits:

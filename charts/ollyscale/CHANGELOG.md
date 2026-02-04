@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.2.0](https://github.com/ryanfaircloth/ollyscale/compare/chart-ollyscale-v0.1.10...chart-ollyscale-v0.2.0) (2026-02-04)
+
+
+### ⚠ BREAKING CHANGES
+
+* **storage:** migrate from Redis to PostgreSQL with comprehensive refactoring ([#111](https://github.com/ryanfaircloth/ollyscale/issues/111))
+
+### Features
+
+* **storage:** migrate from Redis to PostgreSQL with comprehensive refactoring ([#111](https://github.com/ryanfaircloth/ollyscale/issues/111)) ([99b93c9](https://github.com/ryanfaircloth/ollyscale/commit/99b93c9684ffb3764ffc809905086a480d9b5a52))
+* **ui:** replace legacy UI with modern React-based web interface ([#113](https://github.com/ryanfaircloth/ollyscale/issues/113)) ([c570255](https://github.com/ryanfaircloth/ollyscale/commit/c570255b62e8ebd90de5d476f04b715f25627739))
+
+
+### Bug Fixes
+
+* resolve merge conflicts and precommit issues ([d13a198](https://github.com/ryanfaircloth/ollyscale/commit/d13a1980eb236191bd9319e8eca4fd0bf100d9c5))
+* service map deduplication, dagre-d3 UI arrowhead bug, legend, and backend test ([1c535d6](https://github.com/ryanfaircloth/ollyscale/commit/1c535d685beb2dc1729701903a86bcc30a66fa38))
+
 ## [0.1.10](https://github.com/ryanfaircloth/ollyscale/compare/chart-ollyscale-v0.1.9...chart-ollyscale-v0.1.10) (2026-01-20)
 
 

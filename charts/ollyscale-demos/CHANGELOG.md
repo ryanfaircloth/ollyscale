@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/ryanfaircloth/ollyscale/compare/chart-ollyscale-demos-v1.2.0...chart-ollyscale-demos-v1.3.0) (2026-02-04)
+
+
+### Features
+
+* **ui:** replace legacy UI with modern React-based web interface ([#113](https://github.com/ryanfaircloth/ollyscale/issues/113)) ([c570255](https://github.com/ryanfaircloth/ollyscale/commit/c570255b62e8ebd90de5d476f04b715f25627739))
+
 ## [1.2.0](https://github.com/ryanfaircloth/ollyscale/compare/chart-ollyscale-demos-v1.1.0...chart-ollyscale-demos-v1.2.0) (2026-01-19)
 
 
