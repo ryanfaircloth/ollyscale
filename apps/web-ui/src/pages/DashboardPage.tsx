@@ -38,7 +38,7 @@ export default function DashboardPage() {
           <ul className="mb-0">
             <li>{t('dashboard.troubleshoot.backend', 'Make sure the ollyscale backend is running')}</li>
             <li>Docker: <code>cd docker && ./01-start-core.sh</code></li>
-            <li>Kubernetes: <code>cd charts && ./install.sh</code></li>
+            <li>Kubernetes: <code>task deploy</code></li>
             <li>{t('dashboard.troubleshoot.port', 'Check that port 5002 is accessible')}</li>
           </ul>
         </Alert>

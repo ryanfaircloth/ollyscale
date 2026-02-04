@@ -2,7 +2,7 @@ apiVersion: v2
 name: ollyscale-otel-agent
 description: AI Agent demo with Ollama for ollyScale observability platform
 type: application
-version: 1.3.0
+version: 0.0.0-0.0.0-dev.1770226737
 appVersion: "v0.3.0"
 keywords:
   - observability

@@ -34,7 +34,7 @@ git clone https://github.com/ryanfaircloth/ollyscale
 
         ```bash
         cd charts
-        ./install.sh
+        task deploy
         ```
 
         !!! note "Local Development Build (Optional)"

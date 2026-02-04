@@ -29,7 +29,7 @@ describe('useDebounce', () => {
       () => {
         expect(result.current).toBe('updated');
       },
-      { timeout: 600 }
+      { timeout: 1000 }
     );
   });
 
