@@ -12,13 +12,9 @@
         <meta name="author" content="ollyScale">
       
       
-        <link rel="canonical" href="https://ryanfaircloth.github.io/ollyscale/kubernetes/">
+        <link rel="canonical" href="https://ryanfaircloth.github.io/ollyscale/build-system-quickstart/">
       
       
-        <link rel="prev" href="../quickstart/">
-      
-      
-        <link rel="next" href="../otel-collector/">
       
       
         
@@ -29,7 +25,7 @@
     
     
       
-        <title>Kubernetes - ollyScale Documentation</title>
+        <title>Quick Start: New Build System - ollyScale Documentation</title>
       
     
     
@@ -82,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#kubernetes-deployment" class="md-skip">
+        <a href="#quick-start-new-build-system" class="md-skip">
           Skip to content
         </a>
       
@@ -117,7 +113,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Kubernetes
+              Quick Start: New Build System
             
           </span>
         </div>
@@ -315,8 +311,6 @@
       
   
   
-    
-  
   
   
     
@@ -329,11 +323,13 @@
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
         
           
           <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
@@ -354,7 +350,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             
@@ -397,37 +393,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Kubernetes
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../kubernetes/" class="md-nav__link">
         
   
   
@@ -443,120 +412,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#prerequisites" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Prerequisites
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#1-deploy-ollyscale-core" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        1. Deploy ollyScale Core
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#2-demo-applications-optional" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        2. Demo Applications (Optional)
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#3-opentelemetry-demo-20-services-optional" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        3. OpenTelemetry Demo (~20 Services - Optional)
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#4-ollyscale-core-only-deployment-use-your-own-kubernetes-opentelemetry-collector" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        4. ollyScale Core-Only Deployment: Use Your Own Kubernetes OpenTelemetry Collector
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="4. ollyScale Core-Only Deployment: Use Your Own Kubernetes OpenTelemetry Collector">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#use-ollyscale-with-any-opentelemetry-collector" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Use ollyScale with Any OpenTelemetry Collector
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#opamp-configuration-optional" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        OpAMP Configuration (Optional)
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#building-images" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Building Images
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1174,10 +1029,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#prerequisites" class="md-nav__link">
+  <a href="#install-task-runner" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Prerequisites
+        Install Task Runner
       
     </span>
   </a>
@@ -1185,10 +1040,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#1-deploy-ollyscale-core" class="md-nav__link">
+  <a href="#basic-commands" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Deploy ollyScale Core
+        Basic Commands
       
     </span>
   </a>
@@ -1196,44 +1051,44 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#2-demo-applications-optional" class="md-nav__link">
+  <a href="#quick-examples" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Demo Applications (Optional)
+        Quick Examples
       
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#3-opentelemetry-demo-20-services-optional" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        3. OpenTelemetry Demo (~20 Services - Optional)
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#4-ollyscale-core-only-deployment-use-your-own-kubernetes-opentelemetry-collector" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        4. ollyScale Core-Only Deployment: Use Your Own Kubernetes OpenTelemetry Collector
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="4. ollyScale Core-Only Deployment: Use Your Own Kubernetes OpenTelemetry Collector">
+    <nav class="md-nav" aria-label="Quick Examples">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#use-ollyscale-with-any-opentelemetry-collector" class="md-nav__link">
+  <a href="#build-a-single-component" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Use ollyScale with Any OpenTelemetry Collector
+        Build a single component
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom-version" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom version
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#force-docker-instead-of-auto-detected-podman" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Force Docker (instead of auto-detected Podman)
       
     </span>
   </a>
@@ -1246,10 +1101,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#opamp-configuration-optional" class="md-nav__link">
+  <a href="#differences-from-old-system" class="md-nav__link">
     <span class="md-ellipsis">
       
-        OpAMP Configuration (Optional)
+        Differences from Old System
       
     </span>
   </a>
@@ -1257,10 +1112,32 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#building-images" class="md-nav__link">
+  <a href="#for-cicd" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Building Images
+        For CI/CD
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#need-help" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Need Help?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#why-task-instead-of-make" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why Task Instead of Make?
       
     </span>
   </a>
@@ -1287,183 +1164,102 @@
   
 
 
-<h1 id="kubernetes-deployment">Kubernetes Deployment</h1>
-<p>Deploy ollyScale on Kubernetes (Minikube) for local development!</p>
-<div align="center">
-  <img src="../images/servicemap.png" alt="ollyScale on Kubernetes" width="600">
-  <p><em>Service map showing microservices running on Kubernetes</em></p>
-</div>
-
-<hr />
-<p>All examples are launched from the repo - clone it first or download the current GitHub release archive:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/ryanfaircloth/ollyscale
+<h1 id="quick-start-new-build-system">Quick Start: New Build System</h1>
+<h2 id="install-task-runner">Install Task Runner</h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># macOS</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>brew<span class="w"> </span>install<span class="w"> </span>go-task/tap/go-task
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Linux</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>sh<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>curl<span class="w"> </span>--location<span class="w"> </span>https://taskfile.dev/install.sh<span class="k">)</span><span class="s2">&quot;</span><span class="w"> </span>--<span class="w"> </span>-d<span class="w"> </span>-b<span class="w"> </span>~/.local/bin
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="c1"># Verify installation</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>task<span class="w"> </span>--version
 </code></pre></div>
-<h2 id="prerequisites">Prerequisites</h2>
+<h2 id="basic-commands">Basic Commands</h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># See all available commands</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>task<span class="w"> </span>--list
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># Check your environment</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>task<span class="w"> </span>check
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="c1"># Create local KIND cluster</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>task<span class="w"> </span>up
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="c1"># Build and deploy everything</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>task<span class="w"> </span>deploy
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="c1"># Build only (no deployment)</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>task<span class="w"> </span>build-and-push
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="c1"># Clean up</span>
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>task<span class="w"> </span>down
+</code></pre></div>
+<h2 id="quick-examples">Quick Examples</h2>
+<h3 id="build-a-single-component">Build a single component</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>task<span class="w"> </span>build:api<span class="w">        </span><span class="c1"># Just the API backend</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>task<span class="w"> </span>build:web-ui<span class="w">     </span><span class="c1"># Just the web UI</span>
+</code></pre></div>
+<h3 id="custom-version">Custom version</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nv">VERSION</span><span class="o">=</span><span class="m">1</span>.2.3<span class="w"> </span>task<span class="w"> </span>build-and-push
+</code></pre></div>
+<h3 id="force-docker-instead-of-auto-detected-podman">Force Docker (instead of auto-detected Podman)</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nv">CONTAINER_RUNTIME</span><span class="o">=</span>docker<span class="w"> </span>task<span class="w"> </span>build
+</code></pre></div>
+<h2 id="differences-from-old-system">Differences from Old System</h2>
+<table>
+<thead>
+<tr>
+<th>Old</th>
+<th>New</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>make deploy</code></td>
+<td><code>task deploy</code></td>
+<td>Same functionality</td>
+</tr>
+<tr>
+<td><code>make up</code></td>
+<td><code>task up</code></td>
+<td>Create cluster</td>
+</tr>
+<tr>
+<td><code>./charts/build-and-push-local.sh</code></td>
+<td><code>task build-and-push</code></td>
+<td>Simpler</td>
+</tr>
+<tr>
+<td><code>make lint</code></td>
+<td><code>task lint</code></td>
+<td>Pre-commit checks</td>
+</tr>
+</tbody>
+</table>
+<h2 id="for-cicd">For CI/CD</h2>
+<p>The same Taskfile works in GitHub Actions:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Build all images</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="nt">env</span><span class="p">:</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">    </span><span class="nt">CI</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;true&quot;</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">    </span><span class="nt">VERSION</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;1.2.3&quot;</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">  </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">task build</span>
+</code></pre></div>
+<h2 id="need-help">Need Help?</h2>
 <ul>
-<li><a href="https://minikube.sigs.k8s.io/docs/start/">Minikube</a></li>
-<li><a href="https://kubernetes.io/docs/tasks/tools/">kubectl</a></li>
+<li>Full guide: <a href="build-system-migration.md">docs/build-system-migration.md</a></li>
+<li>List tasks: <code>task --list</code></li>
+<li>Task docs: <a href="https://taskfile.dev/">https://taskfile.dev/</a></li>
 </ul>
-<h2 id="1-deploy-ollyscale-core">1. Deploy ollyScale Core</h2>
-<ol>
-<li>
-<p><strong>Start Minikube:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>minikube<span class="w"> </span>start
-</code></pre></div>
-</li>
-<li>
-<p><strong>Deploy ollyScale:</strong></p>
-<div class="highlight"><pre><span></span><code>Deploy using Helm (images will be pulled from Docker Hub automatically):
-
-```bash
-cd charts
-task deploy
-```
-
-!!! note &quot;Local Development Build (Optional)&quot;
-To build and deploy custom images for local development:
-`bash
-</code></pre></div>
-<p>cd charts
-./build-and-push-local.sh <version>
-`</p>
-</li>
-<li>
-<p><strong>Access the UI:</strong></p>
-<p>To access the ollyScale UI (Service Type: LoadBalancer) on macOS with Minikube, you need to use <code>minikube tunnel</code>.</p>
-<p>Open a <strong>new terminal window</strong> and run:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>minikube<span class="w"> </span>tunnel
-</code></pre></div>
-<p>You may be asked for your password. Keep this terminal open.</p>
-<p>Now you can access the ollyScale UI at: <a href="http://localhost:5002">http://localhost:5002</a></p>
-<p><strong>OpenTelemetry Collector + OpAMP Config Page:</strong> Navigate to the "OpenTelemetry Collector + OpAMP Config" tab in the UI to view and manage collector configurations remotely. See the <a href="#opamp-configuration-optional">OpAMP Configuration</a> section below for setup instructions.</p>
-</li>
-<li>
-<p><strong>Send Telemetry from Host Apps:</strong></p>
-<p>To send telemetry from applications running on your host machine (outside Kubernetes), use <code>kubectl port-forward</code> to expose the OTel Collector ports:</p>
-<p>Open a <strong>new terminal window</strong> and run:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>kubectl<span class="w"> </span>port-forward<span class="w"> </span>service/otel-collector<span class="w"> </span><span class="m">4317</span>:4317<span class="w"> </span><span class="m">4318</span>:4318
-</code></pre></div>
-<p>Keep this terminal open. Now point your application's OpenTelemetry exporter to:
-- <strong>gRPC</strong>: <code>http://localhost:4317</code>
-- <strong>HTTP</strong>: <code>http://localhost:4318</code></p>
-<p><strong>Example environment variables:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">OTEL_EXPORTER_OTLP_ENDPOINT</span><span class="o">=</span>http://localhost:4318
-</code></pre></div>
-<p><strong>For apps running inside the Kubernetes cluster:</strong><br />
-Use the Kubernetes service name:
-- <strong>gRPC</strong>: <code>http://otel-collector:4317</code>
-- <strong>HTTP</strong>: <code>http://otel-collector:4318</code></p>
-</li>
-<li>
-<p><strong>Clean Up:</strong></p>
-<p>Uninstall ollyScale using Helm:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>helm<span class="w"> </span>uninstall<span class="w"> </span>ollyscale<span class="w"> </span>-n<span class="w"> </span>ollyscale
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>kubectl<span class="w"> </span>delete<span class="w"> </span>namespace<span class="w"> </span>ollyscale
-</code></pre></div>
-<p>Shut down Minikube:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>minikube<span class="w"> </span>stop
-</code></pre></div>
-<p>Minikube may be more stable if you delete it:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>minikube<span class="w"> </span>delete
-</code></pre></div>
-</li>
-</ol>
-<hr />
-<h2 id="2-demo-applications-optional">2. Demo Applications (Optional)</h2>
-<p>To see ollyScale in action with instrumented microservices:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nb">cd</span><span class="w"> </span>k8s-demo
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>./02-deploy.sh
-</code></pre></div>
-<p>The deploy script pulls demo images from Docker Hub by default. For local development, you can build images locally when prompted.</p>
-<p>To clean up the demo:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>./03-cleanup.sh
-</code></pre></div>
-<p>The demo includes two microservices that automatically generate traffic, showcasing distributed tracing across service boundaries.</p>
-<hr />
-<h2 id="3-opentelemetry-demo-20-services-optional">3. OpenTelemetry Demo (~20 Services - Optional)</h2>
-<p>To deploy the full <a href="https://opentelemetry.io/docs/demo/">OpenTelemetry Demo</a> with ~20 microservices:</p>
-<p><strong>Prerequisites:</strong></p>
+<h2 id="why-task-instead-of-make">Why Task Instead of Make?</h2>
 <ul>
-<li>ollyScale must be deployed first (see Setup above)</li>
-<li><a href="https://helm.sh/docs/intro/install/">Helm</a> installed</li>
-<li>Sufficient cluster resources (demo is resource-intensive)</li>
+<li>✅ Automatic Podman/Docker detection</li>
+<li>✅ Better variable handling</li>
+<li>✅ YAML instead of Makefile syntax</li>
+<li>✅ Built-in dependency management</li>
+<li>✅ Same config for local and CI</li>
+<li>✅ Cross-platform (works on Windows too)</li>
 </ul>
-<p><strong>Deploy:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="nb">cd</span><span class="w"> </span>k8s-otel-demo
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>./01-deploy-otel-demo-helm.sh
-</code></pre></div>
-<p>This deploys all OpenTelemetry Demo services configured to send telemetry to ollyScale's collector via HTTP on port 4318. Built-in observability tools (Jaeger, Grafana, Prometheus) are disabled.</p>
-<p><strong>Cleanup:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="nb">cd</span><span class="w"> </span>k8s-otel-demo
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>./02-cleanup-otel-demo-helm.sh
-</code></pre></div>
-<p>This removes the OpenTelemetry Demo but leaves ollyScale running.</p>
-<h2 id="4-ollyscale-core-only-deployment-use-your-own-kubernetes-opentelemetry-collector">4. ollyScale <strong>Core-Only</strong> Deployment: Use Your Own Kubernetes OpenTelemetry Collector</h2>
-<p>To deploy ollyScale without the bundled OTel Collector (e.g., if you have an existing collector daemonset). Includes OpAMP server for optional remote collector configuration management:</p>
-<ol>
-<li><strong>Deploy Core:</strong></li>
-</ol>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="nb">cd</span><span class="w"> </span>k8s-core-only
-<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>./01-deploy.sh
-</code></pre></div>
-<ol>
-<li>
-<p><strong>Access UI:</strong>
-   Run <code>minikube tunnel</code> and access <code>http://localhost:5002</code>.</p>
-</li>
-<li>
-<p><strong>Cleanup:</strong></p>
-</li>
-</ol>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>./02-cleanup.sh
-</code></pre></div>
-<h3 id="use-ollyscale-with-any-opentelemetry-collector">Use ollyScale with Any OpenTelemetry Collector</h3>
-<p>Swap out the included Otel Collector for any distro of Otel Collector.</p>
-<p><strong>Point your OpenTelemetry exporters to ollyscale-otlp-receiver:4343:</strong>
-i.e.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="nt">exporters</span><span class="p">:</span>
-<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="w">  </span><span class="nt">debug</span><span class="p">:</span>
-<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="w">    </span><span class="nt">verbosity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">detailed</span>
-<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>
-<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="w">  </span><span class="nt">otlp</span><span class="p">:</span>
-<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="w">    </span><span class="nt">endpoint</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;ollyscale-otlp-receiver:4343&quot;</span>
-<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="w">    </span><span class="nt">tls</span><span class="p">:</span>
-<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a><span class="w">      </span><span class="nt">insecure</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
-<a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a>
-<a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a><span class="nt">service</span><span class="p">:</span>
-<a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a><span class="w">  </span><span class="nt">pipelines</span><span class="p">:</span>
-<a id="__codelineno-15-12" name="__codelineno-15-12" href="#__codelineno-15-12"></a><span class="w">    </span><span class="nt">traces</span><span class="p">:</span>
-<a id="__codelineno-15-13" name="__codelineno-15-13" href="#__codelineno-15-13"></a><span class="w">      </span><span class="nt">receivers</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">otlp</span><span class="p p-Indicator">]</span>
-<a id="__codelineno-15-14" name="__codelineno-15-14" href="#__codelineno-15-14"></a><span class="w">      </span><span class="nt">processors</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">batch</span><span class="p p-Indicator">]</span>
-<a id="__codelineno-15-15" name="__codelineno-15-15" href="#__codelineno-15-15"></a><span class="w">      </span><span class="nt">exporters</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">debug</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">otlp</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">spanmetrics</span><span class="p p-Indicator">]</span>
-<a id="__codelineno-15-16" name="__codelineno-15-16" href="#__codelineno-15-16"></a>
-<a id="__codelineno-15-17" name="__codelineno-15-17" href="#__codelineno-15-17"></a><span class="w">    </span><span class="nt">metrics</span><span class="p">:</span>
-<a id="__codelineno-15-18" name="__codelineno-15-18" href="#__codelineno-15-18"></a><span class="w">      </span><span class="nt">receivers</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">otlp</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">spanmetrics</span><span class="p p-Indicator">]</span>
-<a id="__codelineno-15-19" name="__codelineno-15-19" href="#__codelineno-15-19"></a><span class="w">      </span><span class="nt">processors</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">batch</span><span class="p p-Indicator">]</span>
-<a id="__codelineno-15-20" name="__codelineno-15-20" href="#__codelineno-15-20"></a><span class="w">      </span><span class="nt">exporters</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">debug</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">otlp</span><span class="p p-Indicator">]</span>
-<a id="__codelineno-15-21" name="__codelineno-15-21" href="#__codelineno-15-21"></a>
-<a id="__codelineno-15-22" name="__codelineno-15-22" href="#__codelineno-15-22"></a><span class="w">    </span><span class="nt">logs</span><span class="p">:</span>
-<a id="__codelineno-15-23" name="__codelineno-15-23" href="#__codelineno-15-23"></a><span class="w">      </span><span class="nt">receivers</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">otlp</span><span class="p p-Indicator">]</span>
-<a id="__codelineno-15-24" name="__codelineno-15-24" href="#__codelineno-15-24"></a><span class="w">      </span><span class="nt">processors</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">batch</span><span class="p p-Indicator">]</span>
-<a id="__codelineno-15-25" name="__codelineno-15-25" href="#__codelineno-15-25"></a><span class="w">      </span><span class="nt">exporters</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">debug</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">otlp</span><span class="p p-Indicator">]</span>
-</code></pre></div>
-<p>The Otel Collector will forward everything to ollyScale's OTLP receiver, which process telemetry and stores it in Redis in OTEL format for the backend and UI to access.</p>
-<h2 id="opamp-configuration-optional">OpAMP Configuration (Optional)</h2>
-<p>The <strong>OpenTelemetry Collector + OpAMP Config</strong> page in the ollyScale UI allows you to view and manage collector configurations remotely. To enable this feature, add the OpAMP extension to your collector config:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="nt">extensions</span><span class="p">:</span>
-<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="w">  </span><span class="nt">opamp</span><span class="p">:</span>
-<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="w">    </span><span class="nt">server</span><span class="p">:</span>
-<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="w">      </span><span class="nt">ws</span><span class="p">:</span>
-<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="w">        </span><span class="nt">endpoint</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ws://ollyscale-opamp-server:4320/v1/opamp</span>
-<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a>
-<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="nt">service</span><span class="p">:</span>
-<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a><span class="w">  </span><span class="nt">extensions</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">opamp</span><span class="p p-Indicator">]</span>
-</code></pre></div>
-<p>The default configuration template (included as a ConfigMap in <code>k8s-core-only/ollyscale-opamp-server.yaml</code>) shows a complete example with OTLP receivers, OpAMP extension, batch processing, and spanmetrics connector. Your collector will connect to the OpAMP server and receive configuration updates through the ollyScale UI.</p>
-<hr />
-<h2 id="building-images">Building Images</h2>
-<p>By default, deployment scripts pull pre-built images from GitHub Container Registry (GHCR). For building images locally (Minikube) or publishing to GHCR, see <a href="https://github.com/ryanfaircloth/ollyscale/blob/main/build/README.md">build/README.md</a>.</p>
-<hr />
 
 
 
