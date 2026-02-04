@@ -1,6 +1,6 @@
 version: 2
 updates:
-  # API Backend (Python with Poetry)
+  # API Backend (Python with uv)
   - package-ecosystem: "pip"
     directory: "/apps/api"
     schedule:
@@ -18,7 +18,7 @@ updates:
       - "dependencies"
       - "opamp-server"
 
-  # Demo app (Python with Poetry)
+  # Demo app (Python with uv)
   - package-ecosystem: "pip"
     directory: "/apps/demo"
     schedule:
@@ -27,7 +27,7 @@ updates:
       - "dependencies"
       - "demo"
 
-  # AI Agent demo (Python with Poetry)
+  # AI Agent demo (Python with uv)
   - package-ecosystem: "pip"
     directory: "/apps/demo-otel-agent"
     schedule:

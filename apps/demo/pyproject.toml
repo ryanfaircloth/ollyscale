@@ -49,15 +49,12 @@ dev = [
     "flake8>=6.0.0",
 ]
 
-[tool.poetry]
-# Include the root module files as the package
-packages = [
-    {include = "*.py", from = "."}
-]
-
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+include = ["*.py"]
 
 [tool.ruff]
 # Target Python version

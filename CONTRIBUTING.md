@@ -128,9 +128,9 @@ async def my_function(param: str) -> dict:
 ### Python Tests
 
 ```bash
-cd apps/frontend
-poetry install --with test
-poetry run pytest
+cd apps/api
+uv sync --group dev
+uv run pytest
 ```
 
 ### Manual Testing

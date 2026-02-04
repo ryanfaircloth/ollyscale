@@ -21,20 +21,20 @@ See [docs/ollyscale-v2-postgres.md](../../docs/ollyscale-v2-postgres.md) for ful
 ### Prerequisites
 
 - Python 3.11+
-- Poetry
+- uv (modern Python package manager)
 - PostgreSQL 15+ (for local development)
 
 ### Setup
 
 ```bash
 # Install dependencies
-poetry install
+uv sync
 
 # Run tests
-poetry run pytest
+uv run pytest
 
 # Start development server
-poetry run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 ### Running with Database
@@ -44,10 +44,10 @@ poetry run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 export DATABASE_URL="postgresql+asyncpg://user:password@localhost:5432/ollyscale"
 
 # Run migrations
-poetry run alembic upgrade head
+uv run alembic upgrade head
 
 # Start server
-poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000
+uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
 ## API Endpoints
@@ -76,43 +76,43 @@ poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000
 
 ```bash
 # Run all tests
-poetry run pytest
+uv run pytest
 
 # Run with coverage
-poetry run pytest --cov=app --cov-report=html
+uv run pytest --cov=app --cov-report=html
 
 # Run specific test file
-poetry run pytest tests/test_models.py -v
+uv run pytest tests/test_models.py -v
 ```
 
 ## Code Quality
 
 ```bash
 # Lint and format
-poetry run ruff check .
-poetry run ruff format .
+uv run ruff check .
+uv run ruff format .
 
 # Fix auto-fixable issues
-poetry run ruff check --fix .
+uv run ruff check --fix .
 ```
 
 ## Database Migrations
 
 ```bash
 # Create new migration
-poetry run alembic revision -m "description"
+uv run alembic revision -m "description"
 
 # Apply migrations
-poetry run alembic upgrade head
+uv run alembic upgrade head
 
 # Rollback one migration
-poetry run alembic downgrade -1
+uv run alembic downgrade -1
 
 # Show current migration
-poetry run alembic current
+uv run alembic current
 
 # Show migration history
-poetry run alembic history --verbose
+uv run alembic history --verbose
 ```
 
 ## Deployment

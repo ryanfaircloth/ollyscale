@@ -1,94 +1,75 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended", ":dependencyDashboard", ":semanticCommits"],
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":semanticCommitTypeAll(chore)",
+    ":semanticCommitScope(deps)",
+    "group:allNonMajor"
+  ],
   "timezone": "America/New_York",
   "schedule": ["before 5am on Monday"],
-  "enabledManagers": ["dockerfile", "docker-compose", "github-actions", "gomod", "npm", "pip_requirements"],
-  "semanticCommits": "enabled",
-  "commitMessagePrefix": "fix(deps)",
-  "commitMessageTopic": "{{depName}}",
-  "commitMessageExtra": "to {{#if isPinDigest}}{{{newDigestShort}}}{{else}}{{#if isMajor}}{{prettyNewMajor}}{{else}}{{#if isSingleVersion}}{{prettyNewVersion}}{{else}}{{#if newValue}}{{{newValue}}}{{else}}{{{newDigestShort}}}{{/if}}{{/if}}{{/if}}{{/if}}",
+  "labels": ["dependencies"],
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": ["security"],
+    "commitMessageSuffix": "[SECURITY]"
+  },
   "packageRules": [
     {
-      "description": "Security updates are fix type with SECURITY in PR title",
-      "matchPackagePatterns": ["*"],
-      "vulnerabilityAlerts": {
-        "enabled": true
-      },
-      "commitMessagePrefix": "fix(deps)",
-      "commitMessageSuffix": "[SECURITY]"
-    },
-    {
-      "description": "Major updates require approval and use feat! for breaking changes",
-      "matchUpdateTypes": ["major"],
-      "dependencyDashboardApproval": true,
-      "commitMessagePrefix": "feat(deps)!",
-      "labels": ["dependencies", "renovate", "breaking-change"]
-    },
-    {
-      "description": "Group Python packages by app",
-      "matchManagers": ["pip_requirements"],
-      "matchFileNames": ["apps/api/**"],
-      "groupName": "api Python dependencies"
-    },
-    {
-      "description": "Group demo app dependencies separately",
-      "matchManagers": ["pip_requirements"],
-      "matchFileNames": ["apps/demo/**", "apps/demo-otel-agent/**"],
-      "groupName": "demo apps Python dependencies"
-    },
-    {
-      "description": "Group documentation dependencies",
-      "matchManagers": ["pip_requirements"],
-      "matchFileNames": ["docs/**"],
-      "groupName": "documentation dependencies"
-    },
-    {
-      "description": "OpAMP server Go dependencies",
-      "matchManagers": ["gomod"],
-      "matchFileNames": ["apps/opamp-server/**"],
-      "groupName": "opamp-server Go dependencies"
-    },
-    {
-      "description": "Group web-ui npm dependencies",
-      "matchManagers": ["npm"],
-      "matchFileNames": ["apps/web-ui/**"],
-      "groupName": "web-ui npm dependencies"
-    },
-    {
-      "description": "Group all Docker base images",
-      "matchDatasources": ["docker"],
-      "matchUpdateTypes": ["minor", "patch"],
-      "groupName": "Docker base images"
-    },
-    {
-      "description": "Separate major Docker updates",
-      "matchDatasources": ["docker"],
+      "description": "Require approval for major updates",
       "matchUpdateTypes": ["major"],
       "dependencyDashboardApproval": true
     },
     {
-      "description": "Pin PostgreSQL version (critical for data)",
+      "description": "Group Python dependencies by app",
+      "matchManagers": ["pep621"],
+      "matchPaths": ["apps/api/**"],
+      "groupName": "api Python dependencies",
+      "commitMessageTopic": "api Python deps"
+    },
+    {
+      "description": "Group demo apps Python dependencies",
+      "matchManagers": ["pep621"],
+      "matchPaths": ["apps/demo/**", "apps/demo-otel-agent/**"],
+      "groupName": "demo Python dependencies",
+      "commitMessageTopic": "demo Python deps",
+      "automerge": true,
+      "automergeType": "pr",
+      "matchUpdateTypes": ["patch", "minor"]
+    },
+    {
+      "description": "Group documentation dependencies",
+      "matchManagers": ["pip_requirements"],
+      "matchPaths": ["docs/**"],
+      "groupName": "docs Python dependencies",
+      "commitMessageTopic": "docs Python deps"
+    },
+    {
+      "description": "Group Go dependencies",
+      "matchManagers": ["gomod"],
+      "matchPaths": ["apps/opamp-server/**"],
+      "groupName": "opamp Go dependencies",
+      "commitMessageTopic": "opamp Go deps"
+    },
+    {
+      "description": "Group npm dependencies",
+      "matchManagers": ["npm"],
+      "matchPaths": ["apps/web-ui/**"],
+      "groupName": "web-ui npm dependencies",
+      "commitMessageTopic": "web-ui npm deps"
+    },
+    {
+      "description": "Group Docker base image updates",
+      "matchDatasources": ["docker"],
+      "matchUpdateTypes": ["minor", "patch", "digest"],
+      "groupName": "Docker base images"
+    },
+    {
+      "description": "Pin critical infrastructure versions",
       "matchPackageNames": ["postgres", "postgresql"],
       "matchDatasources": ["docker"],
       "enabled": false
-    },
-    {
-      "description": "Auto-merge non-major Python packages in dev apps",
-      "matchManagers": ["pip_requirements"],
-      "matchFileNames": ["apps/demo/**", "apps/demo-otel-agent/**"],
-      "matchUpdateTypes": ["patch", "minor"],
-      "automerge": true,
-      "automergeType": "pr"
     }
-  ],
-  "digest": {
-    "enabled": true,
-    "dependencyDashboardApproval": true
-  },
-  "vulnerabilityAlerts": {
-    "enabled": true,
-    "labels": ["security"]
-  },
-  "labels": ["dependencies", "renovate"]
+  ]
 }
