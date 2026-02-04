@@ -18,7 +18,7 @@
         <link rel="prev" href="../api/">
       
       
-        <link rel="next" href="../build-system/">
+        <link rel="next" href="../licensing/">
       
       
         
@@ -1003,7 +1003,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../build-system/" class="md-nav__link">
+      <a href="../build-system.md" class="md-nav__link">
         
   
   
@@ -1031,7 +1031,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../CARDINALITY-PROTECTION/" class="md-nav__link">
+      <a href="../CARDINALITY-PROTECTION.md" class="md-nav__link">
         
   
   
@@ -1175,7 +1175,7 @@
 <h2 id="data-storage">Data Storage</h2>
 <ul>
 <li><strong>Format</strong>: Full OpenTelemetry (OTEL) format for traces, logs, and metrics</li>
-<li><strong>Redis</strong>: All telemetry stored with 30-minute TTL (compressed with ZSTD + msgpack)</li>
+<li><strong>Postgress</strong>: All telemetry stored</li>
 <li><strong>Sorted Sets</strong>: Time-series data indexed by timestamp</li>
 <li><strong>Correlation</strong>: Native trace-metric-log correlation via trace/span IDs</li>
 <li><strong>Cardinality Protection</strong>: Prevents metric explosion</li>
