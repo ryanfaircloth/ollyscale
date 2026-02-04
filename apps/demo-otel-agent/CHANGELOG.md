@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.2.0](https://github.com/ryanfaircloth/ollyscale/compare/demo-otel-agent-v0.1.4...demo-otel-agent-v0.2.0) (2026-02-04)
+
+
+### ⚠ BREAKING CHANGES
+
+* **storage:** migrate from Redis to PostgreSQL with comprehensive refactoring ([#111](https://github.com/ryanfaircloth/ollyscale/issues/111))
+
+### Features
+
+* **storage:** migrate from Redis to PostgreSQL with comprehensive refactoring ([#111](https://github.com/ryanfaircloth/ollyscale/issues/111)) ([99b93c9](https://github.com/ryanfaircloth/ollyscale/commit/99b93c9684ffb3764ffc809905086a480d9b5a52))
+
 ## [0.1.4](https://github.com/ryanfaircloth/ollyscale/compare/demo-otel-agent-v0.1.3...demo-otel-agent-v0.1.4) (2026-01-20)
 
 
