@@ -14,7 +14,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/ollyscale-v')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Extract version from tag
         id: version
@@ -60,7 +60,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/web-ui-v')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Extract version from tag
         id: version
@@ -106,7 +106,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/opamp-server-v')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Extract version from tag
         id: version
@@ -152,7 +152,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/demo-v')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Extract version from tag
         id: version
@@ -198,7 +198,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/demo-otel-agent-v')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Extract version from tag
         id: version
@@ -245,7 +245,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/chart-ollyscale-v')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Extract version from tag
         id: version
@@ -270,7 +270,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/chart-ollyscale-demos-v')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Extract version from tag
         id: version
@@ -295,7 +295,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/chart-ollyscale-otel-agent-v')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Extract version from tag
         id: version
