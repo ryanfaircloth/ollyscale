@@ -241,7 +241,7 @@ instrumentation:
   python:
     image:
       repository: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python
-      tag: 0.60b0
+      tag: 0.60b1
     env:
       - name: OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED
         value: 'true'
