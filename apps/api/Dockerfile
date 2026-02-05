@@ -30,13 +30,16 @@ COPY --from=builder /app/.venv /app/.venv
 # Add virtual environment to PATH
 ENV PATH="/app/.venv/bin:$PATH"
 
-# Copy application code, receiver, and migrations
+# Copy application code, receiver, migrations, and config
 COPY --chown=1000:1000 app/ app/
 COPY --chown=1000:1000 common/ common/
 COPY --chown=1000:1000 receiver/ receiver/
 COPY --chown=1000:1000 alembic/ alembic/
 COPY --chown=1000:1000 alembic.ini .
 COPY --chown=1000:1000 main.py .
+
+# Copy attribute promotion config
+COPY --chown=1000:1000 attribute-promotion.yaml /config/attribute-promotion.yaml
 
 # Create non-root user
 RUN useradd -u 1000 -m ollyscale && \
