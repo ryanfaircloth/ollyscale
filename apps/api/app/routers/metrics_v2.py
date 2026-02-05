@@ -6,6 +6,7 @@ until Phase 5 migration.
 """
 
 import logging
+from collections import defaultdict
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
@@ -26,11 +27,11 @@ def get_metrics_storage(session: Annotated[Session, Depends(get_db_session)]) ->
 
 @router.get("/search")
 def search_metrics_v2(
-    metric_name: Annotated[str, Query(description="Metric name to query")],
     start_time: Annotated[int, Query(description="Start time in nanoseconds since Unix epoch")],
     end_time: Annotated[int, Query(description="End time in nanoseconds since Unix epoch")],
+    metric_name: Annotated[str | None, Query(description="Filter by metric name")] = None,
     service_name: Annotated[str | None, Query(description="Filter by service name")] = None,
-    limit: Annotated[int, Query(description="Maximum number of data points", ge=1, le=10000)] = 1000,
+    limit: Annotated[int, Query(description="Maximum number of data points per metric", ge=1, le=10000)] = 1000,
     metrics_storage: Annotated[MetricsStorage, Depends(get_metrics_storage)] = None,
 ):
     """Search metric time series with filters using v2 OTLP schema.
@@ -39,17 +40,18 @@ def search_metrics_v2(
     Uses v_otel_metrics_enriched view for unified queries across all metric types.
 
     Query parameters:
-    - metric_name: Name of the metric to query (required)
     - start_time, end_time: Time range in nanoseconds (required)
+    - metric_name: Filter by metric name (optional, returns all metrics if not specified)
     - service_name: Filter by service name (optional)
-    - limit: Max data points (default 1000, max 10000)
+    - limit: Max data points per metric (default 1000, max 10000)
 
     Response includes:
-    - metric_name, unit, metric_type
-    - data_points: Array of time series points with values and attributes
-    - resource_context: Service name/namespace
-    - scope_context: Instrumentation library info
-    - aggregation_temporality: Delta or Cumulative
+    - metrics: Array of metric objects, each containing:
+      - metric_name, unit, metric_type
+      - data_points: Array of time series points with values and attributes
+      - resource: Service name/namespace
+      - scope: Instrumentation library info
+      - aggregation_temporality: Delta or Cumulative
     """
     try:
         # Build query using v_otel_metrics_enriched view
@@ -84,10 +86,10 @@ def search_metrics_v2(
                 scope_version,
                 attributes_other
             FROM v_otel_metrics_enriched
-            WHERE metric_name = :metric_name
-              AND time BETWEEN :start_time AND :end_time
+            WHERE time BETWEEN :start_time AND :end_time
+              AND (:metric_name IS NULL OR metric_name = :metric_name)
               AND (:service_name IS NULL OR service_name = :service_name)
-            ORDER BY time DESC
+            ORDER BY metric_name, time DESC
             LIMIT :limit
             """
         )
@@ -105,9 +107,13 @@ def search_metrics_v2(
 
         rows = result.fetchall()
 
-        # Convert rows to structured response
-        data_points = []
+        # Group rows by metric_name
+        metrics_dict = defaultdict(lambda: {"data_points": [], "metadata": None})
+
         for row in rows:
+            metric_key = row.metric_name
+
+            # Build data point
             point = {
                 "time": row.time,
                 "start_time": row.start_time,
@@ -147,44 +153,56 @@ def search_metrics_v2(
             if row.exemplars is not None:
                 point["exemplars"] = row.exemplars
 
-            data_points.append(point)
+            metrics_dict[metric_key]["data_points"].append(point)
 
-        # Get first row for metadata (all data points share same metric metadata)
-        if rows:
-            first = rows[0]
-            return {
-                "metric_name": metric_name,
-                "metric_type": first.metric_type,
-                "unit": first.unit,
-                "aggregation_temporality": first.aggregation_temporality,
-                "resource": {
-                    "service_name": first.service_name,
-                    "service_namespace": first.service_namespace,
-                },
-                "scope": {
-                    "name": first.scope_name,
-                    "version": first.scope_version,
-                },
-                "data_points": data_points,
-                "count": len(data_points),
-                "limit": limit,
-                "has_more": len(data_points) == limit,
-            }
-        else:
-            return {
-                "metric_name": metric_name,
-                "data_points": [],
-                "count": 0,
-                "limit": limit,
-                "has_more": False,
-            }
+            # Store metadata from first row of each metric
+            if metrics_dict[metric_key]["metadata"] is None:
+                metrics_dict[metric_key]["metadata"] = {
+                    "metric_type": row.metric_type,
+                    "unit": row.unit,
+                    "aggregation_temporality": row.aggregation_temporality,
+                    "service_name": row.service_name,
+                    "service_namespace": row.service_namespace,
+                    "scope_name": row.scope_name,
+                    "scope_version": row.scope_version,
+                }
+
+        # Build response with array of metrics
+        metrics = []
+        for metric_key, metric_data in metrics_dict.items():
+            metadata = metric_data["metadata"]
+            metrics.append(
+                {
+                    "name": metric_key,
+                    "type": metadata["metric_type"],
+                    "unit": metadata["unit"],
+                    "aggregation_temporality": metadata["aggregation_temporality"],
+                    "resource": {
+                        "service_name": metadata["service_name"],
+                        "service_namespace": metadata["service_namespace"],
+                    },
+                    "scope": {
+                        "name": metadata["scope_name"],
+                        "version": metadata["scope_version"],
+                    },
+                    "data_points": metric_data["data_points"],
+                }
+            )
+
+        return {
+            "metrics": metrics,
+            "count": len(metrics),
+            "total_data_points": sum(len(m["data_points"]) for m in metrics),
+            "limit": limit,
+            "has_more": len(rows) == limit,
+        }
 
     except Exception as e:
         logger.exception("Failed to search metrics")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to search metrics: {str(e)}",
-        )
+            detail=f"Failed to search metrics: {e!s}",
+        ) from e
 
 
 @router.get("/{metric_name}/labels")
@@ -312,5 +330,5 @@ def get_metric_labels_v2(
         logger.exception("Failed to get metric labels")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get metric labels: {str(e)}",
-        )
+            detail=f"Failed to get metric labels: {e!s}",
+        ) from e

@@ -47,8 +47,10 @@ export default function MetricsPage() {
   const getMetricTypeBadge = (type: string) => {
     const typeMap: Record<string, string> = {
       Gauge: "primary",
-      Counter: "success",
+      Sum: "success",
+      Counter: "success",  // Legacy, maps to Sum
       Histogram: "info",
+      ExponentialHistogram: "info",
       Summary: "warning",
     };
     const variant = typeMap[type] || "secondary";
@@ -87,7 +89,14 @@ export default function MetricsPage() {
     if (!data?.metrics) return [];
 
     const analysis = data.metrics.map(metric => {
-      const labelKeys = metric.attributes ? Object.keys(metric.attributes) : [];
+      // Collect unique attribute keys from all data points
+      const labelKeysSet = new Set<string>();
+      metric.data_points.forEach(dp => {
+        if (dp.attributes) {
+          Object.keys(dp.attributes).forEach(key => labelKeysSet.add(key));
+        }
+      });
+      const labelKeys = Array.from(labelKeysSet);
       const seriesCount = metric.data_points.length;
 
       return {
