@@ -26,7 +26,63 @@ Our data model takes inspiration from the OTEL Arrow schema, particularly:
 - **Hierarchical attribute storage**: Separating resource, scope, and signal-specific attributes
 - **Parent-child relationships**: Using parent IDs to establish relationships between entities
 - **Type-aware attribute encoding**: Storing attributes with explicit type information
-- **Temporal optimization**: Efficient handling of time-series data with Unix nanosecond timestamps
+- **Temporal optimization**: Efficient handling of time-series data with **timestamp+nanos pattern**
+
+### Timestamp Storage Pattern
+
+**CRITICAL**: All timestamps use a two-column pattern for full nanosecond precision:
+
+1. **TIMESTAMP WITH TIME ZONE** - Stores microsecond precision (6 decimal places, PostgreSQL native)
+2. **SMALLINT nanos_fraction** - Stores remaining 0-999 nanoseconds (3 decimal places)
+
+**Example:**
+
+```
+OTLP unix_nano:     1234567890123456789
+                    ↓
+PostgreSQL storage:
+  timestamp:         2009-02-13 23:31:30.123456+00  (microseconds)
+  nanos_fraction:    789                             (remaining nanos)
+```
+
+**Conversion Logic:**
+
+```python
+# unix_nano → (timestamp, nanos_fraction)
+unix_micros = unix_nano // 1000
+nanos_fraction = unix_nano % 1000
+timestamp = datetime.fromtimestamp(unix_micros / 1_000_000, tz=UTC)
+
+# (timestamp, nanos_fraction) → unix_nano
+unix_micros = int(timestamp.timestamp() * 1_000_000)
+unix_nano = (unix_micros * 1000) + nanos_fraction
+```
+
+**Applies to:**
+
+- Logs: `time` + `time_nanos_fraction`, `observed_time` + `observed_time_nanos_fraction`
+- Spans: `start_time` + `start_time_nanos_fraction`, `end_time` + `end_time_nanos_fraction`
+- Span Events: `time` + `time_nanos_fraction`
+- Metrics: `time` + `time_nanos_fraction`, `start_time` + `start_time_nanos_fraction` (nullable)
+
+### Table and Column Comments
+
+**ALL tables MUST have COMMENT statements** documenting:
+
+- Purpose and relationship to OTLP specification
+- Deduplication strategy (for dimension tables)
+- Attribute storage strategy (for attribute tables)
+- Index usage and performance characteristics
+
+**Example:**
+
+```sql
+COMMENT ON TABLE otel_logs_fact IS 'OTLP log records with full nanosecond timestamp precision';
+COMMENT ON COLUMN otel_logs_fact.time_nanos_fraction IS 'Remaining nanoseconds (0-999) beyond microsecond precision';
+COMMENT ON TABLE attribute_keys IS 'Deduplication registry for attribute keys across all OTLP signals';
+```
+
+This makes the schema self-documenting for developers, DBAs, and data analysts.
 
 ## Data Model Components
 

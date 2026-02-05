@@ -1,12 +1,418 @@
 # OTLP Schema Implementation Plan
 
-**Status**: Design Phase  
+**Status**: Phase 4 Complete - Metrics Tables Needed 
 **Branch**: `improve-data-model`  
-**Breaking Change**: Yes - Complete schema and API overhaul
+**Breaking Change**: Yes - Complete schema overhaul
 
 ## Overview
 
-This document outlines the complete implementation of the new OTLP-aligned schema with denormalized attribute tables for logs, traces, and metrics. This is a **major breaking change** that replaces the old schema entirely.
+Complete OTLP-aligned schema implementation with attribute promotion, timestamp+nanos precision, and enriched views. Current migration (8316334b1935) has logs and spans working but is **MISSING** critical tables for metrics, reference data, span events/links, and resource/scope attributes.
+
+## Implementation Status
+
+### ✅ COMPLETED (Deployed & Working)
+
+**Database Schema:**
+- ✅ attribute_keys table (deduplication registry)
+- ✅ otel_resources_dim table (with hash deduplication)
+- ✅ otel_scopes_dim table (with hash deduplication)
+- ✅ otel_logs_fact table (timestamp+nanos pattern)
+- ✅ All 6 log attribute tables (string, int, double, bool, bytes, other)
+- ✅ otel_spans_fact table (timestamp+nanos pattern, events/links as JSONB)
+- ✅ All 6 span attribute tables
+- ✅ v_otel_logs_enriched view (aggregates all attributes)
+- ✅ v_otel_spans_enriched view (aggregates all attributes)
+
+**Python Implementation:**
+- ✅ AttributePromotionConfig class (48 tests passing)
+- ✅ AttributeManager class (attribute routing & storage)
+- ✅ ResourceManager class (hash-based deduplication)
+- ✅ LogsStorage class (OTLP ingestion)
+- ✅ TracesStorage class (OTLP ingestion)
+- ✅ MetricsStorage class (OTLP ingestion)
+- ✅ ORM models for all implemented tables
+- ✅ /api/v2/logs endpoints (search, trace correlation)
+- ✅ /api/v2/traces endpoints (search, span retrieval)
+- ✅ /api/v2/metrics endpoints (search, aggregation)
+
+**Configuration:**
+- ✅ config/attribute-promotion.yaml (base semantic conventions)
+- ✅ charts/ollyscale/templates/attribute-overrides-configmap.yaml
+- ✅ Helm chart integration
+
+### ❌ MISSING (Must Complete for Full OTLP Compliance)
+
+**Reference/Lookup Tables (6 tables)** - CRITICAL for OTLP spec compliance:
+- ❌ log_severity_numbers (severity levels 0-24)
+- ❌ log_body_types (EMPTY, STRING, INT, DOUBLE, BOOL, BYTES, ARRAY, KVLIST)
+- ❌ span_kinds (UNSPECIFIED, INTERNAL, SERVER, CLIENT, PRODUCER, CONSUMER)
+- ❌ status_codes (UNSET, OK, ERROR)
+- ❌ metric_types (GAUGE, SUM, HISTOGRAM, EXP_HISTOGRAM, SUMMARY)
+- ❌ aggregation_temporalities (UNSPECIFIED, DELTA, CUMULATIVE)
+
+**Resource Attribute Tables (6 tables)** - For promoted resource attributes:
+- ❌ otel_resource_attrs_string, int, double, bool, bytes, other
+
+**Scope Attribute Tables (6 tables)** - For promoted scope attributes:
+- ❌ otel_scope_attrs_string, int, double, bool, bytes, other
+
+**Span Events & Links (13 tables)** - Currently stored as JSONB, need proper tables:
+- ❌ otel_span_events + 6 attribute tables (event_attrs_string, int, double, bool, bytes, other)
+- ❌ otel_span_links + 6 attribute tables (link_attrs_string, int, double, bool, bytes, other)
+
+**Metrics Tables (29 tables)** - Complete metrics support:
+- ❌ otel_metrics_dim
+- ❌ otel_metrics_data_points_number, histogram, exp_histogram, summary
+- ❌ 24 metric data point attribute tables (4 DP types × 6 attr types)
+
+**Table/Column COMMENT Statements** - Missing from many tables
+
+**Total Missing: ~66 tables + COMMENT statements**
+
+---
+
+## IMMEDIATE ACTION required - Migration Update
+
+**Task: Complete Migration 8316334b1935**
+
+The migration is incomplete. Add to apps/api/alembic/versions/8316334b1935_create_otlp_schema.py:
+
+1. **Reference tables** (after attribute_keys)
+2. **Resource/scope attribute tables** (after otel_resources_dim/otel_scopes_dim)
+3. **Update FK constraints** to reference the new reference tables
+4. **Add missing COMMENT statements** on all tables/columns
+5. **Span events/links tables** (if needed immediately, or defer to Phase 5)
+6. **Metrics tables** (if needed immediately, or defer to Phase 5)
+
+See "Task Details" section below for exact SQL.
+
+---
+
+## Task Breakdown for Completion
+
+### PRIORITY 1: Fix Reference Tables (BLOCKING)
+
+**Problem**: Migration creates FK references to tables that don't exist yet.
+
+**Tasks**:
+1. Add all 6 reference/lookup tables to migration 8316334b1935
+2. Add seed data (INSERT statements) 
+3. Update otel_logs_fact FK: severity_number → log_severity_numbers(severity_number)
+4. Update otel_logs_fact FK: body_type_id → log_body_types(body_type_id)  
+5. Update otel_spans_fact FK: kind → span_kinds(kind_id)
+6. Update otel_spans_fact FK: status_code → status_codes(status_code_id)
+7. Add COMMENT ON TABLE for each reference table
+
+**SQL Location**: See "Reference Tables SQL" section below.
+
+**Test**: `task deploy` succeeds, no FK constraint errors.
+
+### PRIORITY 2: Add Resource/Scope Attribute Tables
+
+**Problem**: ResourceManager has nowhere to store promoted resource/scope attributes.
+
+**Tasks**:
+1. Add 6 otel_resource_attrs_* tables (string, int, double, bool, bytes, other)
+2. Add 6 otel_scope_attrs_* tables
+3. Add indexes on (key_id, value)
+4. Add COMMENT statements
+5. Update ResourceManager to use these tables
+
+**SQL Location**: See "Resource/Scope Attribute Tables SQL" section below.
+
+**Test**: Verify resource attributes stored in typed columns, not just JSONB.
+
+### PRIORITY 3: Add Missing COMMENT Statements
+
+**Problem**: Schema undocumented, violates requirements.
+
+**Tasks**:
+1. Add COMMENT ON TABLE for all attribute tables
+2. Add COMMENT ON COLUMN for time_nanos_fraction fields
+3. Add COMMENT ON COLUMN for hash fields
+4. Document promotion strategy in attribute table comments
+
+**SQL Location**: See "COMMENT Statements SQL" section below.
+
+**Test**: Run `\dt+ otel_*` in psql, verify all tables have comments.
+
+### PRIORITY 4 (Optional): Span Events & Links Tables
+
+**Current State**: Events/links stored as JSONB in spans_fact.
+
+**Decision Needed**: Keep JSONB or create proper tables?
+
+**If creating tables**:
+1. Add otel_span_events table
+2. Add 6 otel_span_event_attrs_* tables  
+3. Add otel_span_links table
+4. Add 6 otel_span_link_attrs_* tables
+5. Update TracesStorage to use tables
+6. Migrate existing JSONB data (if any)
+
+**Trade-off**: JSONB simpler, proper tables enable attribute promotion and better queries.
+
+### PRIORITY 5 (Deferred): Metrics Dimension Tables
+
+**Current State**: Metrics stored somewhere (needs investigation).
+
+**Required for full metrics support**:
+1. otel_metrics_dim table
+2. 4 data point tables (number, histogram, exp_histogram, summary)
+3. 24 attribute tables (4 DP types × 6 attr types)
+4. Update MetricsStorage class
+
+**Test**: Full OTLP metrics ingestion working.
+
+---
+
+## SQL for Required Tasks
+
+### Reference Tables SQL
+
+Add this to `apps/api/alembic/versions/8316334b1935_create_otlp_schema.py` after attribute_keys table:
+
+```python
+    # Reference/Lookup Tables
+    op.execute("""
+        CREATE TABLE log_severity_numbers (
+            severity_number SMALLINT PRIMARY KEY,
+            name VARCHAR(50) NOT NULL UNIQUE,
+            description TEXT
+        );
+        COMMENT ON TABLE log_severity_numbers IS 'OTLP log severity levels (0-24) per OpenTelemetry specification';
+
+        INSERT INTO log_severity_numbers (severity_number, name, description) VALUES
+            (0, 'UNSPECIFIED', 'Unspecified severity'),
+            (1, 'TRACE', 'Trace-level message (most verbose)'),
+            (5, 'DEBUG', 'Debug-level message'),
+            (9, 'INFO', 'Informational message'),
+            (13, 'WARN', 'Warning message'),
+            (17, 'ERROR', 'Error message'),
+            (21, 'FATAL', 'Fatal error message (most severe)');
+
+        CREATE TABLE log_body_types (
+            body_type_id SMALLINT PRIMARY KEY,
+            name VARCHAR(50) NOT NULL UNIQUE,
+            description TEXT
+        );
+        COMMENT ON TABLE log_body_types IS 'OTLP AnyValue types for log body field';
+
+        INSERT INTO log_body_types (body_type_id, name, description) VALUES
+            (0, 'EMPTY', 'Empty/null body'),
+            (1, 'STRING', 'String body'),
+            (2, 'INT', 'Integer body'),
+            (3, 'DOUBLE', 'Double precision body'),
+            (4, 'BOOL', 'Boolean body'),
+            (5, 'BYTES', 'Bytes body'),
+            (6, 'ARRAY', 'Array body'),
+            (7, 'KVLIST', 'Key-value list body');
+
+        CREATE TABLE span_kinds (
+            kind_id SMALLINT PRIMARY KEY,
+            name VARCHAR(50) NOT NULL UNIQUE,
+            description TEXT
+        );
+        COMMENT ON TABLE span_kinds IS 'OTLP span kinds per OpenTelemetry specification';
+
+        INSERT INTO span_kinds (kind_id, name, description) VALUES
+            (0, 'UNSPECIFIED', 'Unspecified span kind'),
+            (1, 'INTERNAL', 'Internal operation within application'),
+            (2, 'SERVER', 'Server-side handling of RPC or HTTP request'),
+            (3, 'CLIENT', 'Client-side RPC or HTTP request'),
+            (4, 'PRODUCER', 'Message producer (async operations)'),
+            (5, 'CONSUMER', 'Message consumer (async operations)');
+
+        CREATE TABLE status_codes (
+            status_code_id SMALLINT PRIMARY KEY,
+            name VARCHAR(50) NOT NULL UNIQUE,
+            description TEXT
+        );
+        COMMENT ON TABLE status_codes IS 'OTLP status codes per OpenTelemetry specification';
+
+        INSERT INTO status_codes (status_code_id, name, description) VALUES
+            (0, 'UNSET', 'Default status - operation not explicitly set'),
+            (1, 'OK', 'Operation completed successfully'),
+            (2, 'ERROR', 'Operation failed with error');
+
+        CREATE TABLE metric_types (
+            metric_type_id SMALLINT PRIMARY KEY,
+            name VARCHAR(50) NOT NULL UNIQUE,
+            description TEXT
+        );
+        COMMENT ON TABLE metric_types IS 'OTLP metric data types';
+
+        INSERT INTO metric_types (metric_type_id, name, description) VALUES
+            (1, 'GAUGE', 'Point-in-time measurement (no aggregation)'),
+            (2, 'SUM', 'Cumulative or delta sum aggregation'),
+            (3, 'HISTOGRAM', 'Distribution with explicit bucket boundaries'),
+            (4, 'EXP_HISTOGRAM', 'Distribution with exponential bucket boundaries'),
+            (5, 'SUMMARY', 'Summary statistics with quantiles');
+
+        CREATE TABLE aggregation_temporalities (
+            temporality_id SMALLINT PRIMARY KEY,
+            name VARCHAR(50) NOT NULL UNIQUE,
+            description TEXT
+        );
+        COMMENT ON TABLE aggregation_temporalities IS 'OTLP metric aggregation temporality';
+
+        INSERT INTO aggregation_temporalities (temporality_id, name, description) VALUES
+            (0, 'UNSPECIFIED', 'Unspecified temporality'),
+            (1, 'DELTA', 'Change since last measurement interval'),
+            (2, 'CUMULATIVE', 'Total accumulated since start');
+    """)
+```
+
+### Resource/Scope Attribute Tables SQL
+
+Add after otel_scopes_dim table:
+
+```python
+    # Resource Attribute Tables
+    op.execute("""
+        CREATE TABLE otel_resource_attrs_string (
+            resource_id BIGINT NOT NULL REFERENCES otel_resources_dim(resource_id) ON DELETE CASCADE,
+            key_id BIGINT NOT NULL REFERENCES attribute_keys(key_id),
+            value TEXT NOT NULL,
+            PRIMARY KEY (resource_id, key_id)
+        );
+        CREATE INDEX idx_otel_resource_attrs_string_key_value ON otel_resource_attrs_string(key_id, value);
+        COMMENT ON TABLE otel_resource_attrs_string IS 'Promoted string resource attributes per attribute-promotion.yaml config';
+
+        CREATE TABLE otel_resource_attrs_int (
+            resource_id BIGINT NOT NULL REFERENCES otel_resources_dim(resource_id) ON DELETE CASCADE,
+            key_id BIGINT NOT NULL REFERENCES attribute_keys(key_id),
+            value BIGINT NOT NULL,
+            PRIMARY KEY (resource_id, key_id)
+        );
+        CREATE INDEX idx_otel_resource_attrs_int_key_value ON otel_resource_attrs_int(key_id, value);
+        COMMENT ON TABLE otel_resource_attrs_int IS 'Promoted integer resource attributes per attribute-promotion.yaml config';
+
+        CREATE TABLE otel_resource_attrs_double (
+            resource_id BIGINT NOT NULL REFERENCES otel_resources_dim(resource_id) ON DELETE CASCADE,
+            key_id BIGINT NOT NULL REFERENCES attribute_keys(key_id),
+            value DOUBLE PRECISION NOT NULL,
+            PRIMARY KEY (resource_id, key_id)
+        );
+        CREATE INDEX idx_otel_resource_attrs_double_key_value ON otel_resource_attrs_double(key_id, value);
+        COMMENT ON TABLE otel_resource_attrs_double IS 'Promoted double resource attributes per attribute-promotion.yaml config';
+
+        CREATE TABLE otel_resource_attrs_bool (
+            resource_id BIGINT NOT NULL REFERENCES otel_resources_dim(resource_id) ON DELETE CASCADE,
+            key_id BIGINT NOT NULL REFERENCES attribute_keys(key_id),
+            value BOOLEAN NOT NULL,
+            PRIMARY KEY (resource_id, key_id)
+        );
+        CREATE INDEX idx_otel_resource_attrs_bool_key ON otel_resource_attrs_bool(key_id, value);
+        COMMENT ON TABLE otel_resource_attrs_bool IS 'Promoted boolean resource attributes per attribute-promotion.yaml config';
+
+        CREATE TABLE otel_resource_attrs_bytes (
+            resource_id BIGINT NOT NULL REFERENCES otel_resources_dim(resource_id) ON DELETE CASCADE,
+            key_id BIGINT NOT NULL REFERENCES attribute_keys(key_id),
+            value BYTEA NOT NULL,
+            PRIMARY KEY (resource_id, key_id)
+        );
+        CREATE INDEX idx_otel_resource_attrs_bytes_key ON otel_resource_attrs_bytes(key_id);
+        COMMENT ON TABLE otel_resource_attrs_bytes IS 'Promoted bytes resource attributes per attribute-promotion.yaml config';
+
+        CREATE TABLE otel_resource_attrs_other (
+            resource_id BIGINT NOT NULL PRIMARY KEY REFERENCES otel_resources_dim(resource_id) ON DELETE CASCADE,
+            attributes JSONB NOT NULL
+        );
+        CREATE INDEX idx_otel_resource_attrs_other_gin ON otel_resource_attrs_other USING gin(attributes);
+        COMMENT ON TABLE otel_resource_attrs_other IS 'JSONB catch-all for unpromoted resource attributes (complex types, unknown keys)';
+
+        -- Scope Attribute Tables
+        CREATE TABLE otel_scope_attrs_string (
+            scope_id BIGINT NOT NULL REFERENCES otel_scopes_dim(scope_id) ON DELETE CASCADE,
+            key_id BIGINT NOT NULL REFERENCES attribute_keys(key_id),
+            value TEXT NOT NULL,
+            PRIMARY KEY (scope_id, key_id)
+        );
+        CREATE INDEX idx_otel_scope_attrs_string_key_value ON otel_scope_attrs_string(key_id, value);
+        COMMENT ON TABLE otel_scope_attrs_string IS 'Promoted string scope attributes per attribute-promotion.yaml config';
+
+        CREATE TABLE otel_scope_attrs_int (
+            scope_id BIGINT NOT NULL REFERENCES otel_scopes_dim(scope_id) ON DELETE CASCADE,
+            key_id BIGINT NOT NULL REFERENCES attribute_keys(key_id),
+            value BIGINT NOT NULL,
+            PRIMARY KEY (scope_id, key_id)
+        );
+        CREATE INDEX idx_otel_scope_attrs_int_key_value ON otel_scope_attrs_int(key_id, value);
+        COMMENT ON TABLE otel_scope_attrs_int IS 'Promoted integer scope attributes per attribute-promotion.yaml config';
+
+        CREATE TABLE otel_scope_attrs_double (
+            scope_id BIGINT NOT NULL REFERENCES otel_scopes_dim(scope_id) ON DELETE CASCADE,
+            key_id BIGINT NOT NULL REFERENCES attribute_keys(key_id),
+            value DOUBLE PRECISION NOT NULL,
+            PRIMARY KEY (scope_id, key_id)
+        );
+        CREATE INDEX idx_otel_scope_attrs_double_key_value ON otel_scope_attrs_double(key_id, value);
+        COMMENT ON TABLE otel_scope_attrs_double IS 'Promoted double scope attributes per attribute-promotion.yaml config';
+
+        CREATE TABLE otel_scope_attrs_bool (
+            scope_id BIGINT NOT NULL REFERENCES otel_scopes_dim(scope_id) ON DELETE CASCADE,
+            key_id BIGINT NOT NULL REFERENCES attribute_keys(key_id),
+            value BOOLEAN NOT NULL,
+            PRIMARY KEY (scope_id, key_id)
+        );
+        CREATE INDEX idx_otel_scope_attrs_bool_key ON otel_scope_attrs_bool(key_id, value);
+        COMMENT ON TABLE otel_scope_attrs_bool IS 'Promoted boolean scope attributes per attribute-promotion.yaml config';
+
+        CREATE TABLE otel_scope_attrs_bytes (
+            scope_id BIGINT NOT NULL REFERENCES otel_scopes_dim(scope_id) ON DELETE CASCADE,
+            key_id BIGINT NOT NULL REFERENCES attribute_keys(key_id),
+            value BYTEA NOT NULL,
+            PRIMARY KEY (scope_id, key_id)
+        );
+        CREATE INDEX idx_otel_scope_attrs_bytes_key ON otel_scope_attrs_bytes(key_id);
+        COMMENT ON TABLE otel_scope_attrs_bytes IS 'Promoted bytes scope attributes per attribute-promotion.yaml config';
+
+        CREATE TABLE otel_scope_attrs_other (
+            scope_id BIGINT NOT NULL PRIMARY KEY REFERENCES otel_scopes_dim(scope_id) ON DELETE CASCADE,
+            attributes JSONB NOT NULL
+        );
+        CREATE INDEX idx_otel_scope_attrs_other_gin ON otel_scope_attrs_other USING gin(attributes);
+        COMMENT ON TABLE otel_scope_attrs_other IS 'JSONB catch-all for unpromoted scope attributes (complex types, unknown keys)';
+    """)
+```
+
+### Missing COMMENT Statements SQL
+
+Add before views:
+
+```python
+    # Add missing COMMENT statements
+    op.execute("""
+        -- Log attribute table comments
+        COMMENT ON TABLE otel_log_attrs_string IS 'Promoted string log attributes per attribute-promotion.yaml';
+        COMMENT ON TABLE otel_log_attrs_int IS 'Promoted integer log attributes per attribute-promotion.yaml';
+        COMMENT ON TABLE otel_log_attrs_double IS 'Promoted double log attributes per attribute-promotion.yaml';
+        COMMENT ON TABLE otel_log_attrs_bool IS 'Promoted boolean log attributes per attribute-promotion.yaml';
+        COMMENT ON TABLE otel_log_attrs_bytes IS 'Promoted bytes log attributes per attribute-promotion.yaml';
+        COMMENT ON TABLE otel_log_attrs_other IS 'JSONB catch-all for unpromoted log attributes (complex types)';
+
+        -- Span attribute table comments
+        COMMENT ON TABLE otel_span_attrs_string IS 'Promoted string span attributes per attribute-promotion.yaml';
+        COMMENT ON TABLE otel_span_attrs_int IS 'Promoted integer span attributes per attribute-promotion.yaml';
+        COMMENT ON TABLE otel_span_attrs_double IS 'Promoted double span attributes per attribute-promotion.yaml';
+        COMMENT ON TABLE otel_span_attrs_bool IS 'Promoted boolean span attributes per attribute-promotion.yaml';
+        COMMENT ON TABLE otel_span_attrs_bytes IS 'Promoted bytes span attributes per attribute-promotion.yaml';
+        COMMENT ON TABLE otel_span_attrs_other IS 'JSONB catch-all for unpromoted span attributes (complex types)';
+
+        -- Column comments for timestamp nanos_fraction fields
+        COMMENT ON COLUMN otel_logs_fact.time_nanos_fraction IS 'Remaining nanoseconds (0-999) beyond microsecond precision in time field';
+        COMMENT ON COLUMN otel_logs_fact.observed_time_nanos_fraction IS 'Remaining nanoseconds (0-999) beyond microsecond precision in observed_time field';
+        COMMENT ON COLUMN otel_spans_fact.start_time_nanos_fraction IS 'Remaining nanoseconds (0-999) beyond microsecond precision in start_time field';
+        COMMENT ON COLUMN otel_spans_fact.end_time_nanos_fraction IS 'Remaining nanoseconds (0-999) beyond microsecond precision in end_time field';
+
+        -- Hash field comments
+        COMMENT ON COLUMN otel_resources_dim.resource_hash IS 'SHA-256 hash of sorted resource attributes for deduplication';
+        COMMENT ON COLUMN otel_scopes_dim.scope_hash IS 'SHA-256 hash of scope identity (name+version+schema_url) for deduplication';
+    """)
+```
+
+---
 
 ## Architecture Principles
 
@@ -101,98 +507,89 @@ Views simplify queries by pre-joining attribute tables with fact tables, providi
 
 ## Schema Structure
 
+See [Ollyscale Data Model](../otel-ollyscale-data-model.md) for complete schema documentation.
+
+### Timestamp Storage Pattern
+
+**CRITICAL REQUIREMENT**: All timestamps MUST use the following pattern for full nanosecond precision:
+
+- `time` TIMESTAMP WITH TIME ZONE NOT NULL - Stores microsecond precision (PostgreSQL native)
+- `time_nanos_fraction` SMALLINT NOT NULL DEFAULT 0 - Stores remaining 0-999 nanoseconds
+- CHECK constraint: `time_nanos_fraction >= 0 AND time_nanos_fraction < 1000`
+
+**Applies to:**
+- Logs: `time`, `observed_time` (both with nanos_fraction)
+- Spans: `start_time`, `end_time` (both with nanos_fraction)
+- Span Events: `time` (with nanos_fraction)
+- Metrics: `time`, `start_time` (both with nanos_fraction, start_time nullable for gauges)
+
+**Conversion Logic:**
+```python
+# unix_nano → (timestamp, nanos_fraction)
+unix_micros = unix_nano // 1000
+nanos_fraction = unix_nano % 1000
+timestamp = datetime.fromtimestamp(unix_micros / 1_000_000, tz=UTC)
+
+# (timestamp, nanos_fraction) → unix_nano
+unix_micros = int(timestamp.timestamp() * 1_000_000)
+unix_nano = (unix_micros * 1000) + nanos_fraction
+```
+
+### Table Comments Requirement
+
+**ALL tables and critical columns MUST have COMMENT statements** documenting:
+- Purpose and relationship to OTLP specification
+- Deduplication strategy (for dimension tables)
+- Attribute promotion strategy (for attribute tables)
+- Performance characteristics and index usage
+
 ### Dimension Tables (Shared)
 
 #### `attribute_keys`
-Central registry for all attribute key names across all signals.
-
-```sql
-CREATE TABLE attribute_keys (
-    key_id BIGSERIAL PRIMARY KEY,
-    key VARCHAR(255) NOT NULL UNIQUE
-);
-CREATE UNIQUE INDEX idx_attribute_keys_key ON attribute_keys(key);
-```
+Central registry for all attribute key names across all signals. See data model doc for complete schema.
 
 **Purpose**: Deduplicate attribute names, reduce storage, enable efficient joins.
 
 #### `otel_resources_dim`
-Resource identity with hash-based deduplication.
-
-```sql
-CREATE TABLE otel_resources_dim (
-    resource_id BIGSERIAL PRIMARY KEY,
-    resource_hash VARCHAR(64) NOT NULL UNIQUE,  -- SHA-256 of all attributes
-    service_name VARCHAR(255),                   -- Extracted for fast filtering
-    service_namespace VARCHAR(255),              -- Extracted for fast filtering
-    schema_url TEXT,
-    first_seen TIMESTAMPTZ NOT NULL,
-    last_seen TIMESTAMPTZ NOT NULL,
-    dropped_attributes_count INTEGER NOT NULL DEFAULT 0
-);
-CREATE UNIQUE INDEX idx_otel_resources_hash ON otel_resources_dim(resource_hash);
-CREATE INDEX idx_otel_resources_service ON otel_resources_dim(service_name, service_namespace);
-```
+Resource identity with hash-based deduplication. See data model doc for schema.
 
 **Key Design Decisions**:
-- Hash includes ALL attributes for true deduplication
+- Hash includes ALL attributes for true deduplication (SHA-256)
 - `service.name` and `service.namespace` extracted for fast service filtering
-- `first_seen`/`last_seen` track resource lifecycle
+- `first_seen`/`last_seen` track resource lifecycle (both TIMESTAMPTZ)
+- Requires unique index on `resource_hash` and composite index on service fields
 
 #### `otel_scopes_dim`
-Instrumentation library/scope identity.
+Instrumentation library/scope identity. See data model doc for schema.
 
-```sql
-CREATE TABLE otel_scopes_dim (
-    scope_id BIGSERIAL PRIMARY KEY,
-    scope_hash VARCHAR(64) NOT NULL UNIQUE,
-    name VARCHAR(255) NOT NULL,
-    version VARCHAR(255),
-    schema_url TEXT,
-    first_seen TIMESTAMPTZ NOT NULL,
-    last_seen TIMESTAMPTZ NOT NULL,
-    dropped_attributes_count INTEGER NOT NULL DEFAULT 0
-);
-CREATE UNIQUE INDEX idx_otel_scopes_hash ON otel_scopes_dim(scope_hash);
-CREATE INDEX idx_otel_scopes_name ON otel_scopes_dim(name);
-```
+**Key Design Decisions**:
+- Hash-based deduplication like resources
+- Name and version tracked separately for filtering
+- Requires unique index on `scope_hash` and regular index on `name`
 
-### Resource Attribute Tables
+### Resource Attribute Tables (6 tables)
 
-Each type gets its own table for optimal storage and indexing:
+**Required tables:**
+- `otel_resource_attrs_string` - TEXT values with value index
+- `otel_resource_attrs_int` - BIGINT values with value index  
+- `otel_resource_attrs_double` - DOUBLE PRECISION values with value index
+- `otel_resource_attrs_bool` - BOOLEAN values with value index
+- `otel_resource_attrs_bytes` - BYTEA values (no value index - low cardinality expected)
+- `otel_resource_attrs_other` - JSONB catch-all with GIN index
 
-```sql
--- otel_resource_attrs_string
-CREATE TABLE otel_resource_attrs_string (
-    resource_id BIGINT NOT NULL REFERENCES otel_resources_dim(resource_id),
-    key_id BIGINT NOT NULL REFERENCES attribute_keys(key_id),
-    value TEXT NOT NULL,
-    PRIMARY KEY (resource_id, key_id)
-);
-CREATE INDEX idx_otel_resource_attrs_string_value ON otel_resource_attrs_string(key_id, value);
+**All tables require:**
+- Composite PK on (resource_id, key_id)
+- FK to otel_resources_dim(resource_id) with ON DELETE CASCADE
+- FK to attribute_keys(key_id)
+- Index on (key_id, value) for typed tables (except bytes/other)
+- COMMENT documenting promotion strategy
 
--- otel_resource_attrs_int (similar structure)
--- otel_resource_attrs_double (similar structure)
--- otel_resource_attrs_bool (similar structure)
--- otel_resource_attrs_bytes (similar structure)
+### Scope Attribute Tables (6 tables)
 
--- otel_resource_attrs_other (JSONB catch-all)
-CREATE TABLE otel_resource_attrs_other (
-    resource_id BIGINT PRIMARY KEY REFERENCES otel_resources_dim(resource_id),
-    attributes JSONB NOT NULL
-);
-CREATE INDEX idx_otel_resource_attrs_other_gin ON otel_resource_attrs_other USING GIN(attributes);
-```
-
-### Scope Attribute Tables
-
-Identical structure to resource attributes but for scopes:
-- `otel_scope_attrs_string`
-- `otel_scope_attrs_int`
-- `otel_scope_attrs_double`
-- `otel_scope_attrs_bool`
-- `otel_scope_attrs_bytes`
-- `otel_scope_attrs_other`
+Identical structure to resource attributes:
+- `otel_scope_attrs_string, int, double, bool, bytes, other`
+- Same FK, PK, and index requirements as resource attrs
+- Reference otel_scopes_dim instead of otel_resources_dim
 
 ---
 
@@ -202,141 +599,74 @@ Identical structure to resource attributes but for scopes:
 
 #### Fact Table: `otel_logs_fact`
 
-```sql
-CREATE TABLE otel_logs_fact (
-    log_id BIGSERIAL PRIMARY KEY,
+**Requirements:**
+- Primary key: log_id (BIGSERIAL)
+- Foreign keys: resource_id (required), scope_id (optional)
+- Timestamp fields: time + time_nanos_fraction, observed_time + observed_time_nanos_fraction
+- Severity: severity_number (FK to reference table), severity_text
+- Body: body_type_id (FK), body (JSONB)
+- Trace correlation: trace_id, span_id_hex, trace_flags
+- Metadata: dropped_attributes_count, flags
+- Indexes: (time, time_nanos_fraction DESC), resource_id, severity_number, trace_id
+- COMMENT: Document purpose and OTLP spec complianceReference/Lookup Tables (6 tables)
 
-    -- Dimensions
-    resource_id BIGINT NOT NULL REFERENCES otel_resources_dim(resource_id),
-    scope_id BIGINT REFERENCES otel_scopes_dim(scope_id),
+**Required tables with seed data:**
+- `log_severity_numbers` - OTLP severity levels (0-24)
+- `log_body_types` - OTLP body types (EMPTY, STRING, INT, DOUBLE, BOOL, BYTES, ARRAY, KVLIST)
+- `span_kinds` - OTLP span kinds (UNSPECIFIED, INTERNAL, SERVER, CLIENT, PRODUCER, CONSUMER)
+- `status_codes` - OTLP status codes (UNSET, OK, ERROR)
+- `metric_types` - OTLP metric types (GAUGE, SUM, HISTOGRAM, EXP_HISTOGRAM, SUMMARY)
+- `aggregation_temporalities` - OTLP temporalities (UNSPECIFIED, DELTA, CUMULATIVE)
 
-    -- Timing
-    time_unix_nano BIGINT NOT NULL,
-    observed_time_unix_nano BIGINT NOT NULL,
+**Requirements:**
+- All tables must have name and description columns
+- PK on numeric ID matching OTLP specification values
+- Seed data inserted in migration (not separate data files)
+- COMMENT on each table documenting OTLP specification compliance
 
-    -- Severity
-    severity_number SMALLINT REFERENCES log_severity_numbers(severity_number),
-    severity_text TEXT,
+### 1. Logs
 
-    -- Body
-    body_type_id SMALLINT REFERENCES log_body_types(body_type_id),
-    body JSONB,
+#### Fact Table: `otel_logs_fact`
 
-    -- Trace correlation
-    trace_id VARCHAR(32),
-    span_id_hex VARCHAR(16),
-    trace_flags INTEGER,
+See data model doc for complete schema.
+See data model doc for complete schema.
 
-    -- Metadata
-    dropped_attributes_count INTEGER DEFAULT 0,
-    flags INTEGER DEFAULT 0
-);
+**Key Requirements**:
+- Timestamp columns use timestamp+nanos pattern (4 columns total: start_time, start_time_nanos_fraction, end_time, end_time_nanos_fraction)
+- FK to span_kinds and status_codes (both nullable)
+- UNIQUE index on (trace_id, span_id_hex) - critical for OTLP compliance
+- Indexes on: trace_id, resource_id, (start_time, start_time_nanos_fraction DESC)
+- Partial index on parent_span_id_hex WHERE NOT NULL (for child span lookups)
+- `attributes_other` JSONB column for unpromoted attributes with GIN index
+- NO events/links as JSONB arrays - these go in separate tables per OTLP spec
 
-CREATE INDEX idx_otel_logs_time ON otel_logs_fact(time_unix_nano DESC);
-CREATE INDEX idx_otel_logs_resource ON otel_logs_fact(resource_id);
-CREATE INDEX idx_otel_logs_severity ON otel_logs_fact(severity_number);
-CREATE INDEX idx_otel_logs_trace ON otel_logs_fact(trace_id, span_id_hex);
-```
+#### Span Events Table (1 table + 6 attribute tables = 7 tables total)
 
-#### Log Attribute Tables
+**otel_span_events:**
+- FK to spans with ON DELETE CASCADE
+- Timestamp with nanos pattern (time, time_nanos_fraction)
+- Event name and dropped count
 
-```sql
--- otel_log_attrs_string, int, double, bool, bytes, other
--- Same pattern as resource attributes but FK to log_id
-```
+**otel_span_event_attrs_{string,int,double,bool,bytes,other}:**
+- FK to otel_span_events(event_id) with ON DELETE CASCADE
+- Same structure as other attribute tables
 
-**Key Design**:
-- No tenant/connection - those are resource attributes
-- `body` stays JSONB (can be complex object)
-- Trace correlation fields for APM workflows
+#### Span Links Table (1 table + 6 attribute tables = 7 tables total)
 
-### 2. Traces
+**otel_span_links:**
+- FK to spans with ON DELETE CASCADE  
+- linked_trace_id and linked_span_id_hex for correlation
+- trace_state for W3C trace context
 
-#### Fact Table: `otel_spans_fact`
+**otel_span_link_attrs_{string,int,double,bool,bytes,other}:**
+- FK to otel_span_links(link_id) with ON DELETE CASCADE
+- Same structure as other attribute tables
 
-```sql
-CREATE TABLE otel_spans_fact (
-    span_id BIGSERIAL PRIMARY KEY,
+#### Span Attribute Tables (6 tables)
 
-    -- Dimensions
-    resource_id BIGINT NOT NULL REFERENCES otel_resources_dim(resource_id),
-    scope_id BIGINT REFERENCES otel_scopes_dim(scope_id),
-
-    -- Trace identity
-    trace_id VARCHAR(32) NOT NULL,
-    span_id_hex VARCHAR(16) NOT NULL,
-    parent_span_id_hex VARCHAR(16),
-    trace_state TEXT,
-
-    -- Span identity
-    name TEXT NOT NULL,
-    kind_id SMALLINT REFERENCES span_kinds(kind_id),
-
-    -- Timing
-    start_time_unix_nano BIGINT NOT NULL,
-    end_time_unix_nano BIGINT NOT NULL,
-
-    -- Status
-    status_code_id SMALLINT REFERENCES status_codes(status_code_id),
-    status_message TEXT,
-
-    -- Metadata
-    dropped_attributes_count INTEGER DEFAULT 0,
-    dropped_events_count INTEGER DEFAULT 0,
-    dropped_links_count INTEGER DEFAULT 0,
-    flags INTEGER DEFAULT 0
-);
-
-CREATE UNIQUE INDEX idx_otel_spans_trace_span ON otel_spans_fact(trace_id, span_id_hex);
-CREATE INDEX idx_otel_spans_trace ON otel_spans_fact(trace_id);
-CREATE INDEX idx_otel_spans_resource ON otel_spans_fact(resource_id);
-CREATE INDEX idx_otel_spans_time ON otel_spans_fact(start_time_unix_nano DESC);
-CREATE INDEX idx_otel_spans_parent ON otel_spans_fact(parent_span_id_hex) WHERE parent_span_id_hex IS NOT NULL;
-```
-
-#### Span Events & Links
-
-```sql
-CREATE TABLE otel_span_events (
-    event_id BIGSERIAL PRIMARY KEY,
-    span_id BIGINT NOT NULL REFERENCES otel_spans_fact(span_id) ON DELETE CASCADE,
-    name TEXT NOT NULL,
-    time_unix_nano BIGINT NOT NULL,
-    dropped_attributes_count INTEGER DEFAULT 0
-);
-
-CREATE TABLE otel_span_links (
-    link_id BIGSERIAL PRIMARY KEY,
-    span_id BIGINT NOT NULL REFERENCES otel_spans_fact(span_id) ON DELETE CASCADE,
-    linked_trace_id VARCHAR(32) NOT NULL,
-    linked_span_id_hex VARCHAR(16) NOT NULL,
-    trace_state TEXT,
-    dropped_attributes_count INTEGER DEFAULT 0
-);
-```
-
-#### Span Attribute Tables
-
-Same pattern as logs:
+**Required tables:**
 - `otel_span_attrs_string, int, double, bool, bytes, other`
-- `otel_span_event_attrs_string, int, double, bool, bytes, other`
-- `otel_span_link_attrs_string, int, double, bool, bytes, other`
-
-### 3. Metrics
-
-#### Metric Dimension: `otel_metrics_dim`
-
-Metrics need a dimension table because same metric can have different descriptions/metadata.
-
-```sql
-CREATE TABLE otel_metrics_dim (
-    metric_id BIGSERIAL PRIMARY KEY,
-    metric_hash VARCHAR(64) NOT NULL UNIQUE,           -- Hash with description
-    metric_identity_hash VARCHAR(64) NOT NULL,         -- Hash without description
-    name VARCHAR(1024) NOT NULL,
-    metric_type_id SMALLINT NOT NULL REFERENCES metric_types(metric_type_id),
-    unit VARCHAR(64),
-    aggregation_temporality_id SMALLINT REFERENCES aggregation_temporalities(temporality_id),
+- FK to otel_spans_fact(span_id) with ON DELETE CASCADEemporalities(temporality_id),
     is_monotonic BOOLEAN,
     description TEXT,
     schema_url TEXT,
@@ -344,12 +674,12 @@ CREATE TABLE otel_metrics_dim (
     last_seen TIMESTAMPTZ NOT NULL
 );
 
-CREATE UNIQUE INDEX idx_otel_metrics_hash ON otel_metrics_dim(metric_hash);
-CREATE INDEX idx_otel_metrics_identity ON otel_metrics_dim(metric_identity_hash);
-CREATE INDEX idx_otel_metrics_name ON otel_metrics_dim(name);
-```
+**Indexes:**
+- UNIQUE index on metric_hash
+- Index on metric_identity_hash (for grouping variants)
+- Index on name (for lookups)
 
-**Key Design**:
+**Key Design:**
 - Two hashes: one with description (full identity), one without (groups variants)
 - Enables metric variants with different descriptions
 
@@ -357,145 +687,45 @@ CREATE INDEX idx_otel_metrics_name ON otel_metrics_dim(name);
 
 Separate tables for each metric type for optimal storage:
 
-```sql
--- Gauge & Sum (number values)
-CREATE TABLE otel_metrics_data_points_number (
-    data_point_id BIGSERIAL PRIMARY KEY,
-    metric_id BIGINT NOT NULL REFERENCES otel_metrics_dim(metric_id),
-    resource_id BIGINT NOT NULL REFERENCES otel_resources_dim(resource_id),
-    scope_id BIGINT REFERENCES otel_scopes_dim(scope_id),
-    start_time_unix_nano BIGINT,  -- NULL for gauges
-    time_unix_nano BIGINT NOT NULL,
-    value_int BIGINT,
-    value_double DOUBLE PRECISION,
-    flags INTEGER DEFAULT 0,
-    exemplars JSONB,  -- Array of exemplars
-    CONSTRAINT chk_value_one_of CHECK ((value_int IS NOT NULL) <> (value_double IS NOT NULL))
-);
+**Number Data Points (Gauge & Sum)** - Table: `otel_metrics_data_points_number`
+- Fields: data_point_id (PK), metric_id (FK), resource_id (FK), scope_id (FK)
+- Timestamps: start_time + start_time_nanos_fraction (NULL for gauges), time + time_nanos_fraction
+- Values: value_int (BIGINT), value_double (DOUBLE PRECISION) - exactly one must be non-NULL
+- Additional: flags, exemplars (JSONB)
+- Constraint: CHECK that exactly one of value_int or value_double is non-NULL
 
--- Histogram
-CREATE TABLE otel_metrics_data_points_histogram (
-    data_point_id BIGSERIAL PRIMARY KEY,
-    metric_id BIGINT NOT NULL REFERENCES otel_metrics_dim(metric_id),
-    resource_id BIGINT NOT NULL REFERENCES otel_resources_dim(resource_id),
-    scope_id BIGINT REFERENCES otel_scopes_dim(scope_id),
-    start_time_unix_nano BIGINT NOT NULL,
-    time_unix_nano BIGINT NOT NULL,
-    count BIGINT NOT NULL,
-    sum DOUBLE PRECISION,
-    min DOUBLE PRECISION,
-    max DOUBLE PRECISION,
-    explicit_bounds DOUBLE PRECISION[] NOT NULL,
-    bucket_counts BIGINT[] NOT NULL,
-    flags INTEGER DEFAULT 0,
-    exemplars JSONB
-);
+**Histogram Data Points** - Table: `otel_metrics_data_points_histogram`
+- Fields: data_point_id (PK), metric_id (FK), resource_id (FK), scope_id (FK)
+- Timestamps: start_time + start_time_nanos_fraction, time + time_nanos_fraction
+- Statistics: count, sum, min, max
+- Buckets: explicit_bounds (array), bucket_counts (array)
+- Additional: flags, exemplars (JSONB)
 
--- ExponentialHistogram
-CREATE TABLE otel_metrics_data_points_exp_histogram (
-    data_point_id BIGSERIAL PRIMARY KEY,
-    metric_id BIGINT NOT NULL REFERENCES otel_metrics_dim(metric_id),
-    resource_id BIGINT NOT NULL REFERENCES otel_resources_dim(resource_id),
-    scope_id BIGINT REFERENCES otel_scopes_dim(scope_id),
-    start_time_unix_nano BIGINT NOT NULL,
-    time_unix_nano BIGINT NOT NULL,
-    count BIGINT NOT NULL,
-    sum DOUBLE PRECISION,
-    min DOUBLE PRECISION,
-    max DOUBLE PRECISION,
-    scale INTEGER NOT NULL,
-    zero_count BIGINT NOT NULL,
-    positive_offset INTEGER,
-    positive_bucket_counts BIGINT[],
-    negative_offset INTEGER,
-    negative_bucket_counts BIGINT[],
-    flags INTEGER DEFAULT 0,
-    exemplars JSONB
-);
+**ExponentialHistogram Data Points** - Table: `otel_metrics_data_points_exp_histogram`
+- Fields: data_point_id (PK), metric_id (FK), resource_id (FK), scope_id (FK)
+- Timestamps: start_time + start_time_nanos_fraction, time + time_nanos_fraction
+- Statistics: count, sum, min, max
+- Exponential buckets: scale, zero_count, positive_offset, positive_bucket_counts, negative_offset, negative_bucket_counts
+- Additional: flags, exemplars (JSONB)
 
--- Summary
-CREATE TABLE otel_metrics_data_points_summary (
-    data_point_id BIGSERIAL PRIMARY KEY,
-    metric_id BIGINT NOT NULL REFERENCES otel_metrics_dim(metric_id),
-    resource_id BIGINT NOT NULL REFERENCES otel_resources_dim(resource_id),
-    scope_id BIGINT REFERENCES otel_scopes_dim(scope_id),
-    start_time_unix_nano BIGINT NOT NULL,
-    time_unix_nano BIGINT NOT NULL,
-    count BIGINT NOT NULL,
-    sum DOUBLE PRECISION NOT NULL,
-    quantile_values JSONB NOT NULL,  -- Array of {quantile, value}
-    flags INTEGER DEFAULT 0
-);
+**Summary Data Points** - Table: `otel_metrics_data_points_summary`
+- Fields: data_point_id (PK), metric_id (FK), resource_id (FK), scope_id (FK)
+- Timestamps: start_time + start_time_nanos_fraction, time + time_nanos_fraction
+- Statistics: count, sum, quantile_values (JSONB array of {quantile, value})
+- Additional: flags
 ```
-
-#### Metric Data Point Attribute Tables
-
-Pattern for each metric type:
-- `otel_metric_number_attrs_string, int, double, bool, bytes, other`
-- `otel_metric_histogram_attrs_string, int, double, bool, bytes, other`
-- `otel_metric_exp_histogram_attrs_string, int, double, bool, bytes, other`
-- `otel_metric_summary_attrs_string, int, double, bool, bytes, other`
 
 ---
 
 ## Attribute Promotion Configuration
 
-### Strategy
+See implementation plan for attribute promotion engine details.
 
-**Promoted Attributes** = Stored in typed tables for fast filtering/aggregation  
-**Unpromoted Attributes** = Stored in JSONB catch-all table  
-**Dropped Attributes** = Not stored at all (filtered out during ingestion)
-
-### Configuration Architecture
-
-**Two-Tier Configuration**:
-1. **Base Configuration** (`config/attribute-promotion.yaml`) - Enforced, shipped with application, version controlled
-2. **Admin Overrides** (ConfigMap → `/config/attribute-overrides.yaml`) - Deployment-specific customizations
-
-**Merge Strategy**:
-- Base promoted attributes are **always** promoted (cannot be removed)
-- Admin can add additional promoted attributes (merged with base)
-- Admin can drop specific attributes (takes precedence, attribute not stored)
-- All configuration is version controlled and reviewed via git/ConfigMap changes
-
-### Base Configuration File
-
-`config/attribute-promotion.yaml` (enforced, shipped with application):
-
-```yaml
-# Attribute promotion configuration for OTLP schema
-# Promoted attributes are stored in typed tables for fast queries
-
-resource:
-  string:
-    - service.name
-    - service.namespace
-    - service.instance.id
-    - deployment.environment
-    - cloud.provider
-    - cloud.region
-    - cloud.availability_zone
-    - k8s.cluster.name
-    - k8s.namespace.name
-    - k8s.pod.name
-    - k8s.deployment.name
-    - host.name
-    - host.type
-    - container.name
-    - container.id
-
-  int:
-    - service.port
-
-  # Other types: double, bool, bytes
-
-scope:
-  string:
-    - otel.library.name
-    - otel.library.version
-
-logs:
-  # Log-specific promoted attributes
+**Requirements:**
+- Base configuration promotes well-known OTLP semantic conventions
+- Admin overrides allow deployment-specific customization
+- Dropped attributes prevent storage (security/cardinality control)
+- All configuration version-controlled (git/ConfigMap)
   string:
     - log.level
     - log.logger
@@ -535,17 +765,17 @@ spans:
     - gen_ai.response.model
     - llm.system
     - llm.request.type
-
-  int:
     - http.status_code
     - rpc.grpc.status_code
+
+  int:
     - gen_ai.usage.input_tokens
     - gen_ai.usage.output_tokens
     - gen_ai.usage.total_tokens
-
-  double:
     - http.request.size
     - http.response.size
+
+  double:
     - gen_ai.usage.cost
 
 metrics:
@@ -648,211 +878,27 @@ spec:
           optional: true  # Optional - falls back to base config only
 ```
 
-### Promotion Engine Implementation
+### Promotion Engine Implementation Requirements
 
-```python
-class AttributePromotionConfig:
-    """Load and merge base config with admin overrides from files."""
+**AttributePromotionConfig Class:**
+- Load base configuration from YAML file (enforced semantic conventions)
+- Load optional admin overrides from separate YAML file (deployment-specific)
+- Merge base and override configs using set union operations
+- Maintain separate promotion sets per signal type (resource, scope, logs, spans, metrics)
+- Maintain separate drop lists per signal type (admin-only, not in base config)
+- Build type-specific lookup sets for fast O(1) membership checks
+- Provide `is_promoted(signal, key, value_type) -> bool` method
+- Provide `should_drop(signal, key) -> bool` method
 
-    def __init__(
-        self,
-        base_config_path: Path,
-        override_config_path: Path | None = None
-    ):
-        # Load base (enforced) configuration
-        with base_config_path.open() as f:
-            base_config = yaml.safe_load(f)
-
-        # Load admin overrides (optional)
-        admin_overrides = {}
-        if override_config_path and override_config_path.exists():
-            with override_config_path.open() as f:
-                admin_overrides = yaml.safe_load(f) or {}
-
-        # Build base promotion sets (enforced)
-        self.base_resource = self._build_type_sets(base_config['resource'])
-        self.base_scope = self._build_type_sets(base_config['scope'])
-        self.base_logs = self._build_type_sets(base_config['logs'])
-        self.base_spans = self._build_type_sets(base_config['spans'])
-        self.base_metrics = self._build_type_sets(base_config['metrics'])
-
-        # Merge with admin overrides
-        promote_overrides = admin_overrides.get('promote', {})
-        self.resource_promoted = self._merge_sets(
-            self.base_resource,
-            self._build_type_sets(promote_overrides.get('resource', {}))
-        )
-        self.scope_promoted = self._merge_sets(
-            self.base_scope,
-            self._build_type_sets(promote_overrides.get('scope', {}))
-        )
-        self.logs_promoted = self._merge_sets(
-            self.base_logs,
-            self._build_type_sets(promote_overrides.get('logs', {}))
-        )
-        self.spans_promoted = self._merge_sets(
-            self.base_spans,
-            self._build_type_sets(promote_overrides.get('spans', {}))
-        )
-        self.metrics_promoted = self._merge_sets(
-            self.base_metrics,
-            self._build_type_sets(promote_overrides.get('metrics', {}))
-        )
-
-        # Load drop lists (admin only, not in base config)
-        drop_overrides = admin_overrides.get('drop', {})
-        self.resource_dropped = set(drop_overrides.get('resource', []))
-        self.scope_dropped = set(drop_overrides.get('scope', []))
-        self.logs_dropped = set(drop_overrides.get('logs', []))
-        self.spans_dropped = set(drop_overrides.get('spans', []))
-        self.metrics_dropped = set(drop_overrides.get('metrics', []))
-
-    def _build_type_sets(self, config: dict) -> dict[str, set[str]]:
-        """Build {type: set(keys)} for fast lookups."""
-        return {
-            'string': set(config.get('string', [])),
-            'int': set(config.get('int', [])),
-            'double': set(config.get('double', [])),
-            'bool': set(config.get('bool', [])),
-            'bytes': set(config.get('bytes', [])),
-        }
-
-    def _merge_sets(
-        self,
-        base: dict[str, set[str]],
-        overrides: dict[str, set[str]]
-    ) -> dict[str, set[str]]:
-        """Merge base and override sets (union)."""
-        merged = {}
-        for value_type in ['string', 'int', 'double', 'bool', 'bytes']:
-            merged[value_type] = base.get(value_type, set()) | overrides.get(value_type, set())
-        return merged
-
-    def should_drop(self, signal: str, key: str) -> bool:
-        """Check if attribute should be dropped (not stored at all)."""
-        dropped = getattr(self, f"{signal}_dropped")
-        return key in dropped
-
-    def is_promoted(self, signal: str, key: str, value_type: str) -> bool:
-        """Check if attribute key should be promoted (includes base + admin)."""
-        if self.should_drop(signal, key):
-            return False  # Dropped attributes are never promoted
-
-        promoted = getattr(self, f"{signal}_promoted")
-        return key in promoted.get(value_type, set())
-
-
-class AttributeManager:
-    """Manage attribute storage and promotion."""
-
-    def __init__(self, config: AttributePromotionConfig, db_session):
-        self.config = config
-        self.db = db_session
-        self.key_cache = {}  # {key_name: key_id}
-
-    async def get_or_create_key_id(self, key: str) -> int:
-        """Get or create attribute key, with caching."""
-        if key in self.key_cache:
-            return self.key_cache[key]
-
-        # Try SELECT first
-        result = await self.db.execute(
-            "SELECT key_id FROM attribute_keys WHERE key = $1",
-            key
-        )
-        if result:
-            key_id = result[0]['key_id']
-            self.key_cache[key] = key_id
-            return key_id
-
-        # INSERT if not exists
-        key_id = await self.db.execute(
-            "INSERT INTO attribute_keys (key) VALUES ($1) "
-            "ON CONFLICT (key) DO UPDATE SET key = EXCLUDED.key "
-            "RETURNING key_id",
-            key
-        )
-        self.key_cache[key] = key_id
-        return key_id
-
-    async def store_attributes(
-        self,
-        signal: str,
-        parent_id: int,
-        parent_table: str,
-        attributes: list[dict],
-    ) -> None:
-        """Store attributes in appropriate tables based on promotion config.
-
-        Args:
-            signal: 'resource', 'scope', 'logs', 'spans', 'metrics'
-            parent_id: resource_id, scope_id, log_id, span_id, etc.
-            parent_table: Table prefix (e.g., 'otel_log_attrs')
-            attributes: OTLP attributes array [{key, value: {stringValue, ...}}]
-        """
-        promoted = {
-            'string': [],
-            'int': [],
-            'double': [],
-            'bool': [],
-            'bytes': [],
-        }
-        unpromoted = {}
-
-        for attr in attributes:
-            key = attr['key']
-            value_obj = attr['value']
-
-            # Determine type and extract value
-            value_type, value = self._extract_value(value_obj)
-
-            # Check if promoted
-            if self.config.is_promoted(signal, key, value_type):
-                promoted[value_type].append({'key': key, 'value': value})
-            else:
-                # Store in JSONB catch-all
-                unpromoted[key] = value_obj  # Keep OTLP AnyValue format
-
-        # Insert promoted attributes
-        for value_type, items in promoted.items():
-            if not items:
-                continue
-
-            table = f"{parent_table}_{value_type}"
-
-            for item in items:
-                key_id = await self.get_or_create_key_id(item['key'])
-
-                await self.db.execute(
-                    f"INSERT INTO {table} (parent_id, key_id, value) "
-                    f"VALUES ($1, $2, $3) "
-                    f"ON CONFLICT (parent_id, key_id) DO UPDATE SET value = EXCLUDED.value",
-                    parent_id, key_id, item['value']
-                )
-
-        # Insert unpromoted attributes
-        if unpromoted:
-            await self.db.execute(
-                f"INSERT INTO {parent_table}_other (parent_id, attributes) "
-                f"VALUES ($1, $2) "
-                f"ON CONFLICT (parent_id) DO UPDATE SET attributes = EXCLUDED.attributes",
-                parent_id, unpromoted
-            )
-
-    def _extract_value(self, value_obj: dict) -> tuple[str, Any]:
-        """Extract (type, value) from OTLP AnyValue."""
-        if 'string_value' in value_obj:
-            return ('string', value_obj['string_value'])
-        elif 'int_value' in value_obj:
-            return ('int', value_obj['int_value'])
-        elif 'double_value' in value_obj:
-            return ('double', value_obj['double_value'])
-        elif 'bool_value' in value_obj:
-            return ('bool', value_obj['bool_value'])
-        elif 'bytes_value' in value_obj:
-            return ('bytes', value_obj['bytes_value'])
-        elif 'array_value' in value_obj or 'kvlist_value' in value_obj:
-            return ('other', value_obj)  # Complex types go to JSONB
+**AttributeManager Class:**
+- Initialize with AttributePromotionConfig and database session
+- Maintain in-memory cache of attribute key_id lookups
+- Provide `get_or_create_key_id(key) -> int` with INSERT...ON CONFLICT logic
+- Provide `store_attributes(signal, parent_id, parent_table, attributes)` method
+- Route promoted attributes to typed columns in appropriate tables
+- Route unpromoted attributes to JSONB catch-all column
+- Extract OTLP AnyValue types (string_value, int_value, double_value, bool_value, bytes_value, array_value, kvlist_value)
+- Handle complex types (arrays, kvlists) by storing in JSONB
         else:
             return ('other', value_obj)
 ```
@@ -861,48 +907,29 @@ class AttributeManager:
 
 ## Resource/Scope Management
 
-### Deduplication Strategy
+### Deduplication Strategy Requirements
 
-**Hash Calculation**:
-```python
-import hashlib
-import json
+**Hash Calculation Algorithm:**
+- Use SHA-256 algorithm for resource/scope attribute hashing
+- Sort attributes by key for stable hash calculation
+- Use canonical JSON representation (sorted keys, consistent separators)
+- Encoding: UTF-8 before hashing
 
-def calculate_resource_hash(attributes: list[dict]) -> str:
-    """Calculate SHA-256 hash of resource attributes for deduplication.
-
-    Hash must be stable:
-    - Sort attributes by key
-    - Use canonical JSON representation
-    """
-    # Sort by key for stable hash
-    sorted_attrs = sorted(attributes, key=lambda a: a['key'])
-
-    # Create canonical representation
-    canonical = json.dumps(sorted_attrs, sort_keys=True, separators=(',', ':'))
-
-    return hashlib.sha256(canonical.encode()).hexdigest()
-```
-
-### ResourceManager Implementation
-
-```python
-class ResourceManager:
-    """Manage resource and scope dimensions with deduplication."""
-
-    def __init__(self, db_session, attr_manager: AttributeManager):
-        self.db = db_session
-        self.attr_manager = attr_manager
-        self.resource_cache = {}  # {hash: resource_id}
-        self.scope_cache = {}  # {hash: scope_id}
-
-    async def get_or_create_resource(self, resource: dict) -> int:
-        """Get or create resource, returns resource_id."""
-        attributes = resource.get('attributes', [])
-        schema_url = resource.get('schema_url')
-        dropped_count = resource.get('dropped_attributes_count', 0)
-
-        # Calculate hash
+**ResourceManager Class:**
+- Initialize with db_session and attr_manager
+- Maintain in-memory caches: resource_cache {hash: resource_id}, scope_cache {hash: scope_id}
+- Method: `get_or_create_resource(resource: dict) -> int`
+  - Calculate hash from attributes
+  - Check cache first
+  - SELECT by hash if not cached
+  - INSERT if not exists (ON CONFLICT DO UPDATE pattern)
+  - Extract service.name and service.namespace for denormalized columns
+  - Store resource attributes using AttributeManager (signal='resource')
+  - Return resource_id
+- Method: `get_or_create_scope(scope: dict, resource_id: int) -> int`
+  - Similar logic for scope dimensions
+  - Store scope attributes using AttributeManager (signal='scope')
+  - Return scope_id
         resource_hash = calculate_resource_hash(attributes)
 
         # Check cache
@@ -972,200 +999,55 @@ class ResourceManager:
         return None
 ```
 
----
+## SQL Views for Query Simplification Requirements
 
-## SQL Views for Query Simplification
+All views must join fact tables with typed attribute tables and JSONB catch-all columns to provide unified query interface.
 
-Views join fact tables with attribute tables to provide a simpler query interface.
+### Logs View: `v_otel_logs_enriched`
 
-### Logs View
+**Requirements:**
+- Select all log fact columns (log_id, timestamps, severity, body, trace correlation)
+- Join resource dimension (service_name, service_namespace, resource_id)
+- Join scope dimension (scope_id, name, version)
+- Aggregate ALL attribute types into single JSONB column:
+  - Union all typed attribute tables (string, int, double, bool, bytes)
+  - JOIN attribute_keys to get key names
+  - Use jsonb_object_agg to build {key: value} objects
+  - Union with JSONB catch-all column (otel_log_attrs_other)
+  - Return empty JSONB {} if no attributes
+- Provide simplified query interface for application code
 
-```sql
-CREATE VIEW v_otel_logs_enriched AS
-SELECT
-    l.log_id,
-    l.time_unix_nano,
-    l.observed_time_unix_nano,
-    l.severity_number,
-    l.severity_text,
-    l.body,
-    l.trace_id,
-    l.span_id_hex,
+### Traces View: `v_otel_traces` (Trace-Level Aggregation)
 
-    -- Resource info
-    r.resource_id,
-    r.service_name,
-    r.service_namespace,
+**Requirements:**
+- Group by trace_id
+- Calculate trace-level metrics:
+  - start_time_unix_nano (MIN of all span start times)
+  - end_time_unix_nano (MAX of all span end times)
+  - duration_nanos (end - start)
+  - span_count (COUNT of spans)
+  - error_count (COUNT WHERE status_code = ERROR)
+- Extract root span information:
+  - root_span_name (name of span with NULL parent)
+  - service_name, service_namespace (from root span's resource)
+- Enable efficient trace browsing without loading all span details
 
-    -- Scope info
-    s.scope_id,
-    s.name as scope_name,
-    s.version as scope_version,
+### Spans View: `v_otel_spans_enriched`
 
-    -- Aggregated attributes (all promoted + unpromoted)
-    COALESCE(
-        (
-            SELECT jsonb_object_agg(ak.key, a.value)
-            FROM otel_log_attrs_string a
-            JOIN attribute_keys ak ON a.key_id = ak.key_id
-            WHERE a.log_id = l.log_id
-        ) ||
-        (SELECT jsonb_object_agg(ak.key, a.value::text)
-         FROM otel_log_attrs_int a
-         JOIN attribute_keys ak ON a.key_id = ak.key_id
-         WHERE a.log_id = l.log_id
-        ) ||
-        -- ... other types ...
-        (SELECT attributes FROM otel_log_attrs_other WHERE log_id = l.log_id),
-        '{}'::jsonb
-    ) as attributes
+**Requirements:**
+- Select all span fact columns (span_id, trace_id, name, timestamps, status)
+- Calculate duration_nanos (end_time - start_time)
+- Join span_kinds and status_codes reference tables for names
+- Join resource dimension (service_name, service_namespace)
+- Join scope dimension (scope_name, scope_version)
+- Aggregate span attributes (all typed + JSONB catch-all)
+- Aggregate span events as JSONB array:
+  - Each event: {name, time_unix_nano, attributes{}}
+  - Event attributes aggregated from all typed tables + JSONB
+- Aggregate span links as JSONB array:
+  - Each link: {trace_id, span_id, trace_state, attributes{}}
+  - Link attributes aggregated from all typed tables + JSONB
 
-FROM otel_logs_fact l
-JOIN otel_resources_dim r ON l.resource_id = r.resource_id
-LEFT JOIN otel_scopes_dim s ON l.scope_id = s.scope_id;
-```
-
-### Traces View (Trace-Level Aggregation)
-
-```sql
-CREATE VIEW v_otel_traces AS
-SELECT
-    s.trace_id,
-    MIN(s.start_time_unix_nano) as start_time_unix_nano,
-    MAX(s.end_time_unix_nano) as end_time_unix_nano,
-    MAX(s.end_time_unix_nano) - MIN(s.start_time_unix_nano) as duration_nanos,
-    COUNT(*) as span_count,
-    COUNT(*) FILTER (WHERE s.status_code_id = 2) as error_count,  -- ERROR status
-
-    -- Root span info
-    FIRST_VALUE(s.name) FILTER (WHERE s.parent_span_id_hex IS NULL)
-        OVER (PARTITION BY s.trace_id ORDER BY s.start_time_unix_nano) as root_span_name,
-
-    -- Resource/service info (from root span)
-    FIRST_VALUE(r.service_name) FILTER (WHERE s.parent_span_id_hex IS NULL)
-        OVER (PARTITION BY s.trace_id ORDER BY s.start_time_unix_nano) as service_name,
-    FIRST_VALUE(r.service_namespace) FILTER (WHERE s.parent_span_id_hex IS NULL)
-        OVER (PARTITION BY s.trace_id ORDER BY s.start_time_unix_nano) as service_namespace
-
-FROM otel_spans_fact s
-JOIN otel_resources_dim r ON s.resource_id = r.resource_id
-GROUP BY s.trace_id;
-```
-
-### Spans View
-
-```sql
-CREATE VIEW v_otel_spans_enriched AS
-SELECT
-    s.span_id,
-    s.trace_id,
-    s.span_id_hex,
-    s.parent_span_id_hex,
-    s.name,
-    s.kind_id,
-    sk.name as kind_name,
-    s.start_time_unix_nano,
-    s.end_time_unix_nano,
-    s.end_time_unix_nano - s.start_time_unix_nano as duration_nanos,
-    s.status_code_id,
-    sc.name as status_name,
-    s.status_message,
-
-    -- Resource
-    r.resource_id,
-    r.service_name,
-    r.service_namespace,
-
-    -- Scope
-    scope.scope_id,
-    scope.name as scope_name,
-
-    -- Aggregated attributes
-    COALESCE(
-        (SELECT jsonb_object_agg(ak.key, a.value)
-         FROM otel_span_attrs_string a
-         JOIN attribute_keys ak ON a.key_id = ak.key_id
-         WHERE a.span_id = s.span_id)
-        || -- ... other types ...
-        (SELECT attributes FROM otel_span_attrs_other WHERE span_id = s.span_id),
-        '{}'::jsonb
-    ) as attributes,
-
-    -- Events (aggregated)
-    (SELECT jsonb_agg(jsonb_build_object(
-        'name', e.name,
-        'time_unix_nano', e.time_unix_nano,
-        'attributes', COALESCE(
-            (SELECT jsonb_object_agg(ak.key, a.value)
-             FROM otel_span_event_attrs_string a
-             JOIN attribute_keys ak ON a.key_id = ak.key_id
-             WHERE a.event_id = e.event_id),
-            '{}'::jsonb
-        )
-    ))
-     FROM otel_span_events e
-     WHERE e.span_id = s.span_id
-    ) as events,
-
-    -- Links (aggregated)
-    (SELECT jsonb_agg(jsonb_build_object(
-        'trace_id', l.linked_trace_id,
-        'span_id', l.linked_span_id_hex,
-        'trace_state', l.trace_state,
-        'attributes', COALESCE(
-            (SELECT jsonb_object_agg(ak.key, a.value)
-             FROM otel_span_link_attrs_string a
-             JOIN attribute_keys ak ON a.key_id = ak.key_id
-             WHERE a.link_id = l.link_id),
-            '{}'::jsonb
-        )
-    ))
-     FROM otel_span_links l
-     WHERE l.span_id = s.span_id
-    ) as links
-
-FROM otel_spans_fact s
-JOIN otel_resources_dim r ON s.resource_id = r.resource_id
-LEFT JOIN otel_scopes_dim scope ON s.scope_id = scope.scope_id
-LEFT JOIN span_kinds sk ON s.kind_id = sk.kind_id
-LEFT JOIN status_codes sc ON s.status_code_id = sc.status_code_id;
-```
-
-### Metrics View
-
-```sql
-CREATE VIEW v_otel_metrics_number AS
-SELECT
-    dp.data_point_id,
-    m.metric_id,
-    m.name as metric_name,
-    m.unit,
-    mt.name as metric_type,
-    dp.time_unix_nano,
-    dp.start_time_unix_nano,
-    COALESCE(dp.value_int, dp.value_double) as value,
-
-    -- Resource
-    r.service_name,
-    r.service_namespace,
-
-    -- Aggregated attributes
-    COALESCE(
-        (SELECT jsonb_object_agg(ak.key, a.value)
-         FROM otel_metric_number_attrs_string a
-         JOIN attribute_keys ak ON a.key_id = ak.key_id
-         WHERE a.data_point_id = dp.data_point_id)
-        || -- ... other types ...
-        (SELECT attributes FROM otel_metric_number_attrs_other
-         WHERE data_point_id = dp.data_point_id),
-        '{}'::jsonb
-    ) as attributes
-
-FROM otel_metrics_data_points_number dp
-JOIN otel_metrics_dim m ON dp.metric_id = m.metric_id
-JOIN metric_types mt ON m.metric_type_id = mt.metric_type_id
-JOIN otel_resources_dim r ON dp.resource_id = r.resource_id;
-```
 
 **Benefits of Views**:
 - Simplified application queries
@@ -1439,173 +1321,75 @@ Response:
 
 ### API Router Organization
 
-```
-app/routers/
-  ├── traces.py      # Trace-level operations + log correlation
-  ├── spans.py       # Span-level operations
-  ├── logs.py        # Log search, retrieval, and trace/span correlation
-  ├── metrics.py     # Metric queries
-  └── ingest.py      # OTLP ingestion (unchanged)
-```
+**Router Structure:**
+- `app/routers/traces.py` - Trace-level operations + log correlation
+- `app/routers/spans.py` - Span-level operations  
+- `app/routers/logs.py` - Log search, retrieval, and trace/span correlation
+- `app/routers/metrics.py` - Metric queries
+- `app/routers/ingest.py` - OTLP ingestion (unchanged)
 
 ---
 
 ## Storage Layer Refactoring
 
-### Base Classes
+### Base Classes Requirements
 
-```python
-# app/storage/base.py
+**SignalStorage Abstract Base Class:**
+- Initialize with db_session, resource_mgr, attr_mgr, config
+- Abstract method: `store(otlp_data: dict) -> int` - Store OTLP data, return count
+- Abstract method: `search(filters: dict) -> list[dict]` - Search with filters
+- Provides common initialization pattern for all signal-specific storage classes
 
-from abc import ABC, abstractmethod
+**SemanticConventionDetector Class:**
+- Shared utility for detecting semantic convention types from attributes
+- Maintain dictionary of semantic type prefixes:
+  - ai_agent: gen_ai., llm.
+  - http: http., url.
+  - db: db.
+  - messaging: messaging.
+  - rpc: rpc.
+  - faas: faas.
+  - aws: aws.
+  - gcp: gcp.
+  - azure: az.
+- Class method: `detect_type(attributes: dict) -> str | None`
+- Returns semantic type name or None if no match
+- Used by API layer to add presentation hints for UI
 
-class SignalStorage(ABC):
-    """Base class for signal-specific storage implementations."""
+### Implementation Structure Requirements
 
-    def __init__(self, db_session, resource_mgr, attr_mgr, config):
-        self.db = db_session
-        self.resource_mgr = resource_mgr
-        self.attr_mgr = attr_mgr
-        self.config = config
+**LogsStorage Class (extends SignalStorage):**
+- Implement `store(resource_logs: list[dict]) -> int` method
+- For each resource_logs entry:
+  - Get or create resource using ResourceManager
+  - For each scope_logs entry:
+    - Get or create scope using ResourceManager  
+    - For each log_records entry:
+      - Insert log fact row with all OTLP fields
+      - Store attributes using AttributeManager (signal='logs', parent_table='otel_log_attrs')
+      - Handle body type mapping
+      - Handle trace/span correlation fields
+- Implement `search(filters: dict) -> list[dict]` method
+  - Query v_otel_logs_enriched view
+  - Apply attribute filters using JSONB operators
+  - Support time range, severity, service name filters
 
-    @abstractmethod
-    async def store(self, otlp_data: dict) -> int:
-        """Store OTLP data, return count of stored items."""
-        pass
-
-    @abstractmethod
-    async def search(self, filters: dict) -> list[dict]:
-        """Search with filters, return results."""
-        pass
-
-
-class SemanticConventionDetector:
-    """Detect semantic convention type from span attributes (DRY: shared logic)."""
-
-    SEMANTIC_PREFIXES = {
-        'ai_agent': ['gen_ai.', 'llm.'],
-        'http': ['http.', 'url.'],
-        'db': ['db.'],
-        'messaging': ['messaging.'],
-        'rpc': ['rpc.'],
-        'faas': ['faas.'],
-        'aws': ['aws.'],
-        'gcp': ['gcp.'],
-        'azure': ['az.'],
-    }
-
-    @classmethod
-    def detect_type(cls, attributes: dict) -> str | None:
-        """Detect semantic convention type from attributes.
-
-        Returns semantic type name or None if no match.
-        Used by API layer to add hints for UI presentation.
-        """
-        for semantic_type, prefixes in cls.SEMANTIC_PREFIXES.items():
-            for attr_key in attributes.keys():
-                if any(attr_key.startswith(prefix) for prefix in prefixes):
-                    return semantic_type
-        return None
-```
-
-### Implementation Structure
-
-```python
-# app/storage/logs_storage.py
-
-class LogsStorage(SignalStorage):
-    """Logs-specific storage implementation."""
-
-    async def store(self, resource_logs: list[dict]) -> int:
-        """Store OTLP logs in new schema."""
-        count = 0
-
-        for rl in resource_logs:
-            # 1. Get or create resource
-            resource_id = await self.resource_mgr.get_or_create_resource(
-                rl['resource']
-            )
-
-            # 2. Process each scope_logs
-            for sl in rl.get('scope_logs', []):
-      **Unit tests**: Config loading, validation, type inference
-- [ ] Implement `AttributeManager` class (DRY: shared across all signals)
-- [ ] **Unit tests**: Attribute promotion, key caching, type extraction
-- [ ] Implement `ResourceManager` class (DRY: shared hash/dedup logic)
-- [ ] **Unit tests**: Hash calculation consistency, deduplication, cache behavior
-- [ ] **Deploy**: `task deploy` - verify no regressions
-- [ ] **Code review**: Check DRY compliance before proceeding
-                )
-
-                # 3. Process log records
-                for log in sl['log_records']:
-                    # Insert log fact
-                    log_id = await self._insert_log_fact(
-                        log, resource_id, scope_id
-                    )
-
-                    # Store attributes
-                    if 'attributes' in log:
-                        await self.attr_mgr.store_attributes(
-                            signal='logs',
-                            parent_id=log_id,
-                            parent_table='otel_log_attrs',
-                            attributes=log['attributes']
-                        )
-
-                    count += 1
-
-        return count
-
-    async def _insert_log_fact(self, log: dict, resource_id: int, scope_id: int) -> int:
-        """Insert log fact row, return log_id."""
-        return await self.db.execute(
-            """
-            INSERT INTO otel_logs_fact (
-                resource_id, scope_id,
-                time_unix_nano, observed_time_unix_nano,
-                severity_number, severity_text,
-                body_type_id, body,
-                trace_id, span_id_hex, trace_flags,
-                dropped_attributes_count, flags
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-            RETURNING log_id
-            """,
-            resource_id, scope_id,
-            log['time_unix_nano'], log['observed_time_unix_nano'],
-            log.get('severity_number'), log.get('severity_text'),
-            self._get_body_type_id(log.get('body')), log.get('body'),
-            log.get('trace_id'), log.get('span_id'), log.get('flags'),
-            log.get('dropped_attributes_count', 0), log.get('flags', 0)
-        )
-
-    async def search(self, filters: dict) -> list[dict]:
-        """Search logs using view with attribute filters."""
-        # Build query using v_otel_logs_enriched view
-        # Apply attribute filters using JSONB operators
-        # ...
-
-
-# app/storage/traces_storage.py
-
-class TracesStorage(SignalStorage):
-    """Traces-specific storage implementation."""
-
-    async def search(self, filters: dict) -> list[dict]:
-        """Search spans with semantic convention filtering."""
-        # Build query using v_otel_spans_enriched view
-        # If semantic_type filter present, add WHERE clause for attribute prefixes
-        # Example: semantic_type=ai_agent -> WHERE attributes ? 'gen_ai.system'
-        results = await self._execute_query(filters)
-
-        # Enrich results with semantic_type hint for UI
-        for span in results:
-            span['semantic_type'] = SemanticConventionDetector.detect_type(
-                span.get('attributes', {})
-            )
-
-        return results
-```
+**TracesStorage Class (extends SignalStorage):**
+- Implement `store(resource_spans: list[dict]) -> int` method
+- For each resource_spans entry:
+  - Get or create resource using ResourceManager
+  - For each scope_spans entry:
+    - Get or create scope using ResourceManager
+    - For each spans entry:
+      - Insert span fact row
+      - Store span attributes using AttributeManager
+      - Store span events (with event attributes)
+      - Store span links (with link attributes)
+- Implement `search(filters: dict) -> list[dict]` method
+  - Query v_otel_spans_enriched view
+  - Apply semantic_type filter if present (attribute prefix matching)
+  - Enrich results with semantic_type hint using SemanticConventionDetector
+  - Support time range, service name, trace_id filters
 
 ---
 
@@ -1623,6 +1407,9 @@ class TracesStorage(SignalStorage):
 - [x] Implement `ResourceManager` class (DRY: shared hash/dedup logic)
 - [x] **Unit tests**: Hash calculation consistency, deduplication, cache behavior (18 tests)
 - [x] Update Helm chart values.yaml with attribute override examples
+- [x] **Deploy**: task deploy - verified all pods running, migrations complete
+- [x] **Testing**: 48 tests passing (12 config + 18 attribute + 18 resource manager)
+- [x] **Commit**: Squashed commit with Phase 1 deliverables
 - [x] **Deploy**: `task deploy` - verify no regressions (193 tests passing, all pods running)
 - [x] **Code review**: DRY compliance verified
 
@@ -1727,36 +1514,26 @@ This is a **clean break** deployment:
 
 ## Performance Considerations
 
-### Attribute Table Indexes
+### Attribute Table Indexes Requirements
 
-Critical indexes for promoted attributes:
-```sql
--- String attributes (for filtering)
-CREATE INDEX idx_log_attrs_string_key_value ON otel_log_attrs_string(key_id, value);
+**Critical indexes for promoted attribute tables:**
+- String attribute tables: Index on (key_id, value) for fast equality filtering
+- Int attribute tables: Index on (key_id, value) for range queries
+- Composite indexes: (parent_id, key_id, value) for multi-attribute filters
+- Apply same pattern across all signal types (logs, spans, metrics)
 
--- Int attributes (for range queries)
-CREATE INDEX idx_span_attrs_int_key_value ON otel_span_attrs_int(key_id, value);
+### Query Pattern Guidelines
 
--- Composite for multi-attribute filters
-CREATE INDEX idx_log_attrs_string_multi ON otel_log_attrs_string(log_id, key_id, value);
-```
+**Efficient Queries** - Filter on promoted attributes:
+- Use JOIN to typed attribute tables
+- Join through attribute_keys for key name lookup
+- Index on (key_id, value) enables fast filtering
+- Example pattern: JOIN fact table -> JOIN typed attr table ON parent_id WHERE key_id = X AND value = Y
 
-### Query Patterns
-
-**Efficient**: Filter on promoted attributes
-```sql
--- Fast: Uses index on key_id + value
-SELECT l.* FROM otel_logs_fact l
-JOIN otel_log_attrs_string a ON l.log_id = a.log_id
-JOIN attribute_keys ak ON a.key_id = ak.key_id
-WHERE ak.key = 'http.status_code' AND a.value = '500';
-```
-
-**Less Efficient**: Filter on unpromoted attributes
-```sql
--- Slower: JSONB GIN index scan
-SELECT * FROM otel_logs_fact l
-JOIN otel_log_attrs_other o ON l.log_id = o.log_id
+**Less Efficient Queries** - Filter on unpromoted attributes:
+- Query JSONB catch-all column using ? or @> operators
+- Relies on GIN index on JSONB column
+- Slower than typed column filtering but still functional
 WHERE o.attributes @> '{"custom.field": "value"}';
 ```
 
