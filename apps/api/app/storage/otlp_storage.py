@@ -39,7 +39,7 @@ class OtlpStorage:
         self.session: Session | None = None
 
         # Load attribute promotion configuration
-        self.config = AttributePromotionConfig.from_yaml(config_path)
+        self.config = AttributePromotionConfig(base_config_path=config_path)
         logger.info(f"Loaded attribute promotion config from {config_path}")
 
         # Storage components (initialized after connect())
