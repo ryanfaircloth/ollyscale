@@ -28,7 +28,7 @@ class AttributePromotionConfig:
 
     def __init__(
         self,
-        base_config_path: str = "config/attribute-promotion.yaml",
+        base_config_path: str = "/config/attribute-promotion.yaml",
         override_config_path: str = "/config/attribute-overrides.yaml",
     ):
         """
