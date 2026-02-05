@@ -6,6 +6,7 @@ from collections.abc import Generator
 from sqlalchemy.orm import Session
 
 from app.storage.interface import StorageBackend
+from app.storage.otlp_storage import OtlpStorage
 from app.storage.postgres_orm_sync import PostgresStorage
 
 # Global storage instance
@@ -53,7 +54,7 @@ def close_storage():
         _storage = None
 
 
-def get_db_session() -> Generator[Session, None, None]:
+def get_db_session() -> Generator[Session]:
     """
     Get database session for v2 routers.
 
@@ -80,9 +81,9 @@ def get_db_session() -> Generator[Session, None, None]:
             raise
 
 
-def get_storage_sync() -> StorageBackend:
+def get_storage_sync() -> OtlpStorage:
     """
-    Get storage backend instance synchronously (for gRPC receiver).
+    Get OTLP storage backend instance synchronously (for gRPC receiver).
 
     This is used by the receiver module which manages its own connection lifecycle.
 
@@ -93,7 +94,7 @@ def get_storage_sync() -> StorageBackend:
     """
     # Require DATABASE_HOST to be set
     if not os.getenv("DATABASE_HOST"):
-        msg = "DATABASE_HOST environment variable must be set. PostgresStorage is required."
+        msg = "DATABASE_HOST environment variable must be set. OtlpStorage is required."
         raise RuntimeError(msg)
 
     # Build connection string from environment variables
@@ -104,4 +105,7 @@ def get_storage_sync() -> StorageBackend:
     db_password = os.getenv("DATABASE_PASSWORD", "postgres")
     connection_string = f"postgresql+psycopg2://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
 
-    return PostgresStorage(connection_string)
+    # Path to attribute promotion config (ConfigMap mount or default)
+    config_path = os.getenv("ATTRIBUTE_PROMOTION_CONFIG", "/config/attribute-promotion.yaml")
+
+    return OtlpStorage(connection_string, config_path)
