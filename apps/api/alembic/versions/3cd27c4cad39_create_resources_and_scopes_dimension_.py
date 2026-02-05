@@ -79,34 +79,54 @@ def upgrade() -> None:
     op.execute("CREATE INDEX idx_otel_scopes_dim_last_seen ON otel_scopes_dim(last_seen)")
 
     # Add table and column comments for otel_resources_dim
-    op.execute("""
-        COMMENT ON TABLE otel_resources_dim IS
-        'Dimension table for OpenTelemetry resource deduplication with hash-based identity and temporal tracking';
-
-        COMMENT ON COLUMN otel_resources_dim.resource_id IS 'Primary key, auto-incrementing surrogate key for resource dimension';
-        COMMENT ON COLUMN otel_resources_dim.resource_hash IS 'SHA-256 hash of resource attributes, ensures uniqueness';
-        COMMENT ON COLUMN otel_resources_dim.service_name IS 'Extracted service.name attribute for fast filtering';
-        COMMENT ON COLUMN otel_resources_dim.service_namespace IS 'Extracted service.namespace attribute for fast filtering';
-        COMMENT ON COLUMN otel_resources_dim.schema_url IS 'OTLP schema URL for semantic convention versioning';
-        COMMENT ON COLUMN otel_resources_dim.first_seen IS 'Timestamp when this resource configuration was first observed';
-        COMMENT ON COLUMN otel_resources_dim.last_seen IS 'Timestamp when this resource configuration was last observed, updated on ingestion';
-        COMMENT ON COLUMN otel_resources_dim.dropped_attributes_count IS 'Number of attributes dropped due to limits per OTLP specification';
-    """)
+    op.execute(
+        "COMMENT ON TABLE otel_resources_dim IS 'Dimension table for OpenTelemetry resource deduplication with hash-based identity and temporal tracking'"
+    )
+    op.execute(
+        "COMMENT ON COLUMN otel_resources_dim.resource_id IS 'Primary key, auto-incrementing surrogate key for resource dimension'"
+    )
+    op.execute(
+        "COMMENT ON COLUMN otel_resources_dim.resource_hash IS 'SHA-256 hash of resource attributes, ensures uniqueness'"
+    )
+    op.execute(
+        "COMMENT ON COLUMN otel_resources_dim.service_name IS 'Extracted service.name attribute for fast filtering'"
+    )
+    op.execute(
+        "COMMENT ON COLUMN otel_resources_dim.service_namespace IS 'Extracted service.namespace attribute for fast filtering'"
+    )
+    op.execute(
+        "COMMENT ON COLUMN otel_resources_dim.schema_url IS 'OTLP schema URL for semantic convention versioning'"
+    )
+    op.execute(
+        "COMMENT ON COLUMN otel_resources_dim.first_seen IS 'Timestamp when this resource configuration was first observed'"
+    )
+    op.execute(
+        "COMMENT ON COLUMN otel_resources_dim.last_seen IS 'Timestamp when this resource configuration was last observed, updated on ingestion'"
+    )
+    op.execute(
+        "COMMENT ON COLUMN otel_resources_dim.dropped_attributes_count IS 'Number of attributes dropped due to limits per OTLP specification'"
+    )
 
     # Add table and column comments for otel_scopes_dim
-    op.execute("""
-        COMMENT ON TABLE otel_scopes_dim IS
-        'Dimension table for OpenTelemetry instrumentation scope (library) deduplication with hash-based identity';
-
-        COMMENT ON COLUMN otel_scopes_dim.scope_id IS 'Primary key, auto-incrementing surrogate key for scope dimension';
-        COMMENT ON COLUMN otel_scopes_dim.scope_hash IS 'SHA-256 hash of scope attributes, ensures uniqueness';
-        COMMENT ON COLUMN otel_scopes_dim.name IS 'Instrumentation library name (e.g., io.opentelemetry.jdbc)';
-        COMMENT ON COLUMN otel_scopes_dim.version IS 'Instrumentation library version';
-        COMMENT ON COLUMN otel_scopes_dim.schema_url IS 'OTLP schema URL for semantic convention versioning';
-        COMMENT ON COLUMN otel_scopes_dim.first_seen IS 'Timestamp when this scope configuration was first observed';
-        COMMENT ON COLUMN otel_scopes_dim.last_seen IS 'Timestamp when this scope configuration was last observed, updated on ingestion';
-        COMMENT ON COLUMN otel_scopes_dim.dropped_attributes_count IS 'Number of attributes dropped due to limits per OTLP specification';
-    """)
+    op.execute(
+        "COMMENT ON TABLE otel_scopes_dim IS 'Dimension table for OpenTelemetry instrumentation scope (library) deduplication with hash-based identity'"
+    )
+    op.execute(
+        "COMMENT ON COLUMN otel_scopes_dim.scope_id IS 'Primary key, auto-incrementing surrogate key for scope dimension'"
+    )
+    op.execute("COMMENT ON COLUMN otel_scopes_dim.scope_hash IS 'SHA-256 hash of scope attributes, ensures uniqueness'")
+    op.execute("COMMENT ON COLUMN otel_scopes_dim.name IS 'Instrumentation library name (e.g., io.opentelemetry.jdbc)'")
+    op.execute("COMMENT ON COLUMN otel_scopes_dim.version IS 'Instrumentation library version'")
+    op.execute("COMMENT ON COLUMN otel_scopes_dim.schema_url IS 'OTLP schema URL for semantic convention versioning'")
+    op.execute(
+        "COMMENT ON COLUMN otel_scopes_dim.first_seen IS 'Timestamp when this scope configuration was first observed'"
+    )
+    op.execute(
+        "COMMENT ON COLUMN otel_scopes_dim.last_seen IS 'Timestamp when this scope configuration was last observed, updated on ingestion'"
+    )
+    op.execute(
+        "COMMENT ON COLUMN otel_scopes_dim.dropped_attributes_count IS 'Number of attributes dropped due to limits per OTLP specification'"
+    )
 
 
 def downgrade() -> None:

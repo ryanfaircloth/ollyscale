@@ -61,23 +61,45 @@ def upgrade() -> None:
     # Note: Partitioning strategy will be added in a future migration
 
     # Add table and column comments
-    op.execute("""
-        COMMENT ON TABLE otel_logs_fact IS 'Fact table for OpenTelemetry log records with optional trace correlation';
-        COMMENT ON COLUMN otel_logs_fact.log_id IS 'Primary key, auto-incrementing surrogate key for log record';
-        COMMENT ON COLUMN otel_logs_fact.resource_id IS 'Foreign key to otel_resources_dim';
-        COMMENT ON COLUMN otel_logs_fact.scope_id IS 'Foreign key to otel_scopes_dim (instrumentation library)';
-        COMMENT ON COLUMN otel_logs_fact.time_unix_nano IS 'Log record timestamp in nanoseconds since Unix epoch';
-        COMMENT ON COLUMN otel_logs_fact.observed_time_unix_nano IS 'Timestamp when log was observed by collection system in nanoseconds since Unix epoch';
-        COMMENT ON COLUMN otel_logs_fact.severity_number IS 'Foreign key to log_severity_numbers (1-24 range per OTLP spec)';
-        COMMENT ON COLUMN otel_logs_fact.severity_text IS 'Severity text (e.g., INFO, ERROR, DEBUG), can be arbitrary string';
-        COMMENT ON COLUMN otel_logs_fact.body_type_id IS 'Foreign key to log_body_types indicating body value type';
-        COMMENT ON COLUMN otel_logs_fact.body IS 'JSONB log body content, can be string, number, boolean, or structured object';
-        COMMENT ON COLUMN otel_logs_fact.trace_id IS 'Optional trace correlation: trace ID as 32-character hexadecimal string';
-        COMMENT ON COLUMN otel_logs_fact.span_id_hex IS 'Optional trace correlation: span ID as 16-character hexadecimal string';
-        COMMENT ON COLUMN otel_logs_fact.trace_flags IS 'Optional trace correlation: OTLP trace flags field';
-        COMMENT ON COLUMN otel_logs_fact.dropped_attributes_count IS 'Number of attributes dropped due to limits per OTLP specification';
-        COMMENT ON COLUMN otel_logs_fact.flags IS 'OTLP log record flags field';
-    """)
+    op.execute(
+        "COMMENT ON TABLE otel_logs_fact IS 'Fact table for OpenTelemetry log records with optional trace correlation'"
+    )
+    op.execute(
+        "COMMENT ON COLUMN otel_logs_fact.log_id IS 'Primary key, auto-incrementing surrogate key for log record'"
+    )
+    op.execute("COMMENT ON COLUMN otel_logs_fact.resource_id IS 'Foreign key to otel_resources_dim'")
+    op.execute(
+        "COMMENT ON COLUMN otel_logs_fact.scope_id IS 'Foreign key to otel_scopes_dim (instrumentation library)'"
+    )
+    op.execute(
+        "COMMENT ON COLUMN otel_logs_fact.time_unix_nano IS 'Log record timestamp in nanoseconds since Unix epoch'"
+    )
+    op.execute(
+        "COMMENT ON COLUMN otel_logs_fact.observed_time_unix_nano IS 'Timestamp when log was observed by collection system in nanoseconds since Unix epoch'"
+    )
+    op.execute(
+        "COMMENT ON COLUMN otel_logs_fact.severity_number IS 'Foreign key to log_severity_numbers (1-24 range per OTLP spec)'"
+    )
+    op.execute(
+        "COMMENT ON COLUMN otel_logs_fact.severity_text IS 'Severity text (e.g., INFO, ERROR, DEBUG), can be arbitrary string'"
+    )
+    op.execute(
+        "COMMENT ON COLUMN otel_logs_fact.body_type_id IS 'Foreign key to log_body_types indicating body value type'"
+    )
+    op.execute(
+        "COMMENT ON COLUMN otel_logs_fact.body IS 'JSONB log body content, can be string, number, boolean, or structured object'"
+    )
+    op.execute(
+        "COMMENT ON COLUMN otel_logs_fact.trace_id IS 'Optional trace correlation: trace ID as 32-character hexadecimal string'"
+    )
+    op.execute(
+        "COMMENT ON COLUMN otel_logs_fact.span_id_hex IS 'Optional trace correlation: span ID as 16-character hexadecimal string'"
+    )
+    op.execute("COMMENT ON COLUMN otel_logs_fact.trace_flags IS 'Optional trace correlation: OTLP trace flags field'")
+    op.execute(
+        "COMMENT ON COLUMN otel_logs_fact.dropped_attributes_count IS 'Number of attributes dropped due to limits per OTLP specification'"
+    )
+    op.execute("COMMENT ON COLUMN otel_logs_fact.flags IS 'OTLP log record flags field'")
 
 
 def downgrade() -> None:

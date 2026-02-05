@@ -144,67 +144,135 @@ def upgrade() -> None:
     """)
 
     # Add table and column comments for all data point tables
-    op.execute("""
-        COMMENT ON TABLE otel_metrics_data_points_number IS 'Fact table for Gauge and Sum metric data points with integer or double precision values';
-        COMMENT ON COLUMN otel_metrics_data_points_number.data_point_id IS 'Primary key, auto-incrementing surrogate key for data point';
-        COMMENT ON COLUMN otel_metrics_data_points_number.metric_id IS 'Foreign key to otel_metrics_dim';
-        COMMENT ON COLUMN otel_metrics_data_points_number.resource_id IS 'Foreign key to otel_resources_dim';
-        COMMENT ON COLUMN otel_metrics_data_points_number.scope_id IS 'Foreign key to otel_scopes_dim';
-        COMMENT ON COLUMN otel_metrics_data_points_number.start_time_unix_nano IS 'Start time for cumulative metrics in nanoseconds since Unix epoch, NULL for gauges';
-        COMMENT ON COLUMN otel_metrics_data_points_number.time_unix_nano IS 'Data point timestamp in nanoseconds since Unix epoch';
-        COMMENT ON COLUMN otel_metrics_data_points_number.value_int IS 'Integer metric value, mutually exclusive with value_double';
-        COMMENT ON COLUMN otel_metrics_data_points_number.value_double IS 'Double precision metric value, mutually exclusive with value_int';
-        COMMENT ON COLUMN otel_metrics_data_points_number.flags IS 'OTLP data point flags field';
-        COMMENT ON COLUMN otel_metrics_data_points_number.exemplars IS 'JSONB array of exemplars (sample traces for this metric value)';
+    op.execute(
+        "COMMENT ON TABLE otel_metrics_data_points_number IS 'Fact table for Gauge and Sum metric data points with integer or double precision values'"
+    )
+    op.execute(
+        "COMMENT ON COLUMN otel_metrics_data_points_number.data_point_id IS 'Primary key, auto-incrementing surrogate key for data point'"
+    )
+    op.execute("COMMENT ON COLUMN otel_metrics_data_points_number.metric_id IS 'Foreign key to otel_metrics_dim'")
+    op.execute("COMMENT ON COLUMN otel_metrics_data_points_number.resource_id IS 'Foreign key to otel_resources_dim'")
+    op.execute("COMMENT ON COLUMN otel_metrics_data_points_number.scope_id IS 'Foreign key to otel_scopes_dim'")
+    op.execute(
+        "COMMENT ON COLUMN otel_metrics_data_points_number.start_time_unix_nano IS 'Start time for cumulative metrics in nanoseconds since Unix epoch, NULL for gauges'"
+    )
+    op.execute(
+        "COMMENT ON COLUMN otel_metrics_data_points_number.time_unix_nano IS 'Data point timestamp in nanoseconds since Unix epoch'"
+    )
+    op.execute(
+        "COMMENT ON COLUMN otel_metrics_data_points_number.value_int IS 'Integer metric value, mutually exclusive with value_double'"
+    )
+    op.execute(
+        "COMMENT ON COLUMN otel_metrics_data_points_number.value_double IS 'Double precision metric value, mutually exclusive with value_int'"
+    )
+    op.execute("COMMENT ON COLUMN otel_metrics_data_points_number.flags IS 'OTLP data point flags field'")
+    op.execute(
+        "COMMENT ON COLUMN otel_metrics_data_points_number.exemplars IS 'JSONB array of exemplars (sample traces for this metric value)'"
+    )
 
-        COMMENT ON TABLE otel_metrics_data_points_histogram IS 'Fact table for Histogram metric data points with explicit bucket boundaries';
-        COMMENT ON COLUMN otel_metrics_data_points_histogram.data_point_id IS 'Primary key, auto-incrementing surrogate key for data point';
-        COMMENT ON COLUMN otel_metrics_data_points_histogram.metric_id IS 'Foreign key to otel_metrics_dim';
-        COMMENT ON COLUMN otel_metrics_data_points_histogram.resource_id IS 'Foreign key to otel_resources_dim';
-        COMMENT ON COLUMN otel_metrics_data_points_histogram.scope_id IS 'Foreign key to otel_scopes_dim';
-        COMMENT ON COLUMN otel_metrics_data_points_histogram.start_time_unix_nano IS 'Start time for cumulative histograms in nanoseconds since Unix epoch';
-        COMMENT ON COLUMN otel_metrics_data_points_histogram.time_unix_nano IS 'Data point timestamp in nanoseconds since Unix epoch';
-        COMMENT ON COLUMN otel_metrics_data_points_histogram.count IS 'Total count of observations in histogram';
-        COMMENT ON COLUMN otel_metrics_data_points_histogram.sum IS 'Sum of all observed values, optional';
-        COMMENT ON COLUMN otel_metrics_data_points_histogram.min IS 'Minimum observed value, optional';
-        COMMENT ON COLUMN otel_metrics_data_points_histogram.max IS 'Maximum observed value, optional';
-        COMMENT ON COLUMN otel_metrics_data_points_histogram.explicit_bounds IS 'Array of bucket boundary values in ascending order';
-        COMMENT ON COLUMN otel_metrics_data_points_histogram.bucket_counts IS 'Array of counts for each bucket, length is len(explicit_bounds) + 1';
-        COMMENT ON COLUMN otel_metrics_data_points_histogram.flags IS 'OTLP data point flags field';
-        COMMENT ON COLUMN otel_metrics_data_points_histogram.exemplars IS 'JSONB array of exemplars for histogram buckets';
+    op.execute(
+        "COMMENT ON TABLE otel_metrics_data_points_histogram IS 'Fact table for Histogram metric data points with explicit bucket boundaries'"
+    )
+    op.execute(
+        "COMMENT ON COLUMN otel_metrics_data_points_histogram.data_point_id IS 'Primary key, auto-incrementing surrogate key for data point'"
+    )
+    op.execute("COMMENT ON COLUMN otel_metrics_data_points_histogram.metric_id IS 'Foreign key to otel_metrics_dim'")
+    op.execute(
+        "COMMENT ON COLUMN otel_metrics_data_points_histogram.resource_id IS 'Foreign key to otel_resources_dim'"
+    )
+    op.execute("COMMENT ON COLUMN otel_metrics_data_points_histogram.scope_id IS 'Foreign key to otel_scopes_dim'")
+    op.execute(
+        "COMMENT ON COLUMN otel_metrics_data_points_histogram.start_time_unix_nano IS 'Start time for cumulative histograms in nanoseconds since Unix epoch'"
+    )
+    op.execute(
+        "COMMENT ON COLUMN otel_metrics_data_points_histogram.time_unix_nano IS 'Data point timestamp in nanoseconds since Unix epoch'"
+    )
+    op.execute(
+        "COMMENT ON COLUMN otel_metrics_data_points_histogram.count IS 'Total count of observations in histogram'"
+    )
+    op.execute("COMMENT ON COLUMN otel_metrics_data_points_histogram.sum IS 'Sum of all observed values, optional'")
+    op.execute("COMMENT ON COLUMN otel_metrics_data_points_histogram.min IS 'Minimum observed value, optional'")
+    op.execute("COMMENT ON COLUMN otel_metrics_data_points_histogram.max IS 'Maximum observed value, optional'")
+    op.execute(
+        "COMMENT ON COLUMN otel_metrics_data_points_histogram.explicit_bounds IS 'Array of bucket boundary values in ascending order'"
+    )
+    op.execute(
+        "COMMENT ON COLUMN otel_metrics_data_points_histogram.bucket_counts IS 'Array of counts for each bucket, length is len(explicit_bounds) + 1'"
+    )
+    op.execute("COMMENT ON COLUMN otel_metrics_data_points_histogram.flags IS 'OTLP data point flags field'")
+    op.execute(
+        "COMMENT ON COLUMN otel_metrics_data_points_histogram.exemplars IS 'JSONB array of exemplars for histogram buckets'"
+    )
 
-        COMMENT ON TABLE otel_metrics_data_points_exp_histogram IS 'Fact table for ExponentialHistogram metric data points with exponentially-sized buckets';
-        COMMENT ON COLUMN otel_metrics_data_points_exp_histogram.data_point_id IS 'Primary key, auto-incrementing surrogate key for data point';
-        COMMENT ON COLUMN otel_metrics_data_points_exp_histogram.metric_id IS 'Foreign key to otel_metrics_dim';
-        COMMENT ON COLUMN otel_metrics_data_points_exp_histogram.resource_id IS 'Foreign key to otel_resources_dim';
-        COMMENT ON COLUMN otel_metrics_data_points_exp_histogram.scope_id IS 'Foreign key to otel_scopes_dim';
-        COMMENT ON COLUMN otel_metrics_data_points_exp_histogram.start_time_unix_nano IS 'Start time for cumulative histograms in nanoseconds since Unix epoch';
-        COMMENT ON COLUMN otel_metrics_data_points_exp_histogram.time_unix_nano IS 'Data point timestamp in nanoseconds since Unix epoch';
-        COMMENT ON COLUMN otel_metrics_data_points_exp_histogram.count IS 'Total count of observations in exponential histogram';
-        COMMENT ON COLUMN otel_metrics_data_points_exp_histogram.sum IS 'Sum of all observed values, optional';
-        COMMENT ON COLUMN otel_metrics_data_points_exp_histogram.min IS 'Minimum observed value, optional';
-        COMMENT ON COLUMN otel_metrics_data_points_exp_histogram.max IS 'Maximum observed value, optional';
-        COMMENT ON COLUMN otel_metrics_data_points_exp_histogram.scale IS 'Exponential histogram scale parameter, determines bucket width';
-        COMMENT ON COLUMN otel_metrics_data_points_exp_histogram.zero_count IS 'Count of observations exactly equal to zero';
-        COMMENT ON COLUMN otel_metrics_data_points_exp_histogram.positive_offset IS 'Offset for positive bucket indexing';
-        COMMENT ON COLUMN otel_metrics_data_points_exp_histogram.positive_bucket_counts IS 'Array of counts for positive value buckets';
-        COMMENT ON COLUMN otel_metrics_data_points_exp_histogram.negative_offset IS 'Offset for negative bucket indexing';
-        COMMENT ON COLUMN otel_metrics_data_points_exp_histogram.negative_bucket_counts IS 'Array of counts for negative value buckets';
-        COMMENT ON COLUMN otel_metrics_data_points_exp_histogram.flags IS 'OTLP data point flags field';
-        COMMENT ON COLUMN otel_metrics_data_points_exp_histogram.exemplars IS 'JSONB array of exemplars for histogram buckets';
+    op.execute(
+        "COMMENT ON TABLE otel_metrics_data_points_exp_histogram IS 'Fact table for ExponentialHistogram metric data points with exponentially-sized buckets'"
+    )
+    op.execute(
+        "COMMENT ON COLUMN otel_metrics_data_points_exp_histogram.data_point_id IS 'Primary key, auto-incrementing surrogate key for data point'"
+    )
+    op.execute(
+        "COMMENT ON COLUMN otel_metrics_data_points_exp_histogram.metric_id IS 'Foreign key to otel_metrics_dim'"
+    )
+    op.execute(
+        "COMMENT ON COLUMN otel_metrics_data_points_exp_histogram.resource_id IS 'Foreign key to otel_resources_dim'"
+    )
+    op.execute("COMMENT ON COLUMN otel_metrics_data_points_exp_histogram.scope_id IS 'Foreign key to otel_scopes_dim'")
+    op.execute(
+        "COMMENT ON COLUMN otel_metrics_data_points_exp_histogram.start_time_unix_nano IS 'Start time for cumulative histograms in nanoseconds since Unix epoch'"
+    )
+    op.execute(
+        "COMMENT ON COLUMN otel_metrics_data_points_exp_histogram.time_unix_nano IS 'Data point timestamp in nanoseconds since Unix epoch'"
+    )
+    op.execute(
+        "COMMENT ON COLUMN otel_metrics_data_points_exp_histogram.count IS 'Total count of observations in exponential histogram'"
+    )
+    op.execute("COMMENT ON COLUMN otel_metrics_data_points_exp_histogram.sum IS 'Sum of all observed values, optional'")
+    op.execute("COMMENT ON COLUMN otel_metrics_data_points_exp_histogram.min IS 'Minimum observed value, optional'")
+    op.execute("COMMENT ON COLUMN otel_metrics_data_points_exp_histogram.max IS 'Maximum observed value, optional'")
+    op.execute(
+        "COMMENT ON COLUMN otel_metrics_data_points_exp_histogram.scale IS 'Exponential histogram scale parameter, determines bucket width'"
+    )
+    op.execute(
+        "COMMENT ON COLUMN otel_metrics_data_points_exp_histogram.zero_count IS 'Count of observations exactly equal to zero'"
+    )
+    op.execute(
+        "COMMENT ON COLUMN otel_metrics_data_points_exp_histogram.positive_offset IS 'Offset for positive bucket indexing'"
+    )
+    op.execute(
+        "COMMENT ON COLUMN otel_metrics_data_points_exp_histogram.positive_bucket_counts IS 'Array of counts for positive value buckets'"
+    )
+    op.execute(
+        "COMMENT ON COLUMN otel_metrics_data_points_exp_histogram.negative_offset IS 'Offset for negative bucket indexing'"
+    )
+    op.execute(
+        "COMMENT ON COLUMN otel_metrics_data_points_exp_histogram.negative_bucket_counts IS 'Array of counts for negative value buckets'"
+    )
+    op.execute("COMMENT ON COLUMN otel_metrics_data_points_exp_histogram.flags IS 'OTLP data point flags field'")
+    op.execute(
+        "COMMENT ON COLUMN otel_metrics_data_points_exp_histogram.exemplars IS 'JSONB array of exemplars for histogram buckets'"
+    )
 
-        COMMENT ON TABLE otel_metrics_data_points_summary IS 'Fact table for Summary metric data points with pre-computed quantiles';
-        COMMENT ON COLUMN otel_metrics_data_points_summary.data_point_id IS 'Primary key, auto-incrementing surrogate key for data point';
-        COMMENT ON COLUMN otel_metrics_data_points_summary.metric_id IS 'Foreign key to otel_metrics_dim';
-        COMMENT ON COLUMN otel_metrics_data_points_summary.resource_id IS 'Foreign key to otel_resources_dim';
-        COMMENT ON COLUMN otel_metrics_data_points_summary.scope_id IS 'Foreign key to otel_scopes_dim';
-        COMMENT ON COLUMN otel_metrics_data_points_summary.start_time_unix_nano IS 'Start time for summary calculation window in nanoseconds since Unix epoch';
-        COMMENT ON COLUMN otel_metrics_data_points_summary.time_unix_nano IS 'Data point timestamp in nanoseconds since Unix epoch';
-        COMMENT ON COLUMN otel_metrics_data_points_summary.count IS 'Total count of observations in summary';
-        COMMENT ON COLUMN otel_metrics_data_points_summary.sum IS 'Sum of all observed values';
-        COMMENT ON COLUMN otel_metrics_data_points_summary.quantile_values IS 'JSONB array of quantile/value pairs (e.g., [{quantile: 0.5, value: 123}, {quantile: 0.99, value: 456}])';
-        COMMENT ON COLUMN otel_metrics_data_points_summary.flags IS 'OTLP data point flags field';
-    """)
+    op.execute(
+        "COMMENT ON TABLE otel_metrics_data_points_summary IS 'Fact table for Summary metric data points with pre-computed quantiles'"
+    )
+    op.execute(
+        "COMMENT ON COLUMN otel_metrics_data_points_summary.data_point_id IS 'Primary key, auto-incrementing surrogate key for data point'"
+    )
+    op.execute("COMMENT ON COLUMN otel_metrics_data_points_summary.metric_id IS 'Foreign key to otel_metrics_dim'")
+    op.execute("COMMENT ON COLUMN otel_metrics_data_points_summary.resource_id IS 'Foreign key to otel_resources_dim'")
+    op.execute("COMMENT ON COLUMN otel_metrics_data_points_summary.scope_id IS 'Foreign key to otel_scopes_dim'")
+    op.execute(
+        "COMMENT ON COLUMN otel_metrics_data_points_summary.start_time_unix_nano IS 'Start time for summary calculation window in nanoseconds since Unix epoch'"
+    )
+    op.execute(
+        "COMMENT ON COLUMN otel_metrics_data_points_summary.time_unix_nano IS 'Data point timestamp in nanoseconds since Unix epoch'"
+    )
+    op.execute("COMMENT ON COLUMN otel_metrics_data_points_summary.count IS 'Total count of observations in summary'")
+    op.execute("COMMENT ON COLUMN otel_metrics_data_points_summary.sum IS 'Sum of all observed values'")
+    op.execute(
+        "COMMENT ON COLUMN otel_metrics_data_points_summary.quantile_values IS 'JSONB array of quantile/value pairs (e.g., [{quantile: 0.5, value: 123}, {quantile: 0.99, value: 456}])'"
+    )
+    op.execute("COMMENT ON COLUMN otel_metrics_data_points_summary.flags IS 'OTLP data point flags field'")
 
 
 def downgrade() -> None:

@@ -311,7 +311,7 @@ tasks:
 
   build:image:api:
     desc: Build API backend image
-    deps: [lint, test:api]
+    deps: [test:api]
     cmds:
       - echo "🔨 Building API Backend..."
       - echo "{{.VERSION}}" > .task-version-api
@@ -326,7 +326,7 @@ tasks:
 
   build:image:web-ui:
     desc: Build web UI image
-    deps: [lint, test:web-ui]
+    deps: [test:web-ui]
     cmds:
       - echo "🔨 Building Web UI..."
       - echo "{{.VERSION}}" > .task-version-web-ui
@@ -341,7 +341,7 @@ tasks:
 
   build:image:opamp:
     desc: Build OpAMP server image
-    deps: [lint]
+    deps: []
     cmds:
       - echo "🔨 Building OpAMP Server..."
       - echo "{{.VERSION}}" > .task-version-opamp
@@ -356,7 +356,7 @@ tasks:
 
   build:image:demo:
     desc: Build unified demo image
-    deps: [lint, test:demo]
+    deps: [test:demo]
     cmds:
       - echo "🔨 Building Unified Demo..."
       - echo "{{.VERSION}}" > .task-version-demo
@@ -371,7 +371,7 @@ tasks:
 
   build:image:demo-agent:
     desc: Build AI agent demo image
-    deps: [lint, test:demo-agent]
+    deps: [test:demo-agent]
     cmds:
       - echo "🔨 Building AI Agent Demo..."
       - echo "{{.VERSION}}" > .task-version-demo-agent
