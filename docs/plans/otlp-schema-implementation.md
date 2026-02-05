@@ -466,10 +466,13 @@ task deploy
 kubectl -n ollyscale logs -l job-name=ollyscale-migration --tail=50
 
 # Check receiver health (OTLP ingestion):
-kubectl -n ollyscale logs -l app.kubernetes.io/component=receiver --tail=100
+kubectl -n ollyscale logs -l app.kubernetes.io/component=otlp-receiver --tail=100
 
 # Check API health:
 kubectl -n ollyscale logs -l app.kubernetes.io/component=api --tail=100
+
+# Check Web UI health:
+kubectl -n ollyscale logs -l app.kubernetes.io/component=webui --tail=100
 ```
 
 **Test Checklist** (complete before marking task done):
@@ -1603,8 +1606,8 @@ kubectl get pods -n ollyscale -l app.kubernetes.io/component=api
 kubectl logs -n ollyscale -l app.kubernetes.io/component=api --tail=100
 
 # OTLP Receiver pods (gRPC/HTTP ingestion on port 4317/4318)
-kubectl get pods -n ollyscale -l app.kubernetes.io/component=receiver
-kubectl logs -n ollyscale -l app.kubernetes.io/component=receiver --tail=100
+kubectl get pods -n ollyscale -l app.kubernetes.io/component=otlp-receiver
+kubectl logs -n ollyscale -l app.kubernetes.io/component=otlp-receiver --tail=100
 
 # Web UI pods (React SPA served by nginx)
 kubectl get pods -n ollyscale -l app.kubernetes.io/component=webui
@@ -1648,13 +1651,13 @@ kubectl get jobs -n ollyscale -l app.kubernetes.io/component=migration
 kubectl logs -n ollyscale -l app.kubernetes.io/component=migration
 
 # Exec into database primary
-kubectl exec -it -n ollyscale ollyscale-db-1 -- psql -U postgres -d ollyscale
+kubectl exec -it -n ollyscale ollyscale-db-1 -- sh -c "PGPASSWORD=postgres psql -U postgres -d ollyscale"
 
 # Check which migrations are applied
-kubectl exec -n ollyscale ollyscale-db-1 -- psql -U postgres -d ollyscale -c "SELECT version_num FROM alembic_version;"
+kubectl exec -n ollyscale ollyscale-db-1 -- sh -c "PGPASSWORD=postgres psql -U postgres -d ollyscale -c 'SELECT version_num FROM alembic_version;'"
 
 # Check if enriched views exist
-kubectl exec -n ollyscale ollyscale-db-1 -- psql -U postgres -d ollyscale -c "\dv"
+kubectl exec -n ollyscale ollyscale-db-1 -- sh -c "PGPASSWORD=postgres psql -U postgres -d ollyscale -c '\dv'"
 
 # Port-forward to API for local testing
 kubectl port-forward -n ollyscale svc/ollyscale-api 8000:8000
