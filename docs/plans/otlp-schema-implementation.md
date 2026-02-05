@@ -1,6 +1,6 @@
 # OTLP Schema Implementation Plan
 
-**Status**: Phase 4 Complete - Metrics Tables Needed 
+**Status**: Phase 4 Complete - Metrics Tables Needed
 **Branch**: `improve-data-model`  
 **Breaking Change**: Yes - Complete schema overhaul
 
@@ -96,7 +96,7 @@ See "Task Details" section below for exact SQL.
 
 **Tasks**:
 1. Add all 6 reference/lookup tables to migration 8316334b1935
-2. Add seed data (INSERT statements) 
+2. Add seed data (INSERT statements)
 3. Update otel_logs_fact FK: severity_number → log_severity_numbers(severity_number)
 4. Update otel_logs_fact FK: body_type_id → log_body_types(body_type_id)  
 5. Update otel_spans_fact FK: kind → span_kinds(kind_id)
@@ -466,10 +466,10 @@ task deploy
 kubectl -n ollyscale logs -l job-name=ollyscale-migration --tail=50
 
 # Check receiver health (OTLP ingestion):
-kubectl -n ollyscale logs -l app.kubernetes.io/component=ollyscale-receiver --tail=100
+kubectl -n ollyscale logs -l app.kubernetes.io/component=receiver --tail=100
 
 # Check API health:
-kubectl -n ollyscale logs -l app.kubernetes.io/component=ollyscale-api --tail=100
+kubectl -n ollyscale logs -l app.kubernetes.io/component=api --tail=100
 ```
 
 **Test Checklist** (complete before marking task done):
@@ -1603,8 +1603,8 @@ kubectl get pods -n ollyscale -l app.kubernetes.io/component=api
 kubectl logs -n ollyscale -l app.kubernetes.io/component=api --tail=100
 
 # OTLP Receiver pods (gRPC/HTTP ingestion on port 4317/4318)
-kubectl get pods -n ollyscale -l app.kubernetes.io/component=otlp-receiver
-kubectl logs -n ollyscale -l app.kubernetes.io/component=otlp-receiver --tail=100
+kubectl get pods -n ollyscale -l app.kubernetes.io/component=receiver
+kubectl logs -n ollyscale -l app.kubernetes.io/component=receiver --tail=100
 
 # Web UI pods (React SPA served by nginx)
 kubectl get pods -n ollyscale -l app.kubernetes.io/component=webui
