@@ -225,28 +225,24 @@ class MetricsStorage:
         self._metric_cache[metric_hash] = metric_id
         return metric_id, True
 
-    def store_metrics(self, otlp_metrics: dict[str, Any]) -> dict[str, Any]:
+    def store_metrics(self, resource_metrics: dict[str, Any]) -> dict[str, Any]:
         """
-        Store OTLP metrics records.
-
-        OTLP structure:
-        {
-            "resourceMetrics": [{
-                "resource": {"attributes": [...]},
-                "scopeMetrics": [{
-                    "scope": {"name": "...", "version": "..."},
-                    "metrics": [{
-                        "name": "...",
-                        "gauge": {"dataPoints": [...]},  # OR
-                        "sum": {"dataPoints": [...], "aggregationTemporality": ..., "isMonotonic": ...},  # OR
-                        "histogram": {"dataPoints": [...], "aggregationTemporality": ...},  # etc
-                    }]
-                }]
-            }]
-        }
+        Store OTLP metrics from a single ResourceMetrics entry.
 
         Args:
-            otlp_metrics: OTLP ExportMetricsServiceRequest dict
+            resource_metrics: Single OTLP ResourceMetrics dict with structure:
+                {
+                    "resource": {"attributes": [...]},
+                    "scopeMetrics": [{
+                        "scope": {"name": "...", "version": "..."},
+                        "metrics": [{
+                            "name": "...",
+                            "gauge": {"dataPoints": [...]},  # OR
+                            "sum": {"dataPoints": [...], "aggregationTemporality": ..., "isMonotonic": ...},  # OR
+                            "histogram": {"dataPoints": [...], "aggregationTemporality": ...},  # etc
+                        }]
+                    }]
+                }
 
         Returns:
             Storage statistics
@@ -260,39 +256,36 @@ class MetricsStorage:
             "attributes_other": 0,
         }
 
-        resource_metrics_list = otlp_metrics.get("resourceMetrics", [])
+        # Handle resource dimension
+        resource_attrs_otlp = resource_metrics.get("resource", {}).get("attributes", [])
+        resource_attrs_flat = self._flatten_otlp_attributes(resource_attrs_otlp)
 
-        for resource_metrics in resource_metrics_list:
-            # Handle resource dimension
-            resource_attrs_otlp = resource_metrics.get("resource", {}).get("attributes", [])
-            resource_attrs_flat = self._flatten_otlp_attributes(resource_attrs_otlp)
+        resource_id, created, _ = self.resource_manager.get_or_create_resource(resource_attrs_flat)
+        if created:
+            stats["resources_created"] += 1
 
-            resource_id, created, _ = self.resource_manager.get_or_create_resource(resource_attrs_flat)
+        # Process scope metrics
+        scope_metrics_list = resource_metrics.get("scopeMetrics", [])
+
+        for scope_metrics in scope_metrics_list:
+            # Handle scope dimension
+            scope_info = scope_metrics.get("scope", {})
+            scope_name = scope_info.get("name", "")
+            scope_version = scope_info.get("version", "")
+            scope_attrs_otlp = scope_info.get("attributes", [])
+            scope_attrs_flat = self._flatten_otlp_attributes(scope_attrs_otlp)
+
+            scope_id, created, _ = self.resource_manager.get_or_create_scope(
+                scope_name, scope_version, scope_attrs_flat
+            )
             if created:
-                stats["resources_created"] += 1
+                stats["scopes_created"] += 1
 
-            # Process scope metrics
-            scope_metrics_list = resource_metrics.get("scopeMetrics", [])
+            # Process metrics
+            metrics = scope_metrics.get("metrics", [])
 
-            for scope_metrics in scope_metrics_list:
-                # Handle scope dimension
-                scope_info = scope_metrics.get("scope", {})
-                scope_name = scope_info.get("name", "")
-                scope_version = scope_info.get("version", "")
-                scope_attrs_otlp = scope_info.get("attributes", [])
-                scope_attrs_flat = self._flatten_otlp_attributes(scope_attrs_otlp)
-
-                scope_id, created, _ = self.resource_manager.get_or_create_scope(
-                    scope_name, scope_version, scope_attrs_flat
-                )
-                if created:
-                    stats["scopes_created"] += 1
-
-                # Process metrics
-                metrics = scope_metrics.get("metrics", [])
-
-                for metric in metrics:
-                    self._store_metric(metric, resource_id, scope_id, stats)
+            for metric in metrics:
+                self._store_metric(metric, resource_id, scope_id, stats)
 
         return stats
 

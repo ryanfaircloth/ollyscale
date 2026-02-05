@@ -95,23 +95,19 @@ class LogsStorage:
 
         return flattened
 
-    def store_logs(self, otlp_logs: dict[str, Any]) -> dict[str, Any]:
+    def store_logs(self, resource_logs: dict[str, Any]) -> dict[str, Any]:
         """
-        Store OTLP log records.
-
-        OTLP structure:
-        {
-            "resourceLogs": [{
-                "resource": {"attributes": [...]},
-                "scopeLogs": [{
-                    "scope": {"name": "...", "version": "..."},
-                    "logRecords": [...]
-                }]
-            }]
-        }
+        Store OTLP log records from a single ResourceLogs entry.
 
         Args:
-            otlp_logs: OTLP ExportLogsServiceRequest dict
+            resource_logs: Single OTLP ResourceLogs dict with structure:
+                {
+                    "resource": {"attributes": [...]},
+                    "scopeLogs": [{
+                        "scope": {"name": "...", "version": "..."},
+                        "logRecords": [...]
+                    }]
+                }
 
         Returns:
             Storage statistics (logs_stored, resources_created, etc.)
@@ -124,41 +120,38 @@ class LogsStorage:
             "attributes_other": 0,
         }
 
-        resource_logs_list = otlp_logs.get("resourceLogs", [])
+        # Handle resource dimension
+        resource_attrs_otlp = resource_logs.get("resource", {}).get("attributes", [])
+        resource_attrs_flat = self._flatten_otlp_attributes(resource_attrs_otlp)
 
-        for resource_logs in resource_logs_list:
-            # Handle resource dimension
-            resource_attrs_otlp = resource_logs.get("resource", {}).get("attributes", [])
-            resource_attrs_flat = self._flatten_otlp_attributes(resource_attrs_otlp)
+        resource_id, created, _ = self.resource_manager.get_or_create_resource(resource_attrs_flat)
+        if created:
+            stats["resources_created"] += 1
 
-            resource_id, created, _ = self.resource_manager.get_or_create_resource(resource_attrs_flat)
+        # Process scope logs
+        scope_logs_list = resource_logs.get("scopeLogs", [])
+
+        for scope_logs in scope_logs_list:
+            # Handle scope dimension
+            scope_info = scope_logs.get("scope", {})
+            scope_name = scope_info.get("name", "")
+            scope_version = scope_info.get("version", "")
+            scope_attrs_otlp = scope_info.get("attributes", [])
+            scope_attrs_flat = self._flatten_otlp_attributes(scope_attrs_otlp)
+
+            scope_id, created, _ = self.resource_manager.get_or_create_scope(
+                scope_name, scope_version, scope_attrs_flat
+            )
             if created:
-                stats["resources_created"] += 1
+                stats["scopes_created"] += 1
 
-            # Process scope logs
-            scope_logs_list = resource_logs.get("scopeLogs", [])
+            # Process log records
+            log_records = scope_logs.get("logRecords", [])
 
-            for scope_logs in scope_logs_list:
-                # Handle scope dimension
-                scope_info = scope_logs.get("scope", {})
-                scope_name = scope_info.get("name", "")
-                scope_version = scope_info.get("version", "")
-                scope_attrs_otlp = scope_info.get("attributes", [])
-                scope_attrs_flat = self._flatten_otlp_attributes(scope_attrs_otlp)
-
-                scope_id, created, _ = self.resource_manager.get_or_create_scope(
-                    scope_name, scope_version, scope_attrs_flat
-                )
-                if created:
-                    stats["scopes_created"] += 1
-
-                # Process log records
-                log_records = scope_logs.get("logRecords", [])
-
-                for log_record in log_records:
-                    # Store log fact
-                    self._store_log_record(log_record, resource_id, scope_id, stats)
-                    stats["logs_stored"] += 1
+            for log_record in log_records:
+                # Store log fact
+                self._store_log_record(log_record, resource_id, scope_id, stats)
+                stats["logs_stored"] += 1
 
         return stats
 

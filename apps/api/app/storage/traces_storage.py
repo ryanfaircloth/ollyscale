@@ -96,23 +96,19 @@ class TracesStorage:
 
         return flattened
 
-    def store_traces(self, otlp_traces: dict[str, Any]) -> dict[str, Any]:
+    def store_traces(self, resource_spans: dict[str, Any]) -> dict[str, Any]:
         """
-        Store OTLP trace records.
-
-        OTLP structure:
-        {
-            "resourceSpans": [{
-                "resource": {"attributes": [...]},
-                "scopeSpans": [{
-                    "scope": {"name": "...", "version": "..."},
-                    "spans": [...]
-                }]
-            }]
-        }
+        Store OTLP trace records from a single ResourceSpans entry.
 
         Args:
-            otlp_traces: OTLP ExportTraceServiceRequest dict
+            resource_spans: Single OTLP ResourceSpans dict with structure:
+                {
+                    "resource": {"attributes": [...]},
+                    "scopeSpans": [{
+                        "scope": {"name": "...", "version": "..."},
+                        "spans": [...]
+                    }]
+                }
 
         Returns:
             Storage statistics (spans_stored, resources_created, etc.)
@@ -127,41 +123,38 @@ class TracesStorage:
             "links_stored": 0,
         }
 
-        resource_spans_list = otlp_traces.get("resourceSpans", [])
+        # Handle resource dimension
+        resource_attrs_otlp = resource_spans.get("resource", {}).get("attributes", [])
+        resource_attrs_flat = self._flatten_otlp_attributes(resource_attrs_otlp)
 
-        for resource_spans in resource_spans_list:
-            # Handle resource dimension
-            resource_attrs_otlp = resource_spans.get("resource", {}).get("attributes", [])
-            resource_attrs_flat = self._flatten_otlp_attributes(resource_attrs_otlp)
+        resource_id, created, _ = self.resource_manager.get_or_create_resource(resource_attrs_flat)
+        if created:
+            stats["resources_created"] += 1
 
-            resource_id, created, _ = self.resource_manager.get_or_create_resource(resource_attrs_flat)
+        # Process scope spans
+        scope_spans_list = resource_spans.get("scopeSpans", [])
+
+        for scope_spans in scope_spans_list:
+            # Handle scope dimension
+            scope_info = scope_spans.get("scope", {})
+            scope_name = scope_info.get("name", "")
+            scope_version = scope_info.get("version", "")
+            scope_attrs_otlp = scope_info.get("attributes", [])
+            scope_attrs_flat = self._flatten_otlp_attributes(scope_attrs_otlp)
+
+            scope_id, created, _ = self.resource_manager.get_or_create_scope(
+                scope_name, scope_version, scope_attrs_flat
+            )
             if created:
-                stats["resources_created"] += 1
+                stats["scopes_created"] += 1
 
-            # Process scope spans
-            scope_spans_list = resource_spans.get("scopeSpans", [])
+            # Process spans
+            spans = scope_spans.get("spans", [])
 
-            for scope_spans in scope_spans_list:
-                # Handle scope dimension
-                scope_info = scope_spans.get("scope", {})
-                scope_name = scope_info.get("name", "")
-                scope_version = scope_info.get("version", "")
-                scope_attrs_otlp = scope_info.get("attributes", [])
-                scope_attrs_flat = self._flatten_otlp_attributes(scope_attrs_otlp)
-
-                scope_id, created, _ = self.resource_manager.get_or_create_scope(
-                    scope_name, scope_version, scope_attrs_flat
-                )
-                if created:
-                    stats["scopes_created"] += 1
-
-                # Process spans
-                spans = scope_spans.get("spans", [])
-
-                for span in spans:
-                    # Store span fact
-                    self._store_span(span, resource_id, scope_id, stats)
-                    stats["spans_stored"] += 1
+            for span in spans:
+                # Store span fact
+                self._store_span(span, resource_id, scope_id, stats)
+                stats["spans_stored"] += 1
 
         return stats
 
