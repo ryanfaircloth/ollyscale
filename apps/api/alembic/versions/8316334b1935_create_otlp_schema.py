@@ -32,6 +32,95 @@ def upgrade() -> None:
         COMMENT ON TABLE attribute_keys IS 'Deduplication registry for attribute keys across all signals';
     """)
 
+    # 1b. Reference/Lookup Tables
+    op.execute("""
+        CREATE TABLE log_severity_numbers (
+            severity_number SMALLINT PRIMARY KEY,
+            name VARCHAR(50) NOT NULL UNIQUE,
+            description TEXT
+        );
+        COMMENT ON TABLE log_severity_numbers IS 'OTLP log severity levels (0-24) per OpenTelemetry specification';
+
+        INSERT INTO log_severity_numbers (severity_number, name, description) VALUES
+            (0, 'UNSPECIFIED', 'Unspecified severity'),
+            (1, 'TRACE', 'Trace-level message (most verbose)'),
+            (5, 'DEBUG', 'Debug-level message'),
+            (9, 'INFO', 'Informational message'),
+            (13, 'WARN', 'Warning message'),
+            (17, 'ERROR', 'Error message'),
+            (21, 'FATAL', 'Fatal error message (most severe)');
+
+        CREATE TABLE log_body_types (
+            body_type_id SMALLINT PRIMARY KEY,
+            name VARCHAR(50) NOT NULL UNIQUE,
+            description TEXT
+        );
+        COMMENT ON TABLE log_body_types IS 'OTLP AnyValue types for log body field';
+
+        INSERT INTO log_body_types (body_type_id, name, description) VALUES
+            (0, 'EMPTY', 'Empty/null body'),
+            (1, 'STRING', 'String body'),
+            (2, 'INT', 'Integer body'),
+            (3, 'DOUBLE', 'Double precision body'),
+            (4, 'BOOL', 'Boolean body'),
+            (5, 'BYTES', 'Bytes body'),
+            (6, 'ARRAY', 'Array body'),
+            (7, 'KVLIST', 'Key-value list body');
+
+        CREATE TABLE span_kinds (
+            kind_id SMALLINT PRIMARY KEY,
+            name VARCHAR(50) NOT NULL UNIQUE,
+            description TEXT
+        );
+        COMMENT ON TABLE span_kinds IS 'OTLP span kinds per OpenTelemetry specification';
+
+        INSERT INTO span_kinds (kind_id, name, description) VALUES
+            (0, 'UNSPECIFIED', 'Unspecified span kind'),
+            (1, 'INTERNAL', 'Internal operation within application'),
+            (2, 'SERVER', 'Server-side handling of RPC or HTTP request'),
+            (3, 'CLIENT', 'Client-side RPC or HTTP request'),
+            (4, 'PRODUCER', 'Message producer (async operations)'),
+            (5, 'CONSUMER', 'Message consumer (async operations)');
+
+        CREATE TABLE status_codes (
+            status_code_id SMALLINT PRIMARY KEY,
+            name VARCHAR(50) NOT NULL UNIQUE,
+            description TEXT
+        );
+        COMMENT ON TABLE status_codes IS 'OTLP status codes per OpenTelemetry specification';
+
+        INSERT INTO status_codes (status_code_id, name, description) VALUES
+            (0, 'UNSET', 'Default status - operation not explicitly set'),
+            (1, 'OK', 'Operation completed successfully'),
+            (2, 'ERROR', 'Operation failed with error');
+
+        CREATE TABLE metric_types (
+            metric_type_id SMALLINT PRIMARY KEY,
+            name VARCHAR(50) NOT NULL UNIQUE,
+            description TEXT
+        );
+        COMMENT ON TABLE metric_types IS 'OTLP metric data types';
+
+        INSERT INTO metric_types (metric_type_id, name, description) VALUES
+            (1, 'GAUGE', 'Point-in-time measurement (no aggregation)'),
+            (2, 'SUM', 'Cumulative or delta sum aggregation'),
+            (3, 'HISTOGRAM', 'Distribution with explicit bucket boundaries'),
+            (4, 'EXP_HISTOGRAM', 'Distribution with exponential bucket boundaries'),
+            (5, 'SUMMARY', 'Summary statistics with quantiles');
+
+        CREATE TABLE aggregation_temporalities (
+            temporality_id SMALLINT PRIMARY KEY,
+            name VARCHAR(50) NOT NULL UNIQUE,
+            description TEXT
+        );
+        COMMENT ON TABLE aggregation_temporalities IS 'OTLP metric aggregation temporality';
+
+        INSERT INTO aggregation_temporalities (temporality_id, name, description) VALUES
+            (0, 'UNSPECIFIED', 'Unspecified temporality'),
+            (1, 'DELTA', 'Change since last measurement interval'),
+            (2, 'CUMULATIVE', 'Total accumulated since start');
+    """)
+
     # 2. Resources Dimension
     op.execute("""
         CREATE TABLE otel_resources_dim (
@@ -66,6 +155,116 @@ def upgrade() -> None:
         CREATE INDEX idx_otel_scopes_name ON otel_scopes_dim(name);
         CREATE INDEX idx_otel_scopes_last_seen ON otel_scopes_dim(last_seen);
         COMMENT ON TABLE otel_scopes_dim IS 'Instrumentation scope/library dimension';
+    """)
+
+    # 3b. Resource Attribute Tables
+    op.execute("""
+        CREATE TABLE otel_resource_attrs_string (
+            resource_id BIGINT NOT NULL REFERENCES otel_resources_dim(resource_id) ON DELETE CASCADE,
+            key_id BIGINT NOT NULL REFERENCES attribute_keys(key_id),
+            value TEXT NOT NULL,
+            PRIMARY KEY (resource_id, key_id)
+        );
+        CREATE INDEX idx_otel_resource_attrs_string_key_value ON otel_resource_attrs_string(key_id, value);
+        COMMENT ON TABLE otel_resource_attrs_string IS 'Promoted string resource attributes per attribute-promotion.yaml config';
+
+        CREATE TABLE otel_resource_attrs_int (
+            resource_id BIGINT NOT NULL REFERENCES otel_resources_dim(resource_id) ON DELETE CASCADE,
+            key_id BIGINT NOT NULL REFERENCES attribute_keys(key_id),
+            value BIGINT NOT NULL,
+            PRIMARY KEY (resource_id, key_id)
+        );
+        CREATE INDEX idx_otel_resource_attrs_int_key_value ON otel_resource_attrs_int(key_id, value);
+        COMMENT ON TABLE otel_resource_attrs_int IS 'Promoted integer resource attributes per attribute-promotion.yaml config';
+
+        CREATE TABLE otel_resource_attrs_double (
+            resource_id BIGINT NOT NULL REFERENCES otel_resources_dim(resource_id) ON DELETE CASCADE,
+            key_id BIGINT NOT NULL REFERENCES attribute_keys(key_id),
+            value DOUBLE PRECISION NOT NULL,
+            PRIMARY KEY (resource_id, key_id)
+        );
+        CREATE INDEX idx_otel_resource_attrs_double_key_value ON otel_resource_attrs_double(key_id, value);
+        COMMENT ON TABLE otel_resource_attrs_double IS 'Promoted double resource attributes per attribute-promotion.yaml config';
+
+        CREATE TABLE otel_resource_attrs_bool (
+            resource_id BIGINT NOT NULL REFERENCES otel_resources_dim(resource_id) ON DELETE CASCADE,
+            key_id BIGINT NOT NULL REFERENCES attribute_keys(key_id),
+            value BOOLEAN NOT NULL,
+            PRIMARY KEY (resource_id, key_id)
+        );
+        CREATE INDEX idx_otel_resource_attrs_bool_key ON otel_resource_attrs_bool(key_id, value);
+        COMMENT ON TABLE otel_resource_attrs_bool IS 'Promoted boolean resource attributes per attribute-promotion.yaml config';
+
+        CREATE TABLE otel_resource_attrs_bytes (
+            resource_id BIGINT NOT NULL REFERENCES otel_resources_dim(resource_id) ON DELETE CASCADE,
+            key_id BIGINT NOT NULL REFERENCES attribute_keys(key_id),
+            value BYTEA NOT NULL,
+            PRIMARY KEY (resource_id, key_id)
+        );
+        CREATE INDEX idx_otel_resource_attrs_bytes_key ON otel_resource_attrs_bytes(key_id);
+        COMMENT ON TABLE otel_resource_attrs_bytes IS 'Promoted bytes resource attributes per attribute-promotion.yaml config';
+
+        CREATE TABLE otel_resource_attrs_other (
+            resource_id BIGINT NOT NULL PRIMARY KEY REFERENCES otel_resources_dim(resource_id) ON DELETE CASCADE,
+            attributes JSONB NOT NULL
+        );
+        CREATE INDEX idx_otel_resource_attrs_other_gin ON otel_resource_attrs_other USING gin(attributes);
+        COMMENT ON TABLE otel_resource_attrs_other IS 'JSONB catch-all for unpromoted resource attributes (complex types, unknown keys)';
+    """)
+
+    # 3c. Scope Attribute Tables
+    op.execute("""
+        CREATE TABLE otel_scope_attrs_string (
+            scope_id BIGINT NOT NULL REFERENCES otel_scopes_dim(scope_id) ON DELETE CASCADE,
+            key_id BIGINT NOT NULL REFERENCES attribute_keys(key_id),
+            value TEXT NOT NULL,
+            PRIMARY KEY (scope_id, key_id)
+        );
+        CREATE INDEX idx_otel_scope_attrs_string_key_value ON otel_scope_attrs_string(key_id, value);
+        COMMENT ON TABLE otel_scope_attrs_string IS 'Promoted string scope attributes per attribute-promotion.yaml config';
+
+        CREATE TABLE otel_scope_attrs_int (
+            scope_id BIGINT NOT NULL REFERENCES otel_scopes_dim(scope_id) ON DELETE CASCADE,
+            key_id BIGINT NOT NULL REFERENCES attribute_keys(key_id),
+            value BIGINT NOT NULL,
+            PRIMARY KEY (scope_id, key_id)
+        );
+        CREATE INDEX idx_otel_scope_attrs_int_key_value ON otel_scope_attrs_int(key_id, value);
+        COMMENT ON TABLE otel_scope_attrs_int IS 'Promoted integer scope attributes per attribute-promotion.yaml config';
+
+        CREATE TABLE otel_scope_attrs_double (
+            scope_id BIGINT NOT NULL REFERENCES otel_scopes_dim(scope_id) ON DELETE CASCADE,
+            key_id BIGINT NOT NULL REFERENCES attribute_keys(key_id),
+            value DOUBLE PRECISION NOT NULL,
+            PRIMARY KEY (scope_id, key_id)
+        );
+        CREATE INDEX idx_otel_scope_attrs_double_key_value ON otel_scope_attrs_double(key_id, value);
+        COMMENT ON TABLE otel_scope_attrs_double IS 'Promoted double scope attributes per attribute-promotion.yaml config';
+
+        CREATE TABLE otel_scope_attrs_bool (
+            scope_id BIGINT NOT NULL REFERENCES otel_scopes_dim(scope_id) ON DELETE CASCADE,
+            key_id BIGINT NOT NULL REFERENCES attribute_keys(key_id),
+            value BOOLEAN NOT NULL,
+            PRIMARY KEY (scope_id, key_id)
+        );
+        CREATE INDEX idx_otel_scope_attrs_bool_key ON otel_scope_attrs_bool(key_id, value);
+        COMMENT ON TABLE otel_scope_attrs_bool IS 'Promoted boolean scope attributes per attribute-promotion.yaml config';
+
+        CREATE TABLE otel_scope_attrs_bytes (
+            scope_id BIGINT NOT NULL REFERENCES otel_scopes_dim(scope_id) ON DELETE CASCADE,
+            key_id BIGINT NOT NULL REFERENCES attribute_keys(key_id),
+            value BYTEA NOT NULL,
+            PRIMARY KEY (scope_id, key_id)
+        );
+        CREATE INDEX idx_otel_scope_attrs_bytes_key ON otel_scope_attrs_bytes(key_id);
+        COMMENT ON TABLE otel_scope_attrs_bytes IS 'Promoted bytes scope attributes per attribute-promotion.yaml config';
+
+        CREATE TABLE otel_scope_attrs_other (
+            scope_id BIGINT NOT NULL PRIMARY KEY REFERENCES otel_scopes_dim(scope_id) ON DELETE CASCADE,
+            attributes JSONB NOT NULL
+        );
+        CREATE INDEX idx_otel_scope_attrs_other_gin ON otel_scope_attrs_other USING gin(attributes);
+        COMMENT ON TABLE otel_scope_attrs_other IS 'JSONB catch-all for unpromoted scope attributes (complex types, unknown keys)';
     """)
 
     # 4. Logs Fact Table
@@ -273,6 +472,35 @@ def upgrade() -> None:
         CREATE INDEX idx_otel_span_attrs_other_gin ON otel_span_attrs_other USING gin(attributes);
     """)
 
+    # 7b. Add Missing COMMENT Statements
+    op.execute("""
+        -- Log attribute table comments
+        COMMENT ON TABLE otel_log_attrs_string IS 'Promoted string log attributes per attribute-promotion.yaml';
+        COMMENT ON TABLE otel_log_attrs_int IS 'Promoted integer log attributes per attribute-promotion.yaml';
+        COMMENT ON TABLE otel_log_attrs_double IS 'Promoted double log attributes per attribute-promotion.yaml';
+        COMMENT ON TABLE otel_log_attrs_bool IS 'Promoted boolean log attributes per attribute-promotion.yaml';
+        COMMENT ON TABLE otel_log_attrs_bytes IS 'Promoted bytes log attributes per attribute-promotion.yaml';
+        COMMENT ON TABLE otel_log_attrs_other IS 'JSONB catch-all for unpromoted log attributes (complex types)';
+
+        -- Span attribute table comments
+        COMMENT ON TABLE otel_span_attrs_string IS 'Promoted string span attributes per attribute-promotion.yaml';
+        COMMENT ON TABLE otel_span_attrs_int IS 'Promoted integer span attributes per attribute-promotion.yaml';
+        COMMENT ON TABLE otel_span_attrs_double IS 'Promoted double span attributes per attribute-promotion.yaml';
+        COMMENT ON TABLE otel_span_attrs_bool IS 'Promoted boolean span attributes per attribute-promotion.yaml';
+        COMMENT ON TABLE otel_span_attrs_bytes IS 'Promoted bytes span attributes per attribute-promotion.yaml';
+        COMMENT ON TABLE otel_span_attrs_other IS 'JSONB catch-all for unpromoted span attributes (complex types)';
+
+        -- Column comments for timestamp nanos_fraction fields
+        COMMENT ON COLUMN otel_logs_fact.time_nanos_fraction IS 'Remaining nanoseconds (0-999) beyond microsecond precision in time field';
+        COMMENT ON COLUMN otel_logs_fact.observed_time_nanos_fraction IS 'Remaining nanoseconds (0-999) beyond microsecond precision in observed_time field';
+        COMMENT ON COLUMN otel_spans_fact.start_time_nanos_fraction IS 'Remaining nanoseconds (0-999) beyond microsecond precision in start_time field';
+        COMMENT ON COLUMN otel_spans_fact.end_time_nanos_fraction IS 'Remaining nanoseconds (0-999) beyond microsecond precision in end_time field';
+
+        -- Hash field comments
+        COMMENT ON COLUMN otel_resources_dim.resource_hash IS 'SHA-256 hash of sorted resource attributes for deduplication';
+        COMMENT ON COLUMN otel_scopes_dim.scope_hash IS 'SHA-256 hash of scope identity (name+version+schema_url) for deduplication';
+    """)
+
     # 8. Logs Enriched View
     op.execute("""
         CREATE OR REPLACE VIEW v_otel_logs_enriched AS
@@ -397,6 +625,24 @@ def downgrade() -> None:
     op.execute("DROP TABLE IF EXISTS otel_log_attrs_int CASCADE")
     op.execute("DROP TABLE IF EXISTS otel_log_attrs_string CASCADE")
     op.execute("DROP TABLE IF EXISTS otel_logs_fact CASCADE")
+    op.execute("DROP TABLE IF EXISTS otel_scope_attrs_other CASCADE")
+    op.execute("DROP TABLE IF EXISTS otel_scope_attrs_bytes CASCADE")
+    op.execute("DROP TABLE IF EXISTS otel_scope_attrs_bool CASCADE")
+    op.execute("DROP TABLE IF EXISTS otel_scope_attrs_double CASCADE")
+    op.execute("DROP TABLE IF EXISTS otel_scope_attrs_int CASCADE")
+    op.execute("DROP TABLE IF EXISTS otel_scope_attrs_string CASCADE")
     op.execute("DROP TABLE IF EXISTS otel_scopes_dim CASCADE")
+    op.execute("DROP TABLE IF EXISTS otel_resource_attrs_other CASCADE")
+    op.execute("DROP TABLE IF EXISTS otel_resource_attrs_bytes CASCADE")
+    op.execute("DROP TABLE IF EXISTS otel_resource_attrs_bool CASCADE")
+    op.execute("DROP TABLE IF EXISTS otel_resource_attrs_double CASCADE")
+    op.execute("DROP TABLE IF EXISTS otel_resource_attrs_int CASCADE")
+    op.execute("DROP TABLE IF EXISTS otel_resource_attrs_string CASCADE")
     op.execute("DROP TABLE IF EXISTS otel_resources_dim CASCADE")
+    op.execute("DROP TABLE IF EXISTS aggregation_temporalities CASCADE")
+    op.execute("DROP TABLE IF EXISTS metric_types CASCADE")
+    op.execute("DROP TABLE IF EXISTS status_codes CASCADE")
+    op.execute("DROP TABLE IF EXISTS span_kinds CASCADE")
+    op.execute("DROP TABLE IF EXISTS log_body_types CASCADE")
+    op.execute("DROP TABLE IF EXISTS log_severity_numbers CASCADE")
     op.execute("DROP TABLE IF EXISTS attribute_keys CASCADE")
