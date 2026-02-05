@@ -98,6 +98,20 @@ spec:
         readinessProbe:
           {{- toYaml . | nindent 10 }}
         {{- end }}
+        {{- if .Values.otlpReceiver.attributeOverrides.enabled }}
+        volumeMounts:
+        - name: attribute-overrides
+          mountPath: /config/attribute-overrides.yaml
+          subPath: attribute-overrides.yaml
+          readOnly: true
+        {{- end }}
+      {{- if .Values.otlpReceiver.attributeOverrides.enabled }}
+      volumes:
+      - name: attribute-overrides
+        configMap:
+          name: {{ include "ollyscale.fullname" . }}-attribute-overrides
+          optional: true
+      {{- end }}
       {{- with .Values.otlpReceiver.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

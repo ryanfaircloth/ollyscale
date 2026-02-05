@@ -520,6 +520,34 @@ otlpReceiver:
   nodeSelector: {}
   tolerations: []
   affinity: {}
+  # Attribute Promotion Configuration (Two-Tier System)
+  # Base promoted attributes are defined in config/attribute-promotion.yaml (enforced)
+  # Deploy-specific overrides can be configured here via ConfigMap
+  attributeOverrides:
+    enabled: false  # Set to true to enable deployment-specific attribute customization
+    # Promote additional attributes beyond the base set
+    # promote:
+    #   resource:
+    #     string:
+    #       - custom.datacenter
+    #   logs:
+    #     string:
+    #       - custom.request_id
+    #   spans:
+    #     string:
+    #       - custom.transaction_id
+    #     int:
+    #       - custom.retry_count
+    #   metrics:
+    #     string:
+    #       - custom.endpoint
+    # Drop sensitive attributes (takes precedence, applied before promotion)
+    # drop:
+    #   logs:
+    #     - password
+    #     - auth_token
+    #   spans:
+    #     - api_key
 postgresql:
   teamId: ollyscale
   numberOfInstances: 2

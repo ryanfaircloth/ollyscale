@@ -1,0 +1,24 @@
+{{- if .Values.otlpReceiver.attributeOverrides.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ollyscale.fullname" . }}-attribute-overrides
+  labels:
+    {{- include "ollyscale.labels" . | nindent 4 }}
+    app.kubernetes.io/component: config
+data:
+  attribute-overrides.yaml: |
+    # Admin attribute promotion overrides
+    # These are merged with the base configuration shipped with the application
+    # Base promoted attributes CANNOT be removed, only extended
+
+    {{- with .Values.otlpReceiver.attributeOverrides.promote }}
+    promote:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+
+    {{- with .Values.otlpReceiver.attributeOverrides.drop }}
+    drop:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+{{- end }}

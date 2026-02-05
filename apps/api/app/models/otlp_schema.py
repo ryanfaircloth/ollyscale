@@ -99,6 +99,11 @@ class OtelLogsFact(SQLModel, table=True):
     span_id_hex: str | None = Field(default=None, max_length=16, nullable=True)
     trace_flags: int | None = Field(default=None, sa_column=Column(Integer, nullable=True))
 
+    # Attributes
+    attributes_other: dict | None = Field(
+        default=None, sa_column=Column(JSONB, nullable=True)
+    )  # Non-promoted attributes
+
     # Metadata
     dropped_attributes_count: int = Field(default=0, sa_column=Column(Integer, nullable=False))
     flags: int = Field(default=0, sa_column=Column(Integer, nullable=False))

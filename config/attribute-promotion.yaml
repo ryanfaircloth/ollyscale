@@ -1,0 +1,126 @@
+# Attribute Promotion Configuration - Base (Enforced)
+# This configuration defines which OTLP attributes are promoted to typed tables
+# for fast filtering and aggregation. Admins can extend this via ConfigMap overrides.
+#
+# Promoted attributes = stored in typed tables (string, int, double, bool, bytes)
+# Unpromoted attributes = stored in JSONB catch-all table
+#
+# This base configuration CANNOT be overridden by admins - it is enforced.
+
+resource:
+  # Resource attributes - deduplicated per resource identity
+  string:
+    - service.name # Core service identification
+    - service.namespace # Environment/namespace grouping
+    - service.instance.id # Instance identification
+    - deployment.environment # Production, staging, dev, etc.
+    - cloud.provider # AWS, GCP, Azure, etc.
+    - cloud.region # us-east-1, europe-west1, etc.
+    - cloud.availability_zone
+    - k8s.cluster.name # Kubernetes cluster
+    - k8s.namespace.name
+    - k8s.pod.name
+    - k8s.deployment.name
+    - k8s.container.name
+    - host.name # Host identification
+    - host.type # Instance type
+    - container.name
+    - container.id
+    - container.image.name
+
+  int:
+    - service.version # Numeric version
+
+scope:
+  # Instrumentation scope attributes
+  string:
+    - otel.library.name
+    - otel.library.version
+
+logs:
+  # Log-specific promoted attributes
+  string:
+    - log.level # DEBUG, INFO, WARN, ERROR
+    - log.logger # Logger name
+    - log.file.name # Source file
+    - log.file.path
+    - error.type # Error classification
+    - exception.type # Exception class name
+    - exception.message
+
+  int:
+    - log.line # Line number
+    - error.code # Numeric error code
+    - http.status_code # HTTP status in logs
+
+spans:
+  # Span-specific promoted attributes
+  string:
+    # HTTP semantic conventions
+    - http.method
+    - http.route
+    - http.url
+    - http.target
+    - http.host
+    - http.scheme
+    - http.user_agent
+
+    # Database semantic conventions
+    - db.system # postgresql, mysql, mongodb, etc.
+    - db.name # Database name
+    - db.operation # SELECT, INSERT, UPDATE, etc.
+    - db.statement # SQL query (consider cardinality)
+    - db.connection_string # (often dropped for security)
+
+    # Messaging semantic conventions
+    - messaging.system # kafka, rabbitmq, sqs, etc.
+    - messaging.destination # Queue/topic name
+    - messaging.operation # publish, receive, process
+
+    # RPC semantic conventions
+    - rpc.system # grpc, thrift, etc.
+    - rpc.service # Service name
+    - rpc.method # Method name
+
+    # GenAI/LLM semantic conventions
+    - gen_ai.system # openai, anthropic, etc.
+    - gen_ai.request.model # gpt-4, claude-3, etc.
+    - gen_ai.response.model
+    - llm.system
+    - llm.request.type # chat, completion, embedding
+
+    # Error tracking
+    - error.type
+    - exception.type
+    - exception.message
+
+  int:
+    - http.status_code
+    - http.request.body.size
+    - http.response.body.size
+    - rpc.grpc.status_code
+    - gen_ai.usage.input_tokens
+    - gen_ai.usage.output_tokens
+    - gen_ai.usage.total_tokens
+    - db.connection_pool.size
+
+  double:
+    - http.request.size
+    - http.response.size
+    - gen_ai.usage.cost # Cost tracking for LLM calls
+    - db.query.duration
+
+  bool:
+    - http.request.compressed
+    - http.response.compressed
+
+metrics:
+  # Metric data point attributes (labels)
+  string:
+    - endpoint # API endpoint
+    - method # HTTP method
+    - status_code # Status code as string
+    - operation # Operation name
+    - job # Prometheus job label
+    - instance # Prometheus instance label
+    - le # Histogram bucket (less than or equal)
