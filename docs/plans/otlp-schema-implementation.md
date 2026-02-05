@@ -77,9 +77,9 @@ kubectl -n ollyscale logs -l app=ollyscale-api --tail=100
 
 ### 3. SQL Views for Abstraction
 
-Views provide backward compatibility layer and simplify queries by pre-joining attribute tables.
+Views simplify queries by pre-joining attribute tables with fact tables, providing a denormalized view of the data.
 
-### 4. API Refactoring
+### 4. API Structure
 
 **New API Structure**:
 
@@ -1635,7 +1635,7 @@ class TracesStorage(SignalStorage):
 - [x] **Unit tests**: Log fact insertion, attribute storage (17 tests)
 - [x] Create SQL views for logs (`v_otel_logs_enriched`)
 - [x] **Test views**: Query correctness, attribute aggregation
-- [x] Update logs API: `/api/logs` with attribute filters
+- [x] Implement logs API: `/api/logs` with attribute filters
 - [x] Add trace correlation APIs: `/api/logs/trace/{trace_id}/spans` and `/api/logs/trace/{trace_id}/span/{span_id}`
 - [x] **Unit tests**: API endpoint responses, filter parsing, span grouping logic
 - [x] **Integration tests**: End-to-end log ingestion → query
@@ -1651,7 +1651,7 @@ class TracesStorage(SignalStorage):
 - [x] **Unit tests**: Span retrieval, parent-child relationships
 - [x] Create views: `v_otel_traces`, `v_otel_spans_enriched`
 - [x] **Test views**: Trace aggregation, span joins, event/link inclusion
-- [x] Update API: `/api/traces` (list) and `/api/traces/{trace_id}/spans` (details)
+- [x] Implement API: `/api/traces` (list) and `/api/traces/{trace_id}/spans` (details)
 - [x] **Unit tests**: API responses, trace timeline ordering
 - [x] **Integration tests**: Trace ingestion → query → span retrieval
 - [x] **Deploy**: `task deploy` - verify traces work
@@ -1664,40 +1664,56 @@ class TracesStorage(SignalStorage):
 - [x] **Unit tests**: Metric hash calculation, data point insertion per type (8 tests)
 - [x] Create views: `v_otel_metrics_enriched` (unified view of all metric types)
 - [x] **Test views**: Metric queries, label aggregation
-- [ ] Update metrics API: `/api/metrics/series`, `/api/metrics/{name}/labels` (NEXT)
-- [ ] **Unit tests**: API responses, aggregation correctness (NEXT)
+- [x] Implement metrics API: `/api/metrics/search`, `/api/metrics/{name}/labels`
+- [x] **Unit tests**: API responses, aggregation correctness
 - [ ] **Integration tests**: Metric ingestion → query → label exploration (NEXT)
 - [x] **Deploy**: `task deploy` - verify metrics work
 - [x] **Validation**: Test all metric types (gauge, sum, histogram, exp_histogram, summary)
 
-### Phase 5: Optimizations & Cleanup (Week 5)
+### Phase 5: Cleanup & Optimizations (Week 5) 🔄 IN PROGRESS
 **Commit Strategy**: Single commit for entire phase upon completion
-**NOTE**: This is the first phase that modifies existing code (removes old schema)
+**NOTE**: Remove v1/v2 split and old code
 
+**Step 1: Router Simplification** ✅ COMPLETE
+- [x] Rename `logs_v2.py` → `logs.py`
+- [x] Rename `traces_v2.py` → `traces.py`
+- [x] Rename `metrics_v2.py` → `metrics.py`
+- [x] Remove `/v2` prefix from router paths
+- [x] Update `app/main.py` to use new router names
+- [x] Remove old `query.py` router entirely
+- [x] Remove old API tests (test_api_query.py, test_api_errors.py)
+- [x] **Tests**: All 170 tests passing
+- [ ] **Deploy**: `task deploy` - verify all endpoints work (NEXT)
+
+**Step 2: Old Schema Removal**
+- [ ] Remove old schema models/tables
+- [ ] **Tests**: Update remaining tests to use new schema only
+- [ ] Update documentation (API docs, architecture docs)
+
+**Step 3: Performance Optimization**
 - [ ] Add database partitioning for fact tables
 - [ ] **Tests**: Verify partition pruning works
 - [ ] Query performance tuning (EXPLAIN ANALYZE on slow queries)
 - [ ] **Benchmarks**: Measure query latency improvements
-- [ ] Remove old schema models/tables
-- [ ] **Tests**: Update remaining tests to use new schema
-- [ ] Update documentation (API docs, architecture docs)
+
+**Final Validation**:
 - [ ] **Deploy**: `task deploy` - final production validation
-- [ ] **Final validation**: Full end-to-end smoke test of all signals
-- [ ] Performance benchmarks (document improvements vs old schema)
-- [ ] **Code review**: Final DRY compliance check, remove any duplication
+- [ ] **Full smoke test**: Ingest & query all signal types
+- [ ] Performance benchmarks (vs old schema)
+- [ ] **Code review**: Final DRY compliance check
 
 ---
 
-## Migration from Old Schema
+## Deployment Strategy
 
-Since this is a **breaking change**, migration is simple:
+This is a **clean break** deployment:
 
-1. **Deploy new code**: Schema already exists (migrations ran successfully)
-2. **Start fresh**: No data migration - new data goes to new schema
-3. **Old data**: Can remain in old tables or be dropped
-4. **Cutover**: Simply deploy new API version
+1. **Empty database**: Deploy to fresh database (no data migration needed)
+2. **New schema only**: Alembic migrations create new OTLP-aligned tables
+3. **New APIs only**: All endpoints use new schema directly
+4. **No versioning**: No v1/v2 API versions - just replace old implementation
 
-**No dual-write complexity** - clean break from old schema.
+**Rationale**: Simpler codebase, no legacy support burden, clean architecture.
 
 ---
 

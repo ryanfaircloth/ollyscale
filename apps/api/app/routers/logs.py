@@ -14,7 +14,7 @@ from sqlmodel import Session
 from app.dependencies import get_db_session
 from app.storage.logs_storage import LogsStorage
 
-router = APIRouter(prefix="/v2/logs", tags=["logs-v2"])
+router = APIRouter(prefix="/logs", tags=["logs"])
 logger = logging.getLogger(__name__)
 
 
