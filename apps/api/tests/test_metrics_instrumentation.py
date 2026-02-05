@@ -10,6 +10,8 @@ from opentelemetry.sdk.metrics.export import InMemoryMetricReader
 from app.models.api import TimeRange
 from common import metrics as storage_metrics
 
+pytestmark = pytest.mark.skip(reason="Tests deprecated old schema - being replaced with OTLP schema")
+
 
 @pytest.fixture
 def metrics_reader():

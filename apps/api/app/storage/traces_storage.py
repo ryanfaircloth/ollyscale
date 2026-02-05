@@ -10,7 +10,7 @@ Handles OTLP trace/span record ingestion using the new schema:
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from sqlalchemy import text
 from sqlmodel import Session
@@ -26,6 +26,7 @@ from app.models.otlp_schema import (
 )
 from app.storage.attribute_manager import AttributeManager
 from app.storage.resource_manager import ResourceManager
+from app.utils.timestamp_utils import unix_nano_to_timestamp_and_fraction
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +60,7 @@ class TracesStorage:
             "other": OtelSpanAttrsOther,
         }
 
-    def _flatten_otlp_attributes(self, otlp_attrs: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def _flatten_otlp_attributes(self, otlp_attrs: list[dict[str, Any]]) -> dict[str, Any]:
         """
         Convert OTLP KeyValue list to flat dict.
 
@@ -95,7 +96,7 @@ class TracesStorage:
 
         return flattened
 
-    def store_traces(self, otlp_traces: Dict[str, Any]) -> Dict[str, Any]:
+    def store_traces(self, otlp_traces: dict[str, Any]) -> dict[str, Any]:
         """
         Store OTLP trace records.
 
@@ -167,10 +168,10 @@ class TracesStorage:
 
     def _store_span(
         self,
-        span: Dict[str, Any],
+        span: dict[str, Any],
         resource_id: int,
         scope_id: int,
-        stats: Dict[str, Any],
+        stats: dict[str, Any],
     ) -> int:
         """
         Store a single span record.
@@ -193,6 +194,10 @@ class TracesStorage:
         start_time_unix_nano = int(span.get("startTimeUnixNano", 0))
         end_time_unix_nano = int(span.get("endTimeUnixNano", 0))
         flags = int(span.get("flags", 0))
+
+        # Convert unix_nano to timestamp+nanos_fraction
+        start_time, start_time_nanos_fraction = unix_nano_to_timestamp_and_fraction(start_time_unix_nano)
+        end_time, end_time_nanos_fraction = unix_nano_to_timestamp_and_fraction(end_time_unix_nano)
 
         # Convert IDs to lowercase hex if present
         if trace_id:
@@ -224,8 +229,10 @@ class TracesStorage:
             parent_span_id_hex=parent_span_id_hex,
             name=name,
             kind=kind,
-            start_time_unix_nano=start_time_unix_nano,
-            end_time_unix_nano=end_time_unix_nano,
+            start_time=start_time,
+            start_time_nanos_fraction=start_time_nanos_fraction,
+            end_time=end_time,
+            end_time_nanos_fraction=end_time_nanos_fraction,
             status_code=status_code,
             status_message=status_message,
             flags=flags,
@@ -269,11 +276,11 @@ class TracesStorage:
         self,
         start_time: int,
         end_time: int,
-        service_name: Optional[str] = None,
-        min_duration: Optional[int] = None,
+        service_name: str | None = None,
+        min_duration: int | None = None,
         limit: int = 100,
         offset: int = 0,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Query traces (distinct trace_ids with aggregated metadata).
 
@@ -356,7 +363,7 @@ class TracesStorage:
 
         return traces
 
-    def get_trace_spans(self, trace_id: str) -> List[Dict[str, Any]]:
+    def get_trace_spans(self, trace_id: str) -> list[dict[str, Any]]:
         """
         Get all spans for a trace with full details.
 

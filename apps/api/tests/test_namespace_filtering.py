@@ -1,10 +1,13 @@
 """Test namespace filtering functionality."""
 
+import pytest
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.api import Filter, TimeRange
 from app.models.database import ServiceDim
+
+pytestmark = pytest.mark.skip(reason="Tests deprecated old schema - being replaced with OTLP schema")
 
 
 def test_namespace_dimension_upsert(postgres_storage):

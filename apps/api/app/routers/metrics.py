@@ -1,12 +1,12 @@
-"""v2 metrics query endpoints using new OTLP schema.
+"""Metrics query endpoints using new OTLP schema.
 
 These endpoints use the new denormalized attribute architecture with
-MetricsStorage and v_otel_metrics_enriched view. They coexist with v1 endpoints
-until Phase 5 migration.
+MetricsStorage and v_otel_metrics_enriched view.
 """
 
 import logging
 from collections import defaultdict
+from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
@@ -14,6 +14,7 @@ from sqlalchemy import text
 from sqlmodel import Session
 
 from app.dependencies import get_db_session
+from app.models.api import Metric, MetricSearchRequest, MetricSearchResponse, PaginationResponse
 from app.storage.metrics_storage import MetricsStorage
 
 router = APIRouter(prefix="/metrics", tags=["metrics"])
@@ -25,35 +26,44 @@ def get_metrics_storage(session: Annotated[Session, Depends(get_db_session)]) ->
     return MetricsStorage(session)
 
 
-@router.get("/search")
-def search_metrics_v2(
-    start_time: Annotated[int, Query(description="Start time in nanoseconds since Unix epoch")],
-    end_time: Annotated[int, Query(description="End time in nanoseconds since Unix epoch")],
-    metric_name: Annotated[str | None, Query(description="Filter by metric name")] = None,
-    service_name: Annotated[str | None, Query(description="Filter by service name")] = None,
-    limit: Annotated[int, Query(description="Maximum number of data points per metric", ge=1, le=10000)] = 1000,
-    metrics_storage: Annotated[MetricsStorage, Depends(get_metrics_storage)] = None,
+def rfc3339_to_nanoseconds(rfc3339_str: str) -> int:
+    """Convert RFC3339 timestamp to Unix nanoseconds."""
+    dt = datetime.fromisoformat(rfc3339_str.replace("Z", "+00:00"))
+    return int(dt.timestamp() * 1_000_000_000)
+
+
+@router.post("/search", response_model=MetricSearchResponse)
+def search_metrics(
+    request: MetricSearchRequest,
+    metrics_storage: Annotated[MetricsStorage, Depends(get_metrics_storage)],
 ):
-    """Search metric time series with filters using v2 OTLP schema.
+    """Search metric time series with filters using OTLP schema.
 
-    Returns metric data points with enriched resource and scope context.
-    Uses v_otel_metrics_enriched view for unified queries across all metric types.
-
-    Query parameters:
-    - start_time, end_time: Time range in nanoseconds (required)
-    - metric_name: Filter by metric name (optional, returns all metrics if not specified)
-    - service_name: Filter by service name (optional)
-    - limit: Max data points per metric (default 1000, max 10000)
+    Request body includes:
+    - time_range: Start/end times in RFC3339 format
+    - metric_names: Optional list of metric names to query
+    - filters: Optional filters (service.name)
+    - pagination: Limit and cursor
 
     Response includes:
-    - metrics: Array of metric objects, each containing:
-      - metric_name, unit, metric_type
-      - data_points: Array of time series points with values and attributes
-      - resource: Service name/namespace
-      - scope: Instrumentation library info
-      - aggregation_temporality: Delta or Cumulative
+    - metrics: Array of metric objects with data points
+    - pagination: Has_more flag and next cursor
     """
     try:
+        # Convert RFC3339 to nanoseconds
+        start_time = rfc3339_to_nanoseconds(request.time_range.start_time)
+        end_time = rfc3339_to_nanoseconds(request.time_range.end_time)
+
+        # Extract metric_names from request
+        metric_name = request.metric_names[0] if request.metric_names and len(request.metric_names) > 0 else None
+
+        # Extract service_name from filters
+        service_name = None
+        if request.filters:
+            for f in request.filters:
+                if f.field == "service.name" and f.operator == "eq":
+                    service_name = str(f.value)
+
         # Build query using v_otel_metrics_enriched view
         # Convert nanosecond timestamps to PostgreSQL timestamps
         query = text(
@@ -103,7 +113,7 @@ def search_metrics_v2(
                 "start_time": start_time,
                 "end_time": end_time,
                 "service_name": service_name,
-                "limit": limit,
+                "limit": request.pagination.limit,
             },
         )
 
@@ -117,43 +127,16 @@ def search_metrics_v2(
 
             # Build data point
             point = {
-                "time": row.time,
-                "start_time": row.start_time,
-                "flags": row.flags,
-                "attributes": row.attributes_other,
+                "time_unix_nano": int(row.time.timestamp() * 1_000_000_000) if row.time else None,
+                "value": row.value
+                if row.value is not None
+                else row.sum
+                if row.sum is not None
+                else row.count
+                if row.count is not None
+                else 0,
+                "attributes": [{"key": k, "value": v} for k, v in (row.attributes_other or {}).items()],
             }
-
-            # Add type-specific fields (only non-null values)
-            if row.value is not None:
-                point["value"] = row.value  # Gauge/Sum
-            if row.count is not None:
-                point["count"] = row.count  # Histogram/ExponentialHistogram/Summary
-            if row.sum is not None:
-                point["sum"] = row.sum
-            if row.min is not None:
-                point["min"] = row.min
-            if row.max is not None:
-                point["max"] = row.max
-            if row.explicit_bounds is not None:
-                point["explicit_bounds"] = row.explicit_bounds
-            if row.bucket_counts is not None:
-                point["bucket_counts"] = row.bucket_counts
-            if row.scale is not None:
-                point["scale"] = row.scale
-            if row.zero_count is not None:
-                point["zero_count"] = row.zero_count
-            if row.positive_offset is not None:
-                point["positive_offset"] = row.positive_offset
-            if row.positive_bucket_counts is not None:
-                point["positive_bucket_counts"] = row.positive_bucket_counts
-            if row.negative_offset is not None:
-                point["negative_offset"] = row.negative_offset
-            if row.negative_bucket_counts is not None:
-                point["negative_bucket_counts"] = row.negative_bucket_counts
-            if row.quantile_values is not None:
-                point["quantile_values"] = row.quantile_values
-            if row.exemplars is not None:
-                point["exemplars"] = row.exemplars
 
             metrics_dict[metric_key]["data_points"].append(point)
 
@@ -169,35 +152,35 @@ def search_metrics_v2(
                     "scope_version": row.scope_version,
                 }
 
-        # Build response with array of metrics
-        metrics = []
+        # Build response as list of Metric objects
+        metrics_list = []
         for metric_key, metric_data in metrics_dict.items():
             metadata = metric_data["metadata"]
-            metrics.append(
-                {
-                    "name": metric_key,
-                    "type": metadata["metric_type"],
-                    "unit": metadata["unit"],
-                    "aggregation_temporality": metadata["aggregation_temporality"],
-                    "resource": {
+            metrics_list.append(
+                Metric(
+                    name=metric_key,
+                    metric_type=metadata["metric_type"],
+                    unit=metadata["unit"],
+                    aggregation_temporality=metadata["aggregation_temporality"],
+                    service_name=metadata["service_name"],
+                    service_namespace=metadata["service_namespace"],
+                    data_points=metric_data["data_points"],
+                    resource={
                         "service_name": metadata["service_name"],
                         "service_namespace": metadata["service_namespace"],
                     },
-                    "scope": {
-                        "name": metadata["scope_name"],
-                        "version": metadata["scope_version"],
-                    },
-                    "data_points": metric_data["data_points"],
-                }
+                    scope={"name": metadata["scope_name"], "version": metadata["scope_version"]},
+                )
             )
 
-        return {
-            "metrics": metrics,
-            "count": len(metrics),
-            "total_data_points": sum(len(m["data_points"]) for m in metrics),
-            "limit": limit,
-            "has_more": len(rows) == limit,
-        }
+        return MetricSearchResponse(
+            metrics=metrics_list,
+            pagination=PaginationResponse(
+                has_more=len(rows) == request.pagination.limit,
+                next_cursor=None,
+                total_count=None,
+            ),
+        )
 
     except Exception as e:
         logger.exception("Failed to search metrics")

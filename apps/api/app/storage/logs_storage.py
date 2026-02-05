@@ -25,6 +25,7 @@ from app.models.otlp_schema import (
 )
 from app.storage.attribute_manager import AttributeManager
 from app.storage.resource_manager import ResourceManager
+from app.utils.timestamp_utils import unix_nano_to_timestamp_and_fraction
 
 logger = logging.getLogger(__name__)
 
@@ -189,6 +190,10 @@ class LogsStorage:
         body_value = log_record.get("body", {})
         flags = int(log_record.get("flags", 0))
 
+        # Convert unix_nano to timestamp+nanos_fraction
+        time, time_nanos_fraction = unix_nano_to_timestamp_and_fraction(time_unix_nano)
+        observed_time, observed_time_nanos_fraction = unix_nano_to_timestamp_and_fraction(observed_time_unix_nano)
+
         # Extract body as string (simplified - could be complex)
         if "stringValue" in body_value:
             body = body_value["stringValue"]
@@ -214,8 +219,10 @@ class LogsStorage:
         log_fact = OtelLogsFact(
             resource_id=resource_id,
             scope_id=scope_id,
-            time_unix_nano=time_unix_nano,
-            observed_time_unix_nano=observed_time_unix_nano,
+            time=time,
+            time_nanos_fraction=time_nanos_fraction,
+            observed_time=observed_time,
+            observed_time_nanos_fraction=observed_time_nanos_fraction,
             severity_number=severity_number,
             severity_text=severity_text,
             body=body,

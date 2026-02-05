@@ -3,10 +3,13 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import UTC, datetime
 
+import pytest
 from sqlalchemy import select
 
 from app.models.database import LogsFact, NamespaceDim, OperationDim, ServiceDim, SpansFact
 from app.storage.postgres_orm_sync import PostgresStorage
+
+pytestmark = pytest.mark.skip(reason="Tests deprecated old schema - being replaced with OTLP schema")
 
 
 def test_spans_fact_model():

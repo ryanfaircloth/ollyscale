@@ -4,11 +4,27 @@ These models map to the denormalized attribute table structure with:
 - Separate resource/scope dimension tables
 - Typed attribute tables (string, int, double, bool, bytes, other)
 - Attribute key registry for deduplication
+
+Timestamp pattern:
+- TIMESTAMP WITH TIME ZONE (microsecond precision) + nanos_fraction (0-999)
+- Full nanosecond precision maintained for OTLP compatibility
 """
 
 from datetime import UTC, datetime
 
-from sqlalchemy import BigInteger, Boolean, Column, Double, ForeignKey, Index, Integer, LargeBinary, SmallInteger, Text
+from sqlalchemy import (
+    TIMESTAMP,
+    BigInteger,
+    Boolean,
+    Column,
+    Double,
+    ForeignKey,
+    Index,
+    Integer,
+    LargeBinary,
+    SmallInteger,
+    Text,
+)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, SQLModel
 
@@ -68,7 +84,7 @@ class OtelLogsFact(SQLModel, table=True):
 
     __tablename__ = "otel_logs_fact"
     __table_args__ = (
-        Index("idx_otel_logs_time", "time_unix_nano"),
+        Index("idx_otel_logs_time", "time", "time_nanos_fraction"),
         Index("idx_otel_logs_resource", "resource_id"),
         Index("idx_otel_logs_severity", "severity_number"),
         Index("idx_otel_logs_trace", "trace_id", "span_id_hex"),
@@ -82,9 +98,11 @@ class OtelLogsFact(SQLModel, table=True):
         default=None, sa_column=Column(BigInteger, ForeignKey("otel_scopes_dim.scope_id"), nullable=True)
     )
 
-    # Timing
-    time_unix_nano: int = Field(sa_column=Column(BigInteger, nullable=False))
-    observed_time_unix_nano: int = Field(sa_column=Column(BigInteger, nullable=False))
+    # Timing - TIMESTAMP (microsecond precision) + nanos_fraction (0-999) for full nanosecond precision
+    time: datetime = Field(sa_column=Column(TIMESTAMP(timezone=True), nullable=False))
+    time_nanos_fraction: int = Field(default=0, sa_column=Column(SmallInteger, nullable=False))
+    observed_time: datetime = Field(sa_column=Column(TIMESTAMP(timezone=True), nullable=False))
+    observed_time_nanos_fraction: int = Field(default=0, sa_column=Column(SmallInteger, nullable=False))
 
     # Severity
     severity_number: int | None = Field(default=None, sa_column=Column(SmallInteger, nullable=True))
@@ -221,7 +239,7 @@ class OtelSpansFact(SQLModel, table=True):
         Index("idx_otel_spans_trace_span", "trace_id", "span_id_hex", unique=True),
         Index("idx_otel_spans_trace", "trace_id"),
         Index("idx_otel_spans_resource", "resource_id"),
-        Index("idx_otel_spans_time", "start_time_unix_nano"),
+        Index("idx_otel_spans_time", "start_time", "start_time_nanos_fraction"),
         Index("idx_otel_spans_parent", "parent_span_id_hex"),
     )
 
@@ -242,9 +260,11 @@ class OtelSpansFact(SQLModel, table=True):
     name: str = Field(sa_column=Column(Text, nullable=False))
     kind: int = Field(sa_column=Column(SmallInteger, nullable=False))  # SpanKind enum
 
-    # Timing
-    start_time_unix_nano: int = Field(sa_column=Column(BigInteger, nullable=False))
-    end_time_unix_nano: int = Field(sa_column=Column(BigInteger, nullable=False))
+    # Timing - TIMESTAMP (microsecond precision) + nanos_fraction (0-999) for full nanosecond precision
+    start_time: datetime = Field(sa_column=Column(TIMESTAMP(timezone=True), nullable=False))
+    start_time_nanos_fraction: int = Field(default=0, sa_column=Column(SmallInteger, nullable=False))
+    end_time: datetime = Field(sa_column=Column(TIMESTAMP(timezone=True), nullable=False))
+    end_time_nanos_fraction: int = Field(default=0, sa_column=Column(SmallInteger, nullable=False))
 
     # Status
     status_code: int = Field(sa_column=Column(SmallInteger, nullable=False))  # StatusCode enum
@@ -356,4 +376,3 @@ class OtelSpanAttrsOther(SQLModel, table=True):
         )
     )
     attributes: dict = Field(sa_column=Column(JSONB, nullable=False))
-

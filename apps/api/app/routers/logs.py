@@ -1,17 +1,18 @@
-"""v2 logs query endpoints using new OTLP schema.
+"""Logs query endpoints using new OTLP schema.
 
 These endpoints use the new denormalized attribute architecture with
-LogsStorage and v_otel_logs_enriched view. They coexist with v1 endpoints
-until Phase 5 migration.
+LogsStorage and v_otel_logs_enriched view.
 """
 
 import logging
+from datetime import datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Path, status
 from sqlmodel import Session
 
 from app.dependencies import get_db_session
+from app.models.api import LogRecord, LogSearchRequest, LogSearchResponse, PaginationResponse
 from app.storage.logs_storage import LogsStorage
 
 router = APIRouter(prefix="/logs", tags=["logs"])
@@ -23,56 +24,95 @@ def get_logs_storage(session: Annotated[Session, Depends(get_db_session)]) -> Lo
     return LogsStorage(session)
 
 
-@router.get("/search")
-def search_logs_v2(
-    start_time: Annotated[int, Query(description="Start time in nanoseconds since Unix epoch")],
-    end_time: Annotated[int, Query(description="End time in nanoseconds since Unix epoch")],
-    severity_min: Annotated[int | None, Query(description="Minimum severity number (1-24)", ge=1, le=24)] = None,
-    trace_id: Annotated[str | None, Query(description="Filter by trace ID", max_length=32)] = None,
-    service_name: Annotated[str | None, Query(description="Filter by service name")] = None,
-    limit: Annotated[int, Query(description="Maximum number of results", ge=1, le=1000)] = 100,
-    offset: Annotated[int, Query(description="Result offset for pagination", ge=0)] = 0,
-    logs_storage: Annotated[LogsStorage, Depends(get_logs_storage)] = None,
+def rfc3339_to_nanoseconds(rfc3339_str: str) -> int:
+    """Convert RFC3339 timestamp to Unix nanoseconds."""
+    dt = datetime.fromisoformat(rfc3339_str.replace("Z", "+00:00"))
+    return int(dt.timestamp() * 1_000_000_000)
+
+
+def nanoseconds_to_rfc3339(nanos: int) -> str:
+    """Convert Unix nanoseconds to RFC3339 timestamp."""
+    seconds = nanos / 1_000_000_000
+    dt = datetime.fromtimestamp(seconds)
+    return dt.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+
+
+@router.post("/search", response_model=LogSearchResponse)
+def search_logs(
+    request: LogSearchRequest,
+    logs_storage: Annotated[LogsStorage, Depends(get_logs_storage)],
 ):
-    """Search logs with filters using v2 OTLP schema.
+    """Search logs with filters using OTLP schema.
 
-    Returns logs with enriched attributes from typed tables and JSONB catch-all.
-    Uses v_otel_logs_enriched view for efficient querying.
-
-    Query parameters:
-    - start_time, end_time: Time range in nanoseconds (required)
-    - severity_min: Filter logs with severity >= this value
-    - trace_id: Filter logs by trace correlation
-    - service_name: Filter logs by service
-    - limit: Max results (default 100, max 1000)
-    - offset: Pagination offset (default 0)
+    Request body includes:
+    - time_range: Start/end times in RFC3339 format
+    - filters: Optional filters (severity, trace_id, service.name)
+    - pagination: Limit and cursor
 
     Response includes:
-    - log_id, timestamps, severity, body
-    - trace_id, span_id for correlation
-    - attributes: All attributes (promoted + other) as JSONB
-    - resource_attributes: Service context
-    - scope_attributes: Instrumentation library
-    - semantic_type: Detected type (ai_agent, http, db, messaging, general)
+    - logs: Array of log records with RFC3339 timestamps
+    - pagination: Has_more flag and next cursor
     """
     try:
+        # Convert RFC3339 to nanoseconds
+        start_time = rfc3339_to_nanoseconds(request.time_range.start_time)
+        end_time = rfc3339_to_nanoseconds(request.time_range.end_time)
+
+        # Extract filters
+        severity_min = None
+        trace_id = None
+        service_name = None
+
+        if request.filters:
+            for f in request.filters:
+                if f.field == "severity_number" and f.operator == "gte":
+                    severity_min = int(f.value)
+                elif f.field == "trace_id" and f.operator == "eq":
+                    trace_id = str(f.value)
+                elif f.field == "service.name" and f.operator == "eq":
+                    service_name = str(f.value)
+
+        # Query storage
         logs = logs_storage.get_logs(
             start_time=start_time,
             end_time=end_time,
             severity_min=severity_min,
             trace_id=trace_id,
             service_name=service_name,
-            limit=limit,
-            offset=offset,
+            limit=request.pagination.limit,
+            offset=0,  # TODO: cursor-based pagination
         )
 
-        return {
-            "logs": logs,
-            "count": len(logs),
-            "limit": limit,
-            "offset": offset,
-            "has_more": len(logs) == limit,  # If full page, more might exist
-        }
+        # Convert to API models with RFC3339 timestamps
+        log_records = []
+        for log in logs:
+            log_records.append(
+                LogRecord(
+                    log_id=str(log.get("log_id")),
+                    timestamp=nanoseconds_to_rfc3339(log["time_unix_nano"]),
+                    observed_timestamp=nanoseconds_to_rfc3339(log["observed_time_unix_nano"])
+                    if log.get("observed_time_unix_nano")
+                    else None,
+                    severity_number=log.get("severity_number"),
+                    severity_text=log.get("severity_text"),
+                    body=log.get("body"),
+                    attributes=[{"key": k, "value": v} for k, v in (log.get("attributes") or {}).items()],
+                    trace_id=log.get("trace_id"),
+                    span_id=log.get("span_id_hex"),
+                    service_name=log.get("service_name"),
+                    resource=log.get("resource_attributes"),
+                    scope=log.get("scope_attributes"),
+                )
+            )
+
+        return LogSearchResponse(
+            logs=log_records,
+            pagination=PaginationResponse(
+                has_more=len(logs) == request.pagination.limit,
+                next_cursor=None,  # TODO: implement cursors
+                total_count=None,
+            ),
+        )
 
     except Exception as e:
         logger.exception("Failed to search logs")

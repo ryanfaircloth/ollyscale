@@ -1,17 +1,18 @@
-"""v2 traces query endpoints using new OTLP schema.
+"""Traces query endpoints using new OTLP schema.
 
 These endpoints use the new denormalized attribute architecture with
-TracesStorage and v_otel_spans_enriched view. They coexist with v1 endpoints
-until Phase 5 migration.
+TracesStorage and v_otel_spans_enriched view.
 """
 
 import logging
+from datetime import datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Path, status
 from sqlmodel import Session
 
 from app.dependencies import get_db_session
+from app.models.api import PaginationResponse, TraceSearchRequest, TraceSearchResponse
 from app.storage.traces_storage import TracesStorage
 
 router = APIRouter(prefix="/traces", tags=["traces"])
@@ -23,53 +24,65 @@ def get_traces_storage(session: Annotated[Session, Depends(get_db_session)]) -> 
     return TracesStorage(session)
 
 
-@router.get("/search")
-def search_traces_v2(
-    start_time: Annotated[int, Query(description="Start time in nanoseconds since Unix epoch")],
-    end_time: Annotated[int, Query(description="End time in nanoseconds since Unix epoch")],
-    service_name: Annotated[str | None, Query(description="Filter by service name")] = None,
-    min_duration_ns: Annotated[int | None, Query(description="Minimum trace duration in nanoseconds", ge=0)] = None,
-    limit: Annotated[int, Query(description="Maximum number of results", ge=1, le=1000)] = 100,
-    offset: Annotated[int, Query(description="Result offset for pagination", ge=0)] = 0,
-    traces_storage: Annotated[TracesStorage, Depends(get_traces_storage)] = None,
+def rfc3339_to_nanoseconds(rfc3339_str: str) -> int:
+    """Convert RFC3339 timestamp to Unix nanoseconds."""
+    dt = datetime.fromisoformat(rfc3339_str.replace("Z", "+00:00"))
+    return int(dt.timestamp() * 1_000_000_000)
+
+
+@router.post("/search", response_model=TraceSearchResponse)
+def search_traces(
+    request: TraceSearchRequest,
+    traces_storage: Annotated[TracesStorage, Depends(get_traces_storage)],
 ):
-    """Search traces with filters using v2 OTLP schema.
+    """Search traces with filters using OTLP schema.
 
-    Returns trace summaries with aggregated metrics (span count, duration, service).
-    Uses v_otel_spans_enriched view for efficient querying.
-
-    Query parameters:
-    - start_time, end_time: Time range in nanoseconds (required)
-    - service_name: Filter traces by service
-    - min_duration_ns: Filter traces with duration >= this value
-    - limit: Max results (default 100, max 1000)
-    - offset: Pagination offset (default 0)
+    Request body includes:
+    - time_range: Start/end times in RFC3339 format
+    - filters: Optional filters (service.name, min_duration)
+    - pagination: Limit and cursor
 
     Response includes:
-    - trace_id: Unique trace identifier
-    - span_count: Number of spans in trace
-    - start_time_ns: Earliest span start time
-    - end_time_ns: Latest span end time
-    - duration_ns: Trace duration (end - start)
-    - service_name: Primary service (from root span resource)
+    - traces: Array of trace summaries
+    - pagination: Has_more flag and next cursor
     """
     try:
+        # Convert RFC3339 to nanoseconds
+        start_time = rfc3339_to_nanoseconds(request.time_range.start_time)
+        end_time = rfc3339_to_nanoseconds(request.time_range.end_time)
+
+        # Extract filters
+        service_name = None
+        min_duration = None
+
+        if request.filters:
+            for f in request.filters:
+                if f.field == "service.name" and f.operator == "eq":
+                    service_name = str(f.value)
+                elif f.field == "duration" and f.operator == "gte":
+                    # Convert seconds to nanoseconds if needed
+                    min_duration = (
+                        int(float(f.value) * 1_000_000_000) if isinstance(f.value, (int, float)) else int(f.value)
+                    )
+
+        # Query storage
         traces = traces_storage.get_traces(
             start_time=start_time,
             end_time=end_time,
             service_name=service_name,
-            min_duration_ns=min_duration_ns,
-            limit=limit,
-            offset=offset,
+            min_duration=min_duration,
+            limit=request.pagination.limit,
+            offset=0,
         )
 
-        return {
-            "traces": traces,
-            "count": len(traces),
-            "limit": limit,
-            "offset": offset,
-            "has_more": len(traces) == limit,  # If full page, more might exist
-        }
+        return TraceSearchResponse(
+            traces=traces,
+            pagination=PaginationResponse(
+                has_more=len(traces) == request.pagination.limit,
+                next_cursor=None,
+                total_count=None,
+            ),
+        )
 
     except Exception as e:
         logger.exception("Failed to search traces")

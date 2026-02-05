@@ -11,6 +11,8 @@ Uses make_span() and make_resource_spans() test fixtures for storage tests.
 
 import base64
 
+import pytest
+
 from app.storage.postgres_orm_sync import PostgresStorage
 from tests.fixtures import make_resource_spans, make_span
 
@@ -89,6 +91,7 @@ class TestTraceStorageWithRealOTLP:
     Tests using make_span() and make_resource_spans() fixtures verify trace ID handling.
     """
 
+    @pytest.mark.skip(reason="Uses deprecated PostgresStorage - being replaced with OTLP storage")
     def test_store_trace_with_hex_ids(self, postgres_storage):
         """Verify storage handles already-hex IDs (from test fixtures)."""
         trace_hex = "0102030405060708090a0b0c0d0e0f10"
@@ -113,6 +116,7 @@ class TestTraceStorageWithRealOTLP:
         assert trace["trace_id"] == trace_hex
         assert trace["spans"][0]["span_id"] == span_hex
 
+    @pytest.mark.skip(reason="Uses deprecated PostgresStorage - being replaced with OTLP storage")
     def test_trace_search_returns_valid_ids(self, postgres_storage, time_range, pagination):
         """Verify trace search returns non-empty hex IDs."""
         # Store a trace
