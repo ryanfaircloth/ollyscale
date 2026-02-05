@@ -280,7 +280,9 @@ export default function MetricsPage() {
                   <td className="small">
                     {metric.data_points && metric.data_points.length > 0
                       ? formatTimestamp(
-                          metric.data_points[metric.data_points.length - 1].timestamp
+                          metric.data_points[metric.data_points.length - 1].time
+                            ? new Date(metric.data_points[metric.data_points.length - 1].time! / 1_000_000).toISOString()
+                            : new Date().toISOString()
                         )
                       : '-'}
                   </td>

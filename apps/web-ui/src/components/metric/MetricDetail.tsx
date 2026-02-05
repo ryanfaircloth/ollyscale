@@ -40,11 +40,13 @@ export function MetricDetail({ metric, onHide }: MetricDetailProps) {
 
   // Prepare chart data
   const chartData = {
-    labels: metric.data_points.map((dp) => new Date(dp.timestamp)),
+    labels: metric.data_points.map((dp) =>
+      new Date(dp.time ? dp.time / 1_000_000 : 0)
+    ),
     datasets: [
       {
         label: metric.name,
-        data: metric.data_points.map((dp) => dp.value),
+        data: metric.data_points.map((dp) => dp.value ?? dp.sum ?? dp.count ?? 0),
         borderColor: 'rgb(75, 192, 192)',
         backgroundColor: 'rgba(75, 192, 192, 0.2)',
         tension: 0.1,
@@ -250,9 +252,11 @@ export function MetricDetail({ metric, onHide }: MetricDetailProps) {
                 <tbody>
                   {[...metric.data_points].reverse().map((dp, index) => (
                     <tr key={index}>
-                      <td className="small">{formatTimestamp(dp.timestamp)}</td>
+                      <td className="small">
+                        {formatTimestamp(dp.time ? new Date(dp.time / 1_000_000).toISOString() : new Date().toISOString())}
+                      </td>
                       <td>
-                        <code>{formatNumber(dp.value)}</code>
+                        <code>{formatNumber(dp.value ?? dp.sum ?? dp.count ?? 0)}</code>
                         {metric.unit && <span className="ms-2 text-muted">{metric.unit}</span>}
                       </td>
                     </tr>
