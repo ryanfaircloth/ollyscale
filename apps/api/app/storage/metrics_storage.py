@@ -16,7 +16,7 @@ Handles OTLP metrics record ingestion using the new schema:
 import hashlib
 import json
 import logging
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from sqlalchemy import text
 from sqlmodel import Session
@@ -48,9 +48,9 @@ class MetricsStorage:
         self.attribute_manager = AttributeManager(session)
 
         # Metric dimension cache (metric_hash -> metric_id)
-        self._metric_cache: Dict[str, int] = {}
+        self._metric_cache: dict[str, int] = {}
 
-    def _flatten_otlp_attributes(self, otlp_attrs: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def _flatten_otlp_attributes(self, otlp_attrs: list[dict[str, Any]]) -> dict[str, Any]:
         """
         Convert OTLP KeyValue list to flat dict.
 
@@ -92,9 +92,9 @@ class MetricsStorage:
         metric_type: str,
         unit: str,
         description: str,
-        is_monotonic: Optional[bool],
-        aggregation_temporality: Optional[str],
-    ) -> Tuple[str, str]:
+        is_monotonic: bool | None,
+        aggregation_temporality: str | None,
+    ) -> tuple[str, str]:
         """
         Compute metric hashes for deduplication.
 
@@ -125,7 +125,7 @@ class MetricsStorage:
         identity_hash = hashlib.sha256(identity_str.encode()).hexdigest()
 
         # Full hash includes description
-        full_parts = identity_parts + [description or ""]
+        full_parts = [*identity_parts, description or ""]
         full_str = "|".join(full_parts)
         metric_hash = hashlib.sha256(full_str.encode()).hexdigest()
 
@@ -135,12 +135,12 @@ class MetricsStorage:
         self,
         name: str,
         metric_type_id: int,
-        unit: Optional[str],
-        description: Optional[str],
-        is_monotonic: Optional[bool],
-        aggregation_temporality_id: Optional[int],
-        schema_url: Optional[str],
-    ) -> Tuple[int, bool]:
+        unit: str | None,
+        description: str | None,
+        is_monotonic: bool | None,
+        aggregation_temporality_id: int | None,
+        schema_url: str | None,
+    ) -> tuple[int, bool]:
         """
         Get or create metric dimension record.
 
@@ -225,7 +225,7 @@ class MetricsStorage:
         self._metric_cache[metric_hash] = metric_id
         return metric_id, True
 
-    def store_metrics(self, otlp_metrics: Dict[str, Any]) -> Dict[str, Any]:
+    def store_metrics(self, otlp_metrics: dict[str, Any]) -> dict[str, Any]:
         """
         Store OTLP metrics records.
 
@@ -294,15 +294,14 @@ class MetricsStorage:
                 for metric in metrics:
                     self._store_metric(metric, resource_id, scope_id, stats)
 
-        self.session.commit()
         return stats
 
     def _store_metric(
         self,
-        metric: Dict[str, Any],
+        metric: dict[str, Any],
         resource_id: int,
         scope_id: int,
-        stats: Dict[str, Any],
+        stats: dict[str, Any],
     ) -> None:
         """
         Store a single metric with all its data points.
@@ -335,13 +334,13 @@ class MetricsStorage:
 
     def _store_gauge(
         self,
-        gauge: Dict[str, Any],
+        gauge: dict[str, Any],
         name: str,
         description: str,
         unit: str,
         resource_id: int,
         scope_id: int,
-        stats: Dict[str, Any],
+        stats: dict[str, Any],
     ) -> None:
         """Store Gauge metric data points."""
         metric_type_id = 1  # Gauge
@@ -357,13 +356,13 @@ class MetricsStorage:
 
     def _store_sum(
         self,
-        sum_metric: Dict[str, Any],
+        sum_metric: dict[str, Any],
         name: str,
         description: str,
         unit: str,
         resource_id: int,
         scope_id: int,
-        stats: Dict[str, Any],
+        stats: dict[str, Any],
     ) -> None:
         """Store Sum metric data points."""
         metric_type_id = 2  # Sum
@@ -385,11 +384,11 @@ class MetricsStorage:
 
     def _store_number_data_point(
         self,
-        dp: Dict[str, Any],
+        dp: dict[str, Any],
         metric_id: int,
         resource_id: int,
         scope_id: int,
-        stats: Dict[str, Any],
+        stats: dict[str, Any],
     ) -> int:
         """
         Store a number (Gauge/Sum) data point.
@@ -474,13 +473,13 @@ class MetricsStorage:
 
     def _store_histogram(
         self,
-        histogram: Dict[str, Any],
+        histogram: dict[str, Any],
         name: str,
         description: str,
         unit: str,
         resource_id: int,
         scope_id: int,
-        stats: Dict[str, Any],
+        stats: dict[str, Any],
     ) -> None:
         """Store Histogram metric data points."""
         metric_type_id = 3  # Histogram
@@ -499,11 +498,11 @@ class MetricsStorage:
 
     def _store_histogram_data_point(
         self,
-        dp: Dict[str, Any],
+        dp: dict[str, Any],
         metric_id: int,
         resource_id: int,
         scope_id: int,
-        stats: Dict[str, Any],
+        stats: dict[str, Any],
     ) -> int:
         """Store a histogram data point."""
         start_time_unix_nano = int(dp.get("startTimeUnixNano", 0)) if "startTimeUnixNano" in dp else None
@@ -571,13 +570,13 @@ class MetricsStorage:
 
     def _store_exp_histogram(
         self,
-        exp_histogram: Dict[str, Any],
+        exp_histogram: dict[str, Any],
         name: str,
         description: str,
         unit: str,
         resource_id: int,
         scope_id: int,
-        stats: Dict[str, Any],
+        stats: dict[str, Any],
     ) -> None:
         """Store ExponentialHistogram metric data points."""
         metric_type_id = 4  # ExponentialHistogram
@@ -596,11 +595,11 @@ class MetricsStorage:
 
     def _store_exp_histogram_data_point(
         self,
-        dp: Dict[str, Any],
+        dp: dict[str, Any],
         metric_id: int,
         resource_id: int,
         scope_id: int,
-        stats: Dict[str, Any],
+        stats: dict[str, Any],
     ) -> int:
         """Store an exponential histogram data point."""
         start_time_unix_nano = int(dp.get("startTimeUnixNano", 0)) if "startTimeUnixNano" in dp else None
@@ -687,13 +686,13 @@ class MetricsStorage:
 
     def _store_summary(
         self,
-        summary: Dict[str, Any],
+        summary: dict[str, Any],
         name: str,
         description: str,
         unit: str,
         resource_id: int,
         scope_id: int,
-        stats: Dict[str, Any],
+        stats: dict[str, Any],
     ) -> None:
         """Store Summary metric data points."""
         metric_type_id = 5  # Summary
@@ -709,11 +708,11 @@ class MetricsStorage:
 
     def _store_summary_data_point(
         self,
-        dp: Dict[str, Any],
+        dp: dict[str, Any],
         metric_id: int,
         resource_id: int,
         scope_id: int,
-        stats: Dict[str, Any],
+        stats: dict[str, Any],
     ) -> int:
         """Store a summary data point."""
         start_time_unix_nano = int(dp.get("startTimeUnixNano", 0)) if "startTimeUnixNano" in dp else None
@@ -771,9 +770,9 @@ class MetricsStorage:
         self,
         start_time: int,
         end_time: int,
-        metric_name: Optional[str] = None,
+        metric_name: str | None = None,
         limit: int = 1000,
-    ) -> List[tuple]:
+    ) -> list[tuple]:
         """
         Query metrics data points (simplified query across all types).
 

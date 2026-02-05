@@ -98,7 +98,7 @@ class OtlpStorage:
         total_count = 0
         for resource_log in resource_logs:
             result = self.logs.store_logs(resource_log)
-            total_count += result.get("log_count", 0)
+            total_count += result.get("logs_stored", 0)
 
         self.session.commit()
         return total_count
@@ -119,7 +119,7 @@ class OtlpStorage:
         total_count = 0
         for resource_span in resource_spans:
             result = self.traces.store_traces(resource_span)
-            total_count += result.get("span_count", 0)
+            total_count += result.get("spans_stored", 0)
 
         self.session.commit()
         return total_count
@@ -140,7 +140,7 @@ class OtlpStorage:
         total_count = 0
         for resource_metric in resource_metrics:
             result = self.metrics.store_metrics(resource_metric)
-            total_count += result.get("data_point_count", 0)
+            total_count += result.get("data_points_stored", 0)
 
         self.session.commit()
         return total_count

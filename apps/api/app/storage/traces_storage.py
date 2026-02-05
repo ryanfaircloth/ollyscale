@@ -163,7 +163,6 @@ class TracesStorage:
                     self._store_span(span, resource_id, scope_id, stats)
                     stats["spans_stored"] += 1
 
-        self.session.commit()
         return stats
 
     def _store_span(

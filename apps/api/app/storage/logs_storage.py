@@ -160,7 +160,6 @@ class LogsStorage:
                     self._store_log_record(log_record, resource_id, scope_id, stats)
                     stats["logs_stored"] += 1
 
-        self.session.commit()
         return stats
 
     def _store_log_record(
