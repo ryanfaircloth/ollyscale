@@ -60,10 +60,10 @@ task deploy
 kubectl -n ollyscale logs -l job-name=ollyscale-migration --tail=50
 
 # Check receiver health (OTLP ingestion):
-kubectl -n ollyscale logs -l app=ollyscale-receiver --tail=100
+kubectl -n ollyscale logs -l app.kubernetes.io/component=ollyscale-receiver --tail=100
 
 # Check API health:
-kubectl -n ollyscale logs -l app=ollyscale-api --tail=100
+kubectl -n ollyscale logs -l app.kubernetes.io/component=ollyscale-api --tail=100
 ```
 
 **Test Checklist** (complete before marking task done):
@@ -1683,14 +1683,22 @@ class TracesStorage(SignalStorage):
 - [x] Remove old `query.py` router entirely
 - [x] Remove old API tests (test_api_query.py, test_api_errors.py)
 - [x] **Tests**: All 170 tests passing
-- [ ] **Deploy**: `task deploy` - verify all endpoints work (NEXT)
+- [x] **Deploy**: `task deploy` - API pods running
 
-**Step 2: Old Schema Removal**
+**Step 2: UI Updates** 🔄 IN PROGRESS (API breaking changes require UI updates)
+- [ ] Update useLogsQuery: GET with nanosecond timestamps
+- [ ] Update useTracesQuery: GET with nanosecond timestamps  
+- [ ] Update useMetricsQuery: Fix path `/api/v2/metrics` → `/api/metrics`
+- [ ] Update response type definitions (new pagination format)
+- [ ] Add timestamp conversion helpers (RFC3339 → nanoseconds)
+- [ ] **Test**: Verify all UI pages load data correctly
+
+**Step 3: Old Schema Removal**
 - [ ] Remove old schema models/tables
 - [ ] **Tests**: Update remaining tests to use new schema only
 - [ ] Update documentation (API docs, architecture docs)
 
-**Step 3: Performance Optimization**
+**Step 4: Performance Optimization**
 - [ ] Add database partitioning for fact tables
 - [ ] **Tests**: Verify partition pruning works
 - [ ] Query performance tuning (EXPLAIN ANALYZE on slow queries)
@@ -1814,20 +1822,20 @@ WHERE o.attributes @> '{"custom.field": "value"}';
 
 ```bash
 # API pods (Gunicorn workers serving /api/v2/* endpoints)
-kubectl get pods -n ollyscale -l app=ollyscale-api
-kubectl logs -n ollyscale -l app=ollyscale-api --tail=100
+kubectl get pods -n ollyscale -l app.kubernetes.io/component=api
+kubectl logs -n ollyscale -l app.kubernetes.io/component=api --tail=100
 
 # OTLP Receiver pods (gRPC/HTTP ingestion on port 4317/4318)
-kubectl get pods -n ollyscale -l app=ollyscale-otlp-receiver
-kubectl logs -n ollyscale -l app=ollyscale-otlp-receiver --tail=100
+kubectl get pods -n ollyscale -l app.kubernetes.io/component=otlp-receiver
+kubectl logs -n ollyscale -l app.kubernetes.io/component=otlp-receiver --tail=100
 
 # Web UI pods (React SPA served by nginx)
-kubectl get pods -n ollyscale -l app=ollyscale-webui
-kubectl logs -n ollyscale -l app=ollyscale-webui --tail=100
+kubectl get pods -n ollyscale -l app.kubernetes.io/component=webui
+kubectl logs -n ollyscale -l app.kubernetes.io/component=webui --tail=100
 
 # OpAMP Server pods (agent configuration management)
-kubectl get pods -n ollyscale -l app=ollyscale-opamp-server
-kubectl logs -n ollyscale -l app=ollyscale-opamp-server --tail=100
+kubectl get pods -n ollyscale -l app.kubernetes.io/component=opamp-server
+kubectl logs -n ollyscale -l app.kubernetes.io/component=opamp-server --tail=100
 
 # Migration job (Alembic database migrations)
 kubectl get jobs -n ollyscale -l app.kubernetes.io/component=migration

@@ -1,6 +1,7 @@
 import { useQuery, type UseQueryOptions } from '@tanstack/react-query';
 import apiClient from '../client';
-import type { TraceSearchRequest, TraceSearchResponse, TraceDetailResponse } from '../types/trace';
+import type { TraceSearchRequest, TraceSearchResponse, TraceDetailResponse, OtlpTraceSearchResponse } from '../types/trace';
+import { rfc3339ToNanoseconds } from '../utils/timestamp';
 
 // Search traces
 export function useTracesQuery(
@@ -10,8 +11,36 @@ export function useTracesQuery(
   return useQuery({
     queryKey: ['traces', 'search', request],
     queryFn: async () => {
-      const response = await apiClient.post<TraceSearchResponse>('/api/traces/search', request);
-      return response.data;
+      // Convert to new OTLP API format
+      const params = {
+        start_time: rfc3339ToNanoseconds(request.time_range.start_time),
+        end_time: rfc3339ToNanoseconds(request.time_range.end_time),
+        limit: request.pagination?.limit || 100,
+        offset: request.pagination?.limit ? (request.pagination.limit * ((request.pagination?.cursor as unknown as number) || 0)) : 0,
+      };
+
+      // Add filters as query params
+      const serviceFilter = request.filters?.find(f => f.field === 'service.name' || f.field === 'service_name');
+      if (serviceFilter) {
+        Object.assign(params, { service_name: serviceFilter.value });
+      }
+
+      const durationFilter = request.filters?.find(f => f.field === 'duration' || f.field === 'duration_ns');
+      if (durationFilter) {
+        Object.assign(params, { min_duration_ns: durationFilter.value });
+      }
+
+      const response = await apiClient.get<OtlpTraceSearchResponse>('/api/traces/search', { params });
+
+      // Convert to old response format for compatibility
+      return {
+        traces: response.data.traces,
+        pagination: {
+          has_more: response.data.has_more,
+          total_count: response.data.count,
+          next_cursor: response.data.has_more ? String(response.data.offset + response.data.limit) : undefined,
+        }
+      };
     },
     ...options,
   });

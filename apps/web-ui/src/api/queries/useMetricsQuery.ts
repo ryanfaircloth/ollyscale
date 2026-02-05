@@ -28,7 +28,7 @@ export function useMetricsQuery(
       }
 
       // Call v2 API endpoint with GET and query parameters
-      const response = await apiClient.get<MetricSearchResponse>('/api/v2/metrics/search', {
+      const response = await apiClient.get<MetricSearchResponse>('/api/metrics/search', {
         params,
       });
       return response.data;

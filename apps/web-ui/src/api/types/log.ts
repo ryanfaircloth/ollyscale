@@ -26,3 +26,22 @@ export interface LogSearchResponse {
   logs: LogRecord[];
   pagination: PaginationResponse;
 }
+
+// New OTLP API types
+export interface LogSearchParams {
+  start_time: number; // nanoseconds
+  end_time: number; // nanoseconds
+  severity_min?: number;
+  trace_id?: string;
+  service_name?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface OtlpLogSearchResponse {
+  logs: LogRecord[];
+  count: number;
+  limit: number;
+  offset: number;
+  has_more: boolean;
+}

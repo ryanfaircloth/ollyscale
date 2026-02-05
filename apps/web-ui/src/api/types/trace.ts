@@ -33,3 +33,21 @@ export interface TraceDetailResponse {
   end_time?: string;
   duration_seconds?: number;
 }
+
+// New OTLP API types
+export interface TraceSearchParams {
+  start_time: number; // nanoseconds
+  end_time: number; // nanoseconds
+  service_name?: string;
+  min_duration_ns?: number;
+  limit?: number;
+  offset?: number;
+}
+
+export interface OtlpTraceSearchResponse {
+  traces: Trace[];
+  count: number;
+  limit: number;
+  offset: number;
+  has_more: boolean;
+}
