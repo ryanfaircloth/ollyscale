@@ -1611,20 +1611,26 @@ class TracesStorage(SignalStorage):
 
 ## Implementation Phases
 
-### Phase 1: Foundation (Week 1)
-- [ ] Create `config/attribute-promotion.yaml` (base configuration)
-- [ ] Create ConfigMap template for `attribute-overrides.yaml` in Helm chart
-- [ ] Implement `AttributePromotionConfig` class with file-based override merging
-- [ ] **Unit tests**: Config loading, YAML override merging, drop list, file not found handling
-- [ ] Implement `AttributeManager` class (DRY: shared across all signals)
-- [ ] **Unit tests**: Attribute promotion, drop filtering, key caching, type extraction
-- [ ] Implement `ResourceManager` class (DRY: shared hash/dedup logic)
-- [ ] **Unit tests**: Hash calculation consistency, deduplication, cache behavior
-- [ ] Update Helm chart values.yaml with attribute override examples
-- [ ] **Deploy**: `task deploy` - verify no regressions, test ConfigMap overrides
-- [ ] **Code review**: Check DRY compliance before proceeding
+### Phase 1: Foundation (Week 1) ✅ COMPLETE
+**Commit Strategy**: Single squashed commit per phase for clean history
+
+- [x] Create `config/attribute-promotion.yaml` (base configuration)
+- [x] Create ConfigMap template for `attribute-overrides.yaml` in Helm chart
+- [x] Implement `AttributePromotionConfig` class with file-based override merging
+- [x] **Unit tests**: Config loading, YAML override merging, drop list, file not found handling (12 tests)
+- [x] Implement `AttributeManager` class (DRY: shared across all signals)
+- [x] **Unit tests**: Attribute promotion, drop filtering, key caching, type extraction (18 tests)
+- [x] Implement `ResourceManager` class (DRY: shared hash/dedup logic)
+- [x] **Unit tests**: Hash calculation consistency, deduplication, cache behavior (18 tests)
+- [x] Update Helm chart values.yaml with attribute override examples
+- [x] **Deploy**: `task deploy` - verify no regressions (193 tests passing, all pods running)
+- [x] **Code review**: DRY compliance verified
+
+**Deliverables**: 48 new tests, 3 manager classes, 2 config files, comprehensive plan document
+**Next**: Squash commits, then proceed to Phase 2
 
 ### Phase 2: Logs (Week 2)
+**Commit Strategy**: Single commit for entire phase upon completion
 - [ ] Complete `LogsStorage` implementation
 - [ ] **Unit tests**: Log fact insertion, attribute storage
 - [ ] Create SQL views for logs (`v_otel_logs_enriched`)
@@ -1637,6 +1643,8 @@ class TracesStorage(SignalStorage):
 - [ ] **Validation**: Check migration logs, test API endpoints with curl/httpie
 
 ### Phase 3: Traces (Week 3)
+**Commit Strategy**: Single commit for entire phase upon completion
+
 - [ ] Implement `TracesStorage` (DRY: reuse ResourceManager, AttributeManager)
 - [ ] **Unit tests**: Span fact insertion, event/link storage
 - [ ] Implement `SpansStorage` for span details
@@ -1650,6 +1658,8 @@ class TracesStorage(SignalStorage):
 - [ ] **Validation**: Test trace queries, check span parent-child relationships
 
 ### Phase 4: Metrics (Week 4)
+**Commit Strategy**: Single commit for entire phase upon completion
+
 - [ ] Implement `MetricsStorage` for all types (DRY: shared metric dimension logic)
 - [ ] **Unit tests**: Metric hash calculation, data point insertion per type
 - [ ] Create views: `v_otel_metrics_number`, `v_otel_metrics_histogram`, etc.
@@ -1661,6 +1671,9 @@ class TracesStorage(SignalStorage):
 - [ ] **Validation**: Test all metric types (gauge, sum, histogram, exp_histogram, summary)
 
 ### Phase 5: Optimizations & Cleanup (Week 5)
+**Commit Strategy**: Single commit for entire phase upon completion
+**NOTE**: This is the first phase that modifies existing code (removes old schema)
+
 - [ ] Add database partitioning for fact tables
 - [ ] **Tests**: Verify partition pruning works
 - [ ] Query performance tuning (EXPLAIN ANALYZE on slow queries)
