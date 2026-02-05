@@ -1,24 +1,26 @@
 """
 Resource Manager
 
-Manages OTLP resource and scope dimension records with hash-based deduplication:
-- SHA-256 hash calculation from sorted attributes
-- Resource/scope deduplication (same hash reuses same ID)
-- service.name and service.namespace extraction for resources
-- last_seen timestamp updates
-- Cache for hash → ID mappings
+Manages OTLP resource and scope dimension records with hash-based deduplication.
+
+CRITICAL: Uses AUTOCOMMIT engine to avoid deadlocks in multi-process ingestion.
+Pattern copied from postgres_orm_sync.py _upsert_resource/_upsert_scope.
 """
 
 import hashlib
 import json
 import logging
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from sqlalchemy.dialects.postgresql import insert as pg_insert
-from sqlmodel import Session, select
+from sqlalchemy import case
+from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.engine import Engine
+from sqlalchemy.orm import Session
 
 from app.models.otlp_schema import OtelResourcesDim, OtelScopesDim
+from app.storage.attribute_manager import AttributeManager
+from app.storage.attribute_promotion_config import AttributePromotionConfig
 
 logger = logging.getLogger(__name__)
 
@@ -27,20 +29,27 @@ class ResourceManager:
     """
     Manages OTLP resource and scope dimension records.
 
-    Provides efficient deduplication using SHA-256 hashes of attributes
-    with in-memory caching.
+    Uses autocommit engine for idempotent, multi-process safe upserts.
+    Each upsert commits immediately - no transaction locks = no deadlocks.
     """
 
-    def __init__(self, session: Session):
+    def __init__(self, autocommit_engine: Engine, config: AttributePromotionConfig):
         """
         Initialize ResourceManager.
 
         Args:
-            session: SQLModel database session
+            autocommit_engine: SQLAlchemy engine with AUTOCOMMIT isolation level
+            config: Attribute promotion configuration
         """
-        self.session = session
+        self.autocommit_engine = autocommit_engine
+        self.config = config
+        self.attr_manager = AttributeManager(autocommit_engine, config)
+
         self._resource_cache: dict[str, int] = {}  # hash -> resource_id
-        self._scope_cache: dict[str, int] = {}  # hash -> scope_id
+        self._scope_cache: dict[tuple[int, str], int] = {}  # (resource_id, hash) -> scope_id
+
+        # Minimum time between last_seen updates (5 minutes default)
+        self._last_seen_update_interval = timedelta(minutes=5)
 
     def calculate_resource_hash(self, attributes: dict[str, Any]) -> str:
         """
@@ -62,216 +71,150 @@ class ResourceManager:
         hash_obj = hashlib.sha256(json_str.encode("utf-8"))
         return hash_obj.hexdigest()
 
-    def _extract_service_name(self, attributes: dict[str, Any]) -> str | None:
+    def calculate_scope_hash(self, scope_name: str, scope_version: str) -> str:
         """
-        Extract service.name from resource attributes.
+        Calculate SHA-256 hash of scope name+version.
 
         Args:
-            attributes: Resource attributes dict
-
-        Returns:
-            service.name value or None
-        """
-        return attributes.get("service.name")
-
-    def _extract_service_namespace(self, attributes: dict[str, Any]) -> str | None:
-        """
-        Extract service.namespace from resource attributes.
-
-        Args:
-            attributes: Resource attributes dict
-
-        Returns:
-            service.namespace value or None
-        """
-        return attributes.get("service.namespace")
-
-    def get_or_create_resource(self, attributes: dict[str, Any]) -> tuple[int, bool, str]:
-        """
-        Get or create resource dimension record with deduplication.
-
-        Args:
-            attributes: Resource attributes dict (flattened, not OTLP AnyValue)
-
-        Returns:
-            Tuple of (resource_id, created, resource_hash) where:
-            - resource_id: Primary key of resource dimension
-            - created: True if new resource was created
-            - resource_hash: SHA-256 hash of attributes
-        """
-        # Calculate hash
-        resource_hash = self.calculate_resource_hash(attributes)
-
-        # Check cache first
-        if resource_hash in self._resource_cache:
-            resource_id = self._resource_cache[resource_hash]
-            # Update last_seen timestamp
-            self._update_resource_last_seen(resource_id)
-            return resource_id, False, resource_hash
-
-        # Query database
-        stmt = select(OtelResourcesDim).where(OtelResourcesDim.resource_hash == resource_hash)
-        existing = self.session.exec(stmt).first()
-
-        if existing:
-            resource_id = existing.resource_id
-            self._resource_cache[resource_hash] = resource_id
-            # Update last_seen
-            self._update_resource_last_seen(resource_id)
-            return resource_id, False, resource_hash
-
-        # Create new resource
-        service_name = self._extract_service_name(attributes)
-        service_namespace = self._extract_service_namespace(attributes)
-
-        insert_stmt = pg_insert(OtelResourcesDim).values(
-            resource_hash=resource_hash,
-            service_name=service_name,
-            service_namespace=service_namespace,
-            attributes=attributes,  # Store full attributes as JSONB
-            first_seen=datetime.now(UTC),
-            last_seen=datetime.now(UTC),
-        )
-        # Upsert for concurrency safety
-        upsert_stmt = insert_stmt.on_conflict_do_update(
-            index_elements=["resource_hash"],
-            set_={
-                "last_seen": insert_stmt.excluded.last_seen,
-                # Don't update attributes/service_name/namespace on conflict
-            },
-        )
-        self.session.exec(upsert_stmt)
-        self.session.commit()
-
-        # Query again to get ID
-        existing = self.session.exec(stmt).first()
-        if existing:
-            resource_id = existing.resource_id
-            self._resource_cache[resource_hash] = resource_id
-            return resource_id, True, resource_hash
-
-        raise RuntimeError("Failed to create resource dimension")
-
-    def _update_resource_last_seen(self, resource_id: int):
-        """
-        Update last_seen timestamp for resource.
-
-        Args:
-            resource_id: Resource dimension ID
-        """
-        stmt = select(OtelResourcesDim).where(OtelResourcesDim.resource_id == resource_id)
-        resource = self.session.exec(stmt).first()
-        if resource:
-            resource.last_seen = datetime.now(UTC)
-            self.session.add(resource)
-            self.session.commit()
-
-    def calculate_scope_hash(self, name: str, version: str) -> str:
-        """
-        Calculate SHA-256 hash of scope (name + version).
-
-        Args:
-            name: Scope name (e.g., 'io.opentelemetry.sdk')
-            version: Scope version (e.g., '1.0.0')
+            scope_name: Scope name
+            scope_version: Scope version
 
         Returns:
             SHA-256 hex digest (64 characters)
         """
-        # Combine name and version
-        scope_data = {"name": name, "version": version}
-        json_str = json.dumps(scope_data, sort_keys=True, separators=(",", ":"))
-        hash_obj = hashlib.sha256(json_str.encode("utf-8"))
+        scope_str = f"{scope_name}:{scope_version}"
+        hash_obj = hashlib.sha256(scope_str.encode("utf-8"))
         return hash_obj.hexdigest()
 
-    def get_or_create_scope(
-        self, name: str, version: str, attributes: dict[str, Any] | None = None
-    ) -> tuple[int, bool, str]:
+    def get_or_create_resource(self, resource: dict[str, Any]) -> int:
         """
-        Get or create scope dimension record with deduplication.
+        Get or create resource dimension record.
+
+        Uses autocommit engine for idempotent upsert - safe for multi-process execution.
 
         Args:
-            name: Scope name
-            version: Scope version
-            attributes: Optional scope attributes (OTLP allows scope attributes)
+            resource: OTLP Resource dict with 'attributes' key
 
         Returns:
-            Tuple of (scope_id, created, scope_hash) where:
-            - scope_id: Primary key of scope dimension
-            - created: True if new scope was created
-            - scope_hash: SHA-256 hash of name + version
+            resource_id (int)
         """
-        # Calculate hash
-        scope_hash = self.calculate_scope_hash(name, version)
+        attributes = resource.get("attributes", {})
+        resource_hash = self.calculate_resource_hash(attributes)
 
         # Check cache first
-        if scope_hash in self._scope_cache:
-            scope_id = self._scope_cache[scope_hash]
-            # Update last_seen timestamp
-            self._update_scope_last_seen(scope_id)
-            return scope_id, False, scope_hash
+        if resource_hash in self._resource_cache:
+            return self._resource_cache[resource_hash]
 
-        # Query database
-        stmt = select(OtelScopesDim).where(OtelScopesDim.scope_hash == scope_hash)
-        existing = self.session.exec(stmt).first()
+        # Extract denormalized fields
+        service_name = attributes.get("service.name")
+        service_namespace = attributes.get("service.namespace")
 
-        if existing:
-            scope_id = existing.scope_id
-            self._scope_cache[scope_hash] = scope_id
-            # Update last_seen
-            self._update_scope_last_seen(scope_id)
-            return scope_id, False, scope_hash
+        now = datetime.now(UTC)
+        min_last_seen = now - self._last_seen_update_interval
 
-        # Create new scope
-        insert_stmt = pg_insert(OtelScopesDim).values(
-            scope_hash=scope_hash,
-            name=name,
-            version=version,
-            attributes=attributes or {},  # Store scope attributes as JSONB
-            first_seen=datetime.now(UTC),
-            last_seen=datetime.now(UTC),
+        # Use autocommit engine - INSERT ON CONFLICT commits immediately
+        with Session(self.autocommit_engine) as session:
+            stmt = (
+                insert(OtelResourcesDim)
+                .values(
+                    resource_hash=resource_hash,
+                    attributes=attributes,
+                    service_name=service_name,
+                    service_namespace=service_namespace,
+                    first_seen=now,
+                    last_seen=now,
+                )
+                .on_conflict_do_update(
+                    index_elements=["resource_hash"],
+                    set_={
+                        "last_seen": case(
+                            (OtelResourcesDim.last_seen < min_last_seen, now),
+                            else_=OtelResourcesDim.last_seen,
+                        )
+                    },
+                )
+                .returning(OtelResourcesDim.resource_id)
+            )
+            result = session.execute(stmt)  # ← Commits immediately!
+            resource_id = result.scalar_one()
+
+        # Cache the result
+        self._resource_cache[resource_hash] = resource_id
+
+        # Store resource attributes (promoted + unpromoted)
+        self.attr_manager.store_attributes(
+            signal="resource",
+            parent_id=resource_id,
+            parent_table="otel_resource_attrs",
+            attributes=attributes,
         )
-        # Upsert for concurrency safety
-        upsert_stmt = insert_stmt.on_conflict_do_update(
-            index_elements=["scope_hash"],
-            set_={
-                "last_seen": insert_stmt.excluded.last_seen,
-            },
-        )
-        self.session.exec(upsert_stmt)
-        self.session.commit()
 
-        # Query again to get ID
-        existing = self.session.exec(stmt).first()
-        if existing:
-            scope_id = existing.scope_id
-            self._scope_cache[scope_hash] = scope_id
-            return scope_id, True, scope_hash
+        return resource_id
 
-        raise RuntimeError("Failed to create scope dimension")
-
-    def _update_scope_last_seen(self, scope_id: int):
+    def get_or_create_scope(self, scope: dict[str, Any], resource_id: int) -> int:
         """
-        Update last_seen timestamp for scope.
+        Get or create scope dimension record.
+
+        Uses autocommit engine for idempotent upsert - safe for multi-process execution.
 
         Args:
-            scope_id: Scope dimension ID
+            scope: OTLP InstrumentationScope dict with 'name' and 'version'
+            resource_id: Parent resource ID
+
+        Returns:
+            scope_id (int)
         """
-        stmt = select(OtelScopesDim).where(OtelScopesDim.scope_id == scope_id)
-        scope = self.session.exec(stmt).first()
-        if scope:
-            scope.last_seen = datetime.now(UTC)
-            self.session.add(scope)
-            self.session.commit()
+        scope_name = scope.get("name", "")
+        scope_version = scope.get("version", "")
+        scope_attributes = scope.get("attributes", {})
 
-    def clear_cache(self):
-        """Clear both resource and scope caches (useful for testing)."""
-        self._resource_cache.clear()
-        self._scope_cache.clear()
+        scope_hash = self.calculate_scope_hash(scope_name, scope_version)
+        cache_key = (resource_id, scope_hash)
 
-    def get_resource_cache_size(self) -> int:
-        """Get current resource cache size (useful for monitoring)."""
-        return len(self._resource_cache)
+        # Check cache first
+        if cache_key in self._scope_cache:
+            return self._scope_cache[cache_key]
 
-    def get_scope_cache_size(self) -> int:
-        """Get current scope cache size (useful for monitoring)."""
-        return len(self._scope_cache)
+        now = datetime.now(UTC)
+        min_last_seen = now - self._last_seen_update_interval
+
+        # Use autocommit engine - INSERT ON CONFLICT commits immediately
+        with Session(self.autocommit_engine) as session:
+            stmt = (
+                insert(OtelScopesDim)
+                .values(
+                    resource_id=resource_id,
+                    scope_hash=scope_hash,
+                    name=scope_name,
+                    version=scope_version,
+                    attributes=scope_attributes,
+                    first_seen=now,
+                    last_seen=now,
+                )
+                .on_conflict_do_update(
+                    index_elements=["resource_id", "scope_hash"],
+                    set_={
+                        "last_seen": case(
+                            (OtelScopesDim.last_seen < min_last_seen, now),
+                            else_=OtelScopesDim.last_seen,
+                        )
+                    },
+                )
+                .returning(OtelScopesDim.scope_id)
+            )
+            result = session.execute(stmt)  # ← Commits immediately!
+            scope_id = result.scalar_one()
+
+        # Cache the result
+        self._scope_cache[cache_key] = scope_id
+
+        # Store scope attributes if any
+        if scope_attributes:
+            self.attr_manager.store_attributes(
+                signal="scope",
+                parent_id=scope_id,
+                parent_table="otel_scope_attrs",
+                attributes=scope_attributes,
+            )
+
+        return scope_id

@@ -1,21 +1,20 @@
 """
 Attribute Manager
 
-Manages OTLP attribute keys and values with promotion-based routing:
-- Key deduplication (attribute_keys table) with caching
-- Type-specific storage routing (string/int/double/bool/bytes/other tables)
-- Integration with AttributePromotionConfig for promotion/drop decisions
-- Efficient batch operations
+Manages OTLP attribute keys and values with promotion-based routing.
+
+CRITICAL: Uses AUTOCOMMIT engine for key upserts to avoid deadlocks.
 """
 
 import logging
 from typing import Any
 
-from sqlalchemy.dialects.postgresql import insert as pg_insert
-from sqlmodel import Session, select
+from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.engine import Engine
+from sqlalchemy.orm import Session
 
 from app.models.otlp_schema import AttributeKey
-from app.storage.attribute_promotion_config import get_attribute_promotion_config
+from app.storage.attribute_promotion_config import AttributePromotionConfig
 
 logger = logging.getLogger(__name__)
 
@@ -24,24 +23,27 @@ class AttributeManager:
     """
     Manages attribute keys and storage routing for OTLP attributes.
 
-    Provides efficient key deduplication with caching and type-aware storage
-    routing based on promotion configuration.
+    Uses autocommit engine for key upserts (idempotent, multi-process safe).
+    Attribute value inserts use caller's session (can be transactional).
     """
 
-    def __init__(self, session: Session):
+    def __init__(self, autocommit_engine: Engine, config: AttributePromotionConfig):
         """
         Initialize AttributeManager.
 
         Args:
-            session: SQLModel database session
+            autocommit_engine: SQLAlchemy engine with AUTOCOMMIT isolation level
+            config: Attribute promotion configuration
         """
-        self.session = session
-        self.config = get_attribute_promotion_config()
+        self.autocommit_engine = autocommit_engine
+        self.config = config
         self._key_cache: dict[str, int] = {}  # key -> key_id mapping
 
     def get_or_create_key_id(self, key: str) -> int:
         """
         Get or create attribute key ID with caching.
+
+        Uses autocommit engine for idempotent upsert - safe for multi-process execution.
 
         Args:
             key: Attribute key name (e.g., 'service.name', 'http.status_code')
@@ -53,29 +55,23 @@ class AttributeManager:
         if key in self._key_cache:
             return self._key_cache[key]
 
-        # Query database
-        stmt = select(AttributeKey).where(AttributeKey.key == key)
-        existing = self.session.exec(stmt).first()
+        # Use autocommit engine - INSERT ON CONFLICT commits immediately
+        with Session(self.autocommit_engine) as session:
+            stmt = (
+                insert(AttributeKey)
+                .values(key=key)
+                .on_conflict_do_update(
+                    index_elements=["key"],
+                    set_={"key": insert(AttributeKey).excluded.key},  # No-op update
+                )
+                .returning(AttributeKey.key_id)
+            )
+            result = session.execute(stmt)  # ← Commits immediately!
+            key_id = result.scalar_one()
 
-        if existing:
-            key_id = existing.key_id
-            self._key_cache[key] = key_id
-            return key_id
-
-        # Insert new key (upsert for concurrency safety)
-        insert_stmt = pg_insert(AttributeKey).values(key=key)
-        upsert_stmt = insert_stmt.on_conflict_do_update(index_elements=["key"], set_={"key": insert_stmt.excluded.key})
-        self.session.exec(upsert_stmt)
-        self.session.commit()
-
-        # Query again to get ID
-        existing = self.session.exec(stmt).first()
-        if existing:
-            key_id = existing.key_id
-            self._key_cache[key] = key_id
-            return key_id
-
-        raise RuntimeError(f"Failed to create attribute key: {key}")
+        # Cache the result
+        self._key_cache[key] = key_id
+        return key_id
 
     def _extract_type_and_value(self, otlp_any_value: dict[str, Any]) -> tuple[str | None, Any | None]:
         """
@@ -121,126 +117,139 @@ class AttributeManager:
     def store_attributes(
         self,
         signal: str,
-        entity_id: int,
-        attributes: dict[str, dict[str, Any]],
-        table_classes: dict[str, type],
-    ) -> tuple[dict[str, Any], dict[str, Any]]:
+        parent_id: int,
+        parent_table: str,
+        attributes: dict[str, Any],
+    ) -> dict[str, Any]:
         """
         Store attributes with promotion-based routing.
 
+        NOTE: This method does NOT commit - caller must commit the session.
+        Attribute key upserts use autocommit (already committed).
+        Attribute value inserts use autocommit session for immediate visibility.
+
         Args:
             signal: Signal type ('resource', 'scope', 'logs', 'spans', 'metrics')
-            entity_id: Foreign key ID (resource_id, log_id, span_id, etc.)
-            attributes: Dict mapping key -> OTLP AnyValue
-            table_classes: Dict mapping type -> SQLModel class
-                          {'string': OtelLogAttrsString, 'int': OtelLogAttrsInt, ...}
+            parent_id: Foreign key ID (resource_id, log_id, span_id, etc.)
+            parent_table: Table prefix (e.g., 'otel_log_attrs', 'otel_span_attrs')
+            attributes: Dict mapping key -> value (already flattened, not OTLP AnyValue)
 
         Returns:
-            Tuple of (promoted_attrs, other_attrs) where:
-            - promoted_attrs: Dict of key -> value for promoted attributes (by type)
-            - other_attrs: Dict of key -> value for JSONB storage
+            Dict of all attributes stored (for JSONB catch-all column)
         """
-        promoted_attrs: dict[str, Any] = {}
-        other_attrs: dict[str, Any] = {}
+        all_attrs = {}
 
-        for key, any_value in attributes.items():
+        for key, value in attributes.items():
             # Check drop list first
-            if self.config.should_drop(key):
-                logger.debug(f"Dropping attribute: {key}")
+            if self.config.should_drop(signal, key):
+                logger.debug(f"Dropping attribute {signal}.{key}")
                 continue
 
-            # Extract type and value
-            value_type, value = self._extract_type_and_value(any_value)
-            if value_type is None:
-                continue
+            # Get or create key_id (uses autocommit)
+            key_id = self.get_or_create_key_id(key)
 
-            # Check if promoted
-            if self.config.is_promoted(signal, key, value_type):
-                # Store in dedicated typed table
-                key_id = self.get_or_create_key_id(key)
+            # Determine type and whether promoted
+            value_type = self._infer_python_type(value)
+            is_promoted = self.config.is_promoted(signal, key, value_type)
 
-                if value_type == "other":
-                    # Special case: other goes to JSONB table but still "promoted"
-                    table_class = table_classes.get("other")
-                    if table_class:
-                        record = table_class(
-                            **{
-                                f"{signal}_id" if signal != "logs" else "log_id": entity_id,
-                                "key_id": key_id,
-                                "value": value,
-                            }
-                        )
-                        self.session.add(record)
-                else:
-                    # Store in typed table
-                    table_class = table_classes.get(value_type)
-                    if table_class:
-                        record = table_class(
-                            **{
-                                f"{signal}_id" if signal != "logs" else "log_id": entity_id,
-                                "key_id": key_id,
-                                "value": value,
-                            }
-                        )
-                        self.session.add(record)
+            if is_promoted:
+                # Store in typed table (using autocommit for immediate visibility)
+                self._store_typed_attribute(
+                    parent_table=parent_table,
+                    parent_id=parent_id,
+                    key_id=key_id,
+                    value_type=value_type,
+                    value=value,
+                )
 
-                promoted_attrs[key] = value
-            else:
-                # Store in JSONB catch-all
-                other_attrs[key] = value
+            # Always add to all_attrs for potential JSONB storage
+            all_attrs[key] = value
 
-        return promoted_attrs, other_attrs
+        return all_attrs
 
-    def get_attributes(self, entity_id: int, signal: str, table_classes: dict[str, type]) -> dict[str, Any]:
+    def _infer_python_type(self, value: Any) -> str:
         """
-        Retrieve all attributes for an entity (promoted + other).
+        Infer OTLP type from Python value.
 
         Args:
-            entity_id: Foreign key ID (log_id, span_id, etc.)
-            signal: Signal type ('logs', 'spans', etc.)
-            table_classes: Dict mapping type -> SQLModel class
+            value: Python value
 
         Returns:
-            Dict of all attributes (key -> value)
+            One of: 'string', 'int', 'double', 'bool', 'bytes', 'other'
         """
-        attributes: dict[str, Any] = {}
+        if isinstance(value, str):
+            return "string"
+        elif isinstance(value, bool):  # Check bool before int (bool is subclass of int)
+            return "bool"
+        elif isinstance(value, int):
+            return "int"
+        elif isinstance(value, float):
+            return "double"
+        elif isinstance(value, bytes):
+            return "bytes"
+        else:
+            return "other"
 
-        # Query each typed table
-        for value_type, table_class in table_classes.items():
-            if value_type == "other":
-                continue  # Handle separately
+    def _store_typed_attribute(
+        self,
+        parent_table: str,
+        parent_id: int,
+        key_id: int,
+        value_type: str,
+        value: Any,
+    ):
+        """
+        Store attribute in typed table.
 
-            fk_column = f"{signal}_id" if signal != "logs" else "log_id"  # Adjust for model naming
-            stmt = (
-                select(table_class, AttributeKey)
-                .join(AttributeKey, table_class.key_id == AttributeKey.key_id)
-                .where(getattr(table_class, fk_column) == entity_id)
-            )
-            results = self.session.exec(stmt).all()
+        Uses autocommit engine for immediate visibility to other processes.
 
-            for record, key in results:
-                attributes[key.key] = record.value
+        Args:
+            parent_table: Table prefix (e.g., 'otel_log_attrs')
+            parent_id: FK to parent row
+            key_id: FK to attribute_keys
+            value_type: 'string', 'int', 'double', 'bool', 'bytes', or 'other'
+            value: Attribute value
+        """
+        # Map to actual table name
+        table_map = {
+            "string": f"{parent_table}_string",
+            "int": f"{parent_table}_int",
+            "double": f"{parent_table}_double",
+            "bool": f"{parent_table}_bool",
+            "bytes": f"{parent_table}_bytes",
+            "other": f"{parent_table}_other",
+        }
 
-        # Query JSONB other table
-        other_table = table_classes.get("other")
-        if other_table:
-            fk_column = f"{signal}_id" if signal != "logs" else "log_id"
-            stmt = (
-                select(other_table, AttributeKey)
-                .join(AttributeKey, other_table.key_id == AttributeKey.key_id)
-                .where(getattr(other_table, fk_column) == entity_id)
-            )
-            results = self.session.exec(stmt).all()
+        table_name = table_map.get(value_type)
+        if not table_name:
+            logger.warning(f"Unknown value type: {value_type}")
+            return
 
-            for record, key in results:
-                attributes[key.key] = record.value
+        # Determine parent ID column name
+        if "resource" in parent_table:
+            parent_id_col = "resource_id"
+        elif "scope" in parent_table:
+            parent_id_col = "scope_id"
+        elif "log" in parent_table:
+            parent_id_col = "log_id"
+        elif "span" in parent_table:
+            parent_id_col = "span_id"
+        elif "event" in parent_table:
+            parent_id_col = "event_id"
+        elif "link" in parent_table:
+            parent_id_col = "link_id"
+        elif "metric" in parent_table or "data_point" in parent_table:
+            parent_id_col = "data_point_id"
+        else:
+            logger.error(f"Cannot determine parent ID column for table: {parent_table}")
+            return
 
-        return attributes
-
-    def clear_cache(self):
-        """Clear the key ID cache (useful for testing)."""
-        self._key_cache.clear()
-
-    def get_cache_size(self) -> int:
-        """Get current cache size (useful for monitoring)."""
-        return len(self._key_cache)
+        # Use raw SQL for insert (table name is dynamic)
+        # Uses autocommit engine for immediate commit
+        with Session(self.autocommit_engine) as session:
+            sql = f"""
+                INSERT INTO {table_name} ({parent_id_col}, key_id, value)
+                VALUES (:parent_id, :key_id, :value)
+            """
+            session.execute(sql, {"parent_id": parent_id, "key_id": key_id, "value": value})
+            # ← Commits immediately!

@@ -3,13 +3,17 @@ OTLP Storage Wrapper
 
 Combines logs, traces, and metrics storage for the OTLP receiver.
 Provides a unified interface for storing OTLP telemetry data.
+
+CRITICAL: Uses two-engine pattern for deadlock-free multi-process ingestion:
+- autocommit_engine: For dimension upserts (resource, scope, attribute keys)
+- engine: For transactional fact inserts (logs, spans, metrics)
 """
 
 import logging
 from typing import Any
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import Session
+from sqlalchemy.engine import Engine
 
 from app.storage.attribute_promotion_config import AttributePromotionConfig
 from app.storage.logs_storage import LogsStorage
@@ -24,6 +28,7 @@ class OtlpStorage:
     Unified OTLP storage backend for the receiver.
 
     Manages database connection and provides access to all storage components.
+    Uses two-engine pattern (normal + autocommit) for multi-process safety.
     """
 
     def __init__(self, connection_string: str, config_path: str = "/config/attribute-promotion.yaml"):
@@ -35,8 +40,8 @@ class OtlpStorage:
             config_path: Path to attribute promotion configuration
         """
         self.connection_string = connection_string
-        self.engine = None
-        self.session: Session | None = None
+        self.engine: Engine | None = None  # For fact inserts with explicit transactions
+        self.autocommit_engine: Engine | None = None  # For dimension upserts with autocommit
 
         # Load attribute promotion configuration
         self.config = AttributePromotionConfig(base_config_path=config_path)
@@ -48,8 +53,9 @@ class OtlpStorage:
         self.metrics: MetricsStorage | None = None
 
     def connect(self):
-        """Establish database connection and initialize storage components."""
+        """Establish database engines and initialize storage components."""
         if self.engine is None:
+            # Normal engine for fact inserts with explicit transactions
             self.engine = create_engine(
                 self.connection_string,
                 pool_size=10,
@@ -57,30 +63,37 @@ class OtlpStorage:
                 pool_pre_ping=True,
                 pool_recycle=3600,
             )
-            logger.info(f"Created database engine: {self.connection_string.split('@')[1]}")
+            logger.info(f"Created transactional engine: {self.connection_string.split('@')[1]}")
 
-        # Create session
-        if self.session is None:
-            self.session = Session(self.engine)
-            logger.info("Created database session")
+        if self.autocommit_engine is None:
+            # Autocommit engine for dimension upserts (idempotent, multi-process safe)
+            self.autocommit_engine = create_engine(
+                self.connection_string,
+                pool_size=10,
+                max_overflow=20,
+                pool_pre_ping=True,
+                pool_recycle=3600,
+                execution_options={"isolation_level": "AUTOCOMMIT"},
+            )
+            logger.info(f"Created autocommit engine: {self.connection_string.split('@')[1]}")
 
-            # Initialize storage components
-            self.logs = LogsStorage(self.session)
-            self.traces = TracesStorage(self.session)
-            self.metrics = MetricsStorage(self.session)
-            logger.info("Initialized logs, traces, and metrics storage")
+        # Initialize storage components (they will use correct engines)
+        self.logs = LogsStorage(self.engine, self.autocommit_engine, self.config)
+        self.traces = TracesStorage(self.engine, self.autocommit_engine, self.config)
+        self.metrics = MetricsStorage(self.engine, self.autocommit_engine, self.config)
+        logger.info("Initialized logs, traces, and metrics storage")
 
     def close(self):
-        """Close database connection."""
-        if self.session:
-            self.session.close()
-            self.session = None
-            logger.info("Closed database session")
-
+        """Close database connections."""
         if self.engine:
             self.engine.dispose()
             self.engine = None
-            logger.info("Disposed database engine")
+            logger.info("Disposed transactional engine")
+
+        if self.autocommit_engine:
+            self.autocommit_engine.dispose()
+            self.autocommit_engine = None
+            logger.info("Disposed autocommit engine")
 
     def store_logs(self, resource_logs: list[dict[str, Any]]) -> int:
         """
@@ -97,10 +110,9 @@ class OtlpStorage:
 
         total_count = 0
         for resource_log in resource_logs:
-            result = self.logs.store_logs(resource_log)
-            total_count += result.get("logs_stored", 0)
+            count = self.logs.store_logs(resource_log)
+            total_count += count
 
-        self.session.commit()
         return total_count
 
     def store_traces(self, resource_spans: list[dict[str, Any]]) -> int:
@@ -118,10 +130,9 @@ class OtlpStorage:
 
         total_count = 0
         for resource_span in resource_spans:
-            result = self.traces.store_traces(resource_span)
-            total_count += result.get("spans_stored", 0)
+            count = self.traces.store_traces(resource_span)
+            total_count += count
 
-        self.session.commit()
         return total_count
 
     def store_metrics(self, resource_metrics: list[dict[str, Any]]) -> int:
@@ -139,8 +150,7 @@ class OtlpStorage:
 
         total_count = 0
         for resource_metric in resource_metrics:
-            result = self.metrics.store_metrics(resource_metric)
-            total_count += result.get("data_points_stored", 0)
+            count = self.metrics.store_metrics(resource_metric)
+            total_count += count
 
-        self.session.commit()
         return total_count

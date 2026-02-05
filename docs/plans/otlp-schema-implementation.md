@@ -910,6 +910,107 @@ spec:
 
 ## Resource/Scope Management
 
+### CRITICAL: Transaction Strategy for Multi-Process Safety
+
+**Problem: Deadlocks with Dimension Upserts**
+- Multiple receiver processes upserting same resource/scope causes deadlocks
+- Transactions holding locks while waiting for other locks = deadlock
+- Solution: Dimension upserts MUST use AUTOCOMMIT mode (no transaction)
+
+**Two Engine Pattern (from postgres_orm_sync.py):**
+```python
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
+
+class OtlpStorage:
+    def __init__(self, db_url: str):
+        # Main engine: For transactional fact inserts
+        self.engine = create_engine(db_url, pool_pre_ping=True, ...)
+
+        # Autocommit engine: For idempotent dimension upserts (NO TRANSACTION)
+        self.autocommit_engine = create_engine(
+            db_url,
+            isolation_level="AUTOCOMMIT",  # ← CRITICAL!
+            pool_pre_ping=True,
+            ...
+        )
+```
+
+**MANDATORY PATTERNS:**
+
+**Pattern 1: Dimension Upserts (Resource/Scope/AttributeKey) - AUTOCOMMIT**
+```python
+def _upsert_resource(self, attributes: dict) -> int:
+    """Upsert resource with autocommit - idempotent, multi-process safe.
+
+    Uses AUTOCOMMIT mode - each upsert commits immediately.
+    No transaction = no locks = no deadlocks.
+    """
+    resource_hash = hashlib.sha256(
+        json.dumps(attributes, sort_keys=True).encode()
+    ).hexdigest()
+
+    now = datetime.now(UTC)
+    min_last_seen = now - timedelta(minutes=5)
+
+    # Use autocommit engine - INSERT ON CONFLICT commits immediately
+    with Session(self.autocommit_engine) as session:
+        stmt = (
+            insert(OtelResourcesDim)
+            .values(
+                resource_hash=resource_hash,
+                attributes=attributes,
+                service_name=attributes.get('service.name'),
+                service_namespace=attributes.get('service.namespace'),
+                first_seen=now,
+                last_seen=now,
+            )
+            .on_conflict_do_update(
+                index_elements=["resource_hash"],
+                set_={
+                    "last_seen": case(
+                        (OtelResourcesDim.last_seen < min_last_seen, now),
+                        else_=OtelResourcesDim.last_seen,
+                    )
+                },
+            )
+            .returning(OtelResourcesDim.resource_id)
+        )
+        result = session.execute(stmt)  # ← Commits immediately!
+        resource_id = result.scalar_one()
+        return resource_id
+```
+
+**Pattern 2: Fact Inserts (Logs/Spans/Metrics) - TRANSACTIONAL**
+```python
+def store_logs(self, resource_logs: dict) -> int:
+    """Store logs in transaction AFTER dimensions are committed."""
+    # Step 1: Upsert dimensions with autocommit (OUTSIDE transaction)
+    resource_id = self._upsert_resource(resource_logs['resource']['attributes'])
+    scope_id = self._upsert_scope(resource_logs['scope_logs'][0]['scope'])
+
+    # Step 2: Insert facts in transaction (can rollback if error)
+    with Session(self.engine) as session:  # ← Uses transactional engine
+        for log_record in resource_logs['scope_logs'][0]['log_records']:
+            log = OtelLogsFact(
+                resource_id=resource_id,
+                scope_id=scope_id,
+                time_unix_nano=log_record['time_unix_nano'],
+                # ... all other fields
+            )
+            session.add(log)
+
+        session.commit()  # ← Single commit for all facts
+        return len(resource_logs['scope_logs'][0]['log_records'])
+```
+
+**Why This Works:**
+1. **Dimensions commit immediately**: No locks held, visible to all processes instantly
+2. **Facts use transaction**: Can rollback batch if error, maintain consistency
+3. **No deadlocks**: Dimensions don't hold locks, facts only lock new rows
+4. **Idempotent**: ON CONFLICT DO UPDATE makes dimensions idempotent
+5. **Fast**: No wasted BEGIN/ROLLBACK cycles before dimension upserts
+
 ### Deduplication Strategy Requirements
 
 **Hash Calculation Algorithm:**
@@ -918,22 +1019,26 @@ spec:
 - Use canonical JSON representation (sorted keys, consistent separators)
 - Encoding: UTF-8 before hashing
 
-**ResourceManager Class:**
-- Initialize with db_session and attr_manager
+**ResourceManager Class Requirements:**
+- Initialize with autocommit_engine (NOT regular engine!)
 - Maintain in-memory caches: resource_cache {hash: resource_id}, scope_cache {hash: scope_id}
 - Method: `get_or_create_resource(resource: dict) -> int`
   - Calculate hash from attributes
   - Check cache first
-  - SELECT by hash if not cached
-  - INSERT if not exists (ON CONFLICT DO UPDATE pattern)
+  - Use autocommit engine with INSERT...ON CONFLICT DO UPDATE
+  - Execute with `session.execute(stmt).scalar_one()` to get resource_id
   - Extract service.name and service.namespace for denormalized columns
   - Store resource attributes using AttributeManager (signal='resource')
   - Return resource_id
 - Method: `get_or_create_scope(scope: dict, resource_id: int) -> int`
-  - Similar logic for scope dimensions
+  - Similar logic using autocommit engine
   - Store scope attributes using AttributeManager (signal='scope')
   - Return scope_id
-        resource_hash = calculate_resource_hash(attributes)
+
+**AttributeManager get_or_create_key_id Requirements:**
+- Use autocommit engine for attribute_keys upsert
+- Pattern: `INSERT INTO attribute_keys (key) VALUES (?) ON CONFLICT (key) DO UPDATE SET key = EXCLUDED.key RETURNING key_id`
+- Maintains in-memory cache of key → key_id mappings
 
         # Check cache
         if resource_hash in self.resource_cache:
@@ -1398,26 +1503,48 @@ Response:
 
 ## Implementation Phases
 
-### Phase 1: Foundation (Week 1) ✅ COMPLETE
-**Commit Strategy**: Single squashed commit per phase for clean history
+### Phase 0: CRITICAL FIX - Rewrite with Correct Patterns ❌ BLOCKER
+**Status**: Current code COMPLETELY BROKEN - using wrong APIs, wrong transaction patterns
+**Reason**: AI mixed SQLModel/SQLAlchemy APIs, used transactional sessions for dimensions (causes deadlocks)
 
-- [x] Create `config/attribute-promotion.yaml` (base configuration)
-- [x] Create ConfigMap template for `attribute-overrides.yaml` in Helm chart
-- [x] Implement `AttributePromotionConfig` class with file-based override merging
-- [x] **Unit tests**: Config loading, YAML override merging, drop list, file not found handling (12 tests)
-- [x] Implement `AttributeManager` class (DRY: shared across all signals)
-- [x] **Unit tests**: Attribute promotion, drop filtering, key caching, type extraction (18 tests)
-- [x] Implement `ResourceManager` class (DRY: shared hash/dedup logic)
-- [x] **Unit tests**: Hash calculation consistency, deduplication, cache behavior (18 tests)
-- [x] Update Helm chart values.yaml with attribute override examples
-- [x] **Deploy**: task deploy - verified all pods running, migrations complete
-- [x] **Testing**: 48 tests passing (12 config + 18 attribute + 18 resource manager)
-- [x] **Commit**: Squashed commit with Phase 1 deliverables
-- [x] **Deploy**: `task deploy` - verify no regressions (193 tests passing, all pods running)
-- [x] **Code review**: DRY compliance verified
+**MUST DO BEFORE PROCEEDING:**
+1. **Delete broken code**:
+   - Delete `apps/api/app/storage/resource_manager.py` (uses `.exec()` - WRONG)
+   - Delete `apps/api/app/storage/attribute_manager.py` (uses wrong transaction)
+   - Delete `apps/api/app/storage/logs_storage.py` (uses transactional dimensions)
+   - Delete `apps/api/app/storage/traces_storage.py` (uses transactional dimensions)
+   - Delete `apps/api/app/storage/metrics_storage.py` (uses transactional dimensions)
 
-**Deliverables**: 48 new tests, 3 manager classes, 2 config files, comprehensive plan document
-**Next**: Squash commits, then proceed to Phase 2
+2. **Rewrite from scratch following postgres_orm_sync.py pattern**:
+   - Create `OtlpStorage` base class with TWO engines (engine + autocommit_engine)
+   - Implement `_upsert_resource()` using autocommit_engine + SQLAlchemy pattern
+   - Implement `_upsert_scope()` using autocommit_engine + SQLAlchemy pattern
+   - Implement `_upsert_attribute_key()` using autocommit_engine + SQLAlchemy pattern
+   - Implement fact storage using transactional engine (self.engine) AFTER dimensions committed
+
+3. **Copy exact patterns from postgres_orm_sync.py lines 693-870**:
+   - Use `from sqlalchemy import insert, case, create_engine`
+   - Use `from sqlalchemy.o⚠️ NEEDS REWRITE
+**Status**: Code exists but uses transactional dimensions (causes deadlocks)
+
+- [ ] **REWRITE** `LogsStorage.store()` - upsert dimensions with autocommit FIRST
+- [ ] **FIX** pattern: `resource_id = self._upsert_resource(autocommit_engine, ...)`
+- [ ] **FIX** pattern: `scope_id = self._upsert_scope(autocommit_engine, ...)`
+- [ ] **THEN** insert facts with transactional engine: `with Session(self.engine)`
+- [ ] **VERIFY** No deadlocks with 4+ concurrent processes
+- [ ] Views and API are OK (SQL correct, just storage layer wrong)
+**Blocker Until**: All dimension upserts use autocommit, all facts use transactions
+
+### Phase 1: Foundation (Week 1) ⚠️ NEEDS REWRITE
+**Status**: Code exists but WRONG - needs complete rewrite following correct patterns
+
+- [ ] **REWRITE** `AttributeManager` class - use autocommit_engine for key upserts
+- [ ] **REWRITE** `ResourceManager` class - use autocommit_engine + SQLAlchemy insert()
+- [ ] **FIX** All tests to use SQLAlchemy patterns (not SQLModel .exec())
+- [ ] **VERIFY** Multi-process safety: run 4 receivers, no deadlocks
+- [ ] **VERIFY** Transaction isolation: dimensions visible immediately, facts atomic
+
+**Old deliverables** (need rewrite): 48 tests, 3 manager classes (all using wrong API)
 
 ### Phase 2: Logs (Week 2) ✅ COMPLETE
 **Commit Strategy**: Single commit for entire phase upon completion
@@ -1435,38 +1562,24 @@ Response:
 ### Phase 3: Traces (Week 3) ✅ COMPLETE
 **Commit Strategy**: Single commit for entire phase upon completion
 
-- [x] Implement `TracesStorage` (DRY: reuse ResourceManager, AttributeManager)
-- [x] **Unit tests**: Span fact insertion, event/link storage (18 tests)
-- [x] Implement `SpansStorage` for span details
-- [x] **Unit tests**: Span retrieval, parent-child relationships
-- [x] Create views: `v_otel_traces`, `v_otel_spans_enriched`
-- [x] **Test views**: Trace aggregation, span joins, event/link inclusion
-- [x] Implement API: `/api/traces` (list) and `/api/traces/{trace_id}/spans` (details)
-- [x] **Unit tests**: API responses, trace timeline ordering
-- [x] **Integration tests**: Trace ingestion → query → span retrieval
-- [x] **Deploy**: `task deploy` - verify traces work
-- [x] **Validation**: Test trace queries, check span parent-child relationships
+- [x] Implement `TracesStorag⚠️ NEEDS REWRITE
+**Status**: Same deadlock issue as logs
 
-### Phase 4: Metrics (Week 4) ✅ COMPLETE
-**Commit Strategy**: Single commit for entire phase upon completion
+- [ ] **REWRITE** `TracesStorage.store()` - autocommit dimensions, transactional facts
+- [ ] **VERIFY** Span events/links stored correctly with parent span_id FK
+- [ ] Views and API are OK
 
 - [x] Implement `MetricsStorage` for all types (DRY: shared metric dimension logic)
 - [x] **Unit tests**: Metric hash calculation, data point insertion per type (8 tests)
 - [x] Create views: `v_otel_metrics_enriched` (unified view of all metric types)
 - [x] **Test views**: Metric queries, label aggregation
 - [x] Implement metrics API: `/api/metrics/search`, `/api/metrics/{name}/labels`
-- [x] **Unit tests**: API responses, aggregation correctness
-- [ ] **Integration tests**: Metric ingestion → query → label exploration (NEXT)
-- [x] **Deploy**: `task deploy` - verify metrics work
-- [x] **Validation**: Test all metric types (gauge, sum, histogram, exp_histogram, summary)
+- [x] **Unit tests**: API resp⚠️ NEEDS REWRITE
+**Status**: Same issue - plus metric dimension upserts need autocommit too
 
-### Phase 5: Cleanup & Optimizations (Week 5) 🔄 IN PROGRESS
-**Commit Strategy**: Single commit for entire phase upon completion
-**NOTE**: Remove v1/v2 split and old code
-
-**Step 1: Router Simplification** ✅ COMPLETE
-- [x] Rename `logs_v2.py` → `logs.py`
-- [x] Rename `traces_v2.py` → `traces.py`
+- [ ] **REWRITE** `MetricsStorage.store()` - autocommit for metric/resource/scope dimensions
+- [ ] **FIX** `_upsert_metric_dim()` - use autocommit_engine
+- [ ] Views and API are OK
 - [x] Rename `metrics_v2.py` → `metrics.py`
 - [x] Remove `/v2` prefix from router paths
 - [x] Update `app/main.py` to use new router names
