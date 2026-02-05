@@ -103,32 +103,29 @@ def test_store_traces_single_span(traces_storage, mock_session):
 
     mock_session.flush.side_effect = flush_side_effect
 
-    otlp_traces = {
-        "resourceSpans": [
+    # Single ResourceSpans entry (not wrapped in array)
+    resource_spans = {
+        "resource": {"attributes": [{"key": "service.name", "value": {"stringValue": "test-service"}}]},
+        "scopeSpans": [
             {
-                "resource": {"attributes": [{"key": "service.name", "value": {"stringValue": "test-service"}}]},
-                "scopeSpans": [
+                "scope": {"name": "test.tracer", "version": "1.0.0"},
+                "spans": [
                     {
-                        "scope": {"name": "test.tracer", "version": "1.0.0"},
-                        "spans": [
-                            {
-                                "traceId": "ABC1234567890DEF",
-                                "spanId": "123456789ABCDEF0",
-                                "name": "GET /api/users",
-                                "kind": 2,  # SPAN_KIND_CLIENT
-                                "startTimeUnixNano": "1700000000000000000",
-                                "endTimeUnixNano": "1700000000123456789",
-                                "status": {"code": 0},  # STATUS_CODE_OK
-                                "attributes": [{"key": "http.method", "value": {"stringValue": "GET"}}],
-                            }
-                        ],
+                        "traceId": "ABC1234567890DEF",
+                        "spanId": "123456789ABCDEF0",
+                        "name": "GET /api/users",
+                        "kind": 2,  # SPAN_KIND_CLIENT
+                        "startTimeUnixNano": "1700000000000000000",
+                        "endTimeUnixNano": "1700000000123456789",
+                        "status": {"code": 0},  # STATUS_CODE_OK
+                        "attributes": [{"key": "http.method", "value": {"stringValue": "GET"}}],
                     }
                 ],
             }
-        ]
+        ],
     }
 
-    stats = traces_storage.store_traces(otlp_traces)
+    stats = traces_storage.store_traces(resource_spans)
 
     assert stats["spans_stored"] == 1
     assert stats["resources_created"] == 1
@@ -157,40 +154,37 @@ def test_store_traces_multiple_spans(traces_storage, mock_session):
 
     mock_session.flush.side_effect = flush_side_effect
 
-    otlp_traces = {
-        "resourceSpans": [
+    # Single ResourceSpans entry (not wrapped in array)
+    resource_spans = {
+        "resource": {"attributes": []},
+        "scopeSpans": [
             {
-                "resource": {"attributes": []},
-                "scopeSpans": [
+                "scope": {"name": "tracer", "version": "1.0"},
+                "spans": [
                     {
-                        "scope": {"name": "tracer", "version": "1.0"},
-                        "spans": [
-                            {
-                                "traceId": "ABC123",
-                                "spanId": "SPAN001",
-                                "name": "Span 1",
-                                "kind": 1,
-                                "startTimeUnixNano": "1700000000000000000",
-                                "endTimeUnixNano": "1700000000100000000",
-                                "status": {"code": 0},
-                            },
-                            {
-                                "traceId": "ABC123",
-                                "spanId": "SPAN002",
-                                "name": "Span 2",
-                                "kind": 2,
-                                "startTimeUnixNano": "1700000000200000000",
-                                "endTimeUnixNano": "1700000000300000000",
-                                "status": {"code": 0},
-                            },
-                        ],
-                    }
+                        "traceId": "ABC123",
+                        "spanId": "SPAN001",
+                        "name": "Span 1",
+                        "kind": 1,
+                        "startTimeUnixNano": "1700000000000000000",
+                        "endTimeUnixNano": "1700000000100000000",
+                        "status": {"code": 0},
+                    },
+                    {
+                        "traceId": "ABC123",
+                        "spanId": "SPAN002",
+                        "name": "Span 2",
+                        "kind": 2,
+                        "startTimeUnixNano": "1700000000200000000",
+                        "endTimeUnixNano": "1700000000300000000",
+                        "status": {"code": 0},
+                    },
                 ],
             }
-        ]
+        ],
     }
 
-    stats = traces_storage.store_traces(otlp_traces)
+    stats = traces_storage.store_traces(resource_spans)
 
     assert stats["spans_stored"] == 2
     # Resource/scope reused (not created again)
@@ -218,41 +212,38 @@ def test_store_traces_with_parent_child(traces_storage, mock_session):
 
     mock_session.flush.side_effect = flush_side_effect
 
-    otlp_traces = {
-        "resourceSpans": [
+    # Single ResourceSpans entry (not wrapped in array)
+    resource_spans = {
+        "resource": {"attributes": []},
+        "scopeSpans": [
             {
-                "resource": {"attributes": []},
-                "scopeSpans": [
+                "scope": {"name": "tracer", "version": "1.0"},
+                "spans": [
                     {
-                        "scope": {"name": "tracer", "version": "1.0"},
-                        "spans": [
-                            {
-                                "traceId": "TRACE123",
-                                "spanId": "PARENTSPAN1",
-                                "name": "Parent Span",
-                                "kind": 1,
-                                "startTimeUnixNano": "1700000000000000000",
-                                "endTimeUnixNano": "1700000000500000000",
-                                "status": {"code": 0},
-                            },
-                            {
-                                "traceId": "TRACE123",
-                                "spanId": "CHILDSPAN1",
-                                "parentSpanId": "PARENTSPAN1",
-                                "name": "Child Span",
-                                "kind": 2,
-                                "startTimeUnixNano": "1700000000100000000",
-                                "endTimeUnixNano": "1700000000200000000",
-                                "status": {"code": 0},
-                            },
-                        ],
-                    }
+                        "traceId": "TRACE123",
+                        "spanId": "PARENTSPAN1",
+                        "name": "Parent Span",
+                        "kind": 1,
+                        "startTimeUnixNano": "1700000000000000000",
+                        "endTimeUnixNano": "1700000000500000000",
+                        "status": {"code": 0},
+                    },
+                    {
+                        "traceId": "TRACE123",
+                        "spanId": "CHILDSPAN1",
+                        "parentSpanId": "PARENTSPAN1",
+                        "name": "Child Span",
+                        "kind": 2,
+                        "startTimeUnixNano": "1700000000100000000",
+                        "endTimeUnixNano": "1700000000200000000",
+                        "status": {"code": 0},
+                    },
                 ],
             }
-        ]
+        ],
     }
 
-    traces_storage.store_traces(otlp_traces)
+    traces_storage.store_traces(resource_spans)
 
     # Verify both spans were created
     calls = list(mock_session.add.call_args_list)
@@ -282,32 +273,29 @@ def test_store_traces_with_bytes_ids(traces_storage, mock_session):
 
     mock_session.flush.side_effect = flush_side_effect
 
+    # Single ResourceSpans entry (not wrapped in array)
     # Simulate bytes IDs (hex-encoded in test)
-    otlp_traces = {
-        "resourceSpans": [
+    resource_spans = {
+        "resource": {"attributes": []},
+        "scopeSpans": [
             {
-                "resource": {"attributes": []},
-                "scopeSpans": [
+                "scope": {"name": "tracer", "version": "1.0"},
+                "spans": [
                     {
-                        "scope": {"name": "tracer", "version": "1.0"},
-                        "spans": [
-                            {
-                                "traceId": b"ABC123".hex(),
-                                "spanId": b"SPAN01".hex(),
-                                "name": "Bytes ID Span",
-                                "kind": 1,
-                                "startTimeUnixNano": "1700000000000000000",
-                                "endTimeUnixNano": "1700000000100000000",
-                                "status": {"code": 0},
-                            }
-                        ],
+                        "traceId": b"ABC123".hex(),
+                        "spanId": b"SPAN01".hex(),
+                        "name": "Bytes ID Span",
+                        "kind": 1,
+                        "startTimeUnixNano": "1700000000000000000",
+                        "endTimeUnixNano": "1700000000100000000",
+                        "status": {"code": 0},
                     }
                 ],
             }
-        ]
+        ],
     }
 
-    traces_storage.store_traces(otlp_traces)
+    traces_storage.store_traces(resource_spans)
 
     # Verify span fact was created with converted IDs
     calls = list(mock_session.add.call_args_list)
@@ -333,31 +321,28 @@ def test_store_traces_with_status_error(traces_storage, mock_session):
 
     mock_session.flush.side_effect = flush_side_effect
 
-    otlp_traces = {
-        "resourceSpans": [
+    # Single ResourceSpans entry (not wrapped in array)
+    resource_spans = {
+        "resource": {"attributes": []},
+        "scopeSpans": [
             {
-                "resource": {"attributes": []},
-                "scopeSpans": [
+                "scope": {"name": "tracer", "version": "1.0"},
+                "spans": [
                     {
-                        "scope": {"name": "tracer", "version": "1.0"},
-                        "spans": [
-                            {
-                                "traceId": "ERROR_TRACE",
-                                "spanId": "ERROR_SPAN",
-                                "name": "Failed Operation",
-                                "kind": 3,
-                                "startTimeUnixNano": "1700000000000000000",
-                                "endTimeUnixNano": "1700000000100000000",
-                                "status": {"code": 2, "message": "Internal server error"},  # STATUS_CODE_ERROR
-                            }
-                        ],
+                        "traceId": "ERROR_TRACE",
+                        "spanId": "ERROR_SPAN",
+                        "name": "Failed Operation",
+                        "kind": 3,
+                        "startTimeUnixNano": "1700000000000000000",
+                        "endTimeUnixNano": "1700000000100000000",
+                        "status": {"code": 2, "message": "Internal server error"},  # STATUS_CODE_ERROR
                     }
                 ],
             }
-        ]
+        ],
     }
 
-    traces_storage.store_traces(otlp_traces)
+    traces_storage.store_traces(resource_spans)
 
     # Verify span fact was created with error status
     calls = list(mock_session.add.call_args_list)
@@ -370,9 +355,13 @@ def test_store_traces_with_status_error(traces_storage, mock_session):
 
 def test_store_traces_empty_resource_spans(traces_storage):
     """Test handling empty resourceSpans."""
-    otlp_traces = {"resourceSpans": []}
+    # Mock resource manager to handle empty attributes
+    traces_storage.resource_manager.get_or_create_resource.return_value = (1, False, "hash")
 
-    stats = traces_storage.store_traces(otlp_traces)
+    # Single ResourceSpans entry with no spans
+    resource_spans = {"resource": {"attributes": []}, "scopeSpans": []}
+
+    stats = traces_storage.store_traces(resource_spans)
 
     assert stats["spans_stored"] == 0
     assert stats["resources_created"] == 0
@@ -397,31 +386,28 @@ def test_store_traces_missing_status(traces_storage, mock_session):
 
     mock_session.flush.side_effect = flush_side_effect
 
-    otlp_traces = {
-        "resourceSpans": [
+    # Single ResourceSpans entry (not wrapped in array)
+    resource_spans = {
+        "resource": {"attributes": []},
+        "scopeSpans": [
             {
-                "resource": {"attributes": []},
-                "scopeSpans": [
+                "scope": {"name": "tracer", "version": "1.0"},
+                "spans": [
                     {
-                        "scope": {"name": "tracer", "version": "1.0"},
-                        "spans": [
-                            {
-                                "traceId": "TRACE_NO_STATUS",
-                                "spanId": "SPAN_NO_STATUS",
-                                "name": "No Status Span",
-                                "kind": 1,
-                                "startTimeUnixNano": "1700000000000000000",
-                                "endTimeUnixNano": "1700000000100000000",
-                                # No status field
-                            }
-                        ],
+                        "traceId": "TRACE_NO_STATUS",
+                        "spanId": "SPAN_NO_STATUS",
+                        "name": "No Status Span",
+                        "kind": 1,
+                        "startTimeUnixNano": "1700000000000000000",
+                        "endTimeUnixNano": "1700000000100000000",
+                        # No status field
                     }
                 ],
             }
-        ]
+        ],
     }
 
-    traces_storage.store_traces(otlp_traces)
+    traces_storage.store_traces(resource_spans)
 
     # Verify span fact was created with default status
     calls = list(mock_session.add.call_args_list)
@@ -451,33 +437,30 @@ def test_store_traces_span_kind_values(traces_storage, mock_session):
 
     mock_session.flush.side_effect = flush_side_effect
 
+    # Single ResourceSpans entry (not wrapped in array)
     # Test all 5 SpanKind values
-    otlp_traces = {
-        "resourceSpans": [
+    resource_spans = {
+        "resource": {"attributes": []},
+        "scopeSpans": [
             {
-                "resource": {"attributes": []},
-                "scopeSpans": [
+                "scope": {"name": "tracer", "version": "1.0"},
+                "spans": [
                     {
-                        "scope": {"name": "tracer", "version": "1.0"},
-                        "spans": [
-                            {
-                                "traceId": "TRACE1",
-                                "spanId": f"SPAN{kind}",
-                                "name": f"Kind {kind}",
-                                "kind": kind,
-                                "startTimeUnixNano": "1700000000000000000",
-                                "endTimeUnixNano": "1700000000100000000",
-                                "status": {"code": 0},
-                            }
-                            for kind in [0, 1, 2, 3, 4, 5]  # All SpanKind values
-                        ],
+                        "traceId": "TRACE1",
+                        "spanId": f"SPAN{kind}",
+                        "name": f"Kind {kind}",
+                        "kind": kind,
+                        "startTimeUnixNano": "1700000000000000000",
+                        "endTimeUnixNano": "1700000000100000000",
+                        "status": {"code": 0},
                     }
+                    for kind in [0, 1, 2, 3, 4, 5]  # All SpanKind values
                 ],
             }
-        ]
+        ],
     }
 
-    stats = traces_storage.store_traces(otlp_traces)
+    stats = traces_storage.store_traces(resource_spans)
 
     assert stats["spans_stored"] == 6
 

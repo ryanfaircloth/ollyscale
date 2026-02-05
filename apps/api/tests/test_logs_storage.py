@@ -118,30 +118,27 @@ def test_store_logs_single_record(logs_storage, mock_session):
 
     mock_session.flush.side_effect = flush_side_effect
 
-    otlp_logs = {
-        "resourceLogs": [
+    # Single ResourceLogs entry (not wrapped in array)
+    resource_logs = {
+        "resource": {"attributes": [{"key": "service.name", "value": {"stringValue": "test-service"}}]},
+        "scopeLogs": [
             {
-                "resource": {"attributes": [{"key": "service.name", "value": {"stringValue": "test-service"}}]},
-                "scopeLogs": [
+                "scope": {"name": "test.logger", "version": "1.0.0"},
+                "logRecords": [
                     {
-                        "scope": {"name": "test.logger", "version": "1.0.0"},
-                        "logRecords": [
-                            {
-                                "timeUnixNano": "1700000000000000000",
-                                "observedTimeUnixNano": "1700000000000000001",
-                                "severityNumber": 9,
-                                "severityText": "INFO",
-                                "body": {"stringValue": "Test log message"},
-                                "attributes": [{"key": "log.level", "value": {"stringValue": "INFO"}}],
-                            }
-                        ],
+                        "timeUnixNano": "1700000000000000000",
+                        "observedTimeUnixNano": "1700000000000000001",
+                        "severityNumber": 9,
+                        "severityText": "INFO",
+                        "body": {"stringValue": "Test log message"},
+                        "attributes": [{"key": "log.level", "value": {"stringValue": "INFO"}}],
                     }
                 ],
             }
-        ]
+        ],
     }
 
-    stats = logs_storage.store_logs(otlp_logs)
+    stats = logs_storage.store_logs(resource_logs)
 
     assert stats["logs_stored"] == 1
     assert stats["resources_created"] == 1
@@ -170,37 +167,34 @@ def test_store_logs_multiple_records(logs_storage, mock_session):
 
     mock_session.flush.side_effect = flush_side_effect
 
-    otlp_logs = {
-        "resourceLogs": [
+    # Single ResourceLogs entry (not wrapped in array)
+    resource_logs = {
+        "resource": {"attributes": []},
+        "scopeLogs": [
             {
-                "resource": {"attributes": []},
-                "scopeLogs": [
+                "scope": {"name": "logger", "version": "1.0"},
+                "logRecords": [
                     {
-                        "scope": {"name": "logger", "version": "1.0"},
-                        "logRecords": [
-                            {
-                                "timeUnixNano": "1700000000000000000",
-                                "severityNumber": 9,
-                                "body": {"stringValue": "Log 1"},
-                            },
-                            {
-                                "timeUnixNano": "1700000000000000001",
-                                "severityNumber": 13,
-                                "body": {"stringValue": "Log 2"},
-                            },
-                            {
-                                "timeUnixNano": "1700000000000000002",
-                                "severityNumber": 17,
-                                "body": {"stringValue": "Log 3"},
-                            },
-                        ],
-                    }
+                        "timeUnixNano": "1700000000000000000",
+                        "severityNumber": 9,
+                        "body": {"stringValue": "Log 1"},
+                    },
+                    {
+                        "timeUnixNano": "1700000000000000001",
+                        "severityNumber": 13,
+                        "body": {"stringValue": "Log 2"},
+                    },
+                    {
+                        "timeUnixNano": "1700000000000000002",
+                        "severityNumber": 17,
+                        "body": {"stringValue": "Log 3"},
+                    },
                 ],
             }
-        ]
+        ],
     }
 
-    stats = logs_storage.store_logs(otlp_logs)
+    stats = logs_storage.store_logs(resource_logs)
 
     assert stats["logs_stored"] == 3
     # Resource/scope reused (not created again)
@@ -226,30 +220,27 @@ def test_store_logs_with_trace_correlation(logs_storage, mock_session):
 
     mock_session.flush.side_effect = flush_side_effect
 
-    otlp_logs = {
-        "resourceLogs": [
+    # Single ResourceLogs entry (not wrapped in array)
+    resource_logs = {
+        "resource": {"attributes": []},
+        "scopeLogs": [
             {
-                "resource": {"attributes": []},
-                "scopeLogs": [
+                "scope": {"name": "logger", "version": "1.0"},
+                "logRecords": [
                     {
-                        "scope": {"name": "logger", "version": "1.0"},
-                        "logRecords": [
-                            {
-                                "timeUnixNano": "1700000000000000000",
-                                "severityNumber": 9,
-                                "body": {"stringValue": "Correlated log"},
-                                "traceId": "ABC1234567890DEF",
-                                "spanId": "123456789ABCDEF0",
-                                "attributes": [],
-                            }
-                        ],
+                        "timeUnixNano": "1700000000000000000",
+                        "severityNumber": 9,
+                        "body": {"stringValue": "Correlated log"},
+                        "traceId": "ABC1234567890DEF",
+                        "spanId": "123456789ABCDEF0",
+                        "attributes": [],
                     }
                 ],
             }
-        ]
+        ],
     }
 
-    logs_storage.store_logs(otlp_logs)
+    logs_storage.store_logs(resource_logs)
 
     # Verify log fact was created with trace correlation
     calls = list(mock_session.add.call_args_list)
@@ -278,30 +269,27 @@ def test_store_logs_with_bytes_trace_id(logs_storage, mock_session):
 
     mock_session.flush.side_effect = flush_side_effect
 
-    otlp_logs = {
-        "resourceLogs": [
+    # Single ResourceLogs entry (not wrapped in array)
+    resource_logs = {
+        "resource": {"attributes": []},
+        "scopeLogs": [
             {
-                "resource": {"attributes": []},
-                "scopeLogs": [
+                "scope": {"name": "logger", "version": "1.0"},
+                "logRecords": [
                     {
-                        "scope": {"name": "logger", "version": "1.0"},
-                        "logRecords": [
-                            {
-                                "timeUnixNano": "1700000000000000000",
-                                "severityNumber": 9,
-                                "body": {"stringValue": "Log with bytes IDs"},
-                                "traceId": b"\xab\xcd\xef\x01\x23\x45\x67\x89\xab\xcd\xef\x01\x23\x45\x67\x89",
-                                "spanId": b"\x12\x34\x56\x78\x9a\xbc\xde\xf0",
-                                "attributes": [],
-                            }
-                        ],
+                        "timeUnixNano": "1700000000000000000",
+                        "severityNumber": 9,
+                        "body": {"stringValue": "Log with bytes IDs"},
+                        "traceId": b"\xab\xcd\xef\x01\x23\x45\x67\x89\xab\xcd\xef\x01\x23\x45\x67\x89",
+                        "spanId": b"\x12\x34\x56\x78\x9a\xbc\xde\xf0",
+                        "attributes": [],
                     }
                 ],
             }
-        ]
+        ],
     }
 
-    logs_storage.store_logs(otlp_logs)
+    logs_storage.store_logs(resource_logs)
 
     # Verify hex conversion
     log_fact_call = [c for c in mock_session.add.call_args_list if hasattr(c[0][0], "trace_id") and c[0][0].trace_id]
@@ -334,34 +322,31 @@ def test_store_logs_with_attributes_other(logs_storage, mock_session):
 
     mock_session.flush.side_effect = flush_side_effect
 
-    otlp_logs = {
-        "resourceLogs": [
+    # Single ResourceLogs entry (not wrapped in array)
+    resource_logs = {
+        "resource": {"attributes": []},
+        "scopeLogs": [
             {
-                "resource": {"attributes": []},
-                "scopeLogs": [
+                "scope": {"name": "logger", "version": "1.0"},
+                "logRecords": [
                     {
-                        "scope": {"name": "logger", "version": "1.0"},
-                        "logRecords": [
+                        "timeUnixNano": "1700000000000000000",
+                        "severityNumber": 17,
+                        "body": {"stringValue": "Error log"},
+                        "attributes": [
+                            {"key": "log.level", "value": {"stringValue": "ERROR"}},
                             {
-                                "timeUnixNano": "1700000000000000000",
-                                "severityNumber": 17,
-                                "body": {"stringValue": "Error log"},
-                                "attributes": [
-                                    {"key": "log.level", "value": {"stringValue": "ERROR"}},
-                                    {
-                                        "key": "custom.field",
-                                        "value": {"stringValue": "custom-value"},
-                                    },
-                                ],
-                            }
+                                "key": "custom.field",
+                                "value": {"stringValue": "custom-value"},
+                            },
                         ],
                     }
                 ],
             }
-        ]
+        ],
     }
 
-    stats = logs_storage.store_logs(otlp_logs)
+    stats = logs_storage.store_logs(resource_logs)
 
     # Verify attributes_other was set on log fact
     other_calls = [
