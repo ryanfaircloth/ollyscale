@@ -106,11 +106,17 @@ def test_store_logs_single_record(logs_storage, mock_session):
         {"custom.attr": "value"},
     )
 
-    # Mock flush to set log_id
-    def set_log_id(log_fact):
-        log_fact.log_id = 123
+    # Track objects added to session and set IDs on flush
+    added_objects = []
+    mock_session.add.side_effect = lambda obj: added_objects.append(obj)
 
-    mock_session.flush.side_effect = set_log_id
+    def flush_side_effect():
+        for obj in added_objects:
+            if hasattr(obj, "log_id") and obj.log_id is None:
+                obj.log_id = 123
+        added_objects.clear()
+
+    mock_session.flush.side_effect = flush_side_effect
 
     otlp_logs = {
         "resourceLogs": [
@@ -151,8 +157,19 @@ def test_store_logs_multiple_records(logs_storage, mock_session):
     logs_storage.resource_manager.get_or_create_scope.return_value = (2, False, "hash2")
     logs_storage.attribute_manager.store_attributes.return_value = ({}, {})
 
-    # Mock flush
-    mock_session.flush.side_effect = lambda x: setattr(x, "log_id", 123)
+    # Track objects added to session and set IDs on flush
+    log_id_counter = [100]
+    added_objects = []
+    mock_session.add.side_effect = lambda obj: added_objects.append(obj)
+
+    def flush_side_effect():
+        for obj in added_objects:
+            if hasattr(obj, "log_id") and obj.log_id is None:
+                obj.log_id = log_id_counter[0]
+                log_id_counter[0] += 1
+        added_objects.clear()
+
+    mock_session.flush.side_effect = flush_side_effect
 
     otlp_logs = {
         "resourceLogs": [
@@ -198,7 +215,17 @@ def test_store_logs_with_trace_correlation(logs_storage, mock_session):
     logs_storage.resource_manager.get_or_create_scope.return_value = (2, False, "hash")
     logs_storage.attribute_manager.store_attributes.return_value = ({}, {})
 
-    mock_session.flush.side_effect = lambda x: setattr(x, "log_id", 456)
+    # Track objects added to session and set IDs on flush
+    added_objects = []
+    mock_session.add.side_effect = lambda obj: added_objects.append(obj)
+
+    def flush_side_effect():
+        for obj in added_objects:
+            if hasattr(obj, "log_id") and obj.log_id is None:
+                obj.log_id = 456
+        added_objects.clear()
+
+    mock_session.flush.side_effect = flush_side_effect
 
     otlp_logs = {
         "resourceLogs": [
@@ -231,7 +258,7 @@ def test_store_logs_with_trace_correlation(logs_storage, mock_session):
     assert len(log_fact_call) > 0
     log_fact = log_fact_call[0][0][0]
     assert log_fact.trace_id == "abc1234567890def"  # Lowercase
-    assert log_fact.span_id == "123456789abcdef0"  # Lowercase
+    assert log_fact.span_id_hex == "123456789abcdef0"  # Lowercase
 
 
 def test_store_logs_with_bytes_trace_id(logs_storage, mock_session):
@@ -240,7 +267,17 @@ def test_store_logs_with_bytes_trace_id(logs_storage, mock_session):
     logs_storage.resource_manager.get_or_create_scope.return_value = (2, False, "hash")
     logs_storage.attribute_manager.store_attributes.return_value = ({}, {})
 
-    mock_session.flush.side_effect = lambda x: setattr(x, "log_id", 789)
+    # Track objects added to session and set IDs on flush
+    added_objects = []
+    mock_session.add.side_effect = lambda obj: added_objects.append(obj)
+
+    def flush_side_effect():
+        for obj in added_objects:
+            if hasattr(obj, "log_id") and obj.log_id is None:
+                obj.log_id = 789
+        added_objects.clear()
+
+    mock_session.flush.side_effect = flush_side_effect
 
     otlp_logs = {
         "resourceLogs": [
@@ -272,7 +309,7 @@ def test_store_logs_with_bytes_trace_id(logs_storage, mock_session):
     assert len(log_fact_call) > 0
     log_fact = log_fact_call[0][0][0]
     assert log_fact.trace_id == "abcdef0123456789abcdef0123456789"
-    assert log_fact.span_id == "123456789abcdef0"
+    assert log_fact.span_id_hex == "123456789abcdef0"
 
 
 def test_store_logs_with_attributes_other(logs_storage, mock_session):
@@ -286,7 +323,17 @@ def test_store_logs_with_attributes_other(logs_storage, mock_session):
         {"custom.field": "custom-value", "request.id": "req-123"},
     )
 
-    mock_session.flush.side_effect = lambda x: setattr(x, "log_id", 999)
+    # Track objects added to session and set IDs on flush
+    added_objects = []
+    mock_session.add.side_effect = lambda obj: added_objects.append(obj)
+
+    def flush_side_effect():
+        for obj in added_objects:
+            if hasattr(obj, "log_id") and obj.log_id is None:
+                obj.log_id = 999
+        added_objects.clear()
+
+    mock_session.flush.side_effect = flush_side_effect
 
     otlp_logs = {
         "resourceLogs": [
@@ -329,20 +376,39 @@ def test_store_logs_with_attributes_other(logs_storage, mock_session):
 
 def test_get_logs_basic_query(logs_storage, mock_session):
     """Test basic log querying."""
-    # Mock query results
-    mock_log = MagicMock()
-    mock_log.log_id = 1
-    mock_log.time_unix_nano = 1700000000000000000
-    mock_log.severity_number = 9
-    mock_log.severity_text = "INFO"
-    mock_log.body = "Test log"
-    mock_log.trace_id = None
-    mock_log.span_id = None
-    mock_log.resource_id = 1
-    mock_log.scope_id = 2
-
     mock_result = MagicMock()
-    mock_result.all.return_value = [mock_log]
+    # fetchall() returns tuples with 23 fields matching SELECT order
+    # (log_id, time_unix_nano, observed_time_unix_nano, severity_number, severity_text, body,
+    #  trace_id, span_id_hex, trace_flags, resource_id, resource_hash, resource_attributes,
+    #  scope_id, scope_hash, scope_name, scope_version, scope_attributes, attributes,
+    #  service_name, service_namespace, log_level, error_type, semantic_type)
+    mock_result.fetchall.return_value = [
+        (
+            1,  # log_id
+            1700000000000000000,  # time_unix_nano
+            1700000000000000001,  # observed_time_unix_nano
+            9,  # severity_number
+            "INFO",  # severity_text
+            "Test log",  # body
+            None,  # trace_id
+            None,  # span_id_hex
+            0,  # trace_flags
+            1,  # resource_id
+            "hash1",  # resource_hash
+            {"service.name": "test"},  # resource_attributes
+            2,  # scope_id
+            "hash2",  # scope_hash
+            "logger",  # scope_name
+            "1.0",  # scope_version
+            {},  # scope_attributes
+            {},  # attributes
+            "test",  # service_name
+            None,  # service_namespace
+            "INFO",  # log_level
+            None,  # error_type
+            "general",  # semantic_type
+        )
+    ]
     mock_session.exec.return_value = mock_result
 
     logs = logs_storage.get_logs(start_time=1700000000000000000, end_time=1700000001000000000, limit=10)

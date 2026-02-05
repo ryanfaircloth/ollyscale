@@ -221,7 +221,7 @@ class LogsStorage:
             body=body,
             flags=flags,
             trace_id=trace_id,
-            span_id=span_id,
+            span_id_hex=span_id,
         )
         self.session.add(log_fact)
         self.session.flush()  # Get log_id

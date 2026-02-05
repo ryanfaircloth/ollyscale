@@ -208,3 +208,152 @@ class OtelLogAttrsOther(SQLModel, table=True):
         )
     )
     attributes: dict = Field(sa_column=Column(JSONB, nullable=False))
+
+
+# Spans
+
+
+class OtelSpansFact(SQLModel, table=True):
+    """Span fact table with OTLP schema (new denormalized structure)."""
+
+    __tablename__ = "otel_spans_fact"
+    __table_args__ = (
+        Index("idx_otel_spans_trace_span", "trace_id", "span_id_hex", unique=True),
+        Index("idx_otel_spans_trace", "trace_id"),
+        Index("idx_otel_spans_resource", "resource_id"),
+        Index("idx_otel_spans_time", "start_time_unix_nano"),
+        Index("idx_otel_spans_parent", "parent_span_id_hex"),
+    )
+
+    span_id: int | None = Field(default=None, sa_column=Column(BigInteger, primary_key=True))
+
+    # Resource and scope references
+    resource_id: int = Field(sa_column=Column(BigInteger, ForeignKey("otel_resources_dim.resource_id"), nullable=False))
+    scope_id: int | None = Field(
+        default=None, sa_column=Column(BigInteger, ForeignKey("otel_scopes_dim.scope_id"), nullable=True)
+    )
+
+    # Span identity
+    trace_id: str = Field(max_length=32, nullable=False)
+    span_id_hex: str = Field(max_length=16, nullable=False)
+    parent_span_id_hex: str | None = Field(default=None, max_length=16, nullable=True)
+
+    # Span details
+    name: str = Field(sa_column=Column(Text, nullable=False))
+    kind: int = Field(sa_column=Column(SmallInteger, nullable=False))  # SpanKind enum
+
+    # Timing
+    start_time_unix_nano: int = Field(sa_column=Column(BigInteger, nullable=False))
+    end_time_unix_nano: int = Field(sa_column=Column(BigInteger, nullable=False))
+
+    # Status
+    status_code: int = Field(sa_column=Column(SmallInteger, nullable=False))  # StatusCode enum
+    status_message: str | None = Field(default=None, sa_column=Column(Text, nullable=True))
+
+    # Attributes
+    attributes_other: dict | None = Field(default=None, sa_column=Column(JSONB, nullable=True))
+
+    # Metadata
+    flags: int = Field(default=0, sa_column=Column(Integer, nullable=False))
+
+
+# Span attribute tables
+
+
+class OtelSpanAttrsString(SQLModel, table=True):
+    """String-typed span attributes."""
+
+    __tablename__ = "otel_span_attrs_string"
+    __table_args__ = (
+        Index("idx_otel_span_attrs_string_span", "span_id"),
+        Index("idx_otel_span_attrs_string_key", "key_id"),
+        Index("idx_otel_span_attrs_string_value", "value"),
+    )
+
+    span_id: int = Field(
+        sa_column=Column(BigInteger, ForeignKey("otel_spans_fact.span_id", ondelete="CASCADE"), primary_key=True)
+    )
+    key_id: int = Field(sa_column=Column(BigInteger, ForeignKey("attribute_keys.key_id"), primary_key=True))
+    value: str = Field(sa_column=Column(Text, nullable=False))
+
+
+class OtelSpanAttrsInt(SQLModel, table=True):
+    """Integer-typed span attributes."""
+
+    __tablename__ = "otel_span_attrs_int"
+    __table_args__ = (
+        Index("idx_otel_span_attrs_int_span", "span_id"),
+        Index("idx_otel_span_attrs_int_key", "key_id"),
+        Index("idx_otel_span_attrs_int_value", "value"),
+    )
+
+    span_id: int = Field(
+        sa_column=Column(BigInteger, ForeignKey("otel_spans_fact.span_id", ondelete="CASCADE"), primary_key=True)
+    )
+    key_id: int = Field(sa_column=Column(BigInteger, ForeignKey("attribute_keys.key_id"), primary_key=True))
+    value: int = Field(sa_column=Column(BigInteger, nullable=False))
+
+
+class OtelSpanAttrsDouble(SQLModel, table=True):
+    """Double precision floating point span attributes."""
+
+    __tablename__ = "otel_span_attrs_double"
+    __table_args__ = (
+        Index("idx_otel_span_attrs_double_span", "span_id"),
+        Index("idx_otel_span_attrs_double_key", "key_id"),
+        Index("idx_otel_span_attrs_double_value", "value"),
+    )
+
+    span_id: int = Field(
+        sa_column=Column(BigInteger, ForeignKey("otel_spans_fact.span_id", ondelete="CASCADE"), primary_key=True)
+    )
+    key_id: int = Field(sa_column=Column(BigInteger, ForeignKey("attribute_keys.key_id"), primary_key=True))
+    value: float = Field(sa_column=Column(Double, nullable=False))
+
+
+class OtelSpanAttrsBool(SQLModel, table=True):
+    """Boolean-typed span attributes."""
+
+    __tablename__ = "otel_span_attrs_bool"
+    __table_args__ = (
+        Index("idx_otel_span_attrs_bool_span", "span_id"),
+        Index("idx_otel_span_attrs_bool_key", "key_id"),
+        Index("idx_otel_span_attrs_bool_value", "value"),
+    )
+
+    span_id: int = Field(
+        sa_column=Column(BigInteger, ForeignKey("otel_spans_fact.span_id", ondelete="CASCADE"), primary_key=True)
+    )
+    key_id: int = Field(sa_column=Column(BigInteger, ForeignKey("attribute_keys.key_id"), primary_key=True))
+    value: bool = Field(sa_column=Column(Boolean, nullable=False))
+
+
+class OtelSpanAttrsBytes(SQLModel, table=True):
+    """Binary/bytes span attributes."""
+
+    __tablename__ = "otel_span_attrs_bytes"
+    __table_args__ = (
+        Index("idx_otel_span_attrs_bytes_span", "span_id"),
+        Index("idx_otel_span_attrs_bytes_key", "key_id"),
+    )
+
+    span_id: int = Field(
+        sa_column=Column(BigInteger, ForeignKey("otel_spans_fact.span_id", ondelete="CASCADE"), primary_key=True)
+    )
+    key_id: int = Field(sa_column=Column(BigInteger, ForeignKey("attribute_keys.key_id"), primary_key=True))
+    value: bytes = Field(sa_column=Column(LargeBinary, nullable=False))
+
+
+class OtelSpanAttrsOther(SQLModel, table=True):
+    """JSONB catch-all for complex/array span attributes."""
+
+    __tablename__ = "otel_span_attrs_other"
+    __table_args__ = (Index("idx_otel_span_attrs_other_gin", "attributes", postgresql_using="gin"),)
+
+    span_id: int = Field(
+        sa_column=Column(
+            BigInteger, ForeignKey("otel_spans_fact.span_id", ondelete="CASCADE"), primary_key=True, nullable=False
+        )
+    )
+    attributes: dict = Field(sa_column=Column(JSONB, nullable=False))
+

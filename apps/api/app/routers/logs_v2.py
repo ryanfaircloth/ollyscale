@@ -8,10 +8,10 @@ until Phase 5 migration.
 import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
 from sqlmodel import Session
 
-from app.db.session import get_db_session
+from app.dependencies import get_db_session
 from app.storage.logs_storage import LogsStorage
 
 router = APIRouter(prefix="/v2/logs", tags=["logs-v2"])
@@ -84,7 +84,7 @@ def search_logs_v2(
 
 @router.get("/trace/{trace_id}")
 def get_logs_by_trace_v2(
-    trace_id: Annotated[str, Query(description="Trace ID (32-char hex)", min_length=32, max_length=32)],
+    trace_id: Annotated[str, Path(description="Trace ID (32-char hex)", min_length=32, max_length=32)],
     logs_storage: Annotated[LogsStorage, Depends(get_logs_storage)] = None,
 ):
     """Get all logs for a trace, grouped by span.
@@ -143,8 +143,8 @@ def get_logs_by_trace_v2(
 
 @router.get("/trace/{trace_id}/span/{span_id}")
 def get_logs_by_span_v2(
-    trace_id: Annotated[str, Query(description="Trace ID (32-char hex)", min_length=32, max_length=32)],
-    span_id: Annotated[str, Query(description="Span ID (16-char hex)", min_length=16, max_length=16)],
+    trace_id: Annotated[str, Path(description="Trace ID (32-char hex)", min_length=32, max_length=32)],
+    span_id: Annotated[str, Path(description="Span ID (16-char hex)", min_length=16, max_length=16)],
     logs_storage: Annotated[LogsStorage, Depends(get_logs_storage)] = None,
 ):
     """Get logs for a specific span within a trace.

@@ -1,6 +1,9 @@
 """Dependency injection for FastAPI routes."""
 
 import os
+from collections.abc import Generator
+
+from sqlalchemy.orm import Session
 
 from app.storage.interface import StorageBackend
 from app.storage.postgres_orm_sync import PostgresStorage
@@ -48,6 +51,33 @@ def close_storage():
     if _storage is not None:
         _storage.close()
         _storage = None
+
+
+def get_db_session() -> Generator[Session, None, None]:
+    """
+    Get database session for v2 routers.
+
+    Yields a SQLAlchemy session from the global storage engine.
+    Session is automatically committed on success or rolled back on error.
+
+    Yields:
+        Session: Active database session
+
+    Raises:
+        RuntimeError: If storage is not initialized
+    """
+    storage = get_storage()
+    if not hasattr(storage, "engine") or storage.engine is None:
+        msg = "Storage engine not initialized. Call storage.connect() first."
+        raise RuntimeError(msg)
+
+    with Session(storage.engine) as session:
+        try:
+            yield session
+            session.commit()
+        except Exception:
+            session.rollback()
+            raise
 
 
 def get_storage_sync() -> StorageBackend:

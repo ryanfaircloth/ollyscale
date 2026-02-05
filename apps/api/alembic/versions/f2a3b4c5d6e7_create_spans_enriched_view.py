@@ -1,8 +1,8 @@
-"""create logs enriched view
+"""create spans enriched view
 
-Revision ID: e1f2a3b4c5d6
-Revises: d7e8f9a0b1c2
-Create Date: 2026-02-04 16:30:00.000000
+Revision ID: f2a3b4c5d6e7
+Revises: f1a2b3c4d5e7
+Create Date: 2024-12-19 10:15:00.000000
 
 """
 
@@ -11,57 +11,58 @@ from collections.abc import Sequence
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "e1f2a3b4c5d6"
-down_revision: str | Sequence[str] | None = "d7e8f9a0b1c2"
+revision: str = "f2a3b4c5d6e7"
+down_revision: str | Sequence[str] | None = "f1a2b3c4d5e7"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    """Create v_otel_logs_enriched view.
+    """Create v_otel_spans_enriched view.
 
-    This view provides a denormalized, queryable representation of logs
+    This view provides a denormalized, queryable representation of spans
     with all attributes aggregated from typed tables into a single JSONB column.
 
     Benefits:
-    - Single query for all log + attribute data
+    - Single query for all span + attribute data
     - No manual joins required by API layer
     - Efficient attribute filtering via JSONB operators
     - Includes resource and scope context
+    - Parent-child span relationships
     """
 
     op.execute("""
-        CREATE VIEW v_otel_logs_enriched AS
-        WITH log_attributes AS (
+        CREATE VIEW v_otel_spans_enriched AS
+        WITH span_attributes AS (
             SELECT
-                log_id,
+                span_id,
                 jsonb_object_agg(
                     ak.key,
                     CASE
-                        WHEN ls.value IS NOT NULL THEN to_jsonb(ls.value)
-                        WHEN li.value IS NOT NULL THEN to_jsonb(li.value)
-                        WHEN ld.value IS NOT NULL THEN to_jsonb(ld.value)
-                        WHEN lb.value IS NOT NULL THEN to_jsonb(lb.value)
-                        WHEN lby.value IS NOT NULL THEN to_jsonb(lby.value)
+                        WHEN ss.value IS NOT NULL THEN to_jsonb(ss.value)
+                        WHEN si.value IS NOT NULL THEN to_jsonb(si.value)
+                        WHEN sd.value IS NOT NULL THEN to_jsonb(sd.value)
+                        WHEN sb.value IS NOT NULL THEN to_jsonb(sb.value)
+                        WHEN sby.value IS NOT NULL THEN to_jsonb(sby.value)
                         ELSE 'null'::jsonb
                     END
                 ) FILTER (WHERE ak.key IS NOT NULL) AS promoted_attributes
             FROM (
-                SELECT DISTINCT log_id FROM otel_log_attrs_string
-                UNION SELECT DISTINCT log_id FROM otel_log_attrs_int
-                UNION SELECT DISTINCT log_id FROM otel_log_attrs_double
-                UNION SELECT DISTINCT log_id FROM otel_log_attrs_bool
-                UNION SELECT DISTINCT log_id FROM otel_log_attrs_bytes
-            ) AS log_ids
-            LEFT JOIN otel_log_attrs_string ls USING (log_id)
-            LEFT JOIN otel_log_attrs_int li USING (log_id)
-            LEFT JOIN otel_log_attrs_double ld USING (log_id)
-            LEFT JOIN otel_log_attrs_bool lb USING (log_id)
-            LEFT JOIN otel_log_attrs_bytes lby USING (log_id)
+                SELECT DISTINCT span_id FROM otel_span_attrs_string
+                UNION SELECT DISTINCT span_id FROM otel_span_attrs_int
+                UNION SELECT DISTINCT span_id FROM otel_span_attrs_double
+                UNION SELECT DISTINCT span_id FROM otel_span_attrs_bool
+                UNION SELECT DISTINCT span_id FROM otel_span_attrs_bytes
+            ) AS span_ids
+            LEFT JOIN otel_span_attrs_string ss USING (span_id)
+            LEFT JOIN otel_span_attrs_int si USING (span_id)
+            LEFT JOIN otel_span_attrs_double sd USING (span_id)
+            LEFT JOIN otel_span_attrs_bool sb USING (span_id)
+            LEFT JOIN otel_span_attrs_bytes sby USING (span_id)
             LEFT JOIN attribute_keys ak ON ak.key_id = COALESCE(
-                ls.key_id, li.key_id, ld.key_id, lb.key_id, lby.key_id
+                ss.key_id, si.key_id, sd.key_id, sb.key_id, sby.key_id
             )
-            GROUP BY log_id
+            GROUP BY span_id
         ),
         resource_attributes AS (
             SELECT
@@ -126,69 +127,70 @@ def upgrade() -> None:
             GROUP BY scope_id
         )
         SELECT
-            l.log_id,
-            l.time_unix_nano,
-            l.observed_time_unix_nano,
-            l.severity_number,
-            l.severity_text,
-            l.body_type_id,
-            l.body,
-            l.trace_id,
-            l.span_id_hex,
-            l.trace_flags,
-            l.dropped_attributes_count,
-            l.flags,
+            s.span_id,
+            s.trace_id,
+            s.span_id_hex,
+            s.parent_span_id_hex,
+            s.name,
+            s.kind_id,
+            s.start_time_unix_nano,
+            s.end_time_unix_nano,
+            s.status_code_id,
+            s.status_message,
+            s.flags,
 
             -- Resource context
-            l.resource_id,
+            s.resource_id,
             r.resource_hash,
             COALESCE(ra.resource_attributes, '{}'::jsonb) AS resource_attributes,
 
             -- Scope context
-            l.scope_id,
-            s.scope_hash,
-            s.name AS scope_name,
-            s.version AS scope_version,
+            s.scope_id,
+            sc.scope_hash,
+            sc.name AS scope_name,
+            sc.version AS scope_version,
             COALESCE(sa.scope_attributes, '{}'::jsonb) AS scope_attributes,
 
-            -- Log attributes (promoted + other)
-            COALESCE(la.promoted_attributes, '{}'::jsonb) ||
-            COALESCE(l.attributes_other, '{}'::jsonb) AS attributes,
+            -- Span attributes (promoted + other)
+            COALESCE(spa.promoted_attributes, '{}'::jsonb) ||
+            COALESCE(s.attributes_other, '{}'::jsonb) AS attributes,
 
             -- Commonly queried fields for convenience
             (COALESCE(ra.resource_attributes, '{}'::jsonb) -> 'service.name')::text AS service_name,
             (COALESCE(ra.resource_attributes, '{}'::jsonb) -> 'service.namespace')::text AS service_namespace,
-            (COALESCE(la.promoted_attributes, '{}'::jsonb) || COALESCE(l.attributes_other, '{}'::jsonb) -> 'log.level')::text AS log_level,
-            (COALESCE(la.promoted_attributes, '{}'::jsonb) || COALESCE(l.attributes_other, '{}'::jsonb) -> 'error.type')::text AS error_type,
+            (COALESCE(spa.promoted_attributes, '{}'::jsonb) || COALESCE(s.attributes_other, '{}'::jsonb) -> 'http.method')::text AS http_method,
+            (COALESCE(spa.promoted_attributes, '{}'::jsonb) || COALESCE(s.attributes_other, '{}'::jsonb) -> 'http.status_code')::text AS http_status_code,
+            (COALESCE(spa.promoted_attributes, '{}'::jsonb) || COALESCE(s.attributes_other, '{}'::jsonb) -> 'error.type')::text AS error_type,
 
             -- Semantic type detection helpers
             CASE
-                WHEN COALESCE(la.promoted_attributes, '{}'::jsonb) || COALESCE(l.attributes_other, '{}'::jsonb) ?| ARRAY['gen_ai.system', 'gen_ai.request.model', 'gen_ai.response.model'] THEN 'ai_agent'
-                WHEN COALESCE(la.promoted_attributes, '{}'::jsonb) || COALESCE(l.attributes_other, '{}'::jsonb) ?| ARRAY['http.method', 'http.status_code', 'http.route'] THEN 'http'
-                WHEN COALESCE(la.promoted_attributes, '{}'::jsonb) || COALESCE(l.attributes_other, '{}'::jsonb) ?| ARRAY['db.system', 'db.operation', 'db.statement'] THEN 'db'
-                WHEN COALESCE(la.promoted_attributes, '{}'::jsonb) || COALESCE(l.attributes_other, '{}'::jsonb) ?| ARRAY['messaging.system', 'messaging.operation'] THEN 'messaging'
+                WHEN COALESCE(spa.promoted_attributes, '{}'::jsonb) || COALESCE(s.attributes_other, '{}'::jsonb) ?| ARRAY['gen_ai.system', 'gen_ai.request.model', 'gen_ai.response.model'] THEN 'ai_agent'
+                WHEN COALESCE(spa.promoted_attributes, '{}'::jsonb) || COALESCE(s.attributes_other, '{}'::jsonb) ?| ARRAY['http.method', 'http.status_code', 'http.route'] THEN 'http'
+                WHEN COALESCE(spa.promoted_attributes, '{}'::jsonb) || COALESCE(s.attributes_other, '{}'::jsonb) ?| ARRAY['db.system', 'db.operation', 'db.statement'] THEN 'db'
+                WHEN COALESCE(spa.promoted_attributes, '{}'::jsonb) || COALESCE(s.attributes_other, '{}'::jsonb) ?| ARRAY['messaging.system', 'messaging.operation'] THEN 'messaging'
                 ELSE 'general'
             END AS semantic_type
 
-        FROM otel_logs_fact l
-        LEFT JOIN otel_resources_dim r ON l.resource_id = r.resource_id
-        LEFT JOIN otel_scopes_dim s ON l.scope_id = s.scope_id
-        LEFT JOIN log_attributes la ON l.log_id = la.log_id
-        LEFT JOIN resource_attributes ra ON l.resource_id = ra.resource_id
-        LEFT JOIN scope_attributes sa ON l.scope_id = sa.scope_id
+        FROM otel_spans_fact s
+        LEFT JOIN otel_resources_dim r ON s.resource_id = r.resource_id
+        LEFT JOIN otel_scopes_dim sc ON s.scope_id = sc.scope_id
+        LEFT JOIN span_attributes spa ON s.span_id = spa.span_id
+        LEFT JOIN resource_attributes ra ON s.resource_id = ra.resource_id
+        LEFT JOIN scope_attributes sa ON s.scope_id = sa.scope_id
     """)
 
     # Add helpful comments
     op.execute("""
-        COMMENT ON VIEW v_otel_logs_enriched IS
-        'Enriched log view with all attributes aggregated from typed tables.
+        COMMENT ON VIEW v_otel_spans_enriched IS
+        'Enriched span view with all attributes aggregated from typed tables.
          Provides ready-to-query denormalized representation including resource and scope context.
          Use JSONB operators on attributes column for efficient filtering:
          WHERE attributes @> ''{"http.status_code": 500}''
-         WHERE attributes ? ''error.type''';
+         WHERE attributes ? ''error.type''
+         Includes parent_span_id_hex for trace tree reconstruction.';
     """)
 
 
 def downgrade() -> None:
-    """Drop v_otel_logs_enriched view."""
-    op.execute("DROP VIEW IF EXISTS v_otel_logs_enriched")
+    """Drop v_otel_spans_enriched view."""
+    op.execute("DROP VIEW IF EXISTS v_otel_spans_enriched")
