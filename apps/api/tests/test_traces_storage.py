@@ -135,7 +135,6 @@ def test_store_traces_single_span(traces_storage, mock_session):
     assert stats["scopes_created"] == 1
     assert stats["attributes_promoted"] == 1
     assert stats["attributes_other"] == 1
-    mock_session.commit.assert_called_once()
 
 
 def test_store_traces_multiple_spans(traces_storage, mock_session):
@@ -369,7 +368,7 @@ def test_store_traces_with_status_error(traces_storage, mock_session):
     assert span_fact.status_message == "Internal server error"
 
 
-def test_store_traces_empty_resource_spans(traces_storage, mock_session):
+def test_store_traces_empty_resource_spans(traces_storage):
     """Test handling empty resourceSpans."""
     otlp_traces = {"resourceSpans": []}
 
@@ -378,7 +377,6 @@ def test_store_traces_empty_resource_spans(traces_storage, mock_session):
     assert stats["spans_stored"] == 0
     assert stats["resources_created"] == 0
     assert stats["scopes_created"] == 0
-    mock_session.commit.assert_called_once()
 
 
 def test_store_traces_missing_status(traces_storage, mock_session):

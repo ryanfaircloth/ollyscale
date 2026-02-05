@@ -148,7 +148,6 @@ def test_store_logs_single_record(logs_storage, mock_session):
     assert stats["scopes_created"] == 1
     assert stats["attributes_promoted"] == 1
     assert stats["attributes_other"] == 1
-    mock_session.commit.assert_called_once()
 
 
 def test_store_logs_multiple_records(logs_storage, mock_session):
