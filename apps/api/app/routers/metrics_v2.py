@@ -55,6 +55,7 @@ def search_metrics_v2(
     """
     try:
         # Build query using v_otel_metrics_enriched view
+        # Convert nanosecond timestamps to PostgreSQL timestamps
         query = text(
             """
             SELECT
@@ -86,7 +87,8 @@ def search_metrics_v2(
                 scope_version,
                 attributes_other
             FROM v_otel_metrics_enriched
-            WHERE time BETWEEN :start_time AND :end_time
+            WHERE time BETWEEN to_timestamp(:start_time / 1000000000.0)
+                           AND to_timestamp(:end_time / 1000000000.0)
               AND (:metric_name IS NULL OR metric_name = :metric_name)
               AND (:service_name IS NULL OR service_name = :service_name)
             ORDER BY metric_name, time DESC
