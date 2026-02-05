@@ -8,7 +8,7 @@ OTEL-aligned data ingestion and query APIs.
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import health, ingest, logs_v2, opamp, query, traces_v2
+from app.routers import health, ingest, logs_v2, metrics_v2, opamp, query, traces_v2
 
 # Create FastAPI app instance
 app = FastAPI(
@@ -34,6 +34,7 @@ app.include_router(ingest.router, prefix="/api", tags=["ingest"])
 app.include_router(query.router, prefix="/api", tags=["query"])
 app.include_router(logs_v2.router, prefix="/api", tags=["logs-v2"])  # New OTLP schema logs endpoints
 app.include_router(traces_v2.router, prefix="/api", tags=["traces-v2"])  # New OTLP schema traces endpoints
+app.include_router(metrics_v2.router, prefix="/api", tags=["metrics-v2"])  # New OTLP schema metrics endpoints
 app.include_router(opamp.router)  # OpAMP router includes its own prefix
 
 
