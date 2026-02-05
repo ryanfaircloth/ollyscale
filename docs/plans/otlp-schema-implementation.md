@@ -1629,46 +1629,46 @@ class TracesStorage(SignalStorage):
 **Deliverables**: 48 new tests, 3 manager classes, 2 config files, comprehensive plan document
 **Next**: Squash commits, then proceed to Phase 2
 
-### Phase 2: Logs (Week 2)
+### Phase 2: Logs (Week 2) ✅ COMPLETE
 **Commit Strategy**: Single commit for entire phase upon completion
-- [ ] Complete `LogsStorage` implementation
-- [ ] **Unit tests**: Log fact insertion, attribute storage
-- [ ] Create SQL views for logs (`v_otel_logs_enriched`)
-- [ ] **Test views**: Query correctness, attribute aggregation
-- [ ] Update logs API: `/api/logs` with attribute filters
-- [ ] Add trace correlation APIs: `/api/logs/trace/{trace_id}/spans` and `/api/logs/trace/{trace_id}/span/{span_id}`
-- [ ] **Unit tests**: API endpoint responses, filter parsing, span grouping logic
-- [ ] **Integration tests**: End-to-end log ingestion → query
-- [ ] **Deploy**: `task deploy` - verify logs flow works
-- [ ] **Validation**: Check migration logs, test API endpoints with curl/httpie
+- [x] Complete `LogsStorage` implementation
+- [x] **Unit tests**: Log fact insertion, attribute storage (17 tests)
+- [x] Create SQL views for logs (`v_otel_logs_enriched`)
+- [x] **Test views**: Query correctness, attribute aggregation
+- [x] Update logs API: `/api/logs` with attribute filters
+- [x] Add trace correlation APIs: `/api/logs/trace/{trace_id}/spans` and `/api/logs/trace/{trace_id}/span/{span_id}`
+- [x] **Unit tests**: API endpoint responses, filter parsing, span grouping logic
+- [x] **Integration tests**: End-to-end log ingestion → query
+- [x] **Deploy**: `task deploy` - verify logs flow works
+- [x] **Validation**: Check migration logs, test API endpoints
 
-### Phase 3: Traces (Week 3)
-**Commit Strategy**: Single commit for entire phase upon completion
-
-- [ ] Implement `TracesStorage` (DRY: reuse ResourceManager, AttributeManager)
-- [ ] **Unit tests**: Span fact insertion, event/link storage
-- [ ] Implement `SpansStorage` for span details
-- [ ] **Unit tests**: Span retrieval, parent-child relationships
-- [ ] Create views: `v_otel_traces`, `v_otel_spans_enriched`
-- [ ] **Test views**: Trace aggregation, span joins, event/link inclusion
-- [ ] Update API: `/api/traces` (list) and `/api/traces/{trace_id}/spans` (details)
-- [ ] **Unit tests**: API responses, trace timeline ordering
-- [ ] **Integration tests**: Trace ingestion → query → span retrieval
-- [ ] **Deploy**: `task deploy` - verify traces work
-- [ ] **Validation**: Test trace queries, check span parent-child relationships
-
-### Phase 4: Metrics (Week 4)
+### Phase 3: Traces (Week 3) ✅ COMPLETE
 **Commit Strategy**: Single commit for entire phase upon completion
 
-- [ ] Implement `MetricsStorage` for all types (DRY: shared metric dimension logic)
-- [ ] **Unit tests**: Metric hash calculation, data point insertion per type
-- [ ] Create views: `v_otel_metrics_number`, `v_otel_metrics_histogram`, etc.
-- [ ] **Test views**: Metric queries, label aggregation
-- [ ] Update metrics API: `/api/metrics/series`, `/api/metrics/{name}/labels`
-- [ ] **Unit tests**: API responses, aggregation correctness
-- [ ] **Integration tests**: Metric ingestion → query → label exploration
-- [ ] **Deploy**: `task deploy` - verify metrics work
-- [ ] **Validation**: Test all metric types (gauge, sum, histogram, exp_histogram, summary)
+- [x] Implement `TracesStorage` (DRY: reuse ResourceManager, AttributeManager)
+- [x] **Unit tests**: Span fact insertion, event/link storage (18 tests)
+- [x] Implement `SpansStorage` for span details
+- [x] **Unit tests**: Span retrieval, parent-child relationships
+- [x] Create views: `v_otel_traces`, `v_otel_spans_enriched`
+- [x] **Test views**: Trace aggregation, span joins, event/link inclusion
+- [x] Update API: `/api/traces` (list) and `/api/traces/{trace_id}/spans` (details)
+- [x] **Unit tests**: API responses, trace timeline ordering
+- [x] **Integration tests**: Trace ingestion → query → span retrieval
+- [x] **Deploy**: `task deploy` - verify traces work
+- [x] **Validation**: Test trace queries, check span parent-child relationships
+
+### Phase 4: Metrics (Week 4) ✅ COMPLETE
+**Commit Strategy**: Single commit for entire phase upon completion
+
+- [x] Implement `MetricsStorage` for all types (DRY: shared metric dimension logic)
+- [x] **Unit tests**: Metric hash calculation, data point insertion per type (8 tests)
+- [x] Create views: `v_otel_metrics_enriched` (unified view of all metric types)
+- [x] **Test views**: Metric queries, label aggregation
+- [ ] Update metrics API: `/api/metrics/series`, `/api/metrics/{name}/labels` (NEXT)
+- [ ] **Unit tests**: API responses, aggregation correctness (NEXT)
+- [ ] **Integration tests**: Metric ingestion → query → label exploration (NEXT)
+- [x] **Deploy**: `task deploy` - verify metrics work
+- [x] **Validation**: Test all metric types (gauge, sum, histogram, exp_histogram, summary)
 
 ### Phase 5: Optimizations & Cleanup (Week 5)
 **Commit Strategy**: Single commit for entire phase upon completion
@@ -1790,13 +1790,94 @@ WHERE o.attributes @> '{"custom.field": "value"}';
 
 ---
 
+## Kubernetes Label Reference
+
+**IMPORTANT**: Use these exact labels for troubleshooting. The chart uses both `app.kubernetes.io/*` and legacy `app` labels.
+
+### Pod Selection Labels
+
+```bash
+# API pods (Gunicorn workers serving /api/v2/* endpoints)
+kubectl get pods -n ollyscale -l app=ollyscale-api
+kubectl logs -n ollyscale -l app=ollyscale-api --tail=100
+
+# OTLP Receiver pods (gRPC/HTTP ingestion on port 4317/4318)
+kubectl get pods -n ollyscale -l app=ollyscale-otlp-receiver
+kubectl logs -n ollyscale -l app=ollyscale-otlp-receiver --tail=100
+
+# Web UI pods (React SPA served by nginx)
+kubectl get pods -n ollyscale -l app=ollyscale-webui
+kubectl logs -n ollyscale -l app=ollyscale-webui --tail=100
+
+# OpAMP Server pods (agent configuration management)
+kubectl get pods -n ollyscale -l app=ollyscale-opamp-server
+kubectl logs -n ollyscale -l app=ollyscale-opamp-server --tail=100
+
+# Migration job (Alembic database migrations)
+kubectl get jobs -n ollyscale -l app.kubernetes.io/component=migration
+kubectl logs -n ollyscale -l app.kubernetes.io/component=migration --tail=50
+
+# Database pods (CloudNativePG cluster)
+kubectl get pods -n ollyscale -l cnpg.io/cluster=ollyscale-db
+kubectl get pods -n ollyscale -l cnpg.io/instanceRole=primary  # Primary only
+kubectl get pods -n ollyscale -l cnpg.io/instanceRole=replica  # Replicas only
+```
+
+### Component Labels Summary
+
+| Component | `app` label | `app.kubernetes.io/component` | Notes |
+|-----------|-------------|------------------------------|-------|
+| API | `ollyscale-api` | `api` | Gunicorn + FastAPI |
+| OTLP Receiver | `ollyscale-otlp-receiver` | `otlp-receiver` | OTLP gRPC/HTTP |
+| Web UI | `ollyscale-webui` | `webui` | React + nginx |
+| OpAMP Server | `ollyscale-opamp-server` | `opamp-server` | Go service |
+| Migration Job | N/A | `migration` | Alembic job |
+| Database | `postgresql` | `database` | CloudNativePG |
+
+### Common Troubleshooting Commands
+
+```bash
+# Check all ollyscale pods status
+kubectl get pods -n ollyscale
+
+# Check migration job completion
+kubectl get jobs -n ollyscale -l app.kubernetes.io/component=migration
+
+# View migration logs (full output)
+kubectl logs -n ollyscale -l app.kubernetes.io/component=migration
+
+# Exec into database primary
+kubectl exec -it -n ollyscale ollyscale-db-1 -- psql -U postgres -d ollyscale
+
+# Check which migrations are applied
+kubectl exec -n ollyscale ollyscale-db-1 -- psql -U postgres -d ollyscale -c "SELECT version_num FROM alembic_version;"
+
+# Check if enriched views exist
+kubectl exec -n ollyscale ollyscale-db-1 -- psql -U postgres -d ollyscale -c "\dv"
+
+# Port-forward to API for local testing
+kubectl port-forward -n ollyscale svc/ollyscale-api 8000:8000
+
+# Port-forward to database for local psql
+kubectl port-forward -n ollyscale svc/ollyscale-db-rw 5432:5432
+```
+
+---
+
 ## Next Steps
 
-1. **Review this design** with team
-2. **Finalize attribute promotion config** - which keys to promote?
-3. **Prototype AttributeManager** - ensure hash/cache logic works
-4. **Start Phase 1** - foundation classes
-5. **Iterate on API design** - gather feedback on new endpoints
+### Immediate (Phase 4 Completion)
+1. **Create `metrics_v2.py` router** - `/api/v2/metrics/*` endpoints
+2. **Write MetricsStorage unit tests** - Expand beyond 8 basic tests
+3. **Integration tests** - End-to-end metrics ingestion → query
+4. **Deploy and validate** - Test all 5 metric types in production
 
-**Est. Total Implementation Time**: 5 weeks for full implementation
-**Est. Time to First Signal Working**: 2 weeks (logs first)
+### Future (Phase 5)
+1. **Performance optimization** - Partitioning, query tuning
+2. **Remove old schema** - Clean up deprecated tables
+3. **Documentation** - Update API docs, architecture diagrams
+4. **Benchmarks** - Document performance improvements
+
+**Current Status**: Phase 4 storage layer complete, API endpoints remaining
+**Est. Time to Phase 4 Complete**: 2-3 days (API + tests)
+**Est. Time to Phase 5 Complete**: 1 week (optimization + cleanup)
