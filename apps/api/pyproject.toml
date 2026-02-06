@@ -12,7 +12,6 @@ dependencies = [
     "pydantic>=2.10.0",
     "pydantic-settings>=2.6.0",
     "sqlalchemy[asyncio]>=2.0.36",
-    "sqlmodel>=0.0.31",
     "asyncpg>=0.30.0",
     "alembic>=1.14.0",
     "grpcio>=1.76.0",
