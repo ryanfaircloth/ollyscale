@@ -5,7 +5,7 @@ CRITICAL: Dimension upserts use autocommit (no locks), fact inserts use transact
 
 Flow:
 1. Upsert resource (autocommit) → resource_id
-2. Upsert scope (autocommit) → scope_id  
+2. Upsert scope (autocommit) → scope_id
 3. Insert log facts + attributes (transaction)
 """
 
@@ -44,10 +44,10 @@ class LogsStorage:
         self.engine = engine
         self.autocommit_engine = autocommit_engine
         self.config = config
-        
+
         # Managers use autocommit engine for dimensions
-        self.resource_mgr = ResourceManager(autocommit_engine)
-        self.attr_mgr = AttributeManager(autocommit_engine)
+        self.resource_mgr = ResourceManager(autocommit_engine, config)
+        self.attr_mgr = AttributeManager(autocommit_engine, config)
 
     def store_logs(self, resource_logs: dict[str, Any]) -> int:
         """
@@ -65,7 +65,7 @@ class LogsStorage:
         resource_data = resource_logs.get("resource", {})
         resource_attrs = resource_data.get("attributes", [])
         dropped_attrs_count = resource_data.get("droppedAttributesCount", 0)
-        
+
         resource_id = self.resource_mgr.get_or_create_resource(
             attributes=resource_attrs,
             dropped_attributes_count=dropped_attrs_count,
@@ -93,13 +93,13 @@ class LogsStorage:
                     # Convert timestamps
                     time_unix_nano = log_record.get("timeUnixNano")
                     observed_time_unix_nano = log_record.get("observedTimeUnixNano", time_unix_nano)
-                    
+
                     time_dt, time_nanos = self._nanos_to_timestamp(time_unix_nano)
                     observed_dt, observed_nanos = self._nanos_to_timestamp(observed_time_unix_nano)
 
                     # Extract attributes
                     attributes = log_record.get("attributes", [])
-                    promoted_attrs, unpromoted_attrs = self._process_attributes(attributes)
+                    _, unpromoted_attrs = self._process_attributes(attributes)
 
                     # Create log fact
                     log_fact = OtelLogsFact(
@@ -121,12 +121,12 @@ class LogsStorage:
                         flags=log_record.get("flags", 0),
                     )
                     session.add(log_fact)
-                
+
                 # Flush to get log_ids
                 session.flush()
 
                 # Store promoted attributes for all logs
-                for log_fact, log_record in zip(session.new, log_records):
+                for log_fact, log_record in zip(session.new, log_records, strict=False):
                     if hasattr(log_fact, "log_id"):
                         attributes = log_record.get("attributes", [])
                         self.attr_mgr.store_attributes(
@@ -171,7 +171,7 @@ class LogsStorage:
         """Map OTLP AnyValue type to type_id."""
         if not body:
             return 0
-        
+
         # Check which field is present
         if "stringValue" in body:
             return 1
@@ -187,12 +187,10 @@ class LogsStorage:
             return 6
         elif "kvlistValue" in body:
             return 7
-        
+
         return 0
 
-    def _process_attributes(
-        self, attributes: list[dict]
-    ) -> tuple[dict[str, Any], dict[str, Any]]:
+    def _process_attributes(self, attributes: list[dict]) -> tuple[dict[str, Any], dict[str, Any]]:
         """
         Split attributes into promoted and unpromoted.
 
@@ -205,11 +203,11 @@ class LogsStorage:
         for attr in attributes:
             key = attr.get("key")
             value = attr.get("value", {})
-            
+
             # Extract value by type
             extracted_value = None
             value_type = None
-            
+
             if "stringValue" in value:
                 extracted_value = value["stringValue"]
                 value_type = "string"

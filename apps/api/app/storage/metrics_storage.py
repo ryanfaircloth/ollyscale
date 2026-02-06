@@ -7,7 +7,7 @@ CRITICAL: When implemented, dimension upserts use autocommit (no locks), fact in
 
 Flow:
 1. Upsert resource (autocommit) → resource_id
-2. Upsert scope (autocommit) → scope_id  
+2. Upsert scope (autocommit) → scope_id
 3. Upsert metric dimension (autocommit) → metric_id
 4. Insert metric data point facts + attributes (transaction)
 """
@@ -44,11 +44,11 @@ class MetricsStorage:
         self.engine = engine
         self.autocommit_engine = autocommit_engine
         self.config = config
-        
+
         # Managers use autocommit engine for dimensions
-        self.resource_mgr = ResourceManager(autocommit_engine)
-        self.attr_mgr = AttributeManager(autocommit_engine)
-        
+        self.resource_mgr = ResourceManager(autocommit_engine, config)
+        self.attr_mgr = AttributeManager(autocommit_engine, config)
+
         logger.warning("MetricsStorage initialized but NOT IMPLEMENTED - metrics will be logged and discarded")
 
     def store_metrics(self, resource_metrics: dict[str, Any]) -> int:

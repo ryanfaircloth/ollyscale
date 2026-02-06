@@ -5,7 +5,7 @@ CRITICAL: Dimension upserts use autocommit (no locks), fact inserts use transact
 
 Flow:
 1. Upsert resource (autocommit) → resource_id
-2. Upsert scope (autocommit) → scope_id  
+2. Upsert scope (autocommit) → scope_id
 3. Insert span facts + attributes (transaction)
 """
 
@@ -44,10 +44,10 @@ class TracesStorage:
         self.engine = engine
         self.autocommit_engine = autocommit_engine
         self.config = config
-        
+
         # Managers use autocommit engine for dimensions
-        self.resource_mgr = ResourceManager(autocommit_engine)
-        self.attr_mgr = AttributeManager(autocommit_engine)
+        self.resource_mgr = ResourceManager(autocommit_engine, config)
+        self.attr_mgr = AttributeManager(autocommit_engine, config)
 
     def store_traces(self, resource_spans: dict[str, Any]) -> int:
         """
@@ -65,7 +65,7 @@ class TracesStorage:
         resource_data = resource_spans.get("resource", {})
         resource_attrs = resource_data.get("attributes", [])
         dropped_attrs_count = resource_data.get("droppedAttributesCount", 0)
-        
+
         resource_id = self.resource_mgr.get_or_create_resource(
             attributes=resource_attrs,
             dropped_attributes_count=dropped_attrs_count,
@@ -93,7 +93,7 @@ class TracesStorage:
                     # Convert timestamps
                     start_time_unix_nano = span.get("startTimeUnixNano", 0)
                     end_time_unix_nano = span.get("endTimeUnixNano", 0)
-                    
+
                     start_dt, start_nanos = self._nanos_to_timestamp(start_time_unix_nano)
                     end_dt, end_nanos = self._nanos_to_timestamp(end_time_unix_nano)
 
@@ -120,12 +120,12 @@ class TracesStorage:
                         flags=span.get("flags", 0),
                     )
                     session.add(span_fact)
-                
+
                 # Flush to get span_ids
                 session.flush()
 
                 # Store promoted attributes for all spans
-                for span_fact, span in zip(session.new, spans):
+                for span_fact, span in zip(session.new, spans, strict=False):
                     if hasattr(span_fact, "span_id"):
                         attributes = span.get("attributes", [])
                         self.attr_mgr.store_attributes(
@@ -166,9 +166,7 @@ class TracesStorage:
 
         return dt, nanos_fraction
 
-    def _process_attributes(
-        self, attributes: list[dict]
-    ) -> tuple[dict[str, Any], dict[str, Any]]:
+    def _process_attributes(self, attributes: list[dict]) -> tuple[dict[str, Any], dict[str, Any]]:
         """
         Split attributes into promoted and unpromoted.
 
@@ -181,11 +179,11 @@ class TracesStorage:
         for attr in attributes:
             key = attr.get("key")
             value = attr.get("value", {})
-            
+
             # Extract value by type
             extracted_value = None
             value_type = None
-            
+
             if "stringValue" in value:
                 extracted_value = value["stringValue"]
                 value_type = "string"
