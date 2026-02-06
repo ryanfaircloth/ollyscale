@@ -11,13 +11,19 @@ from app.storage.postgres_orm_sync import PostgresStorage
 
 def test_spans_fact_model():
     """Test SpansFact model can be instantiated with OTLP data."""
+    # Note: start/end times are stored as TIMESTAMP + nanos_fraction
+    start_ts = datetime.fromtimestamp(1000000 / 1e9, tz=UTC)
+    end_ts = datetime.fromtimestamp(2000000 / 1e9, tz=UTC)
+
     span = SpansFact(
         trace_id="abc123",
         span_id="def456",
         name="test-span",
         kind=2,  # SERVER
-        start_time_unix_nano=1000000,
-        end_time_unix_nano=2000000,
+        start_timestamp=start_ts,
+        start_nanos_fraction=0,
+        end_timestamp=end_ts,
+        end_nanos_fraction=0,
         attributes={"http.method": "GET"},
         events=[],
         links=[],

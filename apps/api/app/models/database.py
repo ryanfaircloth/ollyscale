@@ -1,4 +1,4 @@
-"""SQLModel ORM models for PostgreSQL schema.
+"""SQLAlchemy ORM models for PostgreSQL schema.
 
 These models provide type-safe, validated mappings to the database tables,
 eliminating manual SQL construction and field mapping errors.
@@ -6,12 +6,18 @@ eliminating manual SQL construction and field mapping errors.
 
 from datetime import UTC, datetime
 
-from sqlalchemy import BigInteger, Column, Index, Integer, SmallInteger, Text
+from sqlalchemy import BigInteger, ForeignKey, Index, Integer, SmallInteger, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, TIMESTAMP
-from sqlmodel import Field, SQLModel
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
-class TenantDim(SQLModel, table=True):
+class Base(DeclarativeBase):
+    """Base class for all ORM models."""
+
+    pass
+
+
+class TenantDim(Base):
     """Tenant catalog (dimension table).
 
     Multi-tenancy support. Seeded with id=1, name='unknown'.
@@ -19,12 +25,12 @@ class TenantDim(SQLModel, table=True):
 
     __tablename__ = "tenant_dim"
 
-    id: int | None = Field(default=None, primary_key=True)
-    name: str = Field(max_length=255, nullable=False, unique=True)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(255), unique=True)
+    created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
 
 
-class ConnectionDim(SQLModel, table=True):
+class ConnectionDim(Base):
     """Connection catalog (dimension table).
 
     Tracks data sources. Seeded with id=1, tenant_id=1, name='unknown'.
@@ -32,13 +38,13 @@ class ConnectionDim(SQLModel, table=True):
 
     __tablename__ = "connection_dim"
 
-    id: int | None = Field(default=None, primary_key=True)
-    tenant_id: int = Field(default=1, foreign_key="tenant_dim.id", nullable=False)
-    name: str = Field(max_length=255, nullable=False)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    id: Mapped[int] = mapped_column(primary_key=True)
+    tenant_id: Mapped[int] = mapped_column(ForeignKey("tenant_dim.id"), default=1)
+    name: Mapped[str] = mapped_column(String(255))
+    created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
 
 
-class NamespaceDim(SQLModel, table=True):
+class NamespaceDim(Base):
     """Namespace catalog (dimension table).
 
     Namespaces contain services. A NULL namespace represents services without a namespace.
@@ -47,14 +53,14 @@ class NamespaceDim(SQLModel, table=True):
 
     __tablename__ = "namespace_dim"
 
-    id: int | None = Field(default=None, primary_key=True)
-    tenant_id: int = Field(default=1, foreign_key="tenant_dim.id", nullable=False)
-    namespace: str | None = Field(default=None, max_length=255, unique=True)
-    first_seen: datetime = Field(default_factory=lambda: datetime.now(UTC))
-    last_seen: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    id: Mapped[int] = mapped_column(primary_key=True)
+    tenant_id: Mapped[int] = mapped_column(ForeignKey("tenant_dim.id"), default=1)
+    namespace: Mapped[str | None] = mapped_column(String(255), unique=True, nullable=True, default=None)
+    first_seen: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
+    last_seen: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
 
 
-class ServiceDim(SQLModel, table=True):
+class ServiceDim(Base):
     """Service catalog (dimension table).
 
     Service name is unique within a namespace (UNIQUE(name, namespace_id)).
@@ -64,44 +70,44 @@ class ServiceDim(SQLModel, table=True):
     __tablename__ = "service_dim"
     __table_args__ = (Index("idx_service_name_namespace", "name", "namespace_id", unique=True),)
 
-    id: int | None = Field(default=None, primary_key=True)
-    tenant_id: int = Field(default=1, foreign_key="tenant_dim.id", nullable=False)
-    name: str = Field(max_length=255, nullable=False)
-    namespace_id: int | None = Field(default=None, foreign_key="namespace_dim.id")
-    version: str | None = Field(default=None, max_length=255)
-    attributes: dict | None = Field(default=None, sa_column=Column(JSONB))
-    first_seen: datetime = Field(default_factory=lambda: datetime.now(UTC))
-    last_seen: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    id: Mapped[int] = mapped_column(primary_key=True)
+    tenant_id: Mapped[int] = mapped_column(ForeignKey("tenant_dim.id"), default=1)
+    name: Mapped[str] = mapped_column(String(255))
+    namespace_id: Mapped[int | None] = mapped_column(ForeignKey("namespace_dim.id"), nullable=True, default=None)
+    version: Mapped[str | None] = mapped_column(String(255), nullable=True, default=None)
+    attributes: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
+    first_seen: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
+    last_seen: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
 
 
-class OperationDim(SQLModel, table=True):
+class OperationDim(Base):
     """Operation (span name) catalog (dimension table)."""
 
     __tablename__ = "operation_dim"
 
-    id: int | None = Field(default=None, primary_key=True)
-    tenant_id: int = Field(default=1, foreign_key="tenant_dim.id", nullable=False)
-    service_id: int | None = Field(default=None, foreign_key="service_dim.id")
-    name: str = Field(max_length=1024, nullable=False)
-    span_kind: int | None = Field(default=None, sa_column=Column(SmallInteger))
-    first_seen: datetime = Field(default_factory=lambda: datetime.now(UTC))
-    last_seen: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    id: Mapped[int] = mapped_column(primary_key=True)
+    tenant_id: Mapped[int] = mapped_column(ForeignKey("tenant_dim.id"), default=1)
+    service_id: Mapped[int | None] = mapped_column(ForeignKey("service_dim.id"), nullable=True, default=None)
+    name: Mapped[str] = mapped_column(String(1024))
+    span_kind: Mapped[int | None] = mapped_column(SmallInteger, nullable=True, default=None)
+    first_seen: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
+    last_seen: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
 
 
-class ResourceDim(SQLModel, table=True):
+class ResourceDim(Base):
     """Resource attributes catalog (dimension table)."""
 
     __tablename__ = "resource_dim"
 
-    id: int | None = Field(default=None, primary_key=True)
-    tenant_id: int = Field(default=1, foreign_key="tenant_dim.id", nullable=False)
-    resource_hash: str = Field(max_length=64, nullable=False)
-    attributes: dict = Field(sa_column=Column(JSONB, nullable=False))
-    first_seen: datetime = Field(default_factory=lambda: datetime.now(UTC))
-    last_seen: datetime = Field(default_factory=datetime.utcnow)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    tenant_id: Mapped[int] = mapped_column(ForeignKey("tenant_dim.id"), default=1)
+    resource_hash: Mapped[str] = mapped_column(String(64))
+    attributes: Mapped[dict] = mapped_column(JSONB)
+    first_seen: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
+    last_seen: Mapped[datetime] = mapped_column(default=datetime.utcnow)
 
 
-class SpansFact(SQLModel, table=True):
+class SpansFact(Base):
     """Span fact table (partitioned by start_time_unix_nano)."""
 
     __tablename__ = "spans_fact"
@@ -113,49 +119,49 @@ class SpansFact(SQLModel, table=True):
         Index("idx_spans_attributes", "attributes", postgresql_using="gin"),
     )
 
-    id: int | None = Field(default=None, sa_column=Column(BigInteger, primary_key=True))
-    tenant_id: int = Field(default=1, foreign_key="tenant_dim.id", nullable=False)
-    connection_id: int = Field(default=1, foreign_key="connection_dim.id", nullable=False)
-    trace_id: str = Field(max_length=32, nullable=False)
-    span_id: str = Field(max_length=16, nullable=False)
-    parent_span_id: str | None = Field(default=None, max_length=16)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    tenant_id: Mapped[int] = mapped_column(ForeignKey("tenant_dim.id"), default=1)
+    connection_id: Mapped[int] = mapped_column(ForeignKey("connection_dim.id"), default=1)
+    trace_id: Mapped[str] = mapped_column(String(32))
+    span_id: Mapped[str] = mapped_column(String(16))
+    parent_span_id: Mapped[str | None] = mapped_column(String(16), nullable=True, default=None)
 
     # Core OTEL fields
-    name: str = Field(max_length=1024, nullable=False)
-    kind: int = Field(sa_column=Column(SmallInteger, nullable=False))
-    status_code: int | None = Field(default=None, sa_column=Column(SmallInteger))
-    status_message: str | None = Field(default=None, sa_column=Column(Text))
+    name: Mapped[str] = mapped_column(String(1024))
+    kind: Mapped[int] = mapped_column(SmallInteger)
+    status_code: Mapped[int | None] = mapped_column(SmallInteger, nullable=True, default=None)
+    status_message: Mapped[str | None] = mapped_column(Text, nullable=True, default=None)
 
     # Timing - TIMESTAMP (microsecond precision) + nanos_fraction (0-999) for full nanosecond precision
-    start_timestamp: datetime = Field(sa_column=Column(TIMESTAMP(timezone=True), nullable=False))
-    start_nanos_fraction: int = Field(default=0, sa_column=Column(SmallInteger, nullable=False))
-    end_timestamp: datetime = Field(sa_column=Column(TIMESTAMP(timezone=True), nullable=False))
-    end_nanos_fraction: int = Field(default=0, sa_column=Column(SmallInteger, nullable=False))
+    start_timestamp: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True))
+    start_nanos_fraction: Mapped[int] = mapped_column(SmallInteger, default=0)
+    end_timestamp: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True))
+    end_nanos_fraction: Mapped[int] = mapped_column(SmallInteger, default=0)
     # duration is GENERATED column, not included in model
 
     # References
-    service_id: int | None = Field(default=None, foreign_key="service_dim.id")
-    operation_id: int | None = Field(default=None, foreign_key="operation_dim.id")
-    resource_id: int | None = Field(default=None, foreign_key="resource_dim.id")
+    service_id: Mapped[int | None] = mapped_column(ForeignKey("service_dim.id"), nullable=True, default=None)
+    operation_id: Mapped[int | None] = mapped_column(ForeignKey("operation_dim.id"), nullable=True, default=None)
+    resource_id: Mapped[int | None] = mapped_column(ForeignKey("resource_dim.id"), nullable=True, default=None)
 
     # OTEL structures as JSONB
-    attributes: dict | None = Field(default=None, sa_column=Column(JSONB))
-    events: dict | None = Field(default=None, sa_column=Column(JSONB))
-    links: dict | None = Field(default=None, sa_column=Column(JSONB))
-    resource: dict | None = Field(default=None, sa_column=Column(JSONB))
-    scope: dict | None = Field(default=None, sa_column=Column(JSONB))
+    attributes: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
+    events: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
+    links: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
+    resource: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
+    scope: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
 
     # Flags
-    flags: int = Field(default=0, sa_column=Column(Integer))
-    dropped_attributes_count: int = Field(default=0, sa_column=Column(Integer))
-    dropped_events_count: int = Field(default=0, sa_column=Column(Integer))
-    dropped_links_count: int = Field(default=0, sa_column=Column(Integer))
+    flags: Mapped[int] = mapped_column(Integer, default=0)
+    dropped_attributes_count: Mapped[int] = mapped_column(Integer, default=0)
+    dropped_events_count: Mapped[int] = mapped_column(Integer, default=0)
+    dropped_links_count: Mapped[int] = mapped_column(Integer, default=0)
 
     # Metadata
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
 
 
-class LogsFact(SQLModel, table=True):
+class LogsFact(Base):
     """Log fact table (partitioned by time_unix_nano)."""
 
     __tablename__ = "logs_fact"
@@ -166,44 +172,44 @@ class LogsFact(SQLModel, table=True):
         Index("idx_logs_attributes", "attributes", postgresql_using="gin"),
     )
 
-    id: int | None = Field(default=None, sa_column=Column(BigInteger, primary_key=True))
-    tenant_id: int = Field(default=1, foreign_key="tenant_dim.id", nullable=False)
-    connection_id: int = Field(default=1, foreign_key="connection_dim.id", nullable=False)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    tenant_id: Mapped[int] = mapped_column(ForeignKey("tenant_dim.id"), default=1)
+    connection_id: Mapped[int] = mapped_column(ForeignKey("connection_dim.id"), default=1)
 
     # OTEL correlation
-    trace_id: str | None = Field(default=None, max_length=32)
-    span_id: str | None = Field(default=None, max_length=16)
+    trace_id: Mapped[str | None] = mapped_column(String(32), nullable=True, default=None)
+    span_id: Mapped[str | None] = mapped_column(String(16), nullable=True, default=None)
 
     # Timing - TIMESTAMP (microsecond precision) + nanos_fraction (0-999) for full nanosecond precision
-    timestamp: datetime = Field(sa_column=Column(TIMESTAMP(timezone=True), nullable=False))
-    nanos_fraction: int = Field(default=0, sa_column=Column(SmallInteger, nullable=False))
-    observed_timestamp: datetime | None = Field(default=None, sa_column=Column(TIMESTAMP(timezone=True)))
-    observed_nanos_fraction: int = Field(default=0, sa_column=Column(SmallInteger, nullable=False))
+    timestamp: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True))
+    nanos_fraction: Mapped[int] = mapped_column(SmallInteger, default=0)
+    observed_timestamp: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True), nullable=True, default=None)
+    observed_nanos_fraction: Mapped[int] = mapped_column(SmallInteger, default=0)
 
     # Severity
-    severity_number: int | None = Field(default=None, sa_column=Column(SmallInteger))
-    severity_text: str | None = Field(default=None, max_length=64)
+    severity_number: Mapped[int | None] = mapped_column(SmallInteger, nullable=True, default=None)
+    severity_text: Mapped[str | None] = mapped_column(String(64), nullable=True, default=None)
 
     # Content
-    body: dict | None = Field(default=None, sa_column=Column(JSONB))
+    body: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
 
     # References
-    service_id: int | None = Field(default=None, foreign_key="service_dim.id")
+    service_id: Mapped[int | None] = mapped_column(ForeignKey("service_dim.id"), nullable=True, default=None)
 
     # OTEL structures
-    attributes: dict | None = Field(default=None, sa_column=Column(JSONB))
-    resource: dict | None = Field(default=None, sa_column=Column(JSONB))
-    scope: dict | None = Field(default=None, sa_column=Column(JSONB))
+    attributes: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
+    resource: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
+    scope: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
 
     # Flags
-    flags: int = Field(default=0, sa_column=Column(Integer))
-    dropped_attributes_count: int = Field(default=0, sa_column=Column(Integer))
+    flags: Mapped[int] = mapped_column(Integer, default=0)
+    dropped_attributes_count: Mapped[int] = mapped_column(Integer, default=0)
 
     # Metadata
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
 
 
-class MetricsFact(SQLModel, table=True):
+class MetricsFact(Base):
     """Metric fact table (partitioned by time_unix_nano).
 
     Schema matches the Alembic migration (29f08ce99e6e).
@@ -216,34 +222,34 @@ class MetricsFact(SQLModel, table=True):
         Index("idx_metrics_attributes", "attributes", postgresql_using="gin"),
     )
 
-    id: int | None = Field(default=None, sa_column=Column(BigInteger, primary_key=True))
-    tenant_id: int = Field(default=1, foreign_key="tenant_dim.id", nullable=False)
-    connection_id: int = Field(default=1, foreign_key="connection_dim.id", nullable=False)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    tenant_id: Mapped[int] = mapped_column(ForeignKey("tenant_dim.id"), default=1)
+    connection_id: Mapped[int] = mapped_column(ForeignKey("connection_dim.id"), default=1)
 
     # Timing - TIMESTAMP (microsecond precision) + nanos_fraction (0-999) for full nanosecond precision
-    timestamp: datetime = Field(sa_column=Column(TIMESTAMP(timezone=True), nullable=False))
-    nanos_fraction: int = Field(default=0, sa_column=Column(SmallInteger, nullable=False))
-    start_timestamp: datetime | None = Field(default=None, sa_column=Column(TIMESTAMP(timezone=True)))
-    start_nanos_fraction: int = Field(default=0, sa_column=Column(SmallInteger, nullable=False))
+    timestamp: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True))
+    nanos_fraction: Mapped[int] = mapped_column(SmallInteger, default=0)
+    start_timestamp: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True), nullable=True, default=None)
+    start_nanos_fraction: Mapped[int] = mapped_column(SmallInteger, default=0)
 
     # Metric identity
-    metric_name: str = Field(max_length=1024, nullable=False)
-    metric_type: str = Field(max_length=32, nullable=False)
-    unit: str | None = Field(default=None, max_length=64)
-    description: str | None = Field(default=None, sa_column=Column(Text))
+    metric_name: Mapped[str] = mapped_column(String(1024))
+    metric_type: Mapped[str] = mapped_column(String(32))
+    unit: Mapped[str | None] = mapped_column(String(64), nullable=True, default=None)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True, default=None)
 
     # References
-    service_id: int | None = Field(default=None, foreign_key="service_dim.id")
+    service_id: Mapped[int | None] = mapped_column(ForeignKey("service_dim.id"), nullable=True, default=None)
 
     # OTEL structures (stored as JSONB in database)
-    resource: dict | None = Field(default=None, sa_column=Column(JSONB))
-    scope: dict | None = Field(default=None, sa_column=Column(JSONB))
-    attributes: dict | None = Field(default=None, sa_column=Column(JSONB))
-    data_points: dict | None = Field(default=None, sa_column=Column(JSONB))
+    resource: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
+    scope: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
+    attributes: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
+    data_points: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
 
     # Aggregation metadata
-    temporality: str | None = Field(default=None, max_length=32)
-    is_monotonic: bool | None = Field(default=None)
+    temporality: Mapped[str | None] = mapped_column(String(32), nullable=True, default=None)
+    is_monotonic: Mapped[bool | None] = mapped_column(nullable=True, default=None)
 
     # Metadata
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
