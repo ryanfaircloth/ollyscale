@@ -247,16 +247,3 @@ def get_service_map(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get service map: {e!s}",
         ) from e
-
-
-@router.get("/namespaces")
-def get_namespaces(storage: StorageBackend = Depends(get_storage)):
-    """Get list of all namespaces for filtering."""
-    try:
-        namespaces = storage.get_namespaces()
-        return {"namespaces": namespaces}
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get namespaces: {e!s}",
-        ) from e

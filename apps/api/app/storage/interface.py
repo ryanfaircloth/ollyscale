@@ -223,13 +223,3 @@ class StorageBackend(ABC):
             Tuple of (nodes, edges)
         """
         pass
-
-    @abstractmethod
-    async def get_namespaces(self) -> list[str]:
-        """
-        Get list of all namespaces for filtering.
-
-        Returns:
-            List of namespace strings (empty string for NULL namespace)
-        """
-        pass

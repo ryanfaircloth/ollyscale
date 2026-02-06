@@ -2754,18 +2754,3 @@ class PostgresStorage:
             ]
 
             return nodes, edges
-
-    def get_namespaces(self) -> list[str]:
-        """Get list of all namespaces from namespace_dim table."""
-        if not self.engine:
-            return []
-
-        with Session(self.engine) as session:
-            stmt = select(NamespaceDim.namespace).order_by(NamespaceDim.namespace.asc())
-
-            result = session.execute(stmt)
-            rows = result.fetchall()
-
-            # Convert rows to list of namespace strings, handle NULL as empty string
-            namespaces = [row[0] if row[0] is not None else "" for row in rows]
-            return namespaces
