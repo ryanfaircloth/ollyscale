@@ -106,7 +106,7 @@ def postgres_connection_string(postgres_container):
                 capture_output=True,
                 text=True,
                 check=True,
-                timeout=5,
+                timeout=10,
             )
             password = base64.b64decode(result.stdout).decode("utf-8")
         except Exception as e:
