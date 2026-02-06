@@ -415,72 +415,84 @@ tasks:
     deps: [build:image:api, build:image:web-ui, build:image:opamp]
     dir: charts
     vars:
-      CHART_DIR: ollyscale
+      VERSION:
+        sh: echo "${VERSION:-0.0.0-dev.$(date +%s)}"
       VERSION_API:
         sh: cat ../.task-version-api
       VERSION_WEB_UI:
         sh: cat ../.task-version-web-ui
       VERSION_OPAMP:
         sh: cat ../.task-version-opamp
-      VERSION: "{{.VERSION_API}}"
+      CHART_DIR: ollyscale
+      NEW_VERSION: "0.0.0-{{.VERSION}}"
     cmds:
+      - echo "{{.VERSION}}" > ../.task-version-chart-ollyscale
+      - echo "📦 Packaging ollyscale Helm chart..."
+      - 'echo "Chart version: {{.NEW_VERSION}}"'
+      - 'echo "API image version: {{.VERSION_API}}"'
+      - 'echo "Web UI image version: {{.VERSION_WEB_UI}}"'
+      - 'echo "OpAMP image version: {{.VERSION_OPAMP}}"'
       - |
-        echo "{{.VERSION}}" > ../.task-version-chart-ollyscale
-        echo "📦 Packaging ollyscale Helm chart..."
-        echo "Chart version: {{.VERSION}}"
-        echo "API image version: {{.VERSION_API}}"
-        echo "Web UI image version: {{.VERSION_WEB_UI}}"
-        echo "OpAMP image version: {{.VERSION_OPAMP}}"
         if [ -z "${CI:-}" ]; then
-          helm package {{.CHART_DIR}} --version "{{.VERSION}}" --app-version "{{.VERSION}}"
+          # Local build: set chart version via helm flags (terraform handles image tag overrides)
+          helm package {{.CHART_DIR}} --version "{{.NEW_VERSION}}" --app-version "{{.VERSION_API}}"
         else
+          # CI build: release-please already updated Chart.yaml and values.yaml
           helm package {{.CHART_DIR}}
         fi
-        echo "✅ Chart packaged: ollyscale-{{.VERSION}}"
+      - 'echo "✅ Chart packaged: ollyscale-{{.NEW_VERSION}}"'
 
   build:chart:demos:
     desc: Package ollyscale-demos Helm chart
     deps: [build:image:demo]
     dir: charts
     vars:
-      CHART_DIR: ollyscale-demos
+      VERSION:
+        sh: echo "${VERSION:-0.0.0-dev.$(date +%s)}"
       VERSION_DEMO:
         sh: cat ../.task-version-demo
-      VERSION: "{{.VERSION_DEMO}}"
+      CHART_DIR: ollyscale-demos
+      NEW_VERSION: "0.0.0-{{.VERSION}}"
     cmds:
+      - echo "{{.VERSION}}" > ../.task-version-chart-demos
+      - echo "📦 Packaging ollyscale-demos Helm chart..."
+      - 'echo "Chart version: {{.NEW_VERSION}}"'
+      - 'echo "Demo image version: {{.VERSION_DEMO}}"'
       - |
-        echo "{{.VERSION}}" > ../.task-version-chart-demos
-        echo "📦 Packaging ollyscale-demos Helm chart..."
-        echo "Chart version: {{.VERSION}}"
-        echo "Demo image version: {{.VERSION_DEMO}}"
         if [ -z "${CI:-}" ]; then
-          helm package {{.CHART_DIR}} --version "{{.VERSION}}" --app-version "{{.VERSION_DEMO}}"
+          # Local build: set chart version via helm flags (terraform handles image tag overrides)
+          helm package {{.CHART_DIR}} --version "{{.NEW_VERSION}}" --app-version "{{.VERSION_DEMO}}"
         else
+          # CI build: release-please already updated Chart.yaml and values.yaml
           helm package {{.CHART_DIR}}
         fi
-        echo "✅ Chart packaged: ollyscale-demos-{{.VERSION}}"
+      - 'echo "✅ Chart packaged: ollyscale-demos-{{.NEW_VERSION}}"'
 
   build:chart:otel-agent:
     desc: Package ollyscale-otel-agent Helm chart
     deps: [build:image:demo-agent]
     dir: charts
     vars:
-      CHART_DIR: ollyscale-otel-agent
+      VERSION:
+        sh: echo "${VERSION:-0.0.0-dev.$(date +%s)}"
       VERSION_DEMO_AGENT:
         sh: cat ../.task-version-demo-agent
-      VERSION: "{{.VERSION_DEMO_AGENT}}"
+      CHART_DIR: ollyscale-otel-agent
+      NEW_VERSION: "0.0.0-{{.VERSION}}"
     cmds:
+      - echo "{{.VERSION}}" > ../.task-version-chart-otel-agent
+      - echo "📦 Packaging ollyscale-otel-agent Helm chart..."
+      - 'echo "Chart version: {{.NEW_VERSION}}"'
+      - 'echo "Demo agent image version: {{.VERSION_DEMO_AGENT}}"'
       - |
-        echo "{{.VERSION}}" > ../.task-version-chart-otel-agent
-        echo "📦 Packaging ollyscale-otel-agent Helm chart..."
-        echo "Chart version: {{.VERSION}}"
-        echo "Demo agent image version: {{.VERSION_DEMO_AGENT}}"
         if [ -z "${CI:-}" ]; then
-          helm package {{.CHART_DIR}} --version "{{.VERSION}}" --app-version "{{.VERSION_DEMO_AGENT}}"
+          # Local build: set chart version via helm flags (terraform handles image tag overrides)
+          helm package {{.CHART_DIR}} --version "{{.NEW_VERSION}}" --app-version "{{.VERSION_DEMO_AGENT}}"
         else
+          # CI build: release-please already updated Chart.yaml and values.yaml
           helm package {{.CHART_DIR}}
         fi
-        echo "✅ Chart packaged: ollyscale-otel-agent-{{.VERSION}}"
+      - 'echo "✅ Chart packaged: ollyscale-otel-agent-{{.NEW_VERSION}}"'
 
   # ====================
   # Build All
@@ -564,8 +576,8 @@ tasks:
       - echo "📤 Pushing ollyscale chart..."
       - |
         VERSION=$(cat ../.task-version-chart-ollyscale)
-        helm push ollyscale-${VERSION}.tgz oci://{{.EXTERNAL_CHART_REGISTRY}} --insecure-skip-tls-verify
-        echo "✅ Chart pushed: ollyscale-${VERSION}"
+        helm push ollyscale-0.0.0-${VERSION}.tgz oci://{{.EXTERNAL_CHART_REGISTRY}} --insecure-skip-tls-verify
+        echo "✅ Chart pushed: ollyscale-0.0.0-${VERSION}"
 
   push:chart:demos:
     desc: Push ollyscale-demos Helm chart
@@ -575,8 +587,8 @@ tasks:
       - echo "📤 Pushing ollyscale-demos chart..."
       - |
         VERSION=$(cat ../.task-version-chart-demos)
-        helm push ollyscale-demos-${VERSION}.tgz oci://{{.EXTERNAL_CHART_REGISTRY}} --insecure-skip-tls-verify
-        echo "✅ Chart pushed: ollyscale-demos-${VERSION}"
+        helm push ollyscale-demos-0.0.0-${VERSION}.tgz oci://{{.EXTERNAL_CHART_REGISTRY}} --insecure-skip-tls-verify
+        echo "✅ Chart pushed: ollyscale-demos-0.0.0-${VERSION}"
 
   push:chart:otel-agent:
     desc: Push ollyscale-otel-agent Helm chart
@@ -586,8 +598,8 @@ tasks:
       - echo "📤 Pushing ollyscale-otel-agent chart..."
       - |
         VERSION=$(cat ../.task-version-chart-otel-agent)
-        helm push ollyscale-otel-agent-${VERSION}.tgz oci://{{.EXTERNAL_CHART_REGISTRY}} --insecure-skip-tls-verify
-        echo "✅ Chart pushed: ollyscale-otel-agent-${VERSION}"
+        helm push ollyscale-otel-agent-0.0.0-${VERSION}.tgz oci://{{.EXTERNAL_CHART_REGISTRY}} --insecure-skip-tls-verify
+        echo "✅ Chart pushed: ollyscale-otel-agent-0.0.0-${VERSION}"
 
   # ====================
   # Push All
