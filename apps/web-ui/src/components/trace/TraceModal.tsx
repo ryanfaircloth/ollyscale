@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Modal, Tabs, Tab, Card, Table, Badge, Button } from 'react-bootstrap';
+import { Modal, Tabs, Tab, Card, Table, Badge, Button, Alert, Spinner } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { TruncatedId } from '@/components/common/TruncatedId';
 import type { Filter } from '@/api/types/common';
@@ -9,6 +9,7 @@ import { SpanDetail } from './SpanDetail';
 import { CorrelatedLogs } from './CorrelatedLogs';
 import { formatTimestamp, formatDuration, formatAttributeValue } from '@/utils/formatting';
 import type { Trace, Span } from '@/api/types/common';
+import { useTraceDetailQuery } from '@/api/queries/useTracesQuery';
 
 interface TraceModalProps {
   trace: Trace | null;
@@ -26,6 +27,16 @@ const getStatusBadge = (statusCode?: number) => {
 export function TraceModal({ trace, onHide }: TraceModalProps) {
   const [selectedSpan, setSelectedSpan] = useState<Span | null>(null);
   const navigate = useNavigate();
+
+  // Lazy load full trace details with spans when modal opens
+  const { data: traceDetail, isLoading: loadingSpans, error: spansError } = useTraceDetailQuery(
+    trace?.trace_id || '',
+    { enabled: !!trace?.trace_id }
+  );
+
+  // Use spans from detail query if available, otherwise fall back to summary trace
+  const spans = traceDetail?.spans || trace?.spans || [];
+  const spanCount = traceDetail?.spans?.length || trace?.span_count || trace?.spans?.length || 0;
 
   const handleViewMetrics = () => {
     if (!trace?.root_service_name) return;
@@ -51,17 +62,40 @@ export function TraceModal({ trace, onHide }: TraceModalProps) {
         </Modal.Header>
         <Modal.Body>
           {trace && (
-            <Tabs defaultActiveKey="waterfall" className="mb-3">
-              <Tab eventKey="waterfall" title="Waterfall">
-                <Card>
-                  <Card.Body>
-                    <TraceWaterfall
-                      spans={trace.spans}
-                      onSpanClick={setSelectedSpan}
-                    />
-                  </Card.Body>
-                </Card>
-              </Tab>
+            <>
+              {/* Loading state while fetching spans */}
+              {loadingSpans && !traceDetail && (
+                <Alert variant="info" className="d-flex align-items-center">
+                  <Spinner animation="border" size="sm" className="me-2" />
+                  Loading trace spans...
+                </Alert>
+              )}
+
+              {/* Error state if span fetch fails */}
+              {spansError && (
+                <Alert variant="danger">
+                  <Alert.Heading>Failed to load trace spans</Alert.Heading>
+                  <p>Could not fetch full trace details. Please try again.</p>
+                </Alert>
+              )}
+
+              <Tabs defaultActiveKey="waterfall" className="mb-3">
+                <Tab eventKey="waterfall" title="Waterfall" disabled={loadingSpans && !traceDetail}>
+                  <Card>
+                    <Card.Body>
+                      {spans.length > 0 ? (
+                        <TraceWaterfall
+                          spans={spans}
+                          onSpanClick={setSelectedSpan}
+                        />
+                      ) : (
+                        <div className="text-center text-muted p-4">
+                          {loadingSpans ? 'Loading spans...' : 'No spans available'}
+                        </div>
+                      )}
+                    </Card.Body>
+                  </Card>
+                </Tab>
               <Tab eventKey="overview" title="Overview">
                 <Card>
                   <Card.Body>
@@ -99,19 +133,19 @@ export function TraceModal({ trace, onHide }: TraceModalProps) {
                               : '-'}
                           </dd>
                           <dt className="col-sm-4">Span Count:</dt>
-                          <dd className="col-sm-8">{trace.spans.length}</dd>
+                          <dd className="col-sm-8">{spanCount}</dd>
                           <dt className="col-sm-4">Status:</dt>
                           <dd className="col-sm-8">
-                            {getStatusBadge(trace.spans[0]?.status?.code)}
+                            {getStatusBadge(trace.root_span_status?.code || spans[0]?.status?.code)}
                           </dd>
                         </dl>
                       </div>
                       <div className="col-md-6">
                         <h6>Root Span Attributes</h6>
-                        {trace.spans[0]?.attributes && Object.keys(trace.spans[0].attributes).length > 0 ? (
+                        {spans[0]?.attributes && Object.keys(spans[0].attributes).length > 0 ? (
                           <div style={{ maxHeight: '300px', overflow: 'auto' }}>
                             <dl className="row">
-                              {Object.entries(trace.spans[0].attributes).map(([key, value]) => (
+                              {Object.entries(spans[0].attributes).map(([key, value]) => (
                                 <div key={key} className="row mb-1">
                                   <dt className="col-sm-5 text-muted small">{key}:</dt>
                                   <dd className="col-sm-7 small" style={{ fontFamily: 'monospace', whiteSpace: 'pre-wrap' }}>{formatAttributeValue(value)}</dd>
@@ -127,21 +161,22 @@ export function TraceModal({ trace, onHide }: TraceModalProps) {
                   </Card.Body>
                 </Card>
               </Tab>
-              <Tab eventKey="spans" title={`Spans (${trace.spans.length})`}>
+              <Tab eventKey="spans" title={`Spans (${spanCount})`} disabled={loadingSpans && !traceDetail}>
                 <Card>
                   <Card.Body>
-                    <Table hover size="sm">
-                      <thead>
-                        <tr>
-                          <th>Span Name</th>
-                          <th>Service</th>
-                          <th>Kind</th>
-                          <th>Duration</th>
-                          <th>Status</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {trace.spans.map((span) => (
+                    {spans.length > 0 ? (
+                      <Table hover size="sm">
+                        <thead>
+                          <tr>
+                            <th>Span Name</th>
+                            <th>Service</th>
+                            <th>Kind</th>
+                            <th>Duration</th>
+                            <th>Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {spans.map((span) => (
                           <tr key={span.span_id} style={{ cursor: 'pointer' }} onClick={() => setSelectedSpan(span)}>
                             <td>{span.name}</td>
                             <td>{span.service_name}</td>
@@ -157,9 +192,14 @@ export function TraceModal({ trace, onHide }: TraceModalProps) {
                             </td>
                             <td>{getStatusBadge(span.status?.code)}</td>
                           </tr>
-                        ))}
-                      </tbody>
-                    </Table>
+                          ))}
+                        </tbody>
+                      </Table>
+                    ) : (
+                      <div className="text-center text-muted p-4">
+                        {loadingSpans ? 'Loading spans...' : 'No spans available'}
+                      </div>
+                    )}
                   </Card.Body>
                 </Card>
               </Tab>
@@ -197,6 +237,7 @@ export function TraceModal({ trace, onHide }: TraceModalProps) {
                 </Card>
               </Tab>
             </Tabs>
+            </>
           )}
         </Modal.Body>
       </Modal>
@@ -205,7 +246,7 @@ export function TraceModal({ trace, onHide }: TraceModalProps) {
       <SpanDetail
         span={selectedSpan}
         onHide={() => setSelectedSpan(null)}
-        allSpans={trace?.spans || []}
+        allSpans={spans}
         onLinkedSpanClick={(span) => setSelectedSpan(span)}
       />
     </>

@@ -67,7 +67,7 @@ export function AISessionDetailModal({ trace, onHide }: AISessionDetailModalProp
 
   // Identify AI and tool spans
   const categorizedSpans = useMemo(() => {
-    if (!trace) return { aiSpans: [], toolSpans: [], otherSpans: [] };
+    if (!trace || !trace.spans) return { aiSpans: [], toolSpans: [], otherSpans: [] };
 
     const aiSpans: Span[] = [];
     const toolSpans: Span[] = [];
@@ -204,7 +204,11 @@ export function AISessionDetailModal({ trace, onHide }: AISessionDetailModalProp
             </small>
           </Card.Header>
           <Card.Body>
-            <TraceWaterfall spans={trace.spans} onSpanClick={handleSpanClick} />
+            {trace.spans && trace.spans.length > 0 ? (
+              <TraceWaterfall spans={trace.spans} onSpanClick={handleSpanClick} />
+            ) : (
+              <div className="text-center text-muted p-4">No spans available</div>
+            )}
           </Card.Body>
         </Card>
 

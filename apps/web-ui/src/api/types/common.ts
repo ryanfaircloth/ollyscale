@@ -71,7 +71,14 @@ export interface MetricDataPoint {
 
 export interface Trace {
   trace_id: string;
-  spans: Span[];
+  /**
+   * Spans array - optional for performance optimization.
+   * @remarks When returned from search, spans array is omitted for performance.
+   *          Use useTraceDetailQuery to fetch full trace with spans for waterfall view.
+   */
+  spans?: Span[];
+  span_count?: number;               // Total number of spans in trace
+  service_name?: string;             // Alias for root_service_name
   root_service_name?: string;
   start_time?: string;
   end_time?: string;
@@ -82,6 +89,11 @@ export interface Trace {
   root_span_url?: string;            // http.url or url.full
   root_span_target?: string;         // Computed: url > route > http.target
   root_span_status_code?: number;    // http.status_code or http.response.status_code
+  root_span_status?: {               // OTel status object
+    code?: number;
+    message?: string;
+  };
   root_span_host?: string;           // http.host or net.host.name
   root_span_scheme?: string;         // http.scheme or url.scheme
+  root_span_server_name?: string;    // server.address or net.host.name
 }

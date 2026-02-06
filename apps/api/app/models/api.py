@@ -112,9 +112,19 @@ class TraceSearchRequest(BaseModel):
 
 
 class TraceSearchResponse(BaseModel):
-    """Response for trace search."""
+    """Response for trace search.
 
-    traces: list[dict[str, Any]] = Field(..., description="Array of traces with spans")
+    Returns trace summaries optimized for list view performance.
+    Spans array is omitted to reduce payload size (20-100x smaller).
+    Use GET /api/traces/{trace_id} to fetch full trace with all spans.
+    """
+
+    traces: list[dict[str, Any]] = Field(
+        ...,
+        description="Array of trace summaries (without spans field for performance). "
+        "Each trace includes: trace_id, service_name, root_span_*, start_time, "
+        "end_time, duration_seconds, span_count, etc.",
+    )
     pagination: PaginationResponse
 
 

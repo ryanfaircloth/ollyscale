@@ -93,7 +93,6 @@ export default function TracesPage() {
               </thead>
               <tbody>
                 {data.traces.map((trace: Trace) => {
-                  const rootSpan = trace.spans[0];
                   return (
                     <tr
                       key={trace.trace_id}
@@ -104,12 +103,7 @@ export default function TracesPage() {
                         <TruncatedId id={trace.trace_id} showCopy={false} />
                       </td>
                       <td>
-                        {trace.root_service_name || rootSpan?.service_name || t('traces.unknown', 'Unknown')}
-                        {rootSpan?.service_namespace && (
-                          <Badge bg="light" text="dark" className="ms-1 small">
-                            {rootSpan.service_namespace}
-                          </Badge>
-                        )}
+                        {trace.root_service_name || trace.service_name || t('traces.unknown', 'Unknown')}
                       </td>
                       <td>
                         {trace.root_span_method ? (
@@ -141,7 +135,7 @@ export default function TracesPage() {
                         )}
                       </td>
                       <td>
-                        <Badge bg="info">{trace.spans.length}</Badge>
+                        <Badge bg="info">{trace.span_count ?? 0}</Badge>
                       </td>
                       <td className="small">
                         {trace.start_time ? formatTimestamp(trace.start_time) : '-'}
@@ -151,7 +145,7 @@ export default function TracesPage() {
                           ? formatDuration(trace.duration_seconds)
                           : '-'}
                       </td>
-                      <td>{getStatusBadge(rootSpan?.status?.code)}</td>
+                      <td>{getStatusBadge(trace.root_span_status?.code)}</td>
                     </tr>
                   );
                 })}

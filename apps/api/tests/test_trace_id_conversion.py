@@ -131,17 +131,22 @@ class TestTraceStorageWithRealOTLP:
 
         assert len(traces) > 0
 
-        # Verify all traces have valid IDs
+        # Verify all traces have valid IDs (search returns summaries without spans)
         for trace in traces:
             assert "trace_id" in trace
             assert trace["trace_id"] != ""
             assert len(trace["trace_id"]) == 32 or trace["trace_id"] is None
 
-            for span in trace["spans"]:
-                assert span["span_id"] != ""
-                assert len(span["span_id"]) == 16
-                assert span["trace_id"] != ""
-                assert len(span["trace_id"]) == 32
+        # Fetch full trace to validate span IDs
+        full_trace = postgres_storage.get_trace_by_id(traces[0]["trace_id"])
+        assert full_trace is not None
+        assert "spans" in full_trace
+
+        for span in full_trace["spans"]:
+            assert span["span_id"] != ""
+            assert len(span["span_id"]) == 16
+            assert span["trace_id"] != ""
+            assert len(span["trace_id"]) == 32
 
 
 class TestBytesToHexConversion:

@@ -31,6 +31,7 @@ Example trace pattern:
 - AFTER: upsert → commit, upsert → commit, BEGIN → INSERT facts → COMMIT (<200ms)
 """
 
+import contextlib
 import hashlib
 import json
 import logging
@@ -1482,13 +1483,10 @@ class PostgresStorage:
             if has_more:
                 trace_ids = trace_ids[:limit]
 
-            traces = []
-            for trace_id in trace_ids:
-                trace = self.get_trace_by_id(trace_id)
-                if trace:
-                    # Compute summary fields for trace list view
-                    trace = self._compute_trace_summary(trace)
-                    traces.append(trace)
+            # Get trace summaries in batch (eliminates N+1 query pattern)
+            # Old: 51 queries (1 for IDs + 50 x get_trace_by_id)
+            # New: 1-2 queries total
+            traces = self._get_trace_summaries_batch(trace_ids)
 
             # Record query latency
             duration_ms = (time.time() - query_start_time) * 1000
@@ -1499,6 +1497,154 @@ class PostgresStorage:
             )
 
             return traces, has_more, None
+
+    def _get_trace_summaries_batch(self, trace_ids: list[str]) -> list[dict[str, Any]]:
+        """Get trace summaries for multiple traces in a single query.
+
+        Uses window functions to compute trace summaries efficiently without loading all spans.
+        This eliminates the N+1 query pattern (50+ queries → 1 query).
+
+        For each trace, computes:
+        - Root span metadata (first span with no parent)
+        - Trace-level aggregates (start, end, duration, span count)
+        - HTTP attributes from root span
+
+        Args:
+            trace_ids: List of trace IDs to get summaries for
+
+        Returns:
+            List of trace summary dicts (without spans array for performance)
+        """
+        if not self.engine or not trace_ids:
+            return []
+
+        with Session(self.engine) as session:
+            # Use window functions to compute aggregates and identify root spans
+            # ROW_NUMBER() identifies root span (first by start time)
+            stmt = (
+                select(
+                    SpansFact.trace_id,
+                    SpansFact.span_id,
+                    SpansFact.name.label("span_name"),
+                    SpansFact.attributes,
+                    SpansFact.status_code,
+                    SpansFact.status_message,
+                    SpansFact.start_timestamp,
+                    SpansFact.start_nanos_fraction,
+                    SpansFact.end_timestamp,
+                    SpansFact.end_nanos_fraction,
+                    ServiceDim.name.label("service_name"),
+                    # Window functions for aggregates
+                    func.row_number()
+                    .over(partition_by=SpansFact.trace_id, order_by=SpansFact.start_timestamp)
+                    .label("row_num"),
+                    func.count().over(partition_by=SpansFact.trace_id).label("span_count"),
+                    func.min(SpansFact.start_timestamp).over(partition_by=SpansFact.trace_id).label("trace_start_ts"),
+                    func.min(SpansFact.start_nanos_fraction)
+                    .over(partition_by=SpansFact.trace_id)
+                    .label("trace_start_nanos"),
+                    func.max(SpansFact.end_timestamp).over(partition_by=SpansFact.trace_id).label("trace_end_ts"),
+                    func.max(SpansFact.end_nanos_fraction)
+                    .over(partition_by=SpansFact.trace_id)
+                    .label("trace_end_nanos"),
+                )
+                .outerjoin(ServiceDim, SpansFact.service_id == ServiceDim.id)
+                .where(SpansFact.trace_id.in_(trace_ids))
+                .order_by(SpansFact.trace_id, SpansFact.start_timestamp)
+            )
+
+            result = session.execute(stmt)
+            rows = result.fetchall()
+
+            if not rows:
+                return []
+
+            # Group by trace_id and extract root spans (row_num = 1)
+            traces_dict = {}
+            for row in rows:
+                if row.row_num == 1:  # Root span
+                    trace_id = self._bytes_to_hex(row.trace_id)
+
+                    # Helper to extract string values from attributes (same logic as _compute_trace_summary)
+                    def get_attr_str(attrs: dict, *keys: str) -> str:
+                        for key in keys:
+                            value = attrs.get(key)
+                            if value is not None:
+                                if isinstance(value, dict):
+                                    for nested_key in [
+                                        "string_value",
+                                        "int_value",
+                                        "bool_value",
+                                        "double_value",
+                                        "stringValue",
+                                        "intValue",
+                                        "value",
+                                    ]:
+                                        if nested_key in value:
+                                            return str(value[nested_key])
+                                    continue
+                                return str(value)
+                        return ""
+
+                    # Extract root span attributes
+                    root_attrs = row.attributes if row.attributes else {}
+                    http_method = get_attr_str(root_attrs, "http.method", "http.request.method")
+                    http_url = get_attr_str(root_attrs, "http.url", "url.full")
+                    http_route = get_attr_str(root_attrs, "http.route")
+
+                    # Compute target (same logic as _compute_trace_summary)
+                    if http_url:
+                        try:
+                            parsed = urlparse(http_url)
+                            target = parsed.path or "/"
+                        except Exception:
+                            target = http_url
+                    elif http_route:
+                        target = http_route
+                    else:
+                        target = get_attr_str(root_attrs, "http.target", "url.path")
+
+                    # Extract HTTP status code
+                    status_code_str = get_attr_str(root_attrs, "http.status_code", "http.response.status_code")
+                    http_status_code = None
+                    if status_code_str:
+                        with contextlib.suppress(ValueError, TypeError):
+                            http_status_code = int(status_code_str)
+
+                    # Convert timestamps to RFC3339
+                    start_time = _timestamp_to_rfc3339(row.trace_start_ts, row.trace_start_nanos)
+                    end_time = _timestamp_to_rfc3339(row.trace_end_ts, row.trace_end_nanos)
+
+                    # Calculate duration
+                    duration_seconds = _calculate_duration_seconds(
+                        row.trace_start_ts, row.trace_start_nanos, row.trace_end_ts, row.trace_end_nanos
+                    )
+
+                    # Build trace summary (without spans array)
+                    trace_summary = {
+                        "trace_id": trace_id,
+                        "service_name": row.service_name,
+                        "root_span_name": row.span_name,
+                        "root_span_method": http_method,
+                        "root_span_url": http_url,
+                        "root_span_route": http_route,
+                        "root_span_target": target,
+                        "root_span_host": get_attr_str(root_attrs, "http.host", "net.host.name", "server.address"),
+                        "root_span_scheme": get_attr_str(root_attrs, "http.scheme", "url.scheme"),
+                        "root_span_server_name": get_attr_str(root_attrs, "server.address", "net.host.name"),
+                        "root_span_status_code": http_status_code,
+                        "root_span_status": {"code": row.status_code, "message": row.status_message}
+                        if row.status_code is not None
+                        else None,
+                        "start_time": start_time,
+                        "end_time": end_time,
+                        "duration_seconds": duration_seconds,
+                        "span_count": row.span_count,
+                    }
+                    traces_dict[trace_id] = trace_summary
+
+            # Return in same order as input trace_ids
+            return [traces_dict[tid] for tid in trace_ids if tid in traces_dict]
 
     def get_trace_by_id(self, trace_id: str) -> dict[str, Any] | None:
         """Get trace by ID with all spans using ORM."""
