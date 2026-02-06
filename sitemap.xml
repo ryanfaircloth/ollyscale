@@ -2,86 +2,74 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://ryanfaircloth.github.io/ollyscale/</loc>
-         <lastmod>2026-02-04</lastmod>
+         <lastmod>2026-02-06</lastmod>
     </url>
     <url>
          <loc>https://ryanfaircloth.github.io/ollyscale/ai-agent-deployment/</loc>
-         <lastmod>2026-02-04</lastmod>
+         <lastmod>2026-02-06</lastmod>
     </url>
     <url>
          <loc>https://ryanfaircloth.github.io/ollyscale/ai-agent/</loc>
-         <lastmod>2026-02-04</lastmod>
+         <lastmod>2026-02-06</lastmod>
     </url>
     <url>
          <loc>https://ryanfaircloth.github.io/ollyscale/api/</loc>
-         <lastmod>2026-02-04</lastmod>
+         <lastmod>2026-02-06</lastmod>
     </url>
     <url>
          <loc>https://ryanfaircloth.github.io/ollyscale/build-system-quickstart/</loc>
-         <lastmod>2026-02-04</lastmod>
-    </url>
-    <url>
-         <loc>https://ryanfaircloth.github.io/ollyscale/database-connection-pooling/</loc>
-         <lastmod>2026-02-04</lastmod>
-    </url>
-    <url>
-         <loc>https://ryanfaircloth.github.io/ollyscale/ebpf/</loc>
-         <lastmod>2026-02-04</lastmod>
+         <lastmod>2026-02-06</lastmod>
     </url>
     <url>
          <loc>https://ryanfaircloth.github.io/ollyscale/kubernetes/</loc>
-         <lastmod>2026-02-04</lastmod>
+         <lastmod>2026-02-06</lastmod>
     </url>
     <url>
          <loc>https://ryanfaircloth.github.io/ollyscale/licensing/</loc>
-         <lastmod>2026-02-04</lastmod>
+         <lastmod>2026-02-06</lastmod>
     </url>
     <url>
          <loc>https://ryanfaircloth.github.io/ollyscale/metrics/</loc>
-         <lastmod>2026-02-04</lastmod>
+         <lastmod>2026-02-06</lastmod>
+    </url>
+    <url>
+         <loc>https://ryanfaircloth.github.io/ollyscale/otel-arrow-data-model/</loc>
+         <lastmod>2026-02-06</lastmod>
     </url>
     <url>
          <loc>https://ryanfaircloth.github.io/ollyscale/otel-collector/</loc>
-         <lastmod>2026-02-04</lastmod>
+         <lastmod>2026-02-06</lastmod>
     </url>
     <url>
-         <loc>https://ryanfaircloth.github.io/ollyscale/partition-management/</loc>
-         <lastmod>2026-02-04</lastmod>
-    </url>
-    <url>
-         <loc>https://ryanfaircloth.github.io/ollyscale/postgres-infrastructure/</loc>
-         <lastmod>2026-02-04</lastmod>
+         <loc>https://ryanfaircloth.github.io/ollyscale/otel-ollyscale-data-model/</loc>
+         <lastmod>2026-02-06</lastmod>
     </url>
     <url>
          <loc>https://ryanfaircloth.github.io/ollyscale/quickstart/</loc>
-         <lastmod>2026-02-04</lastmod>
+         <lastmod>2026-02-06</lastmod>
     </url>
     <url>
          <loc>https://ryanfaircloth.github.io/ollyscale/technical/</loc>
-         <lastmod>2026-02-04</lastmod>
+         <lastmod>2026-02-06</lastmod>
     </url>
     <url>
          <loc>https://ryanfaircloth.github.io/ollyscale/demos/</loc>
-         <lastmod>2026-02-04</lastmod>
+         <lastmod>2026-02-06</lastmod>
     </url>
     <url>
          <loc>https://ryanfaircloth.github.io/ollyscale/demos/custom-demo/</loc>
-         <lastmod>2026-02-04</lastmod>
+         <lastmod>2026-02-06</lastmod>
     </url>
     <url>
          <loc>https://ryanfaircloth.github.io/ollyscale/demos/otel-demo/</loc>
-         <lastmod>2026-02-04</lastmod>
+         <lastmod>2026-02-06</lastmod>
     </url>
     <url>
-         <loc>https://ryanfaircloth.github.io/ollyscale/plans/ollyscale-v2-postgres/</loc>
-         <lastmod>2026-02-04</lastmod>
+         <loc>https://ryanfaircloth.github.io/ollyscale/plans/FRESH-START-PLAN/</loc>
+         <lastmod>2026-02-06</lastmod>
     </url>
     <url>
          <loc>https://ryanfaircloth.github.io/ollyscale/plans/react-ui-implementation-plan/</loc>
-         <lastmod>2026-02-04</lastmod>
-    </url>
-    <url>
-         <loc>https://ryanfaircloth.github.io/ollyscale/plans/v2-api-migration-plan/</loc>
-         <lastmod>2026-02-04</lastmod>
+         <lastmod>2026-02-06</lastmod>
     </url>
 </urlset>

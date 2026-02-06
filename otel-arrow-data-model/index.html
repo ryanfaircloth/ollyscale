@@ -12,13 +12,9 @@
         <meta name="author" content="ollyScale">
       
       
-        <link rel="canonical" href="https://ryanfaircloth.github.io/ollyscale/kubernetes/">
+        <link rel="canonical" href="https://ryanfaircloth.github.io/ollyscale/otel-arrow-data-model/">
       
       
-        <link rel="prev" href="../quickstart/">
-      
-      
-        <link rel="next" href="../otel-collector/">
       
       
         
@@ -29,7 +25,7 @@
     
     
       
-        <title>Kubernetes - ollyScale Documentation</title>
+        <title>Arrow Data Model - ollyScale Documentation</title>
       
     
     
@@ -82,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#kubernetes-deployment" class="md-skip">
+        <a href="#arrow-data-model" class="md-skip">
           Skip to content
         </a>
       
@@ -117,7 +113,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Kubernetes
+              Arrow Data Model
             
           </span>
         </div>
@@ -315,8 +311,6 @@
       
   
   
-    
-  
   
   
     
@@ -329,11 +323,13 @@
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
         
           
           <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
@@ -354,7 +350,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             
@@ -397,37 +393,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Kubernetes
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../kubernetes/" class="md-nav__link">
         
   
   
@@ -443,120 +412,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#prerequisites" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Prerequisites
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#1-deploy-ollyscale-core" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        1. Deploy ollyScale Core
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#2-demo-applications-optional" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        2. Demo Applications (Optional)
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#3-opentelemetry-demo-20-services-optional" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        3. OpenTelemetry Demo (~20 Services - Optional)
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#4-ollyscale-core-only-deployment-use-your-own-kubernetes-opentelemetry-collector" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        4. ollyScale Core-Only Deployment: Use Your Own Kubernetes OpenTelemetry Collector
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="4. ollyScale Core-Only Deployment: Use Your Own Kubernetes OpenTelemetry Collector">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#use-ollyscale-with-any-opentelemetry-collector" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Use ollyScale with Any OpenTelemetry Collector
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#opamp-configuration-optional" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        OpAMP Configuration (Optional)
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#building-images" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Building Images
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1174,10 +1029,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#prerequisites" class="md-nav__link">
+  <a href="#metrics-arrow-records" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Prerequisites
+        Metrics Arrow Records
       
     </span>
   </a>
@@ -1185,10 +1040,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#1-deploy-ollyscale-core" class="md-nav__link">
+  <a href="#logs-arrow-records" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Deploy ollyScale Core
+        Logs Arrow Records
       
     </span>
   </a>
@@ -1196,71 +1051,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#2-demo-applications-optional" class="md-nav__link">
+  <a href="#traces-arrow-records" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Demo Applications (Optional)
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#3-opentelemetry-demo-20-services-optional" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        3. OpenTelemetry Demo (~20 Services - Optional)
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#4-ollyscale-core-only-deployment-use-your-own-kubernetes-opentelemetry-collector" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        4. ollyScale Core-Only Deployment: Use Your Own Kubernetes OpenTelemetry Collector
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="4. ollyScale Core-Only Deployment: Use Your Own Kubernetes OpenTelemetry Collector">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#use-ollyscale-with-any-opentelemetry-collector" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Use ollyScale with Any OpenTelemetry Collector
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#opamp-configuration-optional" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        OpAMP Configuration (Optional)
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#building-images" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Building Images
+        Traces Arrow Records
       
     </span>
   </a>
@@ -1287,183 +1081,402 @@
   
 
 
-<h1 id="kubernetes-deployment">Kubernetes Deployment</h1>
-<p>Deploy ollyScale on Kubernetes (Minikube) for local development!</p>
-<div align="center">
-  <img src="../images/servicemap.png" alt="ollyScale on Kubernetes" width="600">
-  <p><em>Service map showing microservices running on Kubernetes</em></p>
-</div>
-
-<hr />
-<p>All examples are launched from the repo - clone it first or download the current GitHub release archive:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/ryanfaircloth/ollyscale
-</code></pre></div>
-<h2 id="prerequisites">Prerequisites</h2>
+<h1 id="arrow-data-model">Arrow Data Model</h1>
+<p>This document describes the Arrow Schema used for each OTLP entity as Entity
+Relation diagrams.</p>
+<p>The Arrow Data Model has been carefully designed to optimize:</p>
 <ul>
-<li><a href="https://minikube.sigs.k8s.io/docs/start/">Minikube</a></li>
-<li><a href="https://kubernetes.io/docs/tasks/tools/">kubectl</a></li>
+<li>The compression ratio for metrics, logs, and traces,</li>
+<li>Its compatibility within the extensive Arrow ecosystem,</li>
+<li>Its compatibility with file formats, such as Parquet.</li>
 </ul>
-<h2 id="1-deploy-ollyscale-core">1. Deploy ollyScale Core</h2>
-<ol>
-<li>
-<p><strong>Start Minikube:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>minikube<span class="w"> </span>start
-</code></pre></div>
-</li>
-<li>
-<p><strong>Deploy ollyScale:</strong></p>
-<div class="highlight"><pre><span></span><code>Deploy using Helm (images will be pulled from Docker Hub automatically):
-
-```bash
-cd charts
-task deploy
-```
-
-!!! note &quot;Local Development Build (Optional)&quot;
-To build and deploy custom images for local development:
-`bash
-</code></pre></div>
-<p>cd charts
-./build-and-push-local.sh <version>
-`</p>
-</li>
-<li>
-<p><strong>Access the UI:</strong></p>
-<p>To access the ollyScale UI (Service Type: LoadBalancer) on macOS with Minikube, you need to use <code>minikube tunnel</code>.</p>
-<p>Open a <strong>new terminal window</strong> and run:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>minikube<span class="w"> </span>tunnel
-</code></pre></div>
-<p>You may be asked for your password. Keep this terminal open.</p>
-<p>Now you can access the ollyScale UI at: <a href="http://localhost:5002">http://localhost:5002</a></p>
-<p><strong>OpenTelemetry Collector + OpAMP Config Page:</strong> Navigate to the "OpenTelemetry Collector + OpAMP Config" tab in the UI to view and manage collector configurations remotely. See the <a href="#opamp-configuration-optional">OpAMP Configuration</a> section below for setup instructions.</p>
-</li>
-<li>
-<p><strong>Send Telemetry from Host Apps:</strong></p>
-<p>To send telemetry from applications running on your host machine (outside Kubernetes), use <code>kubectl port-forward</code> to expose the OTel Collector ports:</p>
-<p>Open a <strong>new terminal window</strong> and run:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>kubectl<span class="w"> </span>port-forward<span class="w"> </span>service/otel-collector<span class="w"> </span><span class="m">4317</span>:4317<span class="w"> </span><span class="m">4318</span>:4318
-</code></pre></div>
-<p>Keep this terminal open. Now point your application's OpenTelemetry exporter to:
-- <strong>gRPC</strong>: <code>http://localhost:4317</code>
-- <strong>HTTP</strong>: <code>http://localhost:4318</code></p>
-<p><strong>Example environment variables:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">OTEL_EXPORTER_OTLP_ENDPOINT</span><span class="o">=</span>http://localhost:4318
-</code></pre></div>
-<p><strong>For apps running inside the Kubernetes cluster:</strong><br />
-Use the Kubernetes service name:
-- <strong>gRPC</strong>: <code>http://otel-collector:4317</code>
-- <strong>HTTP</strong>: <code>http://otel-collector:4318</code></p>
-</li>
-<li>
-<p><strong>Clean Up:</strong></p>
-<p>Uninstall ollyScale using Helm:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>helm<span class="w"> </span>uninstall<span class="w"> </span>ollyscale<span class="w"> </span>-n<span class="w"> </span>ollyscale
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>kubectl<span class="w"> </span>delete<span class="w"> </span>namespace<span class="w"> </span>ollyscale
-</code></pre></div>
-<p>Shut down Minikube:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>minikube<span class="w"> </span>stop
-</code></pre></div>
-<p>Minikube may be more stable if you delete it:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>minikube<span class="w"> </span>delete
-</code></pre></div>
-</li>
-</ol>
-<hr />
-<h2 id="2-demo-applications-optional">2. Demo Applications (Optional)</h2>
-<p>To see ollyScale in action with instrumented microservices:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nb">cd</span><span class="w"> </span>k8s-demo
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>./02-deploy.sh
-</code></pre></div>
-<p>The deploy script pulls demo images from Docker Hub by default. For local development, you can build images locally when prompted.</p>
-<p>To clean up the demo:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>./03-cleanup.sh
-</code></pre></div>
-<p>The demo includes two microservices that automatically generate traffic, showcasing distributed tracing across service boundaries.</p>
-<hr />
-<h2 id="3-opentelemetry-demo-20-services-optional">3. OpenTelemetry Demo (~20 Services - Optional)</h2>
-<p>To deploy the full <a href="https://opentelemetry.io/docs/demo/">OpenTelemetry Demo</a> with ~20 microservices:</p>
-<p><strong>Prerequisites:</strong></p>
-<ul>
-<li>ollyScale must be deployed first (see Setup above)</li>
-<li><a href="https://helm.sh/docs/intro/install/">Helm</a> installed</li>
-<li>Sufficient cluster resources (demo is resource-intensive)</li>
-</ul>
-<p><strong>Deploy:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="nb">cd</span><span class="w"> </span>k8s-otel-demo
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>./01-deploy-otel-demo-helm.sh
-</code></pre></div>
-<p>This deploys all OpenTelemetry Demo services configured to send telemetry to ollyScale's collector via HTTP on port 4318. Built-in observability tools (Jaeger, Grafana, Prometheus) are disabled.</p>
-<p><strong>Cleanup:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="nb">cd</span><span class="w"> </span>k8s-otel-demo
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>./02-cleanup-otel-demo-helm.sh
-</code></pre></div>
-<p>This removes the OpenTelemetry Demo but leaves ollyScale running.</p>
-<h2 id="4-ollyscale-core-only-deployment-use-your-own-kubernetes-opentelemetry-collector">4. ollyScale <strong>Core-Only</strong> Deployment: Use Your Own Kubernetes OpenTelemetry Collector</h2>
-<p>To deploy ollyScale without the bundled OTel Collector (e.g., if you have an existing collector daemonset). Includes OpAMP server for optional remote collector configuration management:</p>
-<ol>
-<li><strong>Deploy Core:</strong></li>
-</ol>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="nb">cd</span><span class="w"> </span>k8s-core-only
-<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>./01-deploy.sh
-</code></pre></div>
-<ol>
-<li>
-<p><strong>Access UI:</strong>
-   Run <code>minikube tunnel</code> and access <code>http://localhost:5002</code>.</p>
-</li>
-<li>
-<p><strong>Cleanup:</strong></p>
-</li>
-</ol>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>./02-cleanup.sh
-</code></pre></div>
-<h3 id="use-ollyscale-with-any-opentelemetry-collector">Use ollyScale with Any OpenTelemetry Collector</h3>
-<p>Swap out the included Otel Collector for any distro of Otel Collector.</p>
-<p><strong>Point your OpenTelemetry exporters to ollyscale-otlp-receiver:4343:</strong>
-i.e.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="nt">exporters</span><span class="p">:</span>
-<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="w">  </span><span class="nt">debug</span><span class="p">:</span>
-<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="w">    </span><span class="nt">verbosity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">detailed</span>
-<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>
-<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="w">  </span><span class="nt">otlp</span><span class="p">:</span>
-<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="w">    </span><span class="nt">endpoint</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;ollyscale-otlp-receiver:4343&quot;</span>
-<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="w">    </span><span class="nt">tls</span><span class="p">:</span>
-<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a><span class="w">      </span><span class="nt">insecure</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
-<a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a>
-<a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a><span class="nt">service</span><span class="p">:</span>
-<a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a><span class="w">  </span><span class="nt">pipelines</span><span class="p">:</span>
-<a id="__codelineno-15-12" name="__codelineno-15-12" href="#__codelineno-15-12"></a><span class="w">    </span><span class="nt">traces</span><span class="p">:</span>
-<a id="__codelineno-15-13" name="__codelineno-15-13" href="#__codelineno-15-13"></a><span class="w">      </span><span class="nt">receivers</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">otlp</span><span class="p p-Indicator">]</span>
-<a id="__codelineno-15-14" name="__codelineno-15-14" href="#__codelineno-15-14"></a><span class="w">      </span><span class="nt">processors</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">batch</span><span class="p p-Indicator">]</span>
-<a id="__codelineno-15-15" name="__codelineno-15-15" href="#__codelineno-15-15"></a><span class="w">      </span><span class="nt">exporters</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">debug</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">otlp</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">spanmetrics</span><span class="p p-Indicator">]</span>
-<a id="__codelineno-15-16" name="__codelineno-15-16" href="#__codelineno-15-16"></a>
-<a id="__codelineno-15-17" name="__codelineno-15-17" href="#__codelineno-15-17"></a><span class="w">    </span><span class="nt">metrics</span><span class="p">:</span>
-<a id="__codelineno-15-18" name="__codelineno-15-18" href="#__codelineno-15-18"></a><span class="w">      </span><span class="nt">receivers</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">otlp</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">spanmetrics</span><span class="p p-Indicator">]</span>
-<a id="__codelineno-15-19" name="__codelineno-15-19" href="#__codelineno-15-19"></a><span class="w">      </span><span class="nt">processors</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">batch</span><span class="p p-Indicator">]</span>
-<a id="__codelineno-15-20" name="__codelineno-15-20" href="#__codelineno-15-20"></a><span class="w">      </span><span class="nt">exporters</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">debug</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">otlp</span><span class="p p-Indicator">]</span>
-<a id="__codelineno-15-21" name="__codelineno-15-21" href="#__codelineno-15-21"></a>
-<a id="__codelineno-15-22" name="__codelineno-15-22" href="#__codelineno-15-22"></a><span class="w">    </span><span class="nt">logs</span><span class="p">:</span>
-<a id="__codelineno-15-23" name="__codelineno-15-23" href="#__codelineno-15-23"></a><span class="w">      </span><span class="nt">receivers</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">otlp</span><span class="p p-Indicator">]</span>
-<a id="__codelineno-15-24" name="__codelineno-15-24" href="#__codelineno-15-24"></a><span class="w">      </span><span class="nt">processors</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">batch</span><span class="p p-Indicator">]</span>
-<a id="__codelineno-15-25" name="__codelineno-15-25" href="#__codelineno-15-25"></a><span class="w">      </span><span class="nt">exporters</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">debug</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">otlp</span><span class="p p-Indicator">]</span>
-</code></pre></div>
-<p>The Otel Collector will forward everything to ollyScale's OTLP receiver, which process telemetry and stores it in Redis in OTEL format for the backend and UI to access.</p>
-<h2 id="opamp-configuration-optional">OpAMP Configuration (Optional)</h2>
-<p>The <strong>OpenTelemetry Collector + OpAMP Config</strong> page in the ollyScale UI allows you to view and manage collector configurations remotely. To enable this feature, add the OpAMP extension to your collector config:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="nt">extensions</span><span class="p">:</span>
-<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="w">  </span><span class="nt">opamp</span><span class="p">:</span>
-<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="w">    </span><span class="nt">server</span><span class="p">:</span>
-<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="w">      </span><span class="nt">ws</span><span class="p">:</span>
-<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="w">        </span><span class="nt">endpoint</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ws://ollyscale-opamp-server:4320/v1/opamp</span>
-<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a>
-<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="nt">service</span><span class="p">:</span>
-<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a><span class="w">  </span><span class="nt">extensions</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">opamp</span><span class="p p-Indicator">]</span>
-</code></pre></div>
-<p>The default configuration template (included as a ConfigMap in <code>k8s-core-only/ollyscale-opamp-server.yaml</code>) shows a complete example with OTLP receivers, OpAMP extension, batch processing, and spanmetrics connector. Your collector will connect to the OpAMP server and receive configuration updates through the ollyScale UI.</p>
-<hr />
-<h2 id="building-images">Building Images</h2>
-<p>By default, deployment scripts pull pre-built images from GitHub Container Registry (GHCR). For building images locally (Minikube) or publishing to GHCR, see <a href="https://github.com/ryanfaircloth/ollyscale/blob/main/build/README.md">build/README.md</a>.</p>
-<hr />
+<p>This document has been generated directly from the source code. To regenerate
+this document, run the following command:</p>
+<p>Last Updated 2026-02-04</p>
+<h2 id="metrics-arrow-records">Metrics Arrow Records</h2>
+<p>The following ER diagram describes the Arrow Schema used for metrics.</p>
+<pre class="mermaid"><code>erDiagram
+    METRICS ||--o{ RESOURCE_ATTRS : resource-attrs
+    METRICS ||--o{ SCOPE_ATTRS : scope-attrs
+    METRICS ||--o{ NUMBER_DATA_POINTS : number-dps
+    NUMBER_DATA_POINTS ||--o{ NUMBER_DP_ATTRS : number-dp-attrs
+    NUMBER_DATA_POINTS ||--o{ NUMBER_DP_EXEMPLARS : number-dp-exemplars
+    NUMBER_DP_EXEMPLARS ||--o{ NUMBER_DP_EXEMPLAR_ATTRS : number-dp-exemplar-attrs
+    METRICS ||--o{ SUMMARY_DATA_POINTS : summary-dps
+    SUMMARY_DATA_POINTS ||--o{ quantile : quantile
+    SUMMARY_DATA_POINTS ||--o{ SUMMARY_DP_ATTRS : summary-dp-attrs
+    METRICS ||--o{ HISTOGRAM_DATA_POINTS : histogram-dps
+    HISTOGRAM_DATA_POINTS ||--o{ HISTOGRAM_DP_ATTRS : histogram-dp-attrs
+    HISTOGRAM_DATA_POINTS ||--o{ HISTOGRAM_DP_EXEMPLARS : histogram-dp-exemplars
+    HISTOGRAM_DP_EXEMPLARS ||--o{ HISTOGRAM_DP_EXEMPLAR_ATTRS : histogram-dp-exemplar-attrs
+    METRICS ||--o{ EXP_HISTOGRAM_DATA_POINTS : exp-histogram-dps
+    EXP_HISTOGRAM_DATA_POINTS ||--o{ EXP_HISTOGRAM_DP_ATTRS : exp-histogram-dp-attrs
+    EXP_HISTOGRAM_DATA_POINTS ||--o{ EXP_HISTOGRAM_DP_EXEMPLARS : exp-histogram-dp-exemplars
+    EXP_HISTOGRAM_DP_EXEMPLARS ||--o{ EXP_HISTOGRAM_DP_EXEMPLAR_ATTRS : exp-histogram-dp-exemplar-attrs
+    SCOPE_ATTRS{
+        parent_id u16
+        key string
+        type u8
+        str string
+        int i64 "optional"
+        double f64 "optional"
+        bool bool "optional"
+        bytes bytes "optional"
+        ser bytes "optional"
+    }
+    NUMBER_DATA_POINTS{
+        id u32
+        parent_id u16
+        start_time_unix_nano timestamp
+        time_unix_nano timestamp
+        int_value i64
+        double_value f64
+        flags u32 "optional"
+    }
+    NUMBER_DP_EXEMPLARS{
+        id u32 "optional"
+        parent_id u32
+        time_unix_nano timestamp "optional"
+        int_value i64 "optional"
+        double_value f64 "optional"
+        span_id bytes[8] "optional"
+        trace_id bytes[16] "optional"
+    }
+    NUMBER_DP_EXEMPLAR_ATTRS{
+        parent_id u32
+        key string
+        type u8
+        str string
+        int i64 "optional"
+        double f64 "optional"
+        bool bool "optional"
+        bytes bytes "optional"
+        ser bytes "optional"
+    }
+    HISTOGRAM_DATA_POINTS{
+        id u32 "optional"
+        parent_id u16
+        start_time_unix_nano timestamp "optional"
+        time_unix_nano timestamp "optional"
+        count u64 "optional"
+        sum f64 "optional"
+        bucket_counts u64 "optional"
+        explicit_bounds f64 "optional"
+        flags u32 "optional"
+        min f64 "optional"
+        max f64 "optional"
+    }
+    EXP_HISTOGRAM_DP_ATTRS{
+        parent_id u32
+        key string
+        type u8
+        str string
+        int i64 "optional"
+        double f64 "optional"
+        bool bool "optional"
+        bytes bytes "optional"
+        ser bytes "optional"
+    }
+    EXP_HISTOGRAM_DP_EXEMPLAR_ATTRS{
+        parent_id u32
+        key string
+        type u8
+        str string
+        int i64 "optional"
+        double f64 "optional"
+        bool bool "optional"
+        bytes bytes "optional"
+        ser bytes "optional"
+    }
+    RESOURCE_ATTRS{
+        parent_id u16
+        key string
+        type u8
+        str string
+        int i64 "optional"
+        double f64 "optional"
+        bool bool "optional"
+        bytes bytes "optional"
+        ser bytes "optional"
+    }
+    NUMBER_DP_ATTRS{
+        parent_id u32
+        key string
+        type u8
+        str string
+        int i64 "optional"
+        double f64 "optional"
+        bool bool "optional"
+        bytes bytes "optional"
+        ser bytes "optional"
+    }
+    SUMMARY_DATA_POINTS{
+        id u32 "optional"
+        parent_id u16
+        start_time_unix_nano timestamp "optional"
+        time_unix_nano timestamp "optional"
+        count u64 "optional"
+        sum f64 "optional"
+        flags u32 "optional"
+    }
+    quantile{
+        quantile f64 "optional"
+        value f64 "optional"
+    }
+    SUMMARY_DP_ATTRS{
+        parent_id u32
+        key string
+        type u8
+        str string
+        int i64 "optional"
+        double f64 "optional"
+        bool bool "optional"
+        bytes bytes "optional"
+        ser bytes "optional"
+    }
+    METRICS{
+        id u16
+        resource_id u16 "optional"
+        resource_schema_url string "optional"
+        resource_dropped_attributes_count u32 "optional"
+        scope_id u16 "optional"
+        scope_name string "optional"
+        scope_version string "optional"
+        scope_dropped_attributes_count u32 "optional"
+        schema_url string "optional"
+        metric_type u8
+        name string
+        description string "optional"
+        unit string "optional"
+        aggregation_temporality i32 "optional"
+        is_monotonic bool "optional"
+    }
+    HISTOGRAM_DP_ATTRS{
+        parent_id u32
+        key string
+        type u8
+        str string
+        int i64 "optional"
+        double f64 "optional"
+        bool bool "optional"
+        bytes bytes "optional"
+        ser bytes "optional"
+    }
+    HISTOGRAM_DP_EXEMPLARS{
+        id u32 "optional"
+        parent_id u32
+        time_unix_nano timestamp "optional"
+        int_value i64 "optional"
+        double_value f64 "optional"
+        span_id bytes[8] "optional"
+        trace_id bytes[16] "optional"
+    }
+    HISTOGRAM_DP_EXEMPLAR_ATTRS{
+        parent_id u32
+        key string
+        type u8
+        str string
+        int i64 "optional"
+        double f64 "optional"
+        bool bool "optional"
+        bytes bytes "optional"
+        ser bytes "optional"
+    }
+    EXP_HISTOGRAM_DATA_POINTS{
+        id u32 "optional"
+        parent_id u16
+        start_time_unix_nano timestamp "optional"
+        time_unix_nano timestamp "optional"
+        count u64 "optional"
+        sum f64 "optional"
+        scale i32 "optional"
+        zero_count u64 "optional"
+        positive_offset i32 "optional"
+        positive_bucket_counts u64 "optional"
+        negative_offset i32 "optional"
+        negative_bucket_counts u64 "optional"
+        flags u32 "optional"
+        min f64 "optional"
+        max f64 "optional"
+    }
+    EXP_HISTOGRAM_DP_EXEMPLARS{
+        id u32 "optional"
+        parent_id u32
+        time_unix_nano timestamp "optional"
+        int_value i64 "optional"
+        double_value f64 "optional"
+        span_id bytes[8] "optional"
+        trace_id bytes[16] "optional"
+    }</code></pre>
+<h2 id="logs-arrow-records">Logs Arrow Records</h2>
+<p>The following ER diagram describes the Arrow Schema used for logs.</p>
+<pre class="mermaid"><code>erDiagram
+    LOGS ||--o{ RESOURCE_ATTRS : resource-attrs
+    LOGS ||--o{ SCOPE_ATTRS : scope-attrs
+    LOGS ||--o{ LOG_ATTRS : logs-attrs
+    LOGS{
+        id u16 "optional"
+        resource_id u16 "optional"
+        resource_schema_url string "optional"
+        resource_dropped_attributes_count u32 "optional"
+        scope_id u16 "optional"
+        scope_name string "optional"
+        scope_version string "optional"
+        scope_dropped_attributes_count u32 "optional"
+        schema_url string "optional"
+        time_unix_nano timestamp
+        observed_time_unix_nano timestamp
+        trace_id bytes[16] "optional"
+        span_id bytes[8] "optional"
+        severity_number i32 "optional"
+        severity_text string "optional"
+        body_type u8
+        body_str string
+        body_int i64 "optional"
+        body_double f64 "optional"
+        body_bool bool "optional"
+        body_bytes bytes "optional"
+        body_ser bytes "optional"
+        dropped_attributes_count u32 "optional"
+        flags u32 "optional"
+    }
+    RESOURCE_ATTRS{
+        parent_id u16
+        key string
+        type u8
+        str string
+        int i64 "optional"
+        double f64 "optional"
+        bool bool "optional"
+        bytes bytes "optional"
+        ser bytes "optional"
+    }
+    SCOPE_ATTRS{
+        parent_id u16
+        key string
+        type u8
+        str string
+        int i64 "optional"
+        double f64 "optional"
+        bool bool "optional"
+        bytes bytes "optional"
+        ser bytes "optional"
+    }
+    LOG_ATTRS{
+        parent_id u16
+        key string
+        type u8
+        str string
+        int i64 "optional"
+        double f64 "optional"
+        bool bool "optional"
+        bytes bytes "optional"
+        ser bytes "optional"
+    }</code></pre>
+<h2 id="traces-arrow-records">Traces Arrow Records</h2>
+<p>The following ER diagram describes the Arrow Schema used for traces.</p>
+<pre class="mermaid"><code>erDiagram
+    SPANS ||--o{ RESOURCE_ATTRS : resource-attrs
+    SPANS ||--o{ SCOPE_ATTRS : scope-attrs
+    SPANS ||--o{ SPAN_ATTRS : span-attrs
+    SPANS ||--o{ SPAN_EVENTS : span-event
+    SPANS ||--o{ SPAN_LINKS : span-link
+    SPAN_EVENTS ||--o{ SPAN_EVENT_ATTRS : span-event-attrs
+    SPAN_LINKS ||--o{ SPAN_LINK_ATTRS : span-link-attrs
+    SPANS{
+        id u16 "optional"
+        resource_id u16 "optional"
+        resource_schema_url string "optional"
+        resource_dropped_attributes_count u32 "optional"
+        scope_id u16 "optional"
+        scope_name string "optional"
+        scope_version string "optional"
+        scope_dropped_attributes_count u32 "optional"
+        schema_url string "optional"
+        start_time_unix_nano timestamp
+        duration_time_unix_nano duration
+        trace_id bytes[16]
+        span_id bytes[8]
+        trace_state string "optional"
+        parent_span_id bytes[8] "optional"
+        name string
+        kind i32 "optional"
+        dropped_attributes_count u32 "optional"
+        dropped_events_count u32 "optional"
+        dropped_links_count u32 "optional"
+        status_code i32 "optional"
+        status_status_message string "optional"
+    }
+    RESOURCE_ATTRS{
+        parent_id u16
+        key string
+        type u8
+        str string
+        int i64 "optional"
+        double f64 "optional"
+        bool bool "optional"
+        bytes bytes "optional"
+        ser bytes "optional"
+    }
+    SCOPE_ATTRS{
+        parent_id u16
+        key string
+        type u8
+        str string
+        int i64 "optional"
+        double f64 "optional"
+        bool bool "optional"
+        bytes bytes "optional"
+        ser bytes "optional"
+    }
+    SPAN_ATTRS{
+        parent_id u16
+        key string
+        type u8
+        str string
+        int i64 "optional"
+        double f64 "optional"
+        bool bool "optional"
+        bytes bytes "optional"
+        ser bytes "optional"
+    }
+    SPAN_EVENTS{
+        id u32 "optional"
+        parent_id u16
+        time_unix_nano timestamp "optional"
+        name string
+        dropped_attributes_count u32 "optional"
+    }
+    SPAN_LINKS{
+        id u32 "optional"
+        parent_id u16
+        trace_id bytes[16] "optional"
+        span_id bytes[8] "optional"
+        trace_state string "optional"
+        dropped_attributes_count u32 "optional"
+    }
+    SPAN_EVENT_ATTRS{
+        parent_id u32
+        key string
+        type u8
+        str string
+        int i64 "optional"
+        double f64 "optional"
+        bool bool "optional"
+        bytes bytes "optional"
+        ser bytes "optional"
+    }
+    SPAN_LINK_ATTRS{
+        parent_id u32
+        key string
+        type u8
+        str string
+        int i64 "optional"
+        double f64 "optional"
+        bool bool "optional"
+        bytes bytes "optional"
+        ser bytes "optional"
+    }</code></pre>
 
 
 
