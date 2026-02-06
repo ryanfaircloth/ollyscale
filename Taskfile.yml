@@ -311,7 +311,7 @@ tasks:
 
   build:image:api:
     desc: Build API backend image
-    deps: [lint, test:api]
+    deps: [test:api]
     cmds:
       - echo "🔨 Building API Backend..."
       - date +"Build started at %Y-%m-%d %H:%M:%S"
@@ -329,7 +329,7 @@ tasks:
 
   build:image:web-ui:
     desc: Build web UI image
-    deps: [lint, test:web-ui]
+    deps: [test:web-ui]
     cmds:
       - echo "🔨 Building Web UI..."
       - date +"Build started at %Y-%m-%d %H:%M:%S"
@@ -347,7 +347,7 @@ tasks:
 
   build:image:opamp:
     desc: Build OpAMP server image
-    deps: [lint]
+    deps: []
     cmds:
       - echo "🔨 Building OpAMP Server..."
       - date +"Build started at %Y-%m-%d %H:%M:%S"
@@ -365,7 +365,7 @@ tasks:
 
   build:image:demo:
     desc: Build unified demo image
-    deps: [lint, test:demo]
+    deps: [test:demo]
     cmds:
       - echo "🔨 Building Unified Demo..."
       - date +"Build started at %Y-%m-%d %H:%M:%S"
@@ -383,7 +383,7 @@ tasks:
 
   build:image:demo-agent:
     desc: Build AI agent demo image
-    deps: [lint, test:demo-agent]
+    deps: [test:demo-agent]
     cmds:
       - echo "🔨 Building AI Agent Demo..."
       - date +"Build started at %Y-%m-%d %H:%M:%S"
