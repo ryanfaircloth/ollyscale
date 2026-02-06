@@ -2458,11 +2458,3 @@ class PostgresStorage:
             ]
 
             return nodes, edges
-            nodes = [ServiceMapNode(id=name, name=name, type=data["type"]) for name, data in nodes_dict.items()]
-
-            edges = [
-                ServiceMapEdge(source=source, target=target, call_count=count)
-                for (source, target), count in edges_dict.items()
-            ]
-
-            return nodes, edges
