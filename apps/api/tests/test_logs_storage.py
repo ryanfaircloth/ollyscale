@@ -13,26 +13,37 @@ from app.storage.logs_storage import LogsStorage
 
 
 @pytest.fixture
-def mock_session():
-    """Create mock database session."""
-    session = MagicMock()
-    session.add = MagicMock()
-    session.flush = MagicMock()
-    session.commit = MagicMock()
-    session.exec = MagicMock()
-    return session
+def mock_engine():
+    """Create mock database engine (transactional)."""
+    engine = MagicMock()
+    return engine
 
 
 @pytest.fixture
-def logs_storage(mock_session):
+def mock_autocommit_engine():
+    """Create mock database engine (autocommit)."""
+    engine = MagicMock()
+    return engine
+
+
+@pytest.fixture
+def mock_config():
+    """Create mock AttributePromotionConfig."""
+    config = MagicMock()
+    config.is_promoted = MagicMock(return_value=False)
+    return config
+
+
+@pytest.fixture
+def logs_storage(mock_engine, mock_autocommit_engine, mock_config):
     """Create LogsStorage with mocked dependencies."""
     with (
         patch("app.storage.logs_storage.ResourceManager") as mock_rm,
         patch("app.storage.logs_storage.AttributeManager") as mock_am,
     ):
-        storage = LogsStorage(mock_session)
-        storage.resource_manager = mock_rm.return_value
-        storage.attribute_manager = mock_am.return_value
+        storage = LogsStorage(mock_engine, mock_autocommit_engine, mock_config)
+        storage.resource_mgr = mock_rm.return_value
+        storage.attr_mgr = mock_am.return_value
         return storage
 
 

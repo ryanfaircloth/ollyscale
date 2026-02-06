@@ -15,19 +15,24 @@ from app.storage.resource_manager import ResourceManager
 
 
 @pytest.fixture
-def mock_session():
-    """Create mock database session."""
-    session = MagicMock()
-    session.exec = MagicMock()
-    session.add = MagicMock()
-    session.commit = MagicMock()
-    return session
+def mock_engine():
+    """Create mock database engine (autocommit)."""
+    engine = MagicMock()
+    return engine
 
 
 @pytest.fixture
-def resource_manager(mock_session):
-    """Create ResourceManager with mocked session."""
-    return ResourceManager(mock_session)
+def mock_config():
+    """Create mock AttributePromotionConfig."""
+    config = MagicMock()
+    config.is_promoted = MagicMock(return_value=False)
+    return config
+
+
+@pytest.fixture
+def resource_manager(mock_engine, mock_config):
+    """Create ResourceManager with mocked engine and config."""
+    return ResourceManager(mock_engine, mock_config)
 
 
 def test_calculate_resource_hash_consistency(resource_manager):

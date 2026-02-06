@@ -14,33 +14,24 @@ from app.storage.attribute_manager import AttributeManager
 
 
 @pytest.fixture
-def mock_session():
-    """Create mock database session."""
-    session = MagicMock()
-    session.exec = MagicMock()
-    session.add = MagicMock()
-    session.commit = MagicMock()
-    return session
+def mock_engine():
+    """Create mock database engine (autocommit)."""
+    engine = MagicMock()
+    return engine
 
 
 @pytest.fixture
 def mock_config():
     """Create mock AttributePromotionConfig."""
     config = MagicMock()
-    config.should_drop = MagicMock(return_value=False)
     config.is_promoted = MagicMock(return_value=False)
     return config
 
 
 @pytest.fixture
-def attribute_manager(mock_session, mock_config):
-    """Create AttributeManager with mocked dependencies."""
-    with patch(
-        "app.storage.attribute_manager.get_attribute_promotion_config",
-        return_value=mock_config,
-    ):
-        manager = AttributeManager(mock_session)
-        return manager
+def attribute_manager(mock_engine, mock_config):
+    """Create AttributeManager with mocked engine and config."""
+    return AttributeManager(mock_engine, mock_config)
 
 
 def test_key_cache_hit(attribute_manager):
