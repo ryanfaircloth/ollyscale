@@ -10,7 +10,7 @@ redis:
   host: ollyscale-redis
   port: 6379
 otelCollector:
-  enabled: false
+  enabled: true
   serviceName: gateway-collector
   port: 4318
 agentCollector:
