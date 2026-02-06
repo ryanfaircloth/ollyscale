@@ -11,7 +11,8 @@ COPY pyproject.toml uv.lock* ./
 COPY *.py ./
 
 # Install dependencies using uv (creates .venv in project)
-RUN uv sync --frozen --no-dev
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev
 
 # Production stage
 FROM python:3.14-slim as runtime

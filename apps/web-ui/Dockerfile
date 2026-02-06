@@ -14,7 +14,8 @@ WORKDIR /build
 COPY package.json package-lock.json* ./
 
 # Install dependencies
-RUN npm ci --prefer-offline --no-audit
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --prefer-offline --no-audit
 
 # Copy source code
 COPY public/ ./public/

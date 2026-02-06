@@ -314,14 +314,17 @@ tasks:
     deps: [lint, test:api]
     cmds:
       - echo "🔨 Building API Backend..."
+      - date +"Build started at %Y-%m-%d %H:%M:%S"
       - echo "{{.VERSION}}" > .task-version-api
       - |
         {{.CONTAINER_RUNTIME}} build \
+          --layers \
           -f apps/api/Dockerfile \
           -t {{.PROJECT_SLUG}}/api:{{.VERSION}} \
           -t {{.EXTERNAL_REGISTRY}}/{{.PROJECT_SLUG}}/api:{{.VERSION}} \
           --platform {{.BUILD_PLATFORMS}} \
           apps/api/
+      - date +"Build completed at %Y-%m-%d %H:%M:%S"
       - echo "✅ API Backend built"
 
   build:image:web-ui:
@@ -329,14 +332,17 @@ tasks:
     deps: [lint, test:web-ui]
     cmds:
       - echo "🔨 Building Web UI..."
+      - date +"Build started at %Y-%m-%d %H:%M:%S"
       - echo "{{.VERSION}}" > .task-version-web-ui
       - |
         {{.CONTAINER_RUNTIME}} build \
+          --layers \
           -f apps/web-ui/Dockerfile \
           -t {{.PROJECT_SLUG}}/web-ui:{{.VERSION}} \
           -t {{.EXTERNAL_REGISTRY}}/{{.PROJECT_SLUG}}/web-ui:{{.VERSION}} \
           --platform {{.BUILD_PLATFORMS}} \
           apps/web-ui/
+      - date +"Build completed at %Y-%m-%d %H:%M:%S"
       - echo "✅ Web UI built"
 
   build:image:opamp:
@@ -344,14 +350,17 @@ tasks:
     deps: [lint]
     cmds:
       - echo "🔨 Building OpAMP Server..."
+      - date +"Build started at %Y-%m-%d %H:%M:%S"
       - echo "{{.VERSION}}" > .task-version-opamp
       - |
         {{.CONTAINER_RUNTIME}} build \
+          --layers \
           -f apps/opamp-server/Dockerfile \
           -t {{.PROJECT_SLUG}}/opamp-server:{{.VERSION}} \
           -t {{.EXTERNAL_REGISTRY}}/{{.PROJECT_SLUG}}/opamp-server:{{.VERSION}} \
           --platform {{.BUILD_PLATFORMS}} \
           apps/opamp-server/
+      - date +"Build completed at %Y-%m-%d %H:%M:%S"
       - echo "✅ OpAMP Server built"
 
   build:image:demo:
@@ -359,14 +368,17 @@ tasks:
     deps: [lint, test:demo]
     cmds:
       - echo "🔨 Building Unified Demo..."
+      - date +"Build started at %Y-%m-%d %H:%M:%S"
       - echo "{{.VERSION}}" > .task-version-demo
       - |
         {{.CONTAINER_RUNTIME}} build \
+          --layers \
           -f apps/demo/Dockerfile \
           -t {{.PROJECT_SLUG}}/demo:{{.VERSION}} \
           -t {{.EXTERNAL_REGISTRY}}/{{.PROJECT_SLUG}}/demo:{{.VERSION}} \
           --platform {{.BUILD_PLATFORMS}} \
           apps/demo/
+      - date +"Build completed at %Y-%m-%d %H:%M:%S"
       - echo "✅ Unified Demo built"
 
   build:image:demo-agent:
@@ -374,14 +386,17 @@ tasks:
     deps: [lint, test:demo-agent]
     cmds:
       - echo "🔨 Building AI Agent Demo..."
+      - date +"Build started at %Y-%m-%d %H:%M:%S"
       - echo "{{.VERSION}}" > .task-version-demo-agent
       - |
         {{.CONTAINER_RUNTIME}} build \
+          --layers \
           -f apps/demo-otel-agent/Dockerfile \
           -t {{.PROJECT_SLUG}}/demo-otel-agent:{{.VERSION}} \
           -t {{.EXTERNAL_REGISTRY}}/{{.PROJECT_SLUG}}/demo-otel-agent:{{.VERSION}} \
           --platform {{.BUILD_PLATFORMS}} \
           apps/demo-otel-agent/
+      - date +"Build completed at %Y-%m-%d %H:%M:%S"
       - echo "✅ AI Agent Demo built"
 
   # ====================
@@ -689,6 +704,19 @@ tasks:
     cmds:
       - rm -f charts/*.tgz
       - echo "✅ Build artifacts cleaned"
+
+  clean:cache:
+    desc: Clean container build cache (run when cache fills up)
+    cmds:
+      - echo "🗑️  Cleaning container build cache..."
+      - |
+        if [ "{{.CONTAINER_RUNTIME}}" = "podman" ]; then
+          podman system prune -f
+          echo "✅ Podman build cache cleaned"
+        else
+          docker builder prune -f
+          echo "✅ Docker build cache cleaned"
+        fi
 
   # ====================
   # CI-specific Tasks

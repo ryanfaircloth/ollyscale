@@ -9,15 +9,20 @@ WORKDIR /app
 # Install uv - modern, fast Python package manager
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
-# Copy dependency files and source code (needed for editable install)
+# Copy only dependency files first (enables layer caching)
 COPY pyproject.toml uv.lock* ./
+
+# Install dependencies using uv (creates .venv in project)
+# This layer is cached unless pyproject.toml or uv.lock changes
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev
+
+# Copy source code after dependencies are installed
+# Code changes won't invalidate the dependency layer
 COPY app/ app/
 COPY common/ common/
 COPY receiver/ receiver/
 COPY main.py .
-
-# Install dependencies using uv (creates .venv in project)
-RUN uv sync --frozen --no-dev
 
 # Production stage - copy dependencies and application code
 FROM python:3.14-slim AS production

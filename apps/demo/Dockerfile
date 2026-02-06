@@ -13,7 +13,8 @@ COPY pyproject.toml uv.lock* ./
 COPY frontend.py backend.py ./
 
 # Install dependencies using uv (creates .venv in project)
-RUN uv sync --frozen --no-dev
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev
 
 # Runtime: copy the venv and app code; default CMD runs frontend
 FROM python:3.14-slim AS runtime
