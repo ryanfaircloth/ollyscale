@@ -137,7 +137,7 @@ def record_spans_ingested(count: int, attributes: dict[str, Any] | None = None) 
 
     Args:
         count: Number of spans ingested
-        attributes: Optional attributes (tenant_id, service_name, etc.)
+        attributes: Optional attributes (service_name, etc.)
     """
     spans_ingested_counter.add(count, attributes or {})
 
@@ -147,7 +147,7 @@ def record_logs_ingested(count: int, attributes: dict[str, Any] | None = None) -
 
     Args:
         count: Number of log records ingested
-        attributes: Optional attributes (tenant_id, service_name, etc.)
+        attributes: Optional attributes (service_name, etc.)
     """
     logs_ingested_counter.add(count, attributes or {})
 
@@ -157,7 +157,7 @@ def record_metrics_ingested(count: int, attributes: dict[str, Any] | None = None
 
     Args:
         count: Number of metric data points ingested
-        attributes: Optional attributes (tenant_id, metric_name, etc.)
+        attributes: Optional attributes (metric_name, etc.)
     """
     metrics_ingested_counter.add(count, attributes or {})
 
@@ -178,7 +178,7 @@ def record_query_latency(duration_ms: float, operation: str, attributes: dict[st
     Args:
         duration_ms: Query duration in milliseconds
         operation: Operation name (search_traces, get_trace_by_id, etc.)
-        attributes: Optional attributes (tenant_id, result_count, etc.)
+        attributes: Optional attributes (result_count, etc.)
     """
     attrs = {"operation": operation}
     if attributes:
@@ -190,7 +190,7 @@ def record_dimension_cache_operation(dimension_type: str, hit: bool, attributes:
     """Record dimension cache hit or miss.
 
     Args:
-        dimension_type: Type of dimension (namespace, service, operation, resource)
+        dimension_type: Type of dimension (service, operation, resource)
         hit: True if cache hit, False if cache miss
         attributes: Optional additional attributes
     """
@@ -204,7 +204,7 @@ def record_dimension_upsert(dimension_type: str, created: bool, attributes: dict
     """Record dimension upsert operation.
 
     Args:
-        dimension_type: Type of dimension (namespace, service, operation, resource)
+        dimension_type: Type of dimension (service, operation, resource)
         created: True if new dimension created, False if existing found
         attributes: Optional additional attributes
     """
@@ -234,7 +234,7 @@ def record_storage_error(operation: str, error_type: str, attributes: dict[str, 
     Args:
         operation: Operation that failed (store_traces, store_logs, search_traces, etc.)
         error_type: Type of error (DatabaseError, ValidationError, etc.)
-        attributes: Optional attributes (tenant_id, etc.)
+        attributes: Optional attributes
     """
     attrs = {"operation": operation, "error_type": error_type}
     if attributes:

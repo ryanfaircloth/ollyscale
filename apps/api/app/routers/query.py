@@ -182,7 +182,6 @@ def get_metric_detail(
         result = storage.get_metric_detail(
             metric_name=metric_name,
             time_range=request.time_range,
-            filters=request.filters,
             include_attributes=request.include_attributes,
         )
 
@@ -203,7 +202,7 @@ def get_metric_detail(
 def list_services(
     request: ServiceSearchRequest = ServiceSearchRequest(), storage: StorageBackend = Depends(get_storage)
 ):
-    """List services with RED metrics for optional time range and namespace filters."""
+    """List services with RED metrics for optional time range and filters."""
     try:
         services = storage.get_services(time_range=request.time_range, filters=request.filters)
 
@@ -221,7 +220,7 @@ def list_services(
 def get_service_map(
     request: ServiceSearchRequest = ServiceSearchRequest(), storage: StorageBackend = Depends(get_storage)
 ):
-    """Get service dependency map for time range with optional namespace filters."""
+    """Get service dependency map for time range with optional filters."""
     try:
         # Service map requires time_range
         if request.time_range is None:

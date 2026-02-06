@@ -7,12 +7,25 @@ export interface MetricDataPoint {
 }
 
 export interface Metric {
+  metric_id?: string;
   name: string;
-  type: 'Gauge' | 'Counter' | 'Histogram' | 'Summary';
+  metric_type: string;  // 'gauge', 'sum', 'histogram', 'summary', etc.
   unit?: string;
   description?: string;
-  data_points: MetricDataPoint[];
-  attributes?: Record<string, string>;
+  aggregation_temporality?: string | number;
+  timestamp_ns?: number;
+  value?: any;
+  data_points: MetricDataPoint[] | any[];  // Support both typed and raw dict
+  attributes?: Record<string, any>;
+  service_name?: string;
+  service_namespace?: string | null;
+  resource?: Record<string, any>;
+  exemplars?: any[];
+  // Aggregated stats for catalog view
+  resource_count?: number;
+  label_count?: number;
+  attribute_combinations?: number;
+  scope?: Record<string, any>;
 }
 
 export interface MetricSearchRequest {

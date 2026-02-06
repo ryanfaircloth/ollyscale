@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 
 from sqlalchemy import select
 
-from app.models.database import LogsFact, NamespaceDim, OperationDim, ServiceDim, SpansFact
+from app.models.database import LogsFact, OperationDim, ServiceDim, SpansFact
 from app.storage.postgres_orm_sync import PostgresStorage
 
 
@@ -285,16 +285,16 @@ def test_dimension_upsert_commits_immediately(postgres_storage, postgres_session
     to other processes immediately after upsert.
     postgres_session fixture ensures DB schema exists but isn't used directly.
     """
-    # Upsert namespace (creates own autocommit session internally)
-    namespace_id = postgres_storage._upsert_namespace(1, "test-ns")
-    assert namespace_id is not None
+    # Upsert service (creates own autocommit session internally)
+    service_id = postgres_storage._upsert_service("test-api")
+    assert service_id is not None
 
     # Verify it's committed by querying in a NEW session
     with postgres_storage.engine.begin() as new_conn:
-        result = new_conn.execute(select(NamespaceDim.id).where(NamespaceDim.namespace == "test-ns"))
+        result = new_conn.execute(select(ServiceDim.id).where(ServiceDim.name == "test-api"))
         committed_id = result.scalar()
 
-    assert committed_id == namespace_id, "Dimension not visible in new session - commit didn't happen"
+    assert committed_id == service_id, "Dimension not visible in new session - commit didn't happen"
 
 
 def test_dimension_upserts_are_idempotent(postgres_storage, postgres_session):  # noqa: ARG001
@@ -305,14 +305,11 @@ def test_dimension_upserts_are_idempotent(postgres_storage, postgres_session):  
     postgres_session fixture ensures DB schema exists but isn't used directly.
     """
     # First upsert (methods create own autocommit sessions)
-    ns_id_1 = postgres_storage._upsert_namespace(1, "prod")
-    svc_id_1 = postgres_storage._upsert_service(1, "api", "prod")
+    svc_id_1 = postgres_storage._upsert_service("api")
 
     # Simulate retry - should return same IDs
-    ns_id_2 = postgres_storage._upsert_namespace(1, "prod")
-    svc_id_2 = postgres_storage._upsert_service(1, "api", "prod")
+    svc_id_2 = postgres_storage._upsert_service("api")
 
-    assert ns_id_1 == ns_id_2, "Namespace ID changed on retry"
     assert svc_id_1 == svc_id_2, "Service ID changed on retry"
 
 
@@ -323,9 +320,8 @@ def test_fact_insert_after_dimensions_committed(postgres_storage):
     Methods create their own autocommit sessions.
     """
     # Phase 1: Upsert dimensions (commits immediately via autocommit sessions)
-    postgres_storage._upsert_namespace(1, "test-ns")
-    svc_id = postgres_storage._upsert_service(1, "test-svc", "test-ns")
-    op_id = postgres_storage._upsert_operation(1, svc_id, "GET /api", 2)
+    svc_id = postgres_storage._upsert_service("test-svc")
+    op_id = postgres_storage._upsert_operation(svc_id, "GET /api", 2)
 
     # Phase 2: Insert facts referencing committed dimensions
     resource_spans = [
@@ -377,18 +373,17 @@ def test_concurrent_dimension_upserts_no_deadlock(postgres_storage):
     With immediate commits and internal sessions, no locks are held across operations.
     """
 
-    def upsert_dimensions(ns: str, svc: str):
+    def upsert_dimensions(svc: str):
         """Simulate one process upserting dimensions."""
         # Methods create their own autocommit sessions
-        postgres_storage._upsert_namespace(1, ns)
-        postgres_storage._upsert_service(1, svc, ns)
+        postgres_storage._upsert_service(svc)
 
     # Run concurrent upserts for same dimensions using ThreadPoolExecutor
     with ThreadPoolExecutor(max_workers=3) as executor:
         futures = [
-            executor.submit(upsert_dimensions, "prod", "api"),
-            executor.submit(upsert_dimensions, "prod", "api"),
-            executor.submit(upsert_dimensions, "prod", "api"),
+            executor.submit(upsert_dimensions, "api"),
+            executor.submit(upsert_dimensions, "api"),
+            executor.submit(upsert_dimensions, "api"),
         ]
 
         # Wait for all to complete
@@ -403,21 +398,13 @@ def test_concurrent_dimension_upserts_no_deadlock(postgres_storage):
 
 
 def test_dimension_hierarchy_commits_outer_to_inner(postgres_storage, postgres_session):  # noqa: ARG001
-    """Test that dimension hierarchy commits work: namespace → service → operation.
+    """Test that dimension hierarchy commits work: service → operation.
 
     Each level must commit before next level, ensuring child can reference parent.
     postgres_session fixture ensures DB schema exists but isn't used directly.
     """
-    # Upsert namespace (outer edge of star) - creates own autocommit session
-    ns_id = postgres_storage._upsert_namespace(1, "prod")
-
-    # Verify namespace committed before service upsert
-    with postgres_storage.engine.begin() as conn:
-        result = conn.execute(select(NamespaceDim.id).where(NamespaceDim.namespace == "prod"))
-        assert result.scalar() == ns_id
-
-    # Upsert service (middle layer) - creates own autocommit session
-    svc_id = postgres_storage._upsert_service(1, "api", "prod")
+    # Upsert service - creates own autocommit session
+    svc_id = postgres_storage._upsert_service("api")
 
     # Verify service committed before operation upsert
     with postgres_storage.engine.begin() as conn:
@@ -425,7 +412,7 @@ def test_dimension_hierarchy_commits_outer_to_inner(postgres_storage, postgres_s
         assert result.scalar() == svc_id
 
     # Upsert operation (inner layer, closest to fact) - creates own autocommit session
-    op_id = postgres_storage._upsert_operation(1, svc_id, "GET /users", 2)
+    op_id = postgres_storage._upsert_operation(svc_id, "GET /users", 2)
 
     # Verify operation committed
     with postgres_storage.engine.begin() as conn:

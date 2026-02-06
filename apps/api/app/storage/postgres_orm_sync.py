@@ -8,7 +8,7 @@ No more field name mismatches or manual SQL string building.
 
 Transaction Strategy:
 --------------------
-**DIMENSION UPSERTS** (namespace, service, operation, resource):
+**DIMENSION UPSERTS** (service, operation, resource):
 - Use AUTOCOMMIT mode - each upsert commits immediately
 - Idempotent - safe for concurrent multi-process execution
 - No explicit BEGIN/COMMIT - queries execute and commit atomically
@@ -62,12 +62,10 @@ from app.models.api import (
 from app.models.database import (
     LogsFact,
     MetricsFact,
-    NamespaceDim,
     OperationDim,
     ResourceDim,
     ServiceDim,
     SpansFact,
-    TenantDim,
 )
 from common import metrics as storage_metrics
 
@@ -471,42 +469,6 @@ class PostgresStorage:
         return None
 
     @staticmethod
-    def _apply_namespace_filtering(stmt: Any, filters: list | None) -> tuple[Any, list]:
-        """Apply namespace filtering with proper JOIN strategy and OR logic.
-
-        Returns:
-            tuple: (modified statement, list of namespace filters)
-        """
-
-        # Extract namespace filters
-        namespace_filters = []
-        if filters:
-            namespace_filters = [f for f in filters if f.field == "service_namespace"]
-
-        # Determine if we need INNER or OUTER join to NamespaceDim
-        # Use INNER join if filtering for any non-empty namespace, else OUTER join
-        use_inner_join = any(f.value != "" for f in namespace_filters)
-
-        if use_inner_join:
-            stmt = stmt.join(NamespaceDim, ServiceDim.namespace_id == NamespaceDim.id)
-        else:
-            stmt = stmt.outerjoin(NamespaceDim, ServiceDim.namespace_id == NamespaceDim.id)
-
-        # Apply namespace filters with OR logic
-        if namespace_filters:
-            namespace_conditions = []
-            for f in namespace_filters:
-                if f.value == "":
-                    namespace_conditions.append(ServiceDim.namespace_id.is_(None))
-                else:
-                    namespace_conditions.append(NamespaceDim.namespace == f.value)
-
-            if namespace_conditions:
-                stmt = stmt.where(or_(*namespace_conditions))
-
-        return stmt, namespace_filters
-
-    @staticmethod
     def _apply_traceid_filter(fact_model: Any, stmt: Any, filters: list | None) -> tuple[Any, list]:
         """Apply trace_id filtering with support for NULL values (valid for logs).
 
@@ -667,80 +629,14 @@ class PostgresStorage:
 
         return stmt, http_status_filters
 
-    def _get_unknown_tenant_id(self) -> int:
-        """Get/create 'unknown' tenant (has unique constraint on name)."""
-
-        with Session(self.autocommit_engine) as session:
-            stmt = (
-                insert(TenantDim)
-                .values(name="unknown")
-                .on_conflict_do_nothing(index_elements=["name"])
-                .returning(TenantDim.id)
-            )
-            result = session.execute(stmt)
-            tenant_id = result.scalar()
-            if tenant_id is None:
-                # Already exists, fetch it
-                stmt = select(TenantDim.id).where(TenantDim.name == "unknown")
-                result = session.execute(stmt)
-                tenant_id = result.scalar()
-            return tenant_id
-
-    def _get_unknown_connection_id(self) -> int:
-        """Return seeded 'unknown' connection ID (always 1)."""
-        return 1
-
-    def _upsert_namespace(self, tenant_id: int, namespace: str | None = None) -> int:
-        """Upsert namespace with autocommit - idempotent, multi-process safe.
-
-        Only updates last_seen if:
-        1. This is a new namespace (INSERT), OR
-        2. last_seen is older than LAST_SEEN_UPDATE_INTERVAL_SECONDS (default 5 minutes)
-
-        Uses GREATEST() to ensure last_seen never regresses (other processes may update concurrently).
-
-        Note: Allows NULL namespace - constraint UNIQUE NULLS NOT DISTINCT ensures single NULL per tenant.
-        """
-        now = datetime.now(UTC)
-        min_last_seen = now - self._last_seen_update_interval
-
-        # Use autocommit engine - INSERT ON CONFLICT commits immediately
-        with Session(self.autocommit_engine) as session:
-            stmt = (
-                insert(NamespaceDim)
-                .values(tenant_id=tenant_id, namespace=namespace, first_seen=now, last_seen=now)
-                .on_conflict_do_update(
-                    index_elements=["tenant_id", "namespace"],
-                    # Only update if last_seen is stale (older than threshold)
-                    # Use GREATEST() to ensure we never set an older timestamp
-                    set_={
-                        "last_seen": case(
-                            (NamespaceDim.last_seen < min_last_seen, now),
-                            else_=NamespaceDim.last_seen,
-                        )
-                    },
-                )
-                .returning(NamespaceDim.id)
-            )
-            result = session.execute(stmt)
-            namespace_id = result.scalar_one()  # Will raise if no rows returned
-
-            # Only set span attributes if we have valid span and non-None values
-            span = trace.get_current_span()
-            if span.is_recording():
-                span.set_attribute("db.namespace", namespace or "NULL")
-                span.set_attribute("db.namespace_id", namespace_id)
-            return namespace_id
-
-    def _upsert_service(self, tenant_id: int, name: str, namespace: str | None = None) -> int:
+    def _upsert_service(self, name: str) -> int:
         """Upsert service with autocommit - idempotent, multi-process safe.
 
         Only updates last_seen if it's older than LAST_SEEN_UPDATE_INTERVAL_SECONDS.
         Uses GREATEST() to prevent time regression from concurrent updates.
-        """
-        # First upsert namespace (autocommit - immediately visible to all processes)
-        namespace_id = self._upsert_namespace(tenant_id, namespace)
 
+        Note: Namespace is now just a resource attribute, not a separate dimension.
+        """
         now = datetime.now(UTC)
         min_last_seen = now - self._last_seen_update_interval
 
@@ -748,9 +644,9 @@ class PostgresStorage:
         with Session(self.autocommit_engine) as session:
             stmt = (
                 insert(ServiceDim)
-                .values(tenant_id=tenant_id, name=name, namespace_id=namespace_id, first_seen=now, last_seen=now)
+                .values(name=name, first_seen=now, last_seen=now)
                 .on_conflict_do_update(
-                    index_elements=["name", "namespace_id"],
+                    index_elements=["name"],
                     set_={
                         "last_seen": case(
                             (ServiceDim.last_seen < min_last_seen, now),
@@ -768,10 +664,9 @@ class PostgresStorage:
             if span.is_recording():
                 span.set_attribute("db.service_name", name)
                 span.set_attribute("db.service_id", service_id)
-                span.set_attribute("db.namespace_id", namespace_id)
             return service_id
 
-    def _upsert_operation(self, tenant_id: int, service_id: int, name: str, span_kind: int | None = None) -> int:
+    def _upsert_operation(self, service_id: int, name: str, span_kind: int | None = None) -> int:
         """Upsert operation with autocommit - idempotent, multi-process safe.
 
         Only updates last_seen if it's older than LAST_SEEN_UPDATE_INTERVAL_SECONDS.
@@ -785,7 +680,6 @@ class PostgresStorage:
             stmt = (
                 insert(OperationDim)
                 .values(
-                    tenant_id=tenant_id,
                     service_id=service_id,
                     name=name,
                     span_kind=span_kind,
@@ -793,7 +687,7 @@ class PostgresStorage:
                     last_seen=now,
                 )
                 .on_conflict_do_update(
-                    index_elements=["tenant_id", "service_id", "name", "span_kind"],
+                    index_elements=["service_id", "name", "span_kind"],
                     set_={
                         "last_seen": case(
                             (OperationDim.last_seen < min_last_seen, now),
@@ -808,7 +702,7 @@ class PostgresStorage:
 
             return operation_id
 
-    def _upsert_resource(self, tenant_id: int, attributes: dict) -> int:
+    def _upsert_resource(self, attributes: dict) -> int:
         """Upsert resource with autocommit - idempotent, multi-process safe.
 
         Only updates last_seen if it's older than LAST_SEEN_UPDATE_INTERVAL_SECONDS.
@@ -825,14 +719,13 @@ class PostgresStorage:
             stmt = (
                 insert(ResourceDim)
                 .values(
-                    tenant_id=tenant_id,
                     resource_hash=resource_hash,
                     attributes=attributes,
                     first_seen=now,
                     last_seen=now,
                 )
                 .on_conflict_do_update(
-                    index_elements=["tenant_id", "resource_hash"],
+                    index_elements=["resource_hash"],
                     set_={
                         "last_seen": case(
                             (ResourceDim.last_seen < min_last_seen, now),
@@ -852,11 +745,10 @@ class PostgresStorage:
         resources: list[dict],
         signal_type: str,
         main_span: trace.Span,
-    ) -> tuple[int, int, dict[tuple[str, str | None], int]]:
+    ) -> dict[str, int]:
         """Process resource dimensions in a separate linked trace.
 
         Creates a new trace linked to the main trace for dimension operations.
-        Ensures tenant/connection retrieval happens inside dimension span.
 
         Args:
             resources: List of OTLP resource dicts with attributes
@@ -864,28 +756,25 @@ class PostgresStorage:
             main_span: The main span from the calling method
 
         Returns:
-            Tuple of (tenant_id, connection_id, service_map)
-            where service_map is {(service_name, namespace): service_id}
+            service_map where service_map is {service_name: service_id}
+            Note: service.namespace is preserved in resource JSONB, not as separate dimension
         """
         # Extract unique services from resources
-        unique_services = {}  # (service_name, namespace) -> service_id
+        unique_services = {}  # service_name -> service_id
 
         for resource in resources:
             resource_attrs = resource.get("attributes", [])
 
             service_name = "unknown"
-            service_namespace = None
             for attr in resource_attrs:
                 key = attr.get("key")
                 value = attr.get("value", {})
                 if key == "service.name":
                     service_name = self._extract_string_value(value) or "unknown"
-                elif key == "service.namespace":
-                    service_namespace = self._extract_string_value(value)
+                    break
 
-            service_key = (service_name, service_namespace)
-            if service_key not in unique_services:
-                unique_services[service_key] = None  # Will be populated later
+            if service_name not in unique_services:
+                unique_services[service_name] = None  # Will be populated later
 
         # Create separate linked trace for dimension operations
         tracer = trace.get_tracer(__name__)
@@ -911,23 +800,18 @@ class PostgresStorage:
         # CRITICAL: Use trace.use_span() to activate dimension span
         # SQLAlchemy instrumentation creates child spans in this trace
         with trace.use_span(dim_span, end_on_exit=True):
-            # Get tenant/connection INSIDE dimension span (their DB ops tracked here)
-            tenant_id = self._get_unknown_tenant_id()
-            connection_id = self._get_unknown_connection_id()
-
             # Upsert services
-            for service_key in unique_services:
-                service_name, service_namespace = service_key
-                cache_key = ("service", tenant_id, service_name, service_namespace)
+            for service_name in unique_services:
+                cache_key = ("service", service_name)
 
                 cached_id = self._check_cache(cache_key)
                 if cached_id is not None:
                     service_id = cached_id
                 else:
-                    service_id = self._upsert_service(tenant_id, service_name, service_namespace)
+                    service_id = self._upsert_service(service_name)
                     self._update_cache(cache_key, service_id)
 
-                unique_services[service_key] = service_id
+                unique_services[service_name] = service_id
 
             dim_span.set_attribute("db.dimensions.services_upserted", len(unique_services))
 
@@ -940,16 +824,15 @@ class PostgresStorage:
             },
         )
 
-        return tenant_id, connection_id, unique_services
+        return unique_services
 
     def store_traces(self, resource_spans: list[dict]) -> int:
         """Store OTLP traces using autocommit for dimensions, explicit transaction for facts.
 
         Transaction strategy:
-        1. Cache tenant_id and connection_id (one SELECT each, reused for all spans)
-        2. Dimension upserts with autocommit (namespace, service, operation, resource)
+        1. Dimension upserts with autocommit (service, operation, resource)
            - Each upsert commits immediately - idempotent, multi-process safe
-        3. Fact inserts in explicit transaction after dimensions committed
+        2. Fact inserts in explicit transaction after dimensions committed
            - All span rows in single transaction (atomic, can rollback)
 
         OTLP structure (with preserving_proto_field_name=True):
@@ -968,8 +851,8 @@ class PostgresStorage:
         # Extract resources for common dimension processing
         resources = [rs.get("resource", {}) for rs in resource_spans]
 
-        # Process common dimensions (tenant, connection, service) in separate linked trace
-        tenant_id, connection_id, unique_services = self._process_resource_dimensions(
+        # Process common dimensions (service) in separate linked trace
+        unique_services = self._process_resource_dimensions(
             resources=resources,
             signal_type="traces",
             main_span=otel_span,
@@ -984,17 +867,14 @@ class PostgresStorage:
             resource_attrs = resource.get("attributes", [])
             resource_dict = {attr["key"]: attr.get("value") for attr in resource_attrs}
 
-            # Extract service key for operation mapping
+            # Extract service name for operation mapping
             service_name = "unknown"
-            service_namespace = None
             for attr in resource_attrs:
                 key = attr.get("key")
                 value = attr.get("value", {})
                 if key == "service.name":
                     service_name = self._extract_string_value(value) or "unknown"
-                elif key == "service.namespace":
-                    service_namespace = self._extract_string_value(value)
-            service_key = (service_name, service_namespace)
+                    break
 
             # Track unique resource
             resource_json = json.dumps(resource_dict, sort_keys=True)
@@ -1008,7 +888,7 @@ class PostgresStorage:
                     name = span.get("name", "unknown")
                     kind_raw = span.get("kind", 0)
                     kind = self._normalize_span_kind(kind_raw)
-                    op_key = (service_key, name, kind)
+                    op_key = (service_name, name, kind)
                     if op_key not in unique_operations:
                         unique_operations[op_key] = None
 
@@ -1033,28 +913,28 @@ class PostgresStorage:
         with trace.use_span(dim_span, end_on_exit=True):
             # Upsert resources
             for resource_hash, (resource_dict, _) in unique_resources.items():
-                cache_key = ("resource", tenant_id, resource_hash)
+                cache_key = ("resource", resource_hash)
                 cached_id = self._check_cache(cache_key)
                 if cached_id is not None:
                     resource_id = cached_id
                 else:
-                    resource_id = self._upsert_resource(tenant_id, resource_dict)
+                    resource_id = self._upsert_resource(resource_dict)
                     self._update_cache(cache_key, resource_id)
                 unique_resources[resource_hash] = (resource_dict, resource_id)
 
             # Upsert operations (needs service_ids from unique_services)
             operations_by_service_and_op = {}
             for op_key in unique_operations:
-                service_key, name, kind = op_key
-                service_id = unique_services[service_key]
+                service_name, name, kind = op_key
+                service_id = unique_services[service_name]
                 real_op_key = (service_id, name, kind)
                 if real_op_key not in operations_by_service_and_op:
-                    cache_key = ("operation", tenant_id, service_id, name, kind)
+                    cache_key = ("operation", service_id, name, kind)
                     cached_id = self._check_cache(cache_key)
                     if cached_id is not None:
                         operation_id = cached_id
                     else:
-                        operation_id = self._upsert_operation(tenant_id, service_id, name, kind)
+                        operation_id = self._upsert_operation(service_id, name, kind)
                         self._update_cache(cache_key, operation_id)
                     operations_by_service_and_op[real_op_key] = operation_id
 
@@ -1077,18 +957,15 @@ class PostgresStorage:
             resource_dict = {attr["key"]: attr.get("value") for attr in resource_attrs}
 
             service_name = "unknown"
-            service_namespace = None
             for attr in resource_attrs:
                 key = attr.get("key")
                 value = attr.get("value", {})
                 if key == "service.name":
                     service_name = self._extract_string_value(value) or "unknown"
-                elif key == "service.namespace":
-                    service_namespace = self._extract_string_value(value)
+                    break
 
             # Lookup cached IDs (no DB calls)
-            service_key = (service_name, service_namespace)
-            service_id = unique_services[service_key]
+            service_id = unique_services[service_name]
 
             resource_json = json.dumps(resource_dict, sort_keys=True)
             resource_hash = hashlib.sha256(resource_json.encode()).hexdigest()
@@ -1184,8 +1061,6 @@ class PostgresStorage:
                         links_normalized.append(normalized_link)
 
                     span_obj = SpansFact(
-                        tenant_id=tenant_id,
-                        connection_id=connection_id,
                         trace_id=trace_id,
                         span_id=span_id,
                         parent_span_id=parent_span_id,
@@ -1237,7 +1112,7 @@ class PostgresStorage:
                 # Record ingestion metrics
                 storage_metrics.record_spans_ingested(
                     count=len(spans_to_insert),
-                    attributes={"tenant_id": tenant_id},
+                    attributes={},
                 )
                 storage_metrics.record_ingestion_batch_size(
                     size=len(spans_to_insert),
@@ -1259,10 +1134,9 @@ class PostgresStorage:
         """Store OTLP logs using autocommit for dimensions, explicit transaction for facts.
 
         Transaction strategy:
-        1. Cache tenant_id and connection_id (one SELECT each, reused for all logs)
-        2. Dimension upserts with autocommit (service)
+        1. Dimension upserts with autocommit (service)
            - Each upsert commits immediately - idempotent, multi-process safe
-        3. Fact inserts in explicit transaction after dimensions committed
+        2. Fact inserts in explicit transaction after dimensions committed
            - All log rows in single transaction (atomic, can rollback)
 
         OTLP structure (with preserving_proto_field_name=True):
@@ -1281,8 +1155,8 @@ class PostgresStorage:
         # Extract resources for common dimension processing
         resources = [rl.get("resource", {}) for rl in resource_logs]
 
-        # Process common dimensions (tenant, connection, service) in separate linked trace
-        tenant_id, connection_id, unique_services = self._process_resource_dimensions(
+        # Process common dimensions (service) in separate linked trace
+        unique_services = self._process_resource_dimensions(
             resources=resources,
             signal_type="logs",
             main_span=span,
@@ -1298,18 +1172,14 @@ class PostgresStorage:
 
             # Extract service info to lookup cached service_id
             service_name = "unknown"
-            service_namespace = None
             for attr in resource_attrs:
                 if attr["key"] == "service.name":
                     value = attr.get("value", {})
                     service_name = self._extract_string_value(value) or "unknown"
-                elif attr["key"] == "service.namespace":
-                    value = attr.get("value", {})
-                    service_namespace = self._extract_string_value(value)
+                    break
 
             # Lookup cached service_id (no DB call)
-            service_key = (service_name, service_namespace)
-            service_id = unique_services[service_key]
+            service_id = unique_services[service_name]
 
             # Use snake_case (preserving_proto_field_name=True)
             for scope_log in resource_log.get("scope_logs", []):
@@ -1357,8 +1227,6 @@ class PostgresStorage:
                     attributes = {attr["key"]: attr.get("value") for attr in attrs_list}
 
                     log_obj = LogsFact(
-                        tenant_id=tenant_id,
-                        connection_id=connection_id,
                         trace_id=trace_id,
                         span_id=span_id,
                         timestamp=timestamp,
@@ -1388,7 +1256,7 @@ class PostgresStorage:
                 # Record ingestion metrics
                 storage_metrics.record_logs_ingested(
                     count=len(logs_to_insert),
-                    attributes={"tenant_id": tenant_id},
+                    attributes={},
                 )
                 storage_metrics.record_ingestion_batch_size(
                     size=len(logs_to_insert),
@@ -1410,10 +1278,9 @@ class PostgresStorage:
         """Store OTLP metrics using autocommit for dimensions, explicit transaction for facts.
 
         Transaction strategy:
-        1. Cache tenant_id and connection_id (one SELECT each, reused for all metrics)
-        2. Dimension upserts with autocommit (service)
+        1. Dimension upserts with autocommit (service)
            - Each upsert commits immediately - idempotent, multi-process safe
-        3. Fact inserts in explicit transaction after dimensions committed
+        2. Fact inserts in explicit transaction after dimensions committed
            - All metric rows in single transaction (atomic, can rollback)
 
         OTLP structure (with preserving_proto_field_name=True):
@@ -1433,8 +1300,8 @@ class PostgresStorage:
         # Extract resources for common dimension processing
         resources = [rm.get("resource", {}) for rm in resource_metrics]
 
-        # Process common dimensions (tenant, connection, service) in separate linked trace
-        tenant_id, connection_id, unique_services = self._process_resource_dimensions(
+        # Process common dimensions (service) in separate linked trace
+        unique_services = self._process_resource_dimensions(
             resources=resources,
             signal_type="metrics",
             main_span=span,
@@ -1450,18 +1317,14 @@ class PostgresStorage:
 
             # Extract service info to lookup cached service_id
             service_name = "unknown"
-            service_namespace = None
             for attr in resource_attrs_list:
                 if attr["key"] == "service.name":
                     value = attr.get("value", {})
                     service_name = self._extract_string_value(value) or "unknown"
-                elif attr["key"] == "service.namespace":
-                    value = attr.get("value", {})
-                    service_namespace = self._extract_string_value(value)
+                    break
 
             # Lookup cached service_id (no DB call)
-            service_key = (service_name, service_namespace)
-            service_id = unique_services[service_key]
+            service_id = unique_services[service_name]
 
             # Use snake_case (preserving_proto_field_name=True)
             for scope_metric in resource_metric.get("scope_metrics", []):
@@ -1521,8 +1384,6 @@ class PostgresStorage:
                         dp_attributes = {attr["key"]: attr.get("value") for attr in dp_attrs_list}
 
                         metric_obj = MetricsFact(
-                            tenant_id=tenant_id,
-                            connection_id=connection_id,
                             metric_name=metric_name,
                             metric_type=metric_type,
                             unit=unit,
@@ -1552,7 +1413,7 @@ class PostgresStorage:
                 # Record ingestion metrics
                 storage_metrics.record_metrics_ingested(
                     count=len(metrics_to_insert),
-                    attributes={"tenant_id": tenant_id},
+                    attributes={},
                 )
                 storage_metrics.record_ingestion_batch_size(
                     size=len(metrics_to_insert),
@@ -1587,37 +1448,19 @@ class PostgresStorage:
         end_ts = datetime.fromisoformat(time_range.end_time.replace("Z", "+00:00"))
 
         with Session(self.engine) as session:
-            # Get the unknown tenant_id
-            tenant_id = self._get_unknown_tenant_id()
-
             limit = pagination.limit if pagination else 100
 
             # ORM query for distinct trace IDs with min start time for ordering
-            # Join with ServiceDim and NamespaceDim for namespace filtering
-
             stmt = (
                 select(SpansFact.trace_id, func.min(SpansFact.start_timestamp).label("earliest_span"))
                 .outerjoin(ServiceDim, SpansFact.service_id == ServiceDim.id)
-                .outerjoin(NamespaceDim, ServiceDim.namespace_id == NamespaceDim.id)
                 .where(
                     SpansFact.start_timestamp >= start_ts,
                     SpansFact.start_timestamp < end_ts,
-                    SpansFact.tenant_id == tenant_id,
                 )
             )
 
-            # Apply namespace filtering
-            if filters:
-                namespace_filters = [f for f in filters if f.field == "service_namespace"]
-                if namespace_filters:
-                    namespace_conditions = []
-                    for f in namespace_filters:
-                        if f.value == "":
-                            namespace_conditions.append(ServiceDim.namespace_id.is_(None))
-                        else:
-                            namespace_conditions.append(NamespaceDim.namespace == f.value)
-                    if namespace_conditions:
-                        stmt = stmt.where(or_(*namespace_conditions))
+            # Namespace filtering not supported - namespace is now just a resource attribute
 
             # Apply trace_id filtering (never NULL for spans)
             stmt, _ = self._apply_traceid_filter(SpansFact, stmt, filters)
@@ -1665,9 +1508,6 @@ class PostgresStorage:
             return None
 
         with Session(self.engine) as session:
-            # Get the unknown tenant_id
-            tenant_id = self._get_unknown_tenant_id()
-
             # ORM query with outer join to ServiceDim
             # Use distinct(SpansFact.id) to deduplicate on span primary key
             # This handles cases where ServiceDim has multiple records per service_id
@@ -1676,7 +1516,6 @@ class PostgresStorage:
                 .outerjoin(ServiceDim, SpansFact.service_id == ServiceDim.id)
                 .where(
                     SpansFact.trace_id == trace_id,
-                    SpansFact.tenant_id == tenant_id,
                 )
                 .distinct(SpansFact.id)
                 .order_by(SpansFact.id, SpansFact.start_timestamp.asc())
@@ -1834,32 +1673,12 @@ class PostgresStorage:
             return [], False, None
 
         with Session(self.engine) as session:
-            # Get the unknown tenant_id
-            tenant_id = self._get_unknown_tenant_id()
-
             limit = pagination.limit if pagination else 100
 
-            # ORM query with JOIN to ServiceDim and NamespaceDim
-            # Use distinct(SpansFact.id) to deduplicate on span primary key
-            stmt = (
-                select(SpansFact, ServiceDim.name, NamespaceDim.namespace)
-                .outerjoin(ServiceDim, SpansFact.service_id == ServiceDim.id)
-                .outerjoin(NamespaceDim, ServiceDim.namespace_id == NamespaceDim.id)
-            )
+            # ORM query with JOIN to ServiceDim only (namespace stored in resource attributes)
+            stmt = select(SpansFact, ServiceDim.name).outerjoin(ServiceDim, SpansFact.service_id == ServiceDim.id)
 
-            # Apply namespace filtering
-            if filters:
-                namespace_filters = [f for f in filters if f.field == "service_namespace"]
-                if namespace_filters:
-                    namespace_conditions = []
-                    for f in namespace_filters:
-                        if f.value == "":
-                            namespace_conditions.append(ServiceDim.namespace_id.is_(None))
-                        else:
-                            namespace_conditions.append(NamespaceDim.namespace == f.value)
-                    if namespace_conditions:
-                        stmt = stmt.where(or_(*namespace_conditions))
-
+            # Namespace filtering not supported - namespace is now just a resource attribute
             # Apply trace_id filtering (never NULL for spans)
             stmt, _ = self._apply_traceid_filter(SpansFact, stmt, filters)
 
@@ -1876,7 +1695,6 @@ class PostgresStorage:
             stmt = stmt.where(
                 SpansFact.start_timestamp >= start_timestamp,
                 SpansFact.start_timestamp < end_timestamp,
-                SpansFact.tenant_id == tenant_id,
             )
 
             # Apply other filters (non-namespace, non-traceid, non-spanid, non-http_status)
@@ -1901,7 +1719,7 @@ class PostgresStorage:
                 rows = rows[:limit]
 
             spans = []
-            for span, service_name, service_namespace in rows:
+            for span, service_name in rows:
                 # Convert attributes dict to list of {key, value} pairs for API model
                 attributes_dict = span.attributes if span.attributes else {}
                 attributes_list = []
@@ -1986,7 +1804,7 @@ class PostgresStorage:
                     else None,
                     resource=span.resource if span.resource else {},
                     service_name=service_name,
-                    service_namespace=service_namespace,
+                    service_namespace=None,  # Namespace is now just a resource attribute
                     scope=span.scope if span.scope else None,
                 )
                 spans.append(span_obj)
@@ -2004,18 +1822,12 @@ class PostgresStorage:
             return [], False, None
 
         with Session(self.engine) as session:
-            # Get the unknown tenant_id
-            tenant_id = self._get_unknown_tenant_id()
-
             limit = pagination.limit if pagination else 100
 
-            # ORM query with JOIN to ServiceDim (NamespaceDim JOIN handled by _apply_namespace_filtering)
-            stmt = select(LogsFact, ServiceDim.name, NamespaceDim.namespace).outerjoin(
-                ServiceDim, LogsFact.service_id == ServiceDim.id
-            )
+            # ORM query with JOIN to ServiceDim only (namespace stored in resource attributes)
+            stmt = select(LogsFact, ServiceDim.name).outerjoin(ServiceDim, LogsFact.service_id == ServiceDim.id)
 
-            # Apply namespace filtering with proper JOIN strategy (adds NamespaceDim JOIN)
-            stmt, _ = self._apply_namespace_filtering(stmt, filters)
+            # Namespace filtering not supported - namespace is now just a resource attribute
 
             # Apply trace_id filtering (NULL is valid for logs)
             stmt, _ = self._apply_traceid_filter(LogsFact, stmt, filters)
@@ -2033,7 +1845,6 @@ class PostgresStorage:
             stmt = stmt.where(
                 LogsFact.timestamp >= start_timestamp,
                 LogsFact.timestamp < end_timestamp,
-                LogsFact.tenant_id == tenant_id,
             )
 
             # Apply other filters (non-namespace, non-traceid, non-spanid, non-log_level)
@@ -2058,7 +1869,7 @@ class PostgresStorage:
                 rows = rows[:limit]
 
             logs = []
-            for log, service_name, service_namespace in rows:
+            for log, service_name in rows:
                 # Extract body string per OTLP spec: body.stringValue
                 body = log.body
                 if isinstance(body, dict):
@@ -2091,7 +1902,7 @@ class PostgresStorage:
                     trace_id=log.trace_id,
                     span_id=log.span_id,
                     service_name=service_name,
-                    service_namespace=service_namespace,
+                    service_namespace=None,  # Namespace is now just a resource attribute
                     resource=log.resource if log.resource else {},
                 )
                 logs.append(log_record)
@@ -2110,31 +1921,12 @@ class PostgresStorage:
             return [], False, None
 
         with Session(self.engine) as session:
-            # Get the unknown tenant_id
-            tenant_id = self._get_unknown_tenant_id()
-
             limit = pagination.limit if pagination else 100
 
-            # ORM query with JOIN to ServiceDim and NamespaceDim
-            # Use distinct(MetricsFact.id) to deduplicate on metric primary key
-            stmt = (
-                select(MetricsFact, ServiceDim.name, NamespaceDim.namespace)
-                .outerjoin(ServiceDim, MetricsFact.service_id == ServiceDim.id)
-                .outerjoin(NamespaceDim, ServiceDim.namespace_id == NamespaceDim.id)
-            )
+            # ORM query with JOIN to ServiceDim only (namespace stored in resource attributes)
+            stmt = select(MetricsFact, ServiceDim.name).outerjoin(ServiceDim, MetricsFact.service_id == ServiceDim.id)
 
-            # Apply namespace filtering
-            if filters:
-                namespace_filters = [f for f in filters if f.field == "service_namespace"]
-                if namespace_filters:
-                    namespace_conditions = []
-                    for f in namespace_filters:
-                        if f.value == "":
-                            namespace_conditions.append(ServiceDim.namespace_id.is_(None))
-                        else:
-                            namespace_conditions.append(NamespaceDim.namespace == f.value)
-                    if namespace_conditions:
-                        stmt = stmt.where(or_(*namespace_conditions))
+            # Namespace filtering not supported - namespace is now just a resource attribute
 
             # Convert RFC3339 to timestamps
             start_timestamp = datetime.fromisoformat(time_range.start_time.replace("Z", "+00:00"))
@@ -2143,7 +1935,6 @@ class PostgresStorage:
             stmt = stmt.where(
                 MetricsFact.timestamp >= start_timestamp,
                 MetricsFact.timestamp < end_timestamp,
-                MetricsFact.tenant_id == tenant_id,
             )
 
             if metric_names:
@@ -2153,7 +1944,7 @@ class PostgresStorage:
             if filters:
                 for f in filters:
                     if f.field == "service_namespace":
-                        continue  # Already handled by _apply_namespace_filtering
+                        continue  # service_namespace is not a filterable dimension
                     elif f.field == "service_name":
                         if f.operator == "equals":
                             stmt = stmt.where(ServiceDim.name == f.value)
@@ -2171,7 +1962,7 @@ class PostgresStorage:
 
             # Aggregate metrics by name for catalog view
             metrics_by_name = {}
-            for m, service_name, service_namespace in rows:
+            for m, service_name in rows:
                 metric_name = m.metric_name
 
                 if metric_name not in metrics_by_name:
@@ -2195,7 +1986,7 @@ class PostgresStorage:
                             data_points=data_points,
                             attributes=m.attributes if m.attributes else {},
                             service_name=service_name,
-                            service_namespace=service_namespace,
+                            service_namespace=None,  # Namespace is now just a resource attribute
                             resource=m.resource if m.resource else {},
                             value=0.0,
                             exemplars=[],
@@ -2231,9 +2022,7 @@ class PostgresStorage:
 
             return metrics, has_more, None
 
-    def get_metric_detail(
-        self, metric_name: str, time_range: Any, filters: list | None = None, include_attributes: bool = False
-    ) -> dict | None:
+    def get_metric_detail(self, metric_name: str, time_range: Any, include_attributes: bool = False) -> dict | None:
         """Get detailed time-series data for a specific metric.
 
         Returns data in format expected by UI:
@@ -2250,9 +2039,6 @@ class PostgresStorage:
             return None
 
         with Session(self.engine) as session:
-            # Get the unknown tenant_id
-            tenant_id = self._get_unknown_tenant_id()
-
             # Parse time range
             start_ts, _start_nanos = _rfc3339_to_timestamp_nanos(time_range.start_time)
             end_ts, _end_nanos = _rfc3339_to_timestamp_nanos(time_range.end_time)
@@ -2262,38 +2048,16 @@ class PostgresStorage:
                 select(
                     MetricsFact,
                     ServiceDim.name.label("service_name"),
-                    NamespaceDim.namespace.label("service_namespace"),
                 )
                 .join(ServiceDim, MetricsFact.service_id == ServiceDim.id)
-                .outerjoin(NamespaceDim, ServiceDim.namespace_id == NamespaceDim.id)
                 .where(
-                    MetricsFact.tenant_id == tenant_id,
                     MetricsFact.metric_name == metric_name,
                     MetricsFact.timestamp >= start_ts,
                     MetricsFact.timestamp <= end_ts,
                 )
             )
 
-            # Apply namespace filters if provided
-            if filters:
-                namespace_filter_values = []
-                for f in filters:
-                    if f.field == "namespace" and f.operator == "equals":
-                        namespace_filter_values.append(f.value)
-
-                if namespace_filter_values:
-                    namespace_ids = []
-                    for ns_name in namespace_filter_values:
-                        ns_stmt = select(NamespaceDim.id).where(
-                            NamespaceDim.tenant_id == tenant_id, NamespaceDim.namespace == ns_name
-                        )
-                        ns_result = session.execute(ns_stmt)
-                        ns_row = ns_result.first()
-                        if ns_row:
-                            namespace_ids.append(ns_row[0])
-
-                    if namespace_ids:
-                        stmt = stmt.where(ServiceDim.namespace_id.in_(namespace_ids))
+            # Namespace filtering not supported - namespace is now just a resource attribute
 
             stmt = stmt.order_by(MetricsFact.timestamp.asc())
 
@@ -2308,7 +2072,7 @@ class PostgresStorage:
 
             # Group data points by attribute combination
             series_map = {}
-            for m, service_name, service_namespace in rows:
+            for m, service_name in rows:
                 # Create series key from attributes
                 attr_hash = hashlib.md5(json.dumps(m.attributes or {}, sort_keys=True).encode()).hexdigest()
 
@@ -2324,9 +2088,7 @@ class PostgresStorage:
                     resource = {}
                     if service_name:
                         resource["service.name"] = service_name
-                    if service_namespace:
-                        resource["service.namespace"] = service_namespace
-                    # Add OTLP resource if present
+                    # Add OTLP resource if present (includes service.namespace if it exists)
                     if m.resource:
                         resource.update(m.resource)
 
@@ -2381,7 +2143,7 @@ class PostgresStorage:
                 # Query for distinct attribute combinations
                 attr_stmt = (
                     select(distinct(MetricsFact.attributes))
-                    .where(MetricsFact.tenant_id == tenant_id, MetricsFact.metric_name == metric_name)
+                    .where(MetricsFact.metric_name == metric_name)
                     .order_by(MetricsFact.attributes)
                 )
                 attr_result = session.execute(attr_stmt)
@@ -2391,20 +2153,16 @@ class PostgresStorage:
 
             return result_dict
 
-    def get_services(self, time_range: Any | None = None, filters: list | None = None) -> list:
+    def get_services(self, time_range: Any | None = None, filters: list | None = None) -> list:  # noqa: ARG002
         """Get service catalog with RED metrics using ORM."""
         if not self.engine:
             return []
 
         with Session(self.engine) as session:
-            # Get the unknown tenant_id
-            tenant_id = self._get_unknown_tenant_id()
-
-            # ORM query with aggregations
+            # ORM query with aggregations (no namespace - it's just a resource attribute now)
             stmt = (
                 select(
                     ServiceDim.name,
-                    NamespaceDim.namespace,
                     func.count().label("request_count"),
                     func.count().filter(SpansFact.status_code == 2).label("error_count"),
                     # Duration in microseconds: EXTRACT(EPOCH FROM end_timestamp - start_timestamp) * 1000000 + (end_nanos_fraction - start_nanos_fraction) / 1000
@@ -2425,30 +2183,9 @@ class PostgresStorage:
                 )
                 .select_from(SpansFact)
                 .join(ServiceDim, SpansFact.service_id == ServiceDim.id)
-                .outerjoin(NamespaceDim, ServiceDim.namespace_id == NamespaceDim.id)
-                .where(SpansFact.tenant_id == tenant_id)
             )
 
-            # Apply namespace filtering - if namespace filters exist, only show those namespaces
-            if filters:
-                namespace_filters = [f for f in filters if f.field == "service_namespace"]
-                if namespace_filters:
-                    namespace_values = []
-                    has_empty_namespace = False
-                    for f in namespace_filters:
-                        if f.value == "":
-                            has_empty_namespace = True
-                        else:
-                            namespace_values.append(f.value)
-
-                    namespace_conditions = []
-                    if namespace_values:
-                        namespace_conditions.append(NamespaceDim.namespace.in_(namespace_values))
-                    if has_empty_namespace:
-                        namespace_conditions.append(ServiceDim.namespace_id.is_(None))
-
-                    if namespace_conditions:
-                        stmt = stmt.where(or_(*namespace_conditions))
+            # Namespace filtering not supported - namespace is now just a resource attribute
 
             if time_range:
                 start_timestamp = datetime.fromisoformat(time_range.start_time.replace("Z", "+00:00"))
@@ -2458,7 +2195,7 @@ class PostgresStorage:
                     SpansFact.start_timestamp < end_timestamp,
                 )
 
-            stmt = stmt.group_by(ServiceDim.name, NamespaceDim.namespace).order_by(func.count().desc())
+            stmt = stmt.group_by(ServiceDim.name).order_by(func.count().desc())
 
             result = session.execute(stmt)
             rows = result.fetchall()
@@ -2469,7 +2206,7 @@ class PostgresStorage:
 
                 service = Service(
                     name=row.name,
-                    namespace=row.namespace,
+                    namespace=None,  # Namespace is now just a resource attribute
                     request_count=row.request_count,
                     error_count=row.error_count,
                     error_rate=round(error_rate, 2),
@@ -2484,7 +2221,7 @@ class PostgresStorage:
 
             return services
 
-    def get_service_map(self, time_range: Any | None = None, filters: list | None = None) -> tuple[list, list]:
+    def get_service_map(self, time_range: Any | None = None, filters: list | None = None) -> tuple[list, list]:  # noqa: ARG002
         """Get service dependency map from spans using ORM.
 
         Builds service map edges based on OpenTelemetry span kinds:
@@ -2511,9 +2248,6 @@ class PostgresStorage:
             end_ts = datetime.fromisoformat(time_range.end_time.replace("Z", "+00:00"))
 
         with Session(self.engine) as session:
-            # Get the unknown tenant_id
-            tenant_id = self._get_unknown_tenant_id()
-
             # Query all spans in time range with their attributes to determine node types
             stmt = (
                 select(
@@ -2530,32 +2264,10 @@ class PostgresStorage:
                 .where(
                     SpansFact.start_timestamp >= start_ts,
                     SpansFact.start_timestamp < end_ts,
-                    SpansFact.tenant_id == tenant_id,
                 )
             )
 
-            # Apply namespace filtering
-            if filters:
-                namespace_filters = [f for f in filters if f.field == "service_namespace"]
-                if namespace_filters:
-                    stmt = stmt.outerjoin(NamespaceDim, ServiceDim.namespace_id == NamespaceDim.id)
-
-                    namespace_values = []
-                    has_empty_namespace = False
-                    for f in namespace_filters:
-                        if f.value == "":
-                            has_empty_namespace = True
-                        else:
-                            namespace_values.append(f.value)
-
-                    conditions = []
-                    if namespace_values:
-                        conditions.append(NamespaceDim.namespace.in_(namespace_values))
-                    if has_empty_namespace:
-                        conditions.append(ServiceDim.namespace_id.is_(None))
-
-                    if conditions:
-                        stmt = stmt.where(or_(*conditions))
+            # Namespace filtering not supported - namespace is now just a resource attribute
 
             result = session.execute(stmt)
             spans = result.fetchall()

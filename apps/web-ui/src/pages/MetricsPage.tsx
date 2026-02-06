@@ -46,12 +46,13 @@ export default function MetricsPage() {
 
   const getMetricTypeBadge = (type: string) => {
     const typeMap: Record<string, string> = {
-      Gauge: "primary",
-      Counter: "success",
-      Histogram: "info",
-      Summary: "warning",
+      gauge: "primary",
+      sum: "success",
+      histogram: "info",
+      summary: "warning",
+      exponential_histogram: "warning",
     };
-    const variant = typeMap[type] || "secondary";
+    const variant = typeMap[type?.toLowerCase()] || "secondary";
     return <Badge bg={variant}>{type}</Badge>;
   };
 
@@ -261,7 +262,7 @@ export default function MetricsPage() {
                       <div className="small text-muted">{metric.description}</div>
                     )}
                   </td>
-                  <td>{getMetricTypeBadge(metric.type)}</td>
+                  <td>{getMetricTypeBadge(metric.metric_type)}</td>
                   <td className="text-end">
                     <code>{formatValue(metric.data_points)}</code>
                   </td>

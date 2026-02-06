@@ -126,7 +126,7 @@ export const METRIC_FIELD_SCHEMA: FieldSchema[] = [
     field: 'metric.type',
     label: 'Metric Type',
     type: 'enum',
-    enumValues: ['Gauge', 'Counter', 'Histogram', 'Summary'],
+    enumValues: ['gauge', 'sum', 'histogram', 'summary', 'exponential_histogram'],
     description: 'Type of metric',
   },
   {

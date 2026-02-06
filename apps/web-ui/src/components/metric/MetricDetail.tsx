@@ -29,12 +29,13 @@ export function MetricDetail({ metric, onHide }: MetricDetailProps) {
 
   const getMetricTypeBadge = (type: string) => {
     const typeMap: Record<string, string> = {
-      Gauge: 'primary',
-      Counter: 'success',
-      Histogram: 'info',
-      Summary: 'warning',
+      gauge: 'primary',
+      sum: 'success',
+      histogram: 'info',
+      summary: 'warning',
+      exponential_histogram: 'warning',
     };
-    const variant = typeMap[type] || 'secondary';
+    const variant = typeMap[type?.toLowerCase()] || 'secondary';
     return <Badge bg={variant}>{type}</Badge>;
   };
 
@@ -114,7 +115,7 @@ export function MetricDetail({ metric, onHide }: MetricDetailProps) {
       <Modal.Header closeButton>
         <Modal.Title>
           <span className="me-2">{metric.name}</span>
-          {getMetricTypeBadge(metric.type)}
+          {getMetricTypeBadge(metric.metric_type)}
         </Modal.Title>
       </Modal.Header>
       <Modal.Body>
@@ -137,7 +138,7 @@ export function MetricDetail({ metric, onHide }: MetricDetailProps) {
                     </tr>
                     <tr>
                       <td className="text-muted">Type:</td>
-                      <td>{getMetricTypeBadge(metric.type)}</td>
+                      <td>{getMetricTypeBadge(metric.metric_type)}</td>
                     </tr>
                     {metric.unit && (
                       <tr>

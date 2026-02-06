@@ -17,63 +17,18 @@ class Base(DeclarativeBase):
     pass
 
 
-class TenantDim(Base):
-    """Tenant catalog (dimension table).
-
-    Multi-tenancy support. Seeded with id=1, name='unknown'.
-    """
-
-    __tablename__ = "tenant_dim"
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(255), unique=True)
-    created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
-
-
-class ConnectionDim(Base):
-    """Connection catalog (dimension table).
-
-    Tracks data sources. Seeded with id=1, tenant_id=1, name='unknown'.
-    """
-
-    __tablename__ = "connection_dim"
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    tenant_id: Mapped[int] = mapped_column(ForeignKey("tenant_dim.id"), default=1)
-    name: Mapped[str] = mapped_column(String(255))
-    created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
-
-
-class NamespaceDim(Base):
-    """Namespace catalog (dimension table).
-
-    Namespaces contain services. A NULL namespace represents services without a namespace.
-    Seeded with id=1, namespace=NULL.
-    """
-
-    __tablename__ = "namespace_dim"
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    tenant_id: Mapped[int] = mapped_column(ForeignKey("tenant_dim.id"), default=1)
-    namespace: Mapped[str | None] = mapped_column(String(255), unique=True, nullable=True, default=None)
-    first_seen: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
-    last_seen: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
-
-
 class ServiceDim(Base):
     """Service catalog (dimension table).
 
-    Service name is unique within a namespace (UNIQUE(name, namespace_id)).
+    Service name is globally unique. Namespace info stored in resource attributes.
     All fact tables reference this via service_id FK.
     """
 
     __tablename__ = "service_dim"
-    __table_args__ = (Index("idx_service_name_namespace", "name", "namespace_id", unique=True),)
+    __table_args__ = (Index("idx_service_name", "name", unique=True),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    tenant_id: Mapped[int] = mapped_column(ForeignKey("tenant_dim.id"), default=1)
-    name: Mapped[str] = mapped_column(String(255))
-    namespace_id: Mapped[int | None] = mapped_column(ForeignKey("namespace_dim.id"), nullable=True, default=None)
+    name: Mapped[str] = mapped_column(String(255), unique=True)
     version: Mapped[str | None] = mapped_column(String(255), nullable=True, default=None)
     attributes: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
     first_seen: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
@@ -86,7 +41,6 @@ class OperationDim(Base):
     __tablename__ = "operation_dim"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    tenant_id: Mapped[int] = mapped_column(ForeignKey("tenant_dim.id"), default=1)
     service_id: Mapped[int | None] = mapped_column(ForeignKey("service_dim.id"), nullable=True, default=None)
     name: Mapped[str] = mapped_column(String(1024))
     span_kind: Mapped[int | None] = mapped_column(SmallInteger, nullable=True, default=None)
@@ -100,7 +54,6 @@ class ResourceDim(Base):
     __tablename__ = "resource_dim"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    tenant_id: Mapped[int] = mapped_column(ForeignKey("tenant_dim.id"), default=1)
     resource_hash: Mapped[str] = mapped_column(String(64))
     attributes: Mapped[dict] = mapped_column(JSONB)
     first_seen: Mapped[datetime] = mapped_column(default=lambda: datetime.now(UTC))
@@ -120,8 +73,6 @@ class SpansFact(Base):
     )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    tenant_id: Mapped[int] = mapped_column(ForeignKey("tenant_dim.id"), default=1)
-    connection_id: Mapped[int] = mapped_column(ForeignKey("connection_dim.id"), default=1)
     trace_id: Mapped[str] = mapped_column(String(32))
     span_id: Mapped[str] = mapped_column(String(16))
     parent_span_id: Mapped[str | None] = mapped_column(String(16), nullable=True, default=None)
@@ -173,8 +124,6 @@ class LogsFact(Base):
     )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    tenant_id: Mapped[int] = mapped_column(ForeignKey("tenant_dim.id"), default=1)
-    connection_id: Mapped[int] = mapped_column(ForeignKey("connection_dim.id"), default=1)
 
     # OTEL correlation
     trace_id: Mapped[str | None] = mapped_column(String(32), nullable=True, default=None)
@@ -223,8 +172,6 @@ class MetricsFact(Base):
     )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    tenant_id: Mapped[int] = mapped_column(ForeignKey("tenant_dim.id"), default=1)
-    connection_id: Mapped[int] = mapped_column(ForeignKey("connection_dim.id"), default=1)
 
     # Timing - TIMESTAMP (microsecond precision) + nanos_fraction (0-999) for full nanosecond precision
     timestamp: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True))
