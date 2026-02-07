@@ -2,7 +2,7 @@
 apiVersion: opentelemetry.io/v1alpha1
 kind: Instrumentation
 metadata:
-  name: {{ .Values.instrumentation.name | default "python-instrumentation" }}
+  name: {{ .Values.instrumentation.name | default "ollyscale-instrumentation" }}
   labels:
     {{- include "ollyscale.labels" . | nindent 4 }}
     app.kubernetes.io/component: instrumentation

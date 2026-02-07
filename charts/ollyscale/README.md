@@ -151,9 +151,9 @@ spec:
   template:
     metadata:
       annotations:
-        instrumentation.opentelemetry.io/inject-python: "ollyscale/python-instrumentation"
+        instrumentation.opentelemetry.io/inject-python: "ollyscale/ollyscale-instrumentation"
         # or for Go:
-        # instrumentation.opentelemetry.io/inject-go: "ollyscale/python-instrumentation"
+        # instrumentation.opentelemetry.io/inject-go: "ollyscale/ollyscale-instrumentation"
 ```
 
 ### Tail Sampling Configuration

@@ -15,7 +15,7 @@ spec:
       labels:
         {{- include "ollyscale-demos.backend.selectorLabels" . | nindent 8 }}
       annotations:
-        instrumentation.opentelemetry.io/inject-python: "ollyscale/python-instrumentation"
+        instrumentation.opentelemetry.io/inject-python: "ollyscale/ollyscale-instrumentation"
     spec:
       containers:
       - name: demo-backend

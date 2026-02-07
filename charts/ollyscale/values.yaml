@@ -222,7 +222,7 @@ browserCollector:
 instrumentation:
   enabled: true
   selfObservability: true
-  name: python-instrumentation
+  name: ollyscale-instrumentation
   exporter:
     endpoint: http://agent-collector.ollyscale.svc.cluster.local:4318
   propagators:

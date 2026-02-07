@@ -17,6 +17,9 @@ ollama:
     tag: 0.15.4
     # -- Image pull policy
     pullPolicy: IfNotPresent
+  # -- Pod annotations
+  podAnnotations:
+    instrumentation.opentelemetry.io/inject-go: "ollyscale/ollyscale-instrumentation"
   service:
     # -- Service type
     type: ClusterIP
@@ -65,6 +68,10 @@ agent:
     tag: v0.0.0
     # -- Image pull policy
     pullPolicy: Always
+  # -- Pod annotations
+  podAnnotations:
+    instrumentation.opentelemetry.io/inject-python: "ollyscale/ollyscale-instrumentation"
+
   service:
     # -- Service type
     type: ClusterIP

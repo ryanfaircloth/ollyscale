@@ -14,9 +14,10 @@ spec:
     metadata:
       labels:
         {{- include "ollyscale-otel-agent.agent.selectorLabels" . | nindent 8 }}
+      {{- with .Values.agent.podAnnotations }}
       annotations:
-        # OTel operator auto-instrumentation
-        instrumentation.opentelemetry.io/inject-python: "ollyscale/python-instrumentation"
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
     spec:
       containers:
       - name: ai-agent

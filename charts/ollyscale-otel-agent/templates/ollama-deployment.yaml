@@ -14,6 +14,10 @@ spec:
     metadata:
       labels:
         {{- include "ollyscale-otel-agent.ollama.selectorLabels" . | nindent 8 }}
+      {{- with .Values.ollama.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
     spec:
       containers:
       - name: ollama
