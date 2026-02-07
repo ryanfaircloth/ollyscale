@@ -33,6 +33,7 @@ partition_size_gauge: ObservableGauge | None = None
 oldest_partition_age_gauge: ObservableGauge | None = None
 connection_pool_size_gauge: UpDownCounter
 storage_errors_counter: Counter
+writes_blocked_counter: Counter
 
 
 def _create_metrics() -> None:
@@ -44,7 +45,7 @@ def _create_metrics() -> None:
     global spans_ingested_counter, logs_ingested_counter, metrics_ingested_counter
     global ingestion_batch_size_histogram, query_latency_histogram
     global dimension_cache_ops_counter, dimension_upserts_counter
-    global connection_pool_size_gauge, storage_errors_counter
+    global connection_pool_size_gauge, storage_errors_counter, writes_blocked_counter
 
     # ============================================================================
     # INGESTION METRICS
@@ -120,6 +121,12 @@ def _create_metrics() -> None:
         name="storage.errors",
         description="Count of storage operation errors by operation type",
         unit="errors",
+    )
+
+    writes_blocked_counter = meter.create_counter(
+        name="storage.writes.blocked",
+        description="Count of write operations blocked due to read-only mode",
+        unit="operations",
     )
 
 
@@ -240,6 +247,20 @@ def record_storage_error(operation: str, error_type: str, attributes: dict[str, 
     if attributes:
         attrs.update(attributes)
     storage_errors_counter.add(1, attrs)
+
+
+def record_write_blocked(signal_type: str, reason: str, attributes: dict[str, Any] | None = None) -> None:
+    """Record write operation blocked due to read-only mode.
+
+    Args:
+        signal_type: Type of signal (traces, logs, metrics)
+        reason: Reason for blocking (read_only_mode, migration_in_progress, etc.)
+        attributes: Optional additional attributes
+    """
+    attrs = {"signal_type": signal_type, "reason": reason}
+    if attributes:
+        attrs.update(attributes)
+    writes_blocked_counter.add(1, attrs)
 
 
 # ============================================================================

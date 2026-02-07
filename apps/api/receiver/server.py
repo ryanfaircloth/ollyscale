@@ -6,10 +6,13 @@ directly in PostgreSQL database using the shared storage backend.
 """
 
 import logging
+import threading
+import time
 from concurrent import futures
 
 import grpc
 from google.protobuf.json_format import MessageToDict
+from grpc_health.v1 import health, health_pb2, health_pb2_grpc
 from opentelemetry.proto.collector.logs.v1 import logs_service_pb2, logs_service_pb2_grpc
 from opentelemetry.proto.collector.metrics.v1 import metrics_service_pb2, metrics_service_pb2_grpc
 from opentelemetry.proto.collector.trace.v1 import trace_service_pb2, trace_service_pb2_grpc
@@ -125,27 +128,58 @@ def start_receiver(port: int = 4343):
     storage = get_storage_sync()
     logger.info(f"Initialized PostgreSQL storage backend: {type(storage).__name__}")
 
+    # Start background readiness checker (non-blocking)
+    # This will check DB every 1s and connect when ready
+    storage.start_readiness_checker()
+    logger.info("Started database readiness checker")
+
     logger.info(f"Starting OTLP gRPC receiver on port {port}...")
 
     # Create sync gRPC server with ThreadPoolExecutor (20 workers for concurrent requests)
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=20))
 
-    # Register services
+    # Register OTLP services
     trace_service_pb2_grpc.add_TraceServiceServicer_to_server(TraceService(), server)
     logs_service_pb2_grpc.add_LogsServiceServicer_to_server(LogsService(), server)
     metrics_service_pb2_grpc.add_MetricsServiceServicer_to_server(MetricsService(), server)
 
-    # Bind to port
+    # Register gRPC Health Checking Protocol
+    # https://github.com/grpc/grpc/blob/master/doc/health-checking.md
+    health_servicer = health.HealthServicer()
+    health_pb2_grpc.add_HealthServicer_to_server(health_servicer, server)
+
+    # Set initial health status
+    # "" (empty string) = overall server liveness (always SERVING once started)
+    # "readiness" = readiness for traffic (NOT_SERVING until DB ready)
+    health_servicer.set("", health_pb2.HealthCheckResponse.SERVING)
+    health_servicer.set("readiness", health_pb2.HealthCheckResponse.NOT_SERVING)
+    logger.info("Registered gRPC health checking services")
+
+    # Start background thread to update readiness status
+    def update_health_status():
+        """Background thread to update health status based on storage readiness."""
+        while True:
+            try:
+                # Check if ready and not in read-only mode
+                if storage.is_ready and not storage.is_read_only_mode:
+                    health_servicer.set("readiness", health_pb2.HealthCheckResponse.SERVING)
+                else:
+                    health_servicer.set("readiness", health_pb2.HealthCheckResponse.NOT_SERVING)
+                    if storage.is_read_only_mode:
+                        logger.warning("gRPC health: NOT_SERVING (read-only mode - migration in progress)")
+            except Exception as e:
+                logger.error(f"Error updating health status: {e}")
+            time.sleep(1)  # Check every second
+
+    health_thread = threading.Thread(target=update_health_status, daemon=True, name="health-status-updater")
+    health_thread.start()
+
+    # Bind to port and start server immediately
+    # This allows liveness probe to pass while waiting for DB
     server.add_insecure_port(f"[::]:{port}")
-
-    # Connect to database
-    storage.connect()
-    logger.info("✓ Connected to PostgreSQL database")
-
-    # Start server
     server.start()
     logger.info(f"✓ OTLP gRPC receiver listening on 0.0.0.0:{port}")
-    logger.info("✓ Ready to receive traces, logs, and metrics")
+    logger.info("  (Waiting for database readiness before accepting data...)")
 
     try:
         server.wait_for_termination()
