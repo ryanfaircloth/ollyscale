@@ -6,10 +6,6 @@ metadata:
   labels:
     {{- include "ollyscale.labels" . | nindent 4 }}
     app.kubernetes.io/component: migration
-  annotations:
-    "helm.sh/hook": pre-upgrade,pre-install
-    "helm.sh/hook-weight": "-5"
-    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
 spec:
   ttlSecondsAfterFinished: 300  # Clean up after 5 minutes
   backoffLimit: 3
