@@ -43,6 +43,9 @@ spec:
                   echo "Days ahead: {{ .Values.partitionMaintenance.daysAhead }}"
                   echo ""
 
+                  # Read DATABASE_URL from secret file
+                  export DATABASE_URL=$(cat /secrets/db/uri)
+
                   echo "Creating future partitions..."
                   psql "$DATABASE_URL" -c "SELECT * FROM maintenance_create_partitions({{ .Values.partitionMaintenance.daysAhead }});"
                   CREATE_EXIT=$?
@@ -62,25 +65,14 @@ spec:
                     echo "Drop exit code: $DROP_EXIT"
                     exit 1
                   fi
-              env:
-                - name: DATABASE_HOST
-                  value: {{ include "ollyscale.fullname" . }}-db-pooler
-                - name: DATABASE_PORT
-                  value: "5432"
-                - name: DATABASE_NAME
-                  value: "ollyscale"
-                - name: DATABASE_USER
-                  valueFrom:
-                    secretKeyRef:
-                      name: {{ include "ollyscale.fullname" . }}-db-app
-                      key: username
-                - name: DATABASE_PASSWORD
-                  valueFrom:
-                    secretKeyRef:
-                      name: {{ include "ollyscale.fullname" . }}-db-app
-                      key: password
-                - name: DATABASE_URL
-                  value: "postgresql://$(DATABASE_USER):$(DATABASE_PASSWORD)@$(DATABASE_HOST):$(DATABASE_PORT)/$(DATABASE_NAME)"
+              volumeMounts:
+              - name: db-secret
+                mountPath: /secrets/db
+                readOnly: true
               resources:
                 {{- toYaml .Values.partitionMaintenance.resources | nindent 16 }}
+          volumes:
+          - name: db-secret
+            secret:
+              secretName: {{ .Values.api.databaseSecretName | default (printf "%s-db-app" (include "ollyscale.fullname" .)) }}
 {{- end }}

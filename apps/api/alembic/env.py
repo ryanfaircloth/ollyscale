@@ -1,6 +1,6 @@
 import asyncio
-import os
 from logging.config import fileConfig
+from pathlib import Path
 
 from sqlalchemy import create_engine, pool
 from sqlalchemy.engine import Connection
@@ -12,17 +12,34 @@ from alembic import context
 # access to the values within the .ini file in use.
 config = context.config
 
-# Get database URL from environment
-database_url = os.getenv(
-    "DATABASE_URL",
-    (
-        f"postgresql+asyncpg://{os.getenv('DATABASE_USER', 'ollyscale')}:"
-        f"{os.getenv('DATABASE_PASSWORD', '')}@"
-        f"{os.getenv('DATABASE_HOST', 'localhost')}:"
-        f"{os.getenv('DATABASE_PORT', '5432')}/"
-        f"{os.getenv('DATABASE_NAME', 'ollyscale')}"
-    ),
-)
+# Get database URL from secret file
+# In tests, URL can be passed via -x dburl=... command line argument
+x_args = context.get_x_argument(as_dictionary=True)
+database_url = x_args.get("dburl")
+
+if not database_url:
+    # Production: read from secret mount
+    db_secret_path = Path("/secrets/db")
+    uri_file = db_secret_path / "uri"
+
+    if not uri_file.exists():
+        raise ValueError(f"Database secret not found at {uri_file}")
+
+    uri = uri_file.read_text().strip()
+
+    # Convert postgresql:// to postgresql+asyncpg://
+    if uri.startswith("postgresql://"):
+        database_url = uri.replace("postgresql://", "postgresql+asyncpg://", 1)
+    elif uri.startswith("postgresql+psycopg2://"):
+        database_url = uri.replace("postgresql+psycopg2://", "postgresql+asyncpg://", 1)
+    else:
+        database_url = uri
+# URL provided via command line (tests) - convert driver if needed
+elif database_url.startswith("postgresql://"):
+    database_url = database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+elif database_url.startswith("postgresql+psycopg2://"):
+    database_url = database_url.replace("postgresql+psycopg2://", "postgresql+asyncpg://", 1)
+
 config.set_main_option("sqlalchemy.url", database_url)
 
 # Interpret the config file for Python logging.

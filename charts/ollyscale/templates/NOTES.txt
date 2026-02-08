@@ -52,7 +52,7 @@ To send OTLP data to ollyScale:
 {{- end }}
 
 Configuration:
-  Redis: {{ .Values.redis.host }}:{{ .Values.redis.port }}
+  Database: CloudNative-PG secret ({{ .Values.api.databaseSecretName | default "ollyscale-db-app" }})
   OTel Collector: {{ .Values.otelCollector.endpoint }}
 
 For more information, visit: https://github.com/ollyscale/ollyscale

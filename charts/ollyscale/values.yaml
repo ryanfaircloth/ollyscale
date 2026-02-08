@@ -6,9 +6,6 @@ image:
   pullSecrets: []
 commonLabels: {}
 commonAnnotations: {}
-redis:
-  host: ollyscale-redis
-  port: 6379
 otelCollector:
   enabled: true
   serviceName: gateway-collector
@@ -287,6 +284,9 @@ ebpfAgent:
   affinity: {}
 api:
   replicaCount: 1
+  # CNPG secret name to mount for database connection
+  # The secret should contain 'uri' and 'dbname' fields
+  databaseSecretName: ollyscale-db-app
   image:
     repository: docker-registry.registry.svc.cluster.local:5000/ollyscale/api
     tag: 0.0.0-dev.1770226204
@@ -469,6 +469,9 @@ opampServer:
   affinity: {}
 otlpReceiver:
   replicaCount: 1
+  # CNPG secret name to mount for database connection
+  # The secret should contain 'uri' and 'dbname' fields
+  databaseSecretName: ollyscale-db-app
   image:
     repository: docker-registry.registry.svc.cluster.local:5000/ollyscale/api
     tag: 0.2.0

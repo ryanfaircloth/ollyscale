@@ -34,27 +34,18 @@ spec:
             cd /app
             alembic upgrade head
             echo "Migration completed successfully!"
-        env:
-        - name: DATABASE_HOST
-          value: "{{ include "ollyscale.fullname" . }}-db-rw"
-        - name: DATABASE_PORT
-          value: "5432"
-        - name: DATABASE_NAME
-          value: "ollyscale"
-        - name: DATABASE_USER
-          valueFrom:
-            secretKeyRef:
-              name: {{ include "ollyscale.fullname" . }}-db-app
-              key: username
-        - name: DATABASE_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: {{ include "ollyscale.fullname" . }}-db-app
-              key: password
+        volumeMounts:
+        - name: db-secret
+          mountPath: /secrets/db
+          readOnly: true
         {{- if .Values.migration.resources }}
         resources:
           {{- toYaml .Values.migration.resources | nindent 10 }}
         {{- end }}
+      volumes:
+      - name: db-secret
+        secret:
+          secretName: {{ .Values.api.databaseSecretName | default (printf "%s-db-app" (include "ollyscale.fullname" .)) }}
       {{- with .Values.migration.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

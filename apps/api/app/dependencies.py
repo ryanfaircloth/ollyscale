@@ -1,6 +1,6 @@
 """Dependency injection for FastAPI routes."""
 
-import os
+from pathlib import Path
 
 from app.storage.interface import StorageBackend
 from app.storage.postgres_orm_sync import PostgresStorage
@@ -13,26 +13,31 @@ def get_storage() -> StorageBackend:
     """
     Get storage backend instance.
 
-    Requires DATABASE_HOST environment variable to be set.
+    Reads database connection from /secrets/db/uri.
 
     Raises:
-        RuntimeError: If DATABASE_HOST is not configured
+        RuntimeError: If secret file is not found
     """
     global _storage
 
     if _storage is None:
-        # Require DATABASE_HOST to be set
-        if not os.getenv("DATABASE_HOST"):
-            msg = "DATABASE_HOST environment variable must be set. PostgresStorage is required."
+        # Read connection URI from CNPG secret
+        db_secret_path = Path("/secrets/db")
+        uri_file = db_secret_path / "uri"
+
+        if not uri_file.exists():
+            msg = f"Database secret not found at {uri_file}"
             raise RuntimeError(msg)
 
-        # Build connection string from environment variables
-        db_host = os.getenv("DATABASE_HOST", "localhost")
-        db_port = os.getenv("DATABASE_PORT", "5432")
-        db_name = os.getenv("DATABASE_NAME", "ollyscale")
-        db_user = os.getenv("DATABASE_USER", "postgres")
-        db_password = os.getenv("DATABASE_PASSWORD", "postgres")
-        connection_string = f"postgresql+psycopg2://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+        uri = uri_file.read_text().strip()
+
+        # Convert to postgresql+psycopg2://
+        if uri.startswith("postgresql://"):
+            connection_string = uri.replace("postgresql://", "postgresql+psycopg2://", 1)
+        elif uri.startswith("postgresql+asyncpg://"):
+            connection_string = uri.replace("postgresql+asyncpg://", "postgresql+psycopg2://", 1)
+        else:
+            connection_string = uri
 
         _storage = PostgresStorage(connection_string)
 
@@ -54,24 +59,30 @@ def get_storage_sync() -> StorageBackend:
     """
     Get storage backend instance synchronously (for gRPC receiver).
 
-    This is used by the receiver module which manages its own connection lifecycle.
+    This is used by the receiver module which manages its own connection
+    lifecycle.
 
-    Requires DATABASE_HOST environment variable to be set.
+    Reads database connection from /secrets/db/uri.
 
     Raises:
-        RuntimeError: If DATABASE_HOST is not configured
+        RuntimeError: If secret file is not found
     """
-    # Require DATABASE_HOST to be set
-    if not os.getenv("DATABASE_HOST"):
-        msg = "DATABASE_HOST environment variable must be set. PostgresStorage is required."
+    # Read connection URI from CNPG secret
+    db_secret_path = Path("/secrets/db")
+    uri_file = db_secret_path / "uri"
+
+    if not uri_file.exists():
+        msg = f"Database secret not found at {uri_file}"
         raise RuntimeError(msg)
 
-    # Build connection string from environment variables
-    db_host = os.getenv("DATABASE_HOST", "localhost")
-    db_port = os.getenv("DATABASE_PORT", "5432")
-    db_name = os.getenv("DATABASE_NAME", "ollyscale")
-    db_user = os.getenv("DATABASE_USER", "postgres")
-    db_password = os.getenv("DATABASE_PASSWORD", "postgres")
-    connection_string = f"postgresql+psycopg2://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+    uri = uri_file.read_text().strip()
+
+    # Convert to postgresql+psycopg2://
+    if uri.startswith("postgresql://"):
+        connection_string = uri.replace("postgresql://", "postgresql+psycopg2://", 1)
+    elif uri.startswith("postgresql+asyncpg://"):
+        connection_string = uri.replace("postgresql+asyncpg://", "postgresql+psycopg2://", 1)
+    else:
+        connection_string = uri
 
     return PostgresStorage(connection_string)

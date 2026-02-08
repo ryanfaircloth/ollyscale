@@ -10,6 +10,7 @@ import base64
 import os
 import subprocess
 from pathlib import Path
+from unittest.mock import mock_open, patch
 
 import pytest
 from sqlalchemy import create_engine, inspect, text
@@ -19,6 +20,34 @@ from testcontainers.postgres import PostgresContainer
 from app.models.api import Pagination, TimeRange
 from app.storage.postgres_orm_sync import PostgresStorage
 from tests.fixtures import make_log_record
+
+
+@pytest.fixture(scope="session", autouse=True)
+def mock_db_secret(postgres_connection_string):
+    """Mock /secrets/db/uri file reading for all tests.
+
+    This allows the code to read from /secrets/db/uri without actually
+    creating files on the filesystem.
+    """
+
+    def mock_exists(path):
+        if str(path) == "/secrets/db/uri":
+            return True
+        # For other paths, use real os.path.exists
+        return os.path.exists.__wrapped__(path) if hasattr(os.path.exists, "__wrapped__") else Path(path).exists()
+
+    def mock_file_open(path, *args, **kwargs):
+        if str(path) == "/secrets/db/uri":
+            return mock_open(read_data=postgres_connection_string)()
+        # For other paths, use real open
+        return (
+            open.__wrapped__(path, *args, **kwargs)
+            if hasattr(open, "__wrapped__")
+            else Path(path).open(*args, **kwargs)
+        )
+
+    with patch("os.path.exists", side_effect=mock_exists), patch("builtins.open", side_effect=mock_file_open):
+        yield
 
 
 @pytest.fixture(scope="session")
@@ -135,15 +164,13 @@ def postgres_engine(postgres_connection_string):
     # Create schema if using fresh testcontainer (no existing tables)
     inspector = inspect(engine)
     if not inspector.get_table_names():
-        # Fresh database - run alembic migrations with sync driver
-        # Convert postgres:// URL to sync URL (replace asyncpg with psycopg2)
-        sync_url = postgres_connection_string.replace("postgresql://", "postgresql+psycopg2://")
+        # Fresh database - run alembic migrations
+        # Pass database URL via -x flag to avoid needing secret file
         result = subprocess.run(
-            ["alembic", "upgrade", "head"],
+            ["alembic", "-x", f"dburl={postgres_connection_string}", "upgrade", "head"],
             capture_output=True,
             text=True,
             cwd=Path(__file__).parent.parent,
-            env={**os.environ, "DATABASE_URL": sync_url},
             check=False,
         )
         if result.returncode != 0:

@@ -3,8 +3,14 @@
 import os
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from pathlib import Path
 
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 
 
 class Database:
@@ -20,17 +26,23 @@ class Database:
         if self.engine is not None:
             return
 
-        # Build connection URL from environment variables
-        host = os.getenv("DATABASE_HOST", "localhost")
-        port = os.getenv("DATABASE_PORT", "5432")
-        user = os.getenv("DATABASE_USER", "postgres")
-        password = os.getenv("DATABASE_PASSWORD")
-        if not password:
-            raise ValueError("DATABASE_PASSWORD environment variable is required")
-        db_name = os.getenv("DATABASE_NAME", "ollyscale")
+        # Read connection URI from CNPG secret
+        db_secret_path = Path("/secrets/db")
+        uri_file = db_secret_path / "uri"
 
-        # Use asyncpg driver for PostgreSQL
-        url = f"postgresql+asyncpg://{user}:{password}@{host}:{port}/{db_name}"
+        if not uri_file.exists():
+            msg = f"Database secret not found at {uri_file}"
+            raise ValueError(msg)
+
+        uri = uri_file.read_text().strip()
+
+        # Convert postgresql:// to postgresql+asyncpg://
+        if uri.startswith("postgresql://"):
+            url = uri.replace("postgresql://", "postgresql+asyncpg://", 1)
+        elif uri.startswith("postgresql+psycopg2://"):
+            url = uri.replace("postgresql+psycopg2://", "postgresql+asyncpg://", 1)
+        else:
+            url = uri
 
         # Create async engine with connection pooling
         self.engine = create_async_engine(
