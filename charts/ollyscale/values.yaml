@@ -524,7 +524,7 @@ otlpReceiver:
   affinity: {}
 postgresql:
   teamId: ollyscale
-  numberOfInstances: 2
+  numberOfInstances: 1
   volume:
     size: 10Gi
     storageClass: ''
