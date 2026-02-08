@@ -201,7 +201,8 @@ customDemo:
       tag: latest
 
     env:
-      otelExporterOtlpEndpoint: "http://gateway-collector.ollyscale.svc.cluster.local:4317"
+      # Gateway collector is in otel-system namespace
+      otelExporterOtlpEndpoint: "http://gateway-collector.otel-system.svc.cluster.local:4317"
       otelServiceName: "demo-frontend"
 
   backend:
@@ -292,7 +293,7 @@ kubectl logs -n ollyscale-demos -l app.kubernetes.io/name=demo-frontend
 
    ```bash
    kubectl exec -n ollyscale-demos deployment/demo-frontend -- \
-     curl -v gateway-collector.ollyscale.svc.cluster.local:4317
+     curl -v gateway-collector.otel-system.svc.cluster.local:4317
    ```
 
 ### HTTPRoute not working

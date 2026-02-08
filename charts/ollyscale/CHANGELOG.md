@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+### ⚠ BREAKING CHANGES
+
+* **chart:** OpenTelemetry collectors and instrumentation moved to separate ollyscale-otel chart
+  - Collectors (agent, gateway, browser) now deployed in `otel-system` namespace
+  - Instrumentation CR moved to `otel-system` namespace
+  - Must deploy `ollyscale-otel` chart before deploying `ollyscale` chart
+  - Pod annotations updated to reference `otel-system/ollyscale-instrumentation`
+  - OTLP collector endpoints now use `*.otel-system.svc.cluster.local` FQDNs
+  - OpAMP server and OTLP receiver remain in `ollyscale` namespace
+
+### Features
+
+* **chart:** separate OpenTelemetry infrastructure into ollyscale-otel chart for better separation of concerns and deployment ordering
+
 ## [0.2.0](https://github.com/ryanfaircloth/ollyscale/compare/chart-ollyscale-v0.1.10...chart-ollyscale-v0.2.0) (2026-02-04)
 
 

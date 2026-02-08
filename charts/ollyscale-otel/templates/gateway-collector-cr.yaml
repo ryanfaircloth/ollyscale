@@ -3,9 +3,9 @@ apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: gateway
-  namespace: {{ .Values.gatewayCollector.namespace }}
+  namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "ollyscale.labels" . | nindent 4 }}
+    {{- include "ollyscale-otel.labels" . | nindent 4 }}
     app.kubernetes.io/component: otel-gateway
   {{- with .Values.commonAnnotations }}
   annotations:

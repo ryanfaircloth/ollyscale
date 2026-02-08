@@ -18,7 +18,8 @@ spec:
     metadata:
       annotations:
         {{- if .Values.instrumentation.enabled }}
-        instrumentation.opentelemetry.io/inject-go: "{{ .Release.Namespace }}/{{ .Values.instrumentation.name }}"
+        # Instrumentation CR is in otel-system namespace
+        instrumentation.opentelemetry.io/inject-go: "otel-system/{{ .Values.instrumentation.name }}"
         {{- end }}
         {{- with .Values.opampServer.podAnnotations }}
         {{- toYaml . | nindent 8 }}

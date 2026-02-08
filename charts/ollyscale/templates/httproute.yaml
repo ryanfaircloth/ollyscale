@@ -27,13 +27,13 @@ spec:
       backendRefs:
       - name: {{ include "ollyscale.api.fullname" . }}
         port: {{ .Values.api.service.port }}
-    # OTLP browser ingest endpoints (/v1/traces, /v1/logs, /v1/metrics) - route to browser-collector
+    # OTLP browser ingest endpoints (/v1/traces, /v1/logs, /v1/metrics) - route to browser-collector in otel-system
     - matches:
       - path:
           type: PathPrefix
           value: /v1/
       backendRefs:
-      - name: {{ include "ollyscale.fullname" . }}-browser-collector
+      - name: ollyscale-browser-collector.otel-system.svc.cluster.local
         port: 4318
     # OpenAPI docs - route to api backend
     - matches:

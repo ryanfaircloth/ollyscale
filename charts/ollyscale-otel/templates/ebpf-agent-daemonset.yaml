@@ -2,10 +2,10 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: {{ include "ollyscale.fullname" . }}-ebpf-agent
-  namespace: {{ .Values.ebpfAgent.namespace }}
+  name: {{ include "ollyscale-otel.fullname" . }}-ebpf-agent
+  namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "ollyscale.labels" . | nindent 4 }}
+    {{- include "ollyscale-otel.labels" . | nindent 4 }}
     app.kubernetes.io/component: ebpf-agent
   {{- with .Values.commonAnnotations }}
   annotations:
@@ -14,7 +14,7 @@ metadata:
 spec:
   selector:
     matchLabels:
-      {{- include "ollyscale.selectorLabels" . | nindent 6 }}
+      {{- include "ollyscale-otel.selectorLabels" . | nindent 6 }}
       app.kubernetes.io/component: ebpf-agent
   template:
     metadata:
@@ -23,10 +23,10 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "ollyscale.selectorLabels" . | nindent 8 }}
+        {{- include "ollyscale-otel.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: ebpf-agent
     spec:
-      serviceAccountName: {{ include "ollyscale.fullname" . }}-ebpf-agent
+      serviceAccountName: {{ include "ollyscale-otel.fullname" . }}-ebpf-agent
       {{- with .Values.ebpfAgent.podSecurityContext }}
       {{- toYaml . | nindent 6 }}
       {{- end }}

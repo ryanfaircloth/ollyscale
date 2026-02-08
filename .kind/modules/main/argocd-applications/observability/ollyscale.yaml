@@ -5,7 +5,7 @@ metadata:
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "50"
-    # Depends on postgres being deployed and healthy first
+    # Depends on ollyscale-postgres (wave 45) and ollyscale-otel (wave 48) being deployed and healthy first
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
   finalizers:
     - resources-finalizer.argocd.argoproj.io

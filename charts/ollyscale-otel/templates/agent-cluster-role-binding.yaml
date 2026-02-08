@@ -4,7 +4,7 @@ kind: ClusterRoleBinding
 metadata:
   name: agent
   labels:
-    {{- include "ollyscale.labels" . | nindent 4 }}
+    {{- include "ollyscale-otel.labels" . | nindent 4 }}
     app.kubernetes.io/component: otel-agent
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -13,5 +13,5 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: agent
-    namespace: {{ .Values.agentCollector.namespace }}
+    namespace: {{ .Release.Namespace }}
 {{- end }}

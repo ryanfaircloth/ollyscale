@@ -1,0 +1,57 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ollyscale-otel
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "48"
+    # Depends on OpenTelemetry Operator (wave 20) being deployed and healthy first
+    # Deploys OpenTelemetry infrastructure before ollyscale application
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: middleware
+  source:
+    repoURL: "${chart_registry}"
+    chart: ollyscale-otel
+    targetRevision: ${ollyscale_otel_chart_tag}
+    helm:
+      valuesObject:
+        # Use smaller resources for local development
+        gatewayCollector:
+          replicas: 1
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+
+        browserCollector:
+          replicas: 1
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+
+        # eBPF agent disabled by default - requires real Linux kernel
+        # Will NOT work on KIND/macOS/Docker Desktop environments
+        ebpfAgent:
+          enabled: false
+
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: otel-system
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

@@ -17,6 +17,7 @@ locals {
     opamp_tag                 = var.opamp_tag
     ollyscale_chart_tag       = var.ollyscale_chart_tag
     postgres_chart_tag        = var.postgres_chart_tag
+    ollyscale_otel_chart_tag  = var.ollyscale_otel_chart_tag
     ollyscale_demos_chart_tag = var.ollyscale_demos_chart_tag
     ollyscale_demos_image_tag = var.ollyscale_demos_image_tag
   }

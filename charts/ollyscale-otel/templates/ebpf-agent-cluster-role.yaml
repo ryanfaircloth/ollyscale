@@ -2,9 +2,9 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ include "ollyscale.fullname" . }}-ebpf-agent
+  name: {{ include "ollyscale-otel.fullname" . }}-ebpf-agent
   labels:
-    {{- include "ollyscale.labels" . | nindent 4 }}
+    {{- include "ollyscale-otel.labels" . | nindent 4 }}
     app.kubernetes.io/component: ebpf-agent
 rules:
   # Need to read node information

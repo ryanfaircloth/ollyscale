@@ -19,7 +19,8 @@ ollama:
     pullPolicy: IfNotPresent
   # -- Pod annotations
   podAnnotations:
-    instrumentation.opentelemetry.io/inject-go: "ollyscale/ollyscale-instrumentation"
+    # Instrumentation CR is in otel-system namespace
+    instrumentation.opentelemetry.io/inject-go: "otel-system/ollyscale-instrumentation"
   service:
     # -- Service type
     type: ClusterIP
@@ -70,7 +71,8 @@ agent:
     pullPolicy: Always
   # -- Pod annotations
   podAnnotations:
-    instrumentation.opentelemetry.io/inject-python: "ollyscale/ollyscale-instrumentation"
+    # Instrumentation CR is in otel-system namespace
+    instrumentation.opentelemetry.io/inject-python: "otel-system/ollyscale-instrumentation"
 
   service:
     # -- Service type

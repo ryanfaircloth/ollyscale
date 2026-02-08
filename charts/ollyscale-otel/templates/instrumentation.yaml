@@ -4,7 +4,7 @@ kind: Instrumentation
 metadata:
   name: {{ .Values.instrumentation.name | default "ollyscale-instrumentation" }}
   labels:
-    {{- include "ollyscale.labels" . | nindent 4 }}
+    {{- include "ollyscale-otel.labels" . | nindent 4 }}
     app.kubernetes.io/component: instrumentation
   {{- with .Values.commonAnnotations }}
   annotations:

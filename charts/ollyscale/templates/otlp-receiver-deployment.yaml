@@ -18,7 +18,8 @@ spec:
       annotations:
         {{- if and .Values.instrumentation.enabled .Values.instrumentation.selfObservability }}
         # Self-observability: OTLP receiver instruments itself (demo mode)
-        instrumentation.opentelemetry.io/inject-python: "{{ .Release.Namespace }}/{{ .Values.instrumentation.name }}"
+        # Instrumentation CR is in otel-system namespace
+        instrumentation.opentelemetry.io/inject-python: "otel-system/{{ .Values.instrumentation.name }}"
         {{- end }}
         {{- with .Values.otlpReceiver.podAnnotations }}
         {{- toYaml . | nindent 8 }}

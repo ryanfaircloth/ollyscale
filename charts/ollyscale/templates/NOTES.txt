@@ -53,6 +53,6 @@ To send OTLP data to ollyScale:
 
 Configuration:
   Database: CloudNative-PG secret ({{ .Values.api.databaseSecretName | default "ollyscale-db-app" }})
-  OTel Collector: {{ .Values.otelCollector.endpoint }}
+  OTel Collectors: Deployed separately via ollyscale-otel chart in otel-system namespace
 
 For more information, visit: https://github.com/ollyscale/ollyscale

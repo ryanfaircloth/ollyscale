@@ -18,7 +18,8 @@ spec:
       annotations:
         {{- if and .Values.instrumentation.enabled .Values.instrumentation.selfObservability }}
         # Self-observability: ollyScale api instruments itself (demo mode)
-        instrumentation.opentelemetry.io/inject-python: "{{ .Release.Namespace }}/{{ .Values.instrumentation.name }}"
+        # Instrumentation CR is in otel-system namespace
+        instrumentation.opentelemetry.io/inject-python: "otel-system/{{ .Values.instrumentation.name }}"
         {{- end }}
         {{- with .Values.api.podAnnotations }}
         {{- toYaml . | nindent 8 }}
@@ -74,8 +75,6 @@ spec:
         - name: db-secret
           mountPath: /secrets/db
           readOnly: true
-        - name: otelcol-templates-vol
-          mountPath: /app/otelcol-templates
         {{- with .Values.api.volumeMounts }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -95,9 +94,6 @@ spec:
       - name: db-secret
         secret:
           secretName: {{ .Values.api.databaseSecretName | default (printf "%s-db-app" (include "ollyscale.fullname" .)) }}
-      - name: otelcol-templates-vol
-        configMap:
-          name: {{ include "ollyscale.fullname" . }}-otelcol-templates
       {{- with .Values.api.volumes }}
         {{- toYaml . | nindent 6 }}
       {{- end }}

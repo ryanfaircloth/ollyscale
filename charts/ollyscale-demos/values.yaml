@@ -24,12 +24,12 @@ frontend:
     port: 5000
   # -- Environment variables
   env:
-    # -- OTLP endpoint for traces
-    otelExporterOtlpEndpoint: "http://gateway-collector.ollyscale.svc.cluster.local:4317"
+    # -- OTLP endpoint for traces (gateway collector in otel-system namespace)
+    otelExporterOtlpEndpoint: "http://gateway-collector.otel-system.svc.cluster.local:4317"
     # -- Service name for OTLP
     otelServiceName: "demo-frontend"
     # -- Prometheus remote write endpoint
-    promRemoteWriteEndpoint: "http://gateway-collector.ollyscale.svc.cluster.local:19291/api/v1/write"
+    promRemoteWriteEndpoint: "http://gateway-collector.otel-system.svc.cluster.local:19291/api/v1/write"
   # -- Resource limits and requests
   resources: {}
   # HTTPRoute configuration
@@ -61,8 +61,8 @@ backend:
     port: 5000
   # -- Environment variables
   env:
-    # -- OTLP endpoint for traces
-    otelExporterOtlpEndpoint: "http://gateway-collector.ollyscale.svc.cluster.local:4317"
+    # -- OTLP endpoint for traces (gateway collector in otel-system namespace)
+    otelExporterOtlpEndpoint: "http://gateway-collector.otel-system.svc.cluster.local:4317"
     # -- Service name for OTLP
     otelServiceName: "demo-backend"
   # -- Resource limits and requests

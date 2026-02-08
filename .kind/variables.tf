@@ -35,6 +35,18 @@ variable "ollyscale_chart_tag" {
   default     = "0.3.0"
 }
 
+variable "postgres_chart_tag" {
+  description = "Version of the PostgreSQL Helm chart to deploy"
+  type        = string
+  default     = "0.1.0"
+}
+
+variable "ollyscale_otel_chart_tag" {
+  description = "Version of the OllyScale OpenTelemetry Helm chart to deploy"
+  type        = string
+  default     = "0.1.0"
+}
+
 variable "demo_tag" {
   description = "Demo application image tag"
   type        = string

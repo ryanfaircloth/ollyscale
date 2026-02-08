@@ -43,7 +43,7 @@ data:
       opamp:
         server:
           ws:
-            endpoint: ws://{{ include "ollyscale.opampServer.name" . }}:4320/v1/opamp
+            endpoint: ws://ollyscale-opamp-server.ollyscale.svc.cluster.local:4320/v1/opamp
 
     processors:
       batch:
@@ -68,7 +68,7 @@ data:
         verbosity: detailed
 
       otlp:
-        endpoint: "{{ include "ollyscale.otlpReceiver.name" . }}:4343"
+        endpoint: "ollyscale-otlp-receiver.ollyscale.svc.cluster.local:4343"
         tls:
           insecure: true
 
@@ -110,7 +110,7 @@ data:
       opamp:
         server:
           ws:
-            endpoint: ws://{{ include "ollyscale.opampServer.name" . }}:4320/v1/opamp
+            endpoint: ws://ollyscale-opamp-server.ollyscale.svc.cluster.local:4320/v1/opamp
 
     processors:
       batch:
@@ -131,7 +131,7 @@ data:
       debug:
         verbosity: detailed
       otlp:
-        endpoint: "{{ include "ollyscale.otlpReceiver.name" . }}:4343"
+        endpoint: "ollyscale-otlp-receiver.ollyscale.svc.cluster.local:4343"
         tls:
           insecure: true
       # Invalid exporter - missing required configuration

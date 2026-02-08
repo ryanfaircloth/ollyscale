@@ -5,28 +5,33 @@ A lightweight, desktop-first OpenTelemetry observability platform for local deve
 ## Features
 
 - **OTLP Ingestion**: Receive traces, logs, and metrics via OTLP protocol
-- **Gateway Collector**: Centralized processing with tail sampling and service name extraction
-- **Agent Collector**: DaemonSet for node-level log collection
-- **eBPF Agent** (Optional): Zero-code instrumentation using OpenTelemetry eBPF Instrumentation
-- **Auto-Instrumentation**: Python and Go auto-instrumentation support
 - **OpAMP Server**: Remote OpenTelemetry Collector configuration management
 - **Web UI**: Real-time visualization and service map
+- **Auto-Instrumentation**: Supports Python and Go via ollyscale-otel chart
+
+**Note:** OpenTelemetry collectors and instrumentation are now in a separate
+`ollyscale-otel` chart which must be deployed first.
 
 ## Prerequisites
 
 - Kubernetes 1.24+
 - Helm 3.8+
-- **External PostgreSQL database** - Deploy `ollyscale-postgres` chart separately or provide external connection
+- **External PostgreSQL database** - Deploy `ollyscale-postgres` chart
+  separately or provide external connection
+- **OpenTelemetry Infrastructure** - Deploy `ollyscale-otel` chart to `otel-system` namespace before this chart
 - OpenTelemetry Operator (for auto-instrumentation and collectors)
-- Redis Operator (for data storage)
 
-## Important: Database Requirement
+## Important: Deployment Dependencies
+
+This chart has two required dependencies that must be deployed first:
+
+### 1. Database (ollyscale-postgres)
 
 **Breaking Change:** PostgreSQL is no longer included in this chart.
 
 You must deploy the database separately using one of these options:
 
-### Option 1: ollyscale-postgres Chart (Recommended)
+#### Option 1: ollyscale-postgres Chart (Recommended)
 
 ```bash
 helm install ollyscale-postgres oci://ghcr.io/ryanfaircloth/ollyscale/charts/ollyscale-postgres \
@@ -35,6 +40,7 @@ helm install ollyscale-postgres oci://ghcr.io/ryanfaircloth/ollyscale/charts/oll
 ```
 
 Then configure this chart to use it:
+
 ```yaml
 api:
   databaseSecretName: ollyscale-postgres-app
@@ -42,15 +48,42 @@ otlpReceiver:
   databaseSecretName: ollyscale-postgres-app
 ```
 
-### Option 2: External PostgreSQL
+#### Option 2: External PostgreSQL
 
 Provide a Kubernetes secret with a `uri` key containing the connection string:
+
 ```bash
 kubectl create secret generic my-postgres-secret \
   --from-literal=uri="postgresql://user:pass@host:5432/dbname"
 ```
 
-Then reference it:
+### 2. OpenTelemetry Infrastructure (ollyscale-otel)
+
+**Required:** Deploy the `ollyscale-otel` chart to the `otel-system` namespace before deploying this chart.
+
+The ollyscale-otel chart provides:
+
+- Agent Collector (DaemonSet for node-level collection)
+- Gateway Collector (centralized processing with tail sampling)
+- Browser Collector (for RUM data)
+- Instrumentation CR (for auto-instrumentation)
+- Optional eBPF agent
+
+```bash
+helm install ollyscale-otel ./charts/ollyscale-otel \
+  --namespace otel-system \
+  --create-namespace
+```
+
+Pods in the `ollyscale` namespace use auto-instrumentation from `otel-system`:
+
+```yaml
+annotations:
+  instrumentation.opentelemetry.io/inject-python: "otel-system/ollyscale-instrumentation"
+```
+
+Then reference the database secret:
+
 ```yaml
 api:
   databaseSecretName: my-postgres-secret

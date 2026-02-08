@@ -1,0 +1,25 @@
+apiVersion: v2
+name: ollyscale-otel
+description: OpenTelemetry collector infrastructure for OllyScale
+type: application
+version: 0.1.0
+appVersion: "latest"
+keywords:
+  - opentelemetry
+  - otel
+  - observability
+  - collector
+  - instrumentation
+home: https://github.com/ryanfaircloth/ollyscale
+sources:
+  - https://github.com/ryanfaircloth/ollyscale
+maintainers:
+  - name: Ryan Faircloth
+    email: ryan@faircloth.dev
+annotations:
+  org.opencontainers.image.title: "OllyScale OpenTelemetry"
+  org.opencontainers.image.description: "OpenTelemetry collector infrastructure for OllyScale"
+  org.opencontainers.image.vendor: "Ryan Faircloth"
+  org.opencontainers.image.source: "https://github.com/ryanfaircloth/ollyscale"
+  org.opencontainers.image.documentation: "https://ollyscale.dev/docs"
+  org.opencontainers.image.licenses: "AGPL-3.0"

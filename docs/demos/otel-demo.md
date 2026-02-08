@@ -159,7 +159,8 @@ opentelemetry-demo:
   default:
     env:
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "http://gateway-collector.ollyscale.svc.cluster.local:4318"
+        # Gateway collector is in otel-system namespace
+        value: "http://gateway-collector.otel-system.svc.cluster.local:4318"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "http/protobuf"
 ```
@@ -316,7 +317,8 @@ kubectl get deployment frontend -n ollyscale-demos -o yaml | grep OTEL_EXPORTER
 
 # Test collector connectivity
 kubectl exec -n ollyscale-demos deployment/frontend -- \
-  curl -v gateway-collector.ollyscale.svc.cluster.local:4318
+  # Test collector connectivity
+  curl -v gateway-collector.otel-system.svc.cluster.local:4318
 ```
 
 ### HTTPRoute Not Working

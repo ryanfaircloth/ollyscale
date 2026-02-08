@@ -4,7 +4,7 @@ kind: ClusterRoleBinding
 metadata:
   name: gateway
   labels:
-    {{- include "ollyscale.labels" . | nindent 4 }}
+    {{- include "ollyscale-otel.labels" . | nindent 4 }}
     app.kubernetes.io/component: otel-gateway
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -13,5 +13,5 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: gateway
-    namespace: {{ .Values.gatewayCollector.namespace }}
+    namespace: {{ .Release.Namespace }}
 {{- end }}

@@ -1,6 +1,30 @@
-# ollyScale Helm Chart
+# ollyScale Helm Charts
 
-A Helm chart for deploying ollyScale, a lightweight OpenTelemetry observability platform for local development.
+Helm charts for deploying ollyScale, a lightweight OpenTelemetry observability platform for local development.
+
+## Charts
+
+This directory contains multiple Helm charts that work together to provide the complete ollyScale platform:
+
+- **ollyscale-postgres**: CloudNativePG PostgreSQL cluster for ollyScale (deployed independently)
+- **ollyscale-otel**: OpenTelemetry collector infrastructure (agent, gateway, browser collectors, instrumentation)
+- **ollyscale**: Main ollyScale application (API, Web UI, OpAMP Server, OTLP Receiver)
+- **ollyscale-demos**: Demo applications showcasing ollyScale features
+- **ollyscale-otel-agent**: AI agent demo with Ollama integration
+
+## Deployment Order
+
+For proper operation, charts should be deployed in this order:
+
+1. **ollyscale-postgres** → Database infrastructure
+2. **ollyscale-otel** (to `otel-system` namespace) → Telemetry collection infrastructure
+3. **ollyscale** → Main application components
+4. **ollyscale-demos** (optional) → Demo applications
+5. **ollyscale-otel-agent** (optional) → AI agent demo
+
+The `ollyscale-otel` chart must be deployed to the `otel-system` namespace
+and before the main `ollyscale` chart to ensure instrumentation infrastructure
+is available when application pods start.
 
 ## Prerequisites
 

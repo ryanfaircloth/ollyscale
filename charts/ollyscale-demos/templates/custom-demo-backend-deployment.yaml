@@ -15,7 +15,8 @@ spec:
       labels:
         {{- include "ollyscale-demos.backend.selectorLabels" . | nindent 8 }}
       annotations:
-        instrumentation.opentelemetry.io/inject-python: "ollyscale/ollyscale-instrumentation"
+        # Instrumentation CR is in otel-system namespace
+        instrumentation.opentelemetry.io/inject-python: "otel-system/ollyscale-instrumentation"
     spec:
       containers:
       - name: demo-backend

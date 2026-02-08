@@ -408,6 +408,7 @@ tasks:
     deps:
       - build:chart:ollyscale
       - build:chart:postgres
+      - build:chart:otel
       - build:chart:demos
       - build:chart:otel-agent
 
@@ -480,24 +481,72 @@ tasks:
     desc: Package ollyscale-postgres Helm chart (only if source files changed)
     deps: [test:chart:postgres]
     dir: charts
-    vars:
-      CHART_VERSION:
-        sh: yq eval '.version' ollyscale-postgres/Chart.yaml
     sources:
       - "ollyscale-postgres/**/*.yaml"
       - "ollyscale-postgres/**/*.tpl"
       - ollyscale-postgres/Chart.yaml
       - ollyscale-postgres/values.yaml
     generates:
-      - "ollyscale-postgres-{{.CHART_VERSION}}.tgz"
+      - "ollyscale-postgres-*.tgz"
     cmds:
       - |
+        # Generate proper semver version with dev timestamp for local builds
+        VERSION="0.0.0-dev.$(date +%s)"
+        echo "$VERSION" > ../.task-version-chart-postgres
         echo "📦 Packaging ollyscale-postgres Helm chart..."
-        echo "Chart version: {{.CHART_VERSION}}"
+        echo "Chart version: $VERSION"
 
-        helm package ollyscale-postgres
+        if [ -z "${CI:-}" ]; then
+          # Local build: update Chart.yaml with dev version, package, then restore
+          cp ollyscale-postgres/Chart.yaml ollyscale-postgres/Chart.yaml.bak
+          sed -i.tmp "s/^version: .*/version: $VERSION/" ollyscale-postgres/Chart.yaml
+          rm -f ollyscale-postgres/Chart.yaml.tmp
+          helm package ollyscale-postgres
+          mv ollyscale-postgres/Chart.yaml.bak ollyscale-postgres/Chart.yaml
+        else
+          # CI build: release-please already updated Chart.yaml
+          helm package ollyscale-postgres
+          CI_VERSION=$(yq eval '.version' ollyscale-postgres/Chart.yaml)
+          echo "$CI_VERSION" > ../.task-version-chart-postgres
+          VERSION="$CI_VERSION"
+        fi
 
-        echo "✅ Chart packaged: ollyscale-postgres-{{.CHART_VERSION}}.tgz"
+        echo "✅ Chart packaged: ollyscale-postgres-$VERSION.tgz"
+
+  build:chart:otel:
+    desc: Package ollyscale-otel Helm chart (only if source files changed)
+    dir: charts
+    sources:
+      - "ollyscale-otel/**/*.yaml"
+      - "ollyscale-otel/**/*.tpl"
+      - ollyscale-otel/Chart.yaml
+      - ollyscale-otel/values.yaml
+    generates:
+      - "ollyscale-otel-*.tgz"
+    cmds:
+      - |
+        # Generate proper semver version with dev timestamp for local builds
+        VERSION="0.0.0-dev.$(date +%s)"
+        echo "$VERSION" > ../.task-version-chart-otel
+        echo "📦 Packaging ollyscale-otel Helm chart..."
+        echo "Chart version: $VERSION"
+
+        if [ -z "${CI:-}" ]; then
+          # Local build: update Chart.yaml with dev version, package, then restore
+          cp ollyscale-otel/Chart.yaml ollyscale-otel/Chart.yaml.bak
+          sed -i.tmp "s/^version: .*/version: $VERSION/" ollyscale-otel/Chart.yaml
+          rm -f ollyscale-otel/Chart.yaml.tmp
+          helm package ollyscale-otel
+          mv ollyscale-otel/Chart.yaml.bak ollyscale-otel/Chart.yaml
+        else
+          # CI build: release-please already updated Chart.yaml
+          helm package ollyscale-otel
+          CI_VERSION=$(yq eval '.version' ollyscale-otel/Chart.yaml)
+          echo "$CI_VERSION" > ../.task-version-chart-otel
+          VERSION="$CI_VERSION"
+        fi
+
+        echo "✅ Chart packaged: ollyscale-otel-$VERSION.tgz"
 
   build:chart:demos:
     desc: Package ollyscale-demos Helm chart
@@ -623,6 +672,7 @@ tasks:
     deps:
       - push:chart:ollyscale
       - push:chart:postgres
+      - push:chart:otel
       - push:chart:demos
       - push:chart:otel-agent
 
@@ -669,26 +719,39 @@ tasks:
     desc: Push ollyscale-postgres Helm chart to registry (only if .tgz changed)
     deps: [build:chart:postgres]
     dir: charts
-    vars:
-      CHART_VERSION:
-        sh: yq eval '.version' ollyscale-postgres/Chart.yaml
-    sources:
-      - "ollyscale-postgres-{{.CHART_VERSION}}.tgz"
-    generates:
-      - "../.kind/postgres.auto.tfvars"
     cmds:
       - |
-        # Check if version already pushed
-        if task has-pushed:chart:postgres 2>/dev/null; then
-          echo "⏭️  Postgres chart version {{.CHART_VERSION}} already pushed"
+        # Get version - try version file first, but validate .tgz exists
+        if [ -f ../.task-version-chart-postgres ]; then
+          CHART_VERSION=$(cat ../.task-version-chart-postgres)
+          # Validate the .tgz actually exists for this version
+          if [ ! -f "ollyscale-postgres-$CHART_VERSION.tgz" ]; then
+            echo "Warning: Version file points to $CHART_VERSION but .tgz doesn't exist"
+            CHART_VERSION=""
+          fi
+        fi
+
+        # If version file didn't work, find the existing .tgz
+        if [ -z "$CHART_VERSION" ]; then
+          CHART_VERSION=$(ls ollyscale-postgres-*.tgz 2>/dev/null | head -1 | sed 's/ollyscale-postgres-\(.*\)\.tgz/\1/')
+          if [ -z "$CHART_VERSION" ]; then
+            echo "Error: No chart package found"
+            exit 1
+          fi
+          echo "Using chart version from existing package: $CHART_VERSION"
+        fi
+
+        # Check if version already pushed (CI only - local builds use unique timestamp versions)
+        if [ -n "${CI:-}" ] && task has-pushed:chart:postgres 2>/dev/null; then
+          echo "⏭️  Postgres chart version $CHART_VERSION already pushed"
           # Still update auto vars for consistency
           cat > ../.kind/postgres.auto.tfvars <<EOF
         # Auto-generated by task push:chart:postgres
         # Chart: ollyscale-postgres
-        # Version: {{.CHART_VERSION}}
+        # Version: $CHART_VERSION
         # Last updated: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
 
-        postgres_chart_version = "{{.CHART_VERSION}}"
+        postgres_chart_tag = "$CHART_VERSION"
         EOF
           exit 0
         fi
@@ -696,28 +759,82 @@ tasks:
         echo "📤 Pushing ollyscale-postgres chart..."
 
         # Push to local registry (always for dev)
-        helm push ollyscale-postgres-{{.CHART_VERSION}}.tgz \
+        helm push ollyscale-postgres-$CHART_VERSION.tgz \
           oci://{{.EXTERNAL_CHART_REGISTRY}} \
           --insecure-skip-tls-verify
 
         # Push to GHCR in CI or if configured
         if [ -n "${CI:-}" ] || [ -n "${PUSH_TO_GHCR:-}" ]; then
           echo "📤 Pushing to GitHub Container Registry..."
-          helm push ollyscale-postgres-{{.CHART_VERSION}}.tgz \
+          helm push ollyscale-postgres-$CHART_VERSION.tgz \
             oci://ghcr.io/{{.REGISTRY_ORG}}/{{.PROJECT_SLUG}}/charts
         fi
 
-        echo "✅ Chart pushed: ollyscale-postgres-{{.CHART_VERSION}}"
+        echo "✅ Chart pushed: ollyscale-postgres-$CHART_VERSION"
 
         # Update auto vars file
         echo "📝 Updating .kind/postgres.auto.tfvars..."
         cat > ../.kind/postgres.auto.tfvars <<EOF
         # Auto-generated by task push:chart:postgres
         # Chart: ollyscale-postgres
-        # Version: {{.CHART_VERSION}}
+        # Version: $CHART_VERSION
         # Last updated: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
 
-        postgres_chart_version = "{{.CHART_VERSION}}"
+        postgres_chart_tag = "$CHART_VERSION"
+        EOF
+        echo "✅ Auto vars updated"
+
+  push:chart:otel:
+    desc: Push ollyscale-otel Helm chart to registry
+    deps: [build:chart:otel]
+    dir: charts
+    cmds:
+      - |
+        # Get version - try version file first, but validate .tgz exists
+        if [ -f ../.task-version-chart-otel ]; then
+          CHART_VERSION=$(cat ../.task-version-chart-otel)
+          # Validate the .tgz actually exists for this version
+          if [ ! -f "ollyscale-otel-$CHART_VERSION.tgz" ]; then
+            echo "Warning: Version file points to $CHART_VERSION but .tgz doesn't exist"
+            CHART_VERSION=""
+          fi
+        fi
+
+        # If version file didn't work, find the existing .tgz
+        if [ -z "$CHART_VERSION" ]; then
+          CHART_VERSION=$(ls ollyscale-otel-*.tgz 2>/dev/null | head -1 | sed 's/ollyscale-otel-\(.*\)\.tgz/\1/')
+          if [ -z "$CHART_VERSION" ]; then
+            echo "Error: No chart package found"
+            exit 1
+          fi
+          echo "Using chart version from existing package: $CHART_VERSION"
+        fi
+
+        echo "📤 Pushing ollyscale-otel chart..."
+
+        # Push to local registry (always for dev)
+        helm push ollyscale-otel-$CHART_VERSION.tgz \
+          oci://{{.EXTERNAL_CHART_REGISTRY}} \
+          --insecure-skip-tls-verify
+
+        # Push to GHCR in CI or if configured
+        if [ -n "${CI:-}" ] || [ -n "${PUSH_TO_GHCR:-}" ]; then
+          echo "📤 Pushing to GitHub Container Registry..."
+          helm push ollyscale-otel-$CHART_VERSION.tgz \
+            oci://ghcr.io/{{.REGISTRY_ORG}}/{{.PROJECT_SLUG}}/charts
+        fi
+
+        echo "✅ Chart pushed: ollyscale-otel-$CHART_VERSION"
+
+        # Update auto vars file
+        echo "📝 Updating .kind/otel.auto.tfvars..."
+        cat > ../.kind/otel.auto.tfvars <<EOF
+        # Auto-generated by task push:chart:otel
+        # Chart: ollyscale-otel
+        # Version: $CHART_VERSION
+        # Last updated: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+
+        ollyscale_otel_chart_tag = "$CHART_VERSION"
         EOF
         echo "✅ Auto vars updated"
 
@@ -779,7 +896,8 @@ tasks:
       - echo "🔄 Updating terraform auto vars..."
       - |
         VERSION_CHART_OLLYSCALE=$(cat .task-version-chart-ollyscale)
-        VERSION_CHART_POSTGRES=$(cat .task-version-chart-postgres 2>/dev/null || echo "0.1.0")
+        VERSION_CHART_POSTGRES=$(cat .task-version-chart-postgres 2>/dev/null || yq eval '.version' charts/ollyscale-postgres/Chart.yaml)
+        VERSION_CHART_OTEL=$(cat .task-version-chart-otel 2>/dev/null || yq eval '.version' charts/ollyscale-otel/Chart.yaml)
         VERSION_CHART_OTEL_AGENT=$(cat .task-version-chart-otel-agent)
         VERSION_API=$(cat .task-version-api)
         VERSION_OPAMP=$(cat .task-version-opamp)
@@ -787,6 +905,7 @@ tasks:
         cat > .kind/terraform.auto.tfvars <<EOF
         ollyscale_chart_tag = "0.0.0-${VERSION_CHART_OLLYSCALE}"
         postgres_chart_tag = "${VERSION_CHART_POSTGRES}"
+        ollyscale_otel_chart_tag = "${VERSION_CHART_OTEL}"
         ollyscale_tag = "${VERSION_API}"
         opamp_tag = "${VERSION_OPAMP}"
         ai_agent_chart_tag = "0.0.0-${VERSION_CHART_OTEL_AGENT}"
