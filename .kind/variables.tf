@@ -18,7 +18,13 @@ variable "use_local_registry" {
 
 # OllyScale image versions - use "latest" for local builds
 variable "ollyscale_tag" {
-  description = "OllyScale image tag"
+  description = "OllyScale API image tag"
+  type        = string
+  default     = "latest"
+}
+
+variable "webui_tag" {
+  description = "OllyScale Web UI image tag"
   type        = string
   default     = "latest"
 }

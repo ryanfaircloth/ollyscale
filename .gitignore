@@ -46,3 +46,6 @@ apps/frontend/app/storage/OTLP_FIELD_MAPPING.md
 .task-version
 .task-version-*
 .task/*
+
+# Build artifacts (Makefile system)
+.build/

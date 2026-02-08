@@ -10,7 +10,7 @@ metadata:
 spec:
   project: observability
   source:
-    repoURL: "docker-registry.registry.svc.cluster.local:5000/ollyscale/charts"
+    repoURL: "${chart_registry}"
     chart: ollyscale-otel-agent
     targetRevision: ${ai_agent_chart_tag}
     helm:

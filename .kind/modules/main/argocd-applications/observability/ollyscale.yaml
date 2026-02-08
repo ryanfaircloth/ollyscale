@@ -42,7 +42,7 @@ spec:
         webui:
           image:
             repository: ${image_registry}/web-ui
-            tag: ${ollyscale_tag}
+            tag: ${webui_tag}
 
           resources:
             limits: {}

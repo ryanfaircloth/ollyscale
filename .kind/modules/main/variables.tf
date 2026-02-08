@@ -66,7 +66,12 @@ variable "chart_registry" {
 }
 
 variable "ollyscale_tag" {
-  description = "OllyScale image tag"
+  description = "OllyScale API image tag"
+  type        = string
+}
+
+variable "webui_tag" {
+  description = "OllyScale Web UI image tag"
   type        = string
 }
 

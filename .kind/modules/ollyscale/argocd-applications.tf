@@ -6,6 +6,8 @@ resource "kubectl_manifest" "observability_applications" {
     "${path.module}/argocd-applications/observability/${each.value}",
     {
       gateway_dns_suffix         = var.gateway_dns_suffix
+      image_registry             = var.image_registry
+      chart_registry             = var.chart_registry
       custom_demo_frontend_image = var.custom_demo_frontend_image
       custom_demo_frontend_tag   = var.custom_demo_frontend_tag
       custom_demo_backend_image  = var.custom_demo_backend_image

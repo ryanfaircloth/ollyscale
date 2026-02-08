@@ -4,6 +4,16 @@ variable "gateway_dns_suffix" {
   type        = string
 }
 
+variable "image_registry" {
+  description = "Image registry for ollyscale images"
+  type        = string
+}
+
+variable "chart_registry" {
+  description = "Chart registry for ollyscale Helm charts"
+  type        = string
+}
+
 variable "custom_demo_frontend_image" {
   description = "Custom demo frontend image"
   type        = string

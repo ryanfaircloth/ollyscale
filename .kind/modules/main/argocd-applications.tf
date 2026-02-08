@@ -14,6 +14,7 @@ locals {
     image_registry            = var.image_registry
     chart_registry            = var.chart_registry
     ollyscale_tag             = var.ollyscale_tag
+    webui_tag                 = var.webui_tag
     opamp_tag                 = var.opamp_tag
     ollyscale_chart_tag       = var.ollyscale_chart_tag
     postgres_chart_tag        = var.postgres_chart_tag

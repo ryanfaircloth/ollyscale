@@ -12,10 +12,11 @@ locals {
   # Chart registry configuration
   # When use_local_registry=true:  oci://docker-registry.registry.svc.cluster.local:5000/ollyscale/charts
   # When use_local_registry=false: oci://ghcr.io/ryanfaircloth/ollyscale/charts
-  chart_registry = local.use_local_registry ? "docker-registry.registry.svc.cluster.local:5000/ollyscale/charts" : "oci://ghcr.io/ryanfaircloth/ollyscale/charts"
+  chart_registry = local.use_local_registry ? "oci://docker-registry.registry.svc.cluster.local:5000/ollyscale/charts" : "oci://ghcr.io/ryanfaircloth/ollyscale/charts"
 
   # Image tags
   ollyscale_tag      = var.ollyscale_tag
+  webui_tag          = var.webui_tag
   opamp_tag          = var.opamp_tag
   demo_tag           = var.demo_tag
   demo_agent_tag     = var.demo_agent_tag

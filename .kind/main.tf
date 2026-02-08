@@ -20,6 +20,7 @@ module "main" {
   image_registry            = local.image_registry
   chart_registry            = local.chart_registry
   ollyscale_tag             = local.ollyscale_tag
+  webui_tag                 = local.webui_tag
   opamp_tag                 = local.opamp_tag
   ollyscale_chart_tag       = var.ollyscale_chart_tag
   postgres_chart_tag        = var.postgres_chart_tag
@@ -31,6 +32,8 @@ module "main" {
 module "ollyscale" {
   source                     = "./modules/ollyscale"
   gateway_dns_suffix         = var.gateway_dns_suffix
+  image_registry             = local.image_registry
+  chart_registry             = local.chart_registry
   custom_demo_frontend_image = var.custom_demo_frontend_image
   custom_demo_frontend_tag   = var.custom_demo_frontend_tag
   custom_demo_backend_image  = var.custom_demo_backend_image

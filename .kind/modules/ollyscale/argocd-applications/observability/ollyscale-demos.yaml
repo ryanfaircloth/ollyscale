@@ -10,7 +10,7 @@ metadata:
 spec:
   project: observability
   source:
-    repoURL: "docker-registry.registry.svc.cluster.local:5000/ollyscale/charts"
+    repoURL: "${chart_registry}"
     chart: ollyscale-demos
     targetRevision: ${ollyscale_demos_chart_tag}
     helm:
@@ -20,7 +20,7 @@ spec:
 
         frontend:
           image:
-            repository: docker-registry.registry.svc.cluster.local:5000/ollyscale/demo
+            repository: ${image_registry}/demo
             tag: ${ollyscale_demos_image_tag}
 
           httpRoute:
@@ -33,7 +33,7 @@ spec:
 
         backend:
           image:
-            repository: docker-registry.registry.svc.cluster.local:5000/ollyscale/demo
+            repository: ${image_registry}/demo
             tag: ${ollyscale_demos_image_tag}
 
   destination:
