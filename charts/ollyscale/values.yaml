@@ -523,30 +523,14 @@ otlpReceiver:
   nodeSelector: {}
   tolerations: []
   affinity: {}
-postgresql:
-  teamId: ollyscale
-  numberOfInstances: 1
-  volume:
-    size: 10Gi
-    storageClass: ''
-  databases:
-    ollyscale: ollyscale
-  users:
-    ollyscale:
-      - superuser
-      - createdb
-  postgresql:
-    version: '17'
-  resources:
-    requests:
-      cpu: 100m
-      memory: 256Mi
-    limits:
-      cpu: 1000m
-      memory: 1Gi
-  patroni:
-    synchronous_mode: true
-    synchronous_mode_strict: false
+
+# PostgreSQL is now deployed separately via ollyscale-postgres chart
+# Configure the database secret name to connect to external postgres
+# api:
+#   databaseSecretName: ollyscale-postgres-app
+# otlpReceiver:
+#   databaseSecretName: ollyscale-postgres-app
+
 migration:
   resources:
     limits:

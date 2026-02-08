@@ -19,6 +19,24 @@ git clone https://github.com/ryanfaircloth/ollyscale
 
 - [Minikube](https://minikube.sigs.k8s.io/docs/start/)
 - [kubectl](https://kubernetes.io/docs/tasks/tools/)
+- [Helm](https://helm.sh/docs/intro/install/) 3.8+
+
+## Deployment Architecture
+
+ollyScale uses a modular deployment architecture with the following components deployed in order:
+
+1. **Infrastructure** (sync wave 10-20): ArgoCD, cert-manager, Gateway API, OpenTelemetry Operator
+2. **Middleware** (sync wave 30-45):
+   - CloudNativePG Operator (wave 30)
+   - **ollyscale-postgres** chart (wave 45) - PostgreSQL database
+   - Redis, Kafka operators
+3. **Observability** (sync wave 50+):
+   - **ollyscale** chart (wave 50) - API, Web UI, OpAMP server, OTLP receiver
+   - Demo applications
+
+!!! important "Database Requirement"
+    The postgres database is now deployed separately via the `ollyscale-postgres` chart.
+    This must be deployed before the main `ollyscale` chart.
 
 ## 1. Deploy ollyScale Core
 

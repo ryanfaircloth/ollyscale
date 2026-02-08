@@ -5,6 +5,8 @@ metadata:
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "50"
+    # Depends on postgres being deployed and healthy first
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
@@ -24,6 +26,9 @@ spec:
     helm:
       valuesObject:
         api:
+          # Connect to external PostgreSQL deployed by ollyscale-postgres chart
+          databaseSecretName: ollyscale-postgres-app
+
           image:
             repository: ${image_registry}/api
             tag: ${ollyscale_tag}
@@ -62,6 +67,9 @@ spec:
             limits: {}
 
         otlpReceiver:
+          # Connect to external PostgreSQL deployed by ollyscale-postgres chart
+          databaseSecretName: ollyscale-postgres-app
+
           image:
             repository: ${image_registry}/api
             tag: ${ollyscale_tag}

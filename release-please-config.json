@@ -65,6 +65,11 @@
         }
       ]
     },
+    "charts/ollyscale-postgres": {
+      "component": "chart-ollyscale-postgres",
+      "release-type": "helm",
+      "package-name": "chart-ollyscale-postgres"
+    },
     "charts/ollyscale-demos": {
       "component": "chart-ollyscale-demos",
       "release-type": "helm",

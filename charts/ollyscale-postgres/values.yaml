@@ -1,0 +1,41 @@
+# Default values for ollyscale-postgres
+# This chart deploys a CloudNativePG PostgreSQL cluster
+# The namespace is determined by Helm/ArgoCD and should not be set here
+
+# PostgreSQL cluster configuration
+numberOfInstances: 1
+
+# Container image
+image:
+  repository: ghcr.io/cloudnative-pg/postgresql
+  tag: '17'
+
+# Storage configuration
+volume:
+  size: 10Gi
+  storageClass: ''
+
+# Database and user configuration
+databases:
+  ollyscale: ollyscale
+
+# Resource limits and requests
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+
+# Monitoring configuration
+monitoring:
+  enabled: true
+  podMonitorEnabled: true
+
+# Additional labels to apply to all resources
+commonLabels: {}
+
+# Name overrides
+nameOverride: ""
+fullnameOverride: ""

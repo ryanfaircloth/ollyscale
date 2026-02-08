@@ -44,6 +44,21 @@ task build:api        # Just the API backend
 task build:web-ui     # Just the web UI
 ```
 
+### Build specific charts
+
+```bash
+task build:chart:postgres    # PostgreSQL chart (with change detection)
+task build:chart:ollyscale   # Main ollyscale chart
+task build:chart:demos       # Demo applications chart
+```
+
+The postgres chart build includes:
+
+- **Change detection**: Only builds if files changed or version bumped
+- **Automated testing**: Runs `helm lint` and chart-testing before packaging
+- **Conditional push**: Checks if version already exists in registry
+- **Auto vars**: Updates `.kind/postgres.auto.tfvars` after successful push
+
 ### Custom version
 
 ```bash

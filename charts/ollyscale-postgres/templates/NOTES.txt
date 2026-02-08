@@ -1,0 +1,26 @@
+CloudNativePG PostgreSQL cluster has been deployed!
+
+Cluster name: {{ include "ollyscale-postgres.fullname" . }}
+Namespace: (deployed to your release namespace)
+Instances: {{ .Values.numberOfInstances }}
+PostgreSQL version: {{ .Values.image.tag }}
+
+Database Connection:
+-------------------
+The CNPG operator will create a secret containing connection credentials:
+
+  Secret name: {{ include "ollyscale-postgres.fullname" . }}-app
+  
+To get the connection URI:
+  kubectl get secret {{ include "ollyscale-postgres.fullname" . }}-app -n <namespace> -o jsonpath='{.data.uri}' | base64 -d
+
+To connect via psql:
+  kubectl exec -n <namespace> {{ include "ollyscale-postgres.fullname" . }}-1 -c postgres -- psql -U ollyscale -d ollyscale
+
+Status:
+-------
+Check cluster status:
+  kubectl get cluster {{ include "ollyscale-postgres.fullname" . }} -n <namespace>
+
+Watch pods:
+  kubectl get pods -n <namespace> -l cnpg.io/cluster={{ include "ollyscale-postgres.fullname" . }} -w

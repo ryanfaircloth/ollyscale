@@ -1,0 +1,42 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: {{ include "ollyscale-postgres.fullname" . }}
+  labels:
+    {{- include "ollyscale-postgres.labels" . | nindent 4 }}
+    app.kubernetes.io/component: database
+spec:
+  instances: {{ .Values.numberOfInstances }}
+
+  imageName: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+
+  postgresql:
+    parameters:
+      max_connections: "200"
+      shared_buffers: "256MB"
+
+  bootstrap:
+    initdb:
+      database: {{ .Values.databases.ollyscale | default "ollyscale" }}
+      owner: {{ .Values.databases.ollyscale | default "ollyscale" }}
+
+  storage:
+    size: {{ .Values.volume.size }}
+    {{- if .Values.volume.storageClass }}
+    storageClass: {{ .Values.volume.storageClass }}
+    {{- end }}
+
+  resources:
+    requests:
+      cpu: {{ .Values.resources.requests.cpu }}
+      memory: {{ .Values.resources.requests.memory }}
+    limits:
+      cpu: {{ .Values.resources.limits.cpu }}
+      memory: {{ .Values.resources.limits.memory }}
+
+  # Monitoring
+  monitoring:
+    enabled: {{ .Values.monitoring.enabled }}
+    {{- if .Values.monitoring.enabled }}
+    podMonitorEnabled: {{ .Values.monitoring.podMonitorEnabled }}
+    {{- end }}

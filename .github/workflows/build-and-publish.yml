@@ -153,6 +153,17 @@ jobs:
           helm package ollyscale-otel-agent
           helm push ollyscale-otel-agent-${AGENT_NEW_VERSION}.tgz oci://${CHART_REGISTRY}
 
+          # Package ollyscale-postgres chart (if changed)
+          # Check if chart exists and has changes
+          if [ -d "ollyscale-postgres" ]; then
+            POSTGRES_VERSION=$(grep "^version:" ollyscale-postgres/Chart.yaml | awk '{print $2}')
+            echo "Packaging ollyscale-postgres chart version ${POSTGRES_VERSION}..."
+
+            # Package and push
+            helm package ollyscale-postgres
+            helm push ollyscale-postgres-${POSTGRES_VERSION}.tgz oci://${CHART_REGISTRY} || echo "Note: postgres chart may already exist in registry"
+          fi
+
       - name: Build summary
         run: |
           echo "## Build Complete! 🎉" >> $GITHUB_STEP_SUMMARY
@@ -168,4 +179,5 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Helm Charts Published" >> $GITHUB_STEP_SUMMARY
           echo "- \`oci://${REGISTRY}/${REGISTRY_ORG}/charts/ollyscale\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`oci://${REGISTRY}/${REGISTRY_ORG}/charts/ollyscale-postgres\`" >> $GITHUB_STEP_SUMMARY
           echo "- \`oci://${REGISTRY}/${REGISTRY_ORG}/charts/ollyscale-otel-agent\`" >> $GITHUB_STEP_SUMMARY

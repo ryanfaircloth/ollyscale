@@ -16,8 +16,47 @@ A lightweight, desktop-first OpenTelemetry observability platform for local deve
 
 - Kubernetes 1.24+
 - Helm 3.8+
+- **External PostgreSQL database** - Deploy `ollyscale-postgres` chart separately or provide external connection
 - OpenTelemetry Operator (for auto-instrumentation and collectors)
 - Redis Operator (for data storage)
+
+## Important: Database Requirement
+
+**Breaking Change:** PostgreSQL is no longer included in this chart.
+
+You must deploy the database separately using one of these options:
+
+### Option 1: ollyscale-postgres Chart (Recommended)
+
+```bash
+helm install ollyscale-postgres oci://ghcr.io/ryanfaircloth/ollyscale/charts/ollyscale-postgres \
+  --namespace ollyscale-postgres \
+  --create-namespace
+```
+
+Then configure this chart to use it:
+```yaml
+api:
+  databaseSecretName: ollyscale-postgres-app
+otlpReceiver:
+  databaseSecretName: ollyscale-postgres-app
+```
+
+### Option 2: External PostgreSQL
+
+Provide a Kubernetes secret with a `uri` key containing the connection string:
+```bash
+kubectl create secret generic my-postgres-secret \
+  --from-literal=uri="postgresql://user:pass@host:5432/dbname"
+```
+
+Then reference it:
+```yaml
+api:
+  databaseSecretName: my-postgres-secret
+otlpReceiver:
+  databaseSecretName: my-postgres-secret
+```
 
 ## Installation
 
