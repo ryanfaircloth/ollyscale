@@ -33,24 +33,6 @@ class StorageBackend(ABC):
         """Check storage backend health."""
         pass
 
-    # ==================== Readiness Checking ====================
-
-    @property
-    @abstractmethod
-    def is_ready(self) -> bool:
-        """Check if storage backend is ready for operations."""
-        pass
-
-    @abstractmethod
-    def get_readiness_status(self) -> dict[str, Any]:
-        """Get detailed readiness status for health checks."""
-        pass
-
-    @abstractmethod
-    def start_readiness_checker(self) -> None:
-        """Start background readiness checker."""
-        pass
-
     # ==================== Trace Storage ====================
 
     @abstractmethod

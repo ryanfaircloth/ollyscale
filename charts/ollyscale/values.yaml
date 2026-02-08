@@ -322,20 +322,20 @@ api:
       memory: 256Mi
   livenessProbe:
     httpGet:
-      path: /health/live
+      path: /health/
       port: 8000
-    initialDelaySeconds: 10
+    initialDelaySeconds: 30
     periodSeconds: 10
     timeoutSeconds: 5
     failureThreshold: 3
   readinessProbe:
     httpGet:
-      path: /health/ready
+      path: /health/
       port: 8000
-    initialDelaySeconds: 5
+    initialDelaySeconds: 10
     periodSeconds: 5
     timeoutSeconds: 3
-    failureThreshold: 12  # 1 minute before marked unready
+    failureThreshold: 3
   env:
     - name: DEPLOYMENT_ENV
       value: kubernetes
@@ -500,21 +500,19 @@ otlpReceiver:
       cpu: 200m
       memory: 256Mi
   livenessProbe:
-    grpc:
+    tcpSocket:
       port: 4343
-      service: ""
-    initialDelaySeconds: 10
+    initialDelaySeconds: 30
     periodSeconds: 10
     timeoutSeconds: 5
     failureThreshold: 3
   readinessProbe:
-    grpc:
+    tcpSocket:
       port: 4343
-      service: readiness
-    initialDelaySeconds: 5
+    initialDelaySeconds: 10
     periodSeconds: 5
     timeoutSeconds: 3
-    failureThreshold: 12  # 1 minute before marked unready
+    failureThreshold: 3
   env:
     - name: OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED
       value: 'true'

@@ -31,7 +31,6 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ include "ollyscale.api.serviceAccountName" . }}
-      terminationGracePeriodSeconds: 45
       {{- with .Values.api.podSecurityContext }}
       securityContext:
         {{- toYaml . | nindent 8 }}
@@ -44,10 +43,6 @@ spec:
         {{- end }}
         image: "{{ .Values.api.image.repository }}:{{ .Values.api.image.tag }}"
         imagePullPolicy: {{ include "ollyscale.imagePullPolicy" (dict "component" .Values.api.image "global" .) }}
-        lifecycle:
-          preStop:
-            exec:
-              command: ["/bin/sh", "-c", "sleep 30"]
         ports:
         - name: http
           containerPort: {{ .Values.api.service.targetPort }}

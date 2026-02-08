@@ -31,7 +31,6 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ include "ollyscale.otlpReceiver.serviceAccountName" . }}
-      terminationGracePeriodSeconds: 45
       {{- with .Values.otlpReceiver.podSecurityContext }}
       securityContext:
         {{- toYaml . | nindent 8 }}
@@ -44,10 +43,6 @@ spec:
         {{- end }}
         image: "{{ .Values.otlpReceiver.image.repository }}:{{ .Values.otlpReceiver.image.tag }}"
         imagePullPolicy: {{ include "ollyscale.imagePullPolicy" (dict "component" .Values.otlpReceiver.image "global" .) }}
-        lifecycle:
-          preStop:
-            exec:
-              command: ["/bin/sh", "-c", "sleep 30"]
         ports:
         - name: grpc
           containerPort: {{ .Values.otlpReceiver.service.targetPort }}

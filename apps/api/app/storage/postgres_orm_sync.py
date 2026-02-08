@@ -36,23 +36,17 @@ import hashlib
 import json
 import logging
 import os
-import threading
 import time
 from base64 import b64decode
 from datetime import UTC, datetime, timedelta
-from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
-from alembic.config import Config
-from alembic.script import ScriptDirectory
 from opentelemetry import context as context_api
 from opentelemetry import trace
 from sqlalchemy import case, cast, create_engine, distinct, func, or_, select, text
-from sqlalchemy import inspect as sqlalchemy_inspect
 from sqlalchemy.dialects.postgresql import INTEGER, insert
 from sqlalchemy.engine import Engine
-from sqlalchemy.exc import OperationalError, ProgrammingError
 from sqlalchemy.orm import Session
 
 from app.models.api import (
@@ -77,54 +71,6 @@ from app.models.database import (
 from common import metrics as storage_metrics
 
 logger = logging.getLogger(__name__)
-
-
-def _get_expected_alembic_revision() -> str:
-    """Get the expected (head) alembic revision from migration files.
-
-    Returns:
-        The head revision identifier (e.g., "a1b2c3d4e5f6")
-
-    Raises:
-        RuntimeError: If alembic directory or head revision cannot be found
-    """
-    try:
-        # Try to find alembic.ini - check multiple possible locations
-        # 1. In the current working directory (container default: /app)
-        # 2. Relative to this module file (for development)
-
-        alembic_ini = None
-
-        # Try current working directory first
-        cwd_alembic = Path.cwd() / "alembic.ini"
-        if cwd_alembic.exists():
-            alembic_ini = str(cwd_alembic)
-        else:
-            # Try relative to this module
-            current_dir = Path(__file__).resolve().parent
-            # Navigate from app/storage/ to apps/api/
-            api_dir = current_dir.parent.parent
-            alembic_ini = str(api_dir / "alembic.ini")
-
-        if not Path(alembic_ini).exists():
-            raise RuntimeError(f"alembic.ini not found at {alembic_ini} or {cwd_alembic}")
-
-        # Load alembic config and get script directory
-        alembic_cfg = Config(alembic_ini)
-        script_dir = ScriptDirectory.from_config(alembic_cfg)
-
-        # Get the head revision (latest migration)
-        head_revision = script_dir.get_current_head()
-
-        if not head_revision:
-            raise RuntimeError("No head revision found in alembic migrations")
-
-        logger.info(f"Expected alembic revision: {head_revision} (from {alembic_ini})")
-        return head_revision
-
-    except Exception as e:
-        logger.error(f"Failed to determine expected alembic revision: {e}")
-        raise RuntimeError(f"Cannot determine expected alembic revision: {e}") from e
 
 
 def _timestamp_to_rfc3339(ts: datetime, nanos_fraction: int = 0) -> str:
@@ -261,16 +207,6 @@ class PostgresStorage:
         self._cache_hits = 0
         self._cache_misses = 0
 
-        # Database readiness tracking (for startup and schema change detection)
-        self._is_ready = False
-        self._is_read_only = False  # Set to True when migration detected
-        self._schema_version: str | None = None
-        self._readiness_message = "Initializing"
-        self._last_schema_check: float = 0
-        self._readiness_checker_thread: threading.Thread | None = None
-        self._readiness_lock = threading.Lock()
-        self._shutdown_event = threading.Event()
-
     def connect(self) -> None:
         """Initialize database engines (normal + autocommit)."""
         # Normal engine for fact inserts with explicit transactions
@@ -366,272 +302,10 @@ class PostgresStorage:
 
     def close(self) -> None:
         """Close database connections."""
-        # Signal readiness checker to shutdown
-        self._shutdown_event.set()
-        if self._readiness_checker_thread and self._readiness_checker_thread.is_alive():
-            self._readiness_checker_thread.join(timeout=2.0)
-
         if self.engine:
             self.engine.dispose()
         if self.autocommit_engine:
             self.autocommit_engine.dispose()
-
-    @property
-    def is_ready(self) -> bool:
-        """Check if database is ready for operations."""
-        return self._is_ready
-
-    @property
-    def is_read_only_mode(self) -> bool:
-        """Check if storage is in read-only mode (migration detected or schema mismatch)."""
-        return self._is_read_only
-
-    def get_readiness_status(self) -> dict[str, Any]:
-        """Get detailed readiness status for health checks.
-
-        Returns:
-            Dictionary with ready, read_only, message, schema_version, and last_check
-        """
-        with self._readiness_lock:
-            return {
-                "ready": self._is_ready,
-                "read_only": self._is_read_only,
-                "message": self._readiness_message,
-                "schema_version": self._schema_version,
-                "last_check": self._last_schema_check,
-            }
-
-    def check_database_ready(self) -> tuple[bool, str | None, str, dict[str, Any]]:
-        """Check if database is online and schema migrations are complete.
-
-        This method is safe to call before connect() is called - it creates a
-        temporary engine for testing connectivity and schema validation.
-
-        Returns:
-            Tuple of (ready, current_version, status_message, details)
-        """
-        # Get expected alembic revision from migration files
-        try:
-            expected_revision = _get_expected_alembic_revision()
-        except RuntimeError as e:
-            return (False, None, f"Configuration error: {e}", {})
-
-        details: dict[str, Any] = {
-            "connection": False,
-            "alembic_version_table": False,
-            "expected_revision": expected_revision,
-        }
-
-        try:
-            # Create a temporary engine for testing (don't affect main engines)
-            test_engine = create_engine(
-                self.connection_string,
-                echo=False,
-                pool_pre_ping=True,
-                connect_args={"connect_timeout": 5},
-            )
-
-            # Test basic connectivity
-            with test_engine.connect() as conn:
-                conn.execute(text("SELECT 1"))
-                details["connection"] = True
-
-            # Check if alembic_version table exists
-            inspector = sqlalchemy_inspect(test_engine)
-            table_names = inspector.get_table_names()
-
-            if "alembic_version" not in table_names:
-                test_engine.dispose()
-                return (False, None, "Migration not started: alembic_version table missing", details)
-
-            details["alembic_version_table"] = True
-
-            # Get current migration version
-            with test_engine.connect() as conn:
-                result = conn.execute(text("SELECT version_num FROM alembic_version"))
-                row = result.fetchone()
-                current_version = row[0] if row else None
-
-            if not current_version:
-                test_engine.dispose()
-                return (False, None, "No migration version found in alembic_version table", details)
-
-            # Check if current version matches expected revision
-            details["current_revision"] = current_version
-
-            if current_version != expected_revision:
-                test_engine.dispose()
-                return (
-                    False,
-                    current_version,
-                    f"Migration version mismatch: expected {expected_revision}, got {current_version}",
-                    details,
-                )
-
-            # All checks passed
-            test_engine.dispose()
-            return (True, current_version, "Database ready", details)
-
-        except (OperationalError, ProgrammingError) as e:
-            # Database connection error or SQL error
-            error_msg = str(e).split("\n")[0]  # First line only
-            return (False, None, f"Database error: {error_msg}", details)
-        except Exception as e:
-            # Unexpected error
-            logger.exception("Unexpected error during database readiness check")
-            return (False, None, f"Unexpected error: {e!s}", details)
-
-    def start_readiness_checker(self) -> None:
-        """Start background thread that checks database readiness.
-
-        This method is idempotent - calling it multiple times won't create
-        duplicate threads.
-
-        The background thread:
-        1. Startup phase: Checks every 1s until DB is ready, then calls connect()
-        2. Monitoring phase: Checks every 30s to detect schema version changes
-        3. If schema changes: Sets is_ready=False to trigger pod unready state
-        """
-        with self._readiness_lock:
-            # Don't start if already running
-            if self._readiness_checker_thread and self._readiness_checker_thread.is_alive():
-                logger.info("Readiness checker already running")
-                return
-
-            # Start the background thread
-            self._readiness_checker_thread = threading.Thread(
-                target=self._readiness_checker_loop, daemon=True, name="db-readiness-checker"
-            )
-            self._readiness_checker_thread.start()
-            logger.info("Started database readiness checker thread")
-
-    def _readiness_checker_loop(self) -> None:
-        """Background thread loop for checking database readiness.
-
-        Phase 1: Startup - check every 1s until ready
-        Phase 2: Monitoring - check every 30s for schema changes
-        """
-        attempt = 0
-        last_log_time = 0
-        startup_phase = True
-
-        while not self._shutdown_event.is_set():
-            attempt += 1
-            current_time = time.time()
-
-            # Check database readiness
-            ready, version, message, _details = self.check_database_ready()
-
-            # Log throttling: first attempt, every 10s, and on state changes
-            should_log = attempt == 1 or (current_time - last_log_time) >= 10 or ready != self._is_ready
-
-            if should_log:
-                if startup_phase:
-                    if ready:
-                        logger.info(f"✓ Database ready: {message} (schema version: {version})")
-                    else:
-                        logger.warning(f"Database not ready (attempt {attempt}): {message}")
-                elif not ready:
-                    logger.warning(f"Database became unready: {message}")
-                else:
-                    logger.info(f"Database status: {message} (version: {version})")
-                last_log_time = current_time
-
-            # Update readiness state
-            with self._readiness_lock:
-                was_ready = self._is_ready
-                was_read_only = self._is_read_only
-                self._is_ready = ready
-                self._readiness_message = message
-                self._last_schema_check = current_time
-
-                # Detect schema version changes during monitoring phase
-                if ready and version:
-                    if self._schema_version and self._schema_version != version:
-                        # Schema changed - enter read-only mode instead of becoming unready
-                        # This keeps the pod serving queries but prevents writes
-                        logger.warning(
-                            f"Schema version changed from {self._schema_version} to {version} - "
-                            "entering read-only mode during migration"
-                        )
-                        self._is_read_only = True
-                        self._readiness_message = (
-                            f"Read-only mode: schema migration in progress ({self._schema_version} → {version})"
-                        )
-                    elif not self._schema_version:
-                        # First time seeing schema version
-                        self._schema_version = version
-                    elif self._schema_version == version and self._is_read_only:
-                        # Schema version matches again - exit read-only mode
-                        logger.info(f"Schema version stable at {version} - exiting read-only mode")
-                        self._is_read_only = False
-                        self._readiness_message = "Database ready"
-                        self._schema_version = version
-
-                # Log mode transitions
-                if not was_read_only and self._is_read_only and should_log:
-                    logger.warning("⚠️  Entered READ-ONLY MODE - writes will be blocked")
-                elif was_read_only and not self._is_read_only and should_log:
-                    logger.info("✓ Exited read-only mode - writes restored")
-
-            # If we just became ready in startup phase, initialize connections
-            if ready and not was_ready and startup_phase:
-                try:
-                    logger.info("Initializing database connection pools...")
-                    self.connect()
-                    logger.info("✓ Database connection pools initialized")
-                    startup_phase = False
-                except Exception as e:
-                    logger.error(f"Failed to initialize connection pools: {e}")
-                    with self._readiness_lock:
-                        self._is_ready = False
-                        self._readiness_message = f"Connection pool initialization failed: {e!s}"
-
-            # Determine sleep interval
-            if startup_phase:
-                # Startup phase: check every 1s
-                sleep_interval = 1.0
-            else:
-                # Monitoring phase: check every 30s
-                sleep_interval = 30.0
-
-            # Sleep with ability to wake up on shutdown
-            self._shutdown_event.wait(timeout=sleep_interval)
-
-    def check_schema_after_error(self, exception: Exception) -> None:
-        """Check if schema changed after a SQL error occurs.
-
-        If the error appears to be schema-related (missing table, column, etc.),
-        immediately validate the schema version. If it changed, mark as unready.
-
-        Args:
-            exception: The exception that was caught
-        """
-        error_str = str(exception).lower()
-        schema_keywords = ["does not exist", "relation", "column", "table", "no such table"]
-
-        # Check if this looks like a schema error
-        if not any(keyword in error_str for keyword in schema_keywords):
-            return  # Not a schema error
-
-        logger.warning(f"Schema-related error detected: {exception}")
-
-        # Immediately check schema
-        ready, version, message, _ = self.check_database_ready()
-
-        with self._readiness_lock:
-            # If schema version changed, mark as unready
-            if version and self._schema_version and version != self._schema_version:
-                logger.error(
-                    f"Schema version mismatch detected after error - expected {self._schema_version}, found {version}"
-                )
-                self._is_ready = False
-                self._readiness_message = f"Schema mismatch: {self._schema_version} → {version}"
-                self._schema_version = version
-            elif not ready:
-                logger.error(f"Database became unavailable: {message}")
-                self._is_ready = False
-                self._readiness_message = message
 
     def _check_cache(self, cache_key: tuple) -> int | None:
         """Check if dimension is cached and not expired.
@@ -1169,12 +843,6 @@ class PostgresStorage:
               ├─ scope: {}
               └─ spans: []
         """
-        # Check if in read-only mode (migration or schema mismatch detected)
-        if self._is_read_only:
-            logger.warning("Write blocked: storage in read-only mode (migration in progress)")
-            storage_metrics.record_write_blocked(signal_type="traces", reason="read_only_mode")
-            return 0
-
         if not resource_spans:
             return 0
 
@@ -1479,12 +1147,6 @@ class PostgresStorage:
               ├─ scope: {}
               └─ log_records: []  # snake_case
         """
-        # Check if in read-only mode (migration or schema mismatch detected)
-        if self._is_read_only:
-            logger.warning("Write blocked: storage in read-only mode (migration in progress)")
-            storage_metrics.record_write_blocked(signal_type="logs", reason="read_only_mode")
-            return 0
-
         if not resource_logs:
             return 0
 
@@ -1630,12 +1292,6 @@ class PostgresStorage:
               └─ metrics: []
                   └─ [gauge|sum|histogram|summary]: { data_points: [] }  # snake_case
         """
-        # Check if in read-only mode (migration or schema mismatch detected)
-        if self._is_read_only:
-            logger.warning("Write blocked: storage in read-only mode (migration in progress)")
-            storage_metrics.record_write_blocked(signal_type="metrics", reason="read_only_mode")
-            return 0
-
         if not resource_metrics:
             return 0
 
