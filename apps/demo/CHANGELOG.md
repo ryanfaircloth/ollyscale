@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/ryanfaircloth/ollyscale/compare/demo-v0.1.2...demo-v0.1.3) (2026-02-08)
+
+
+### Performance Improvements
+
+* **build:** add comprehensive Podman build optimizations ([95e9f48](https://github.com/ryanfaircloth/ollyscale/commit/95e9f48a7b5c75abbd24d3e9f12df0942da5daa1))
+
 ## [0.1.2](https://github.com/ryanfaircloth/ollyscale/compare/demo-v0.1.1...demo-v0.1.2) (2026-01-20)
 
 

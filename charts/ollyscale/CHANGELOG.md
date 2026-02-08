@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.2.1](https://github.com/ryanfaircloth/ollyscale/compare/chart-ollyscale-v0.2.0...chart-ollyscale-v0.2.1) (2026-02-08)
+
+
+### Features
+
+* **charts:** add pod annotation support to ollyscale-otel-agent deployments ([ee2e086](https://github.com/ryanfaircloth/ollyscale/commit/ee2e086a05733b9031557e466d7da0ac6e618e86))
+* implement graceful database migration coordination ([9cf2ee4](https://github.com/ryanfaircloth/ollyscale/commit/9cf2ee441666dd1e167d1c075ae4ff652640c3e9))
+
+
+### Bug Fixes
+
+* **config:** enable gateway collector to receive telemetry data ([577f7ca](https://github.com/ryanfaircloth/ollyscale/commit/577f7caf2d7d1523f3a30ce6c43f5432828452b1))
+* **db:** replica count ([5904734](https://github.com/ryanfaircloth/ollyscale/commit/5904734adc89b7b0be545f8f96e0fd500bced94c))
+* **helm:** ensure migration ServiceAccount created before migration job ([75dc764](https://github.com/ryanfaircloth/ollyscale/commit/75dc764bc56d1389f8015532d98eea71fac4ddff))
+* **helm:** remove hooks/waves from migration for parallel deployment ([fe8f0f7](https://github.com/ryanfaircloth/ollyscale/commit/fe8f0f717a7290622a27598e0e710c83a5dc0fb5))
+* **ollyscale:** fix missing component labels ([77a4b7d](https://github.com/ryanfaircloth/ollyscale/commit/77a4b7d3b2e9d278f47cb1e550072297e9f437d3))
+* route /v1/traces to browser-collector and add --remove-signatures to podman push ([ab33f6e](https://github.com/ryanfaircloth/ollyscale/commit/ab33f6e79b6fdb77f9d7c11bf3fe676693be2496))
+
 ## [0.2.0](https://github.com/ryanfaircloth/ollyscale/compare/chart-ollyscale-v0.1.10...chart-ollyscale-v0.2.0) (2026-02-04)
 
 
