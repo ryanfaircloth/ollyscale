@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/ryanfaircloth/ollyscale/compare/demo-otel-agent-v0.2.0...demo-otel-agent-v0.2.1) (2026-02-08)
+
+
+### Performance Improvements
+
+* **build:** add comprehensive Podman build optimizations ([95e9f48](https://github.com/ryanfaircloth/ollyscale/commit/95e9f48a7b5c75abbd24d3e9f12df0942da5daa1))
+
 ## [0.2.0](https://github.com/ryanfaircloth/ollyscale/compare/demo-otel-agent-v0.1.4...demo-otel-agent-v0.2.0) (2026-02-04)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/ryanfaircloth/ollyscale/compare/chart-ollyscale-demos-v1.3.0...chart-ollyscale-demos-v1.4.0) (2026-02-08)
+
+
+### Features
+
+* **charts:** add pod annotation support to ollyscale-otel-agent deployments ([ee2e086](https://github.com/ryanfaircloth/ollyscale/commit/ee2e086a05733b9031557e466d7da0ac6e618e86))
+
 ## [1.3.0](https://github.com/ryanfaircloth/ollyscale/compare/chart-ollyscale-demos-v1.2.0...chart-ollyscale-demos-v1.3.0) (2026-02-04)
 
 
