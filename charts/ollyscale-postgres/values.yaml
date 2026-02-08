@@ -30,8 +30,8 @@ resources:
 
 # Monitoring configuration
 monitoring:
-  enabled: true
-  podMonitorEnabled: true
+  enabled: false
+  podMonitorEnabled: false
 
 # Additional labels to apply to all resources
 commonLabels: {}
