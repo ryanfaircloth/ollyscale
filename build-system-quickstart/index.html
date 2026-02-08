@@ -1074,6 +1074,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#build-specific-charts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Build specific charts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#custom-version" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1199,11 +1210,23 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>task<span class="w"> </span>build:api<span class="w">        </span><span class="c1"># Just the API backend</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>task<span class="w"> </span>build:web-ui<span class="w">     </span><span class="c1"># Just the web UI</span>
 </code></pre></div>
+<h3 id="build-specific-charts">Build specific charts</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>task<span class="w"> </span>build:chart:postgres<span class="w">    </span><span class="c1"># PostgreSQL chart (with change detection)</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>task<span class="w"> </span>build:chart:ollyscale<span class="w">   </span><span class="c1"># Main ollyscale chart</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>task<span class="w"> </span>build:chart:demos<span class="w">       </span><span class="c1"># Demo applications chart</span>
+</code></pre></div>
+<p>The postgres chart build includes:</p>
+<ul>
+<li><strong>Change detection</strong>: Only builds if files changed or version bumped</li>
+<li><strong>Automated testing</strong>: Runs <code>helm lint</code> and chart-testing before packaging</li>
+<li><strong>Conditional push</strong>: Checks if version already exists in registry</li>
+<li><strong>Auto vars</strong>: Updates <code>.kind/postgres.auto.tfvars</code> after successful push</li>
+</ul>
 <h3 id="custom-version">Custom version</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nv">VERSION</span><span class="o">=</span><span class="m">1</span>.2.3<span class="w"> </span>task<span class="w"> </span>build-and-push
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nv">VERSION</span><span class="o">=</span><span class="m">1</span>.2.3<span class="w"> </span>task<span class="w"> </span>build-and-push
 </code></pre></div>
 <h3 id="force-docker-instead-of-auto-detected-podman">Force Docker (instead of auto-detected Podman)</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nv">CONTAINER_RUNTIME</span><span class="o">=</span>docker<span class="w"> </span>task<span class="w"> </span>build
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nv">CONTAINER_RUNTIME</span><span class="o">=</span>docker<span class="w"> </span>task<span class="w"> </span>build
 </code></pre></div>
 <h2 id="differences-from-old-system">Differences from Old System</h2>
 <table>
@@ -1239,11 +1262,11 @@
 </table>
 <h2 id="for-cicd">For CI/CD</h2>
 <p>The same Taskfile works in GitHub Actions:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Build all images</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="nt">env</span><span class="p">:</span>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">    </span><span class="nt">CI</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;true&quot;</span>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">    </span><span class="nt">VERSION</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;1.2.3&quot;</span>
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">  </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">task build</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Build all images</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="nt">env</span><span class="p">:</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">    </span><span class="nt">CI</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;true&quot;</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">    </span><span class="nt">VERSION</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;1.2.3&quot;</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">  </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">task build</span>
 </code></pre></div>
 <h2 id="need-help">Need Help?</h2>
 <ul>

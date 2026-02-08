@@ -471,6 +471,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#deployment-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deployment Architecture
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#1-deploy-ollyscale-core" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1185,6 +1196,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#deployment-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deployment Architecture
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#1-deploy-ollyscale-core" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1302,7 +1324,25 @@
 <ul>
 <li><a href="https://minikube.sigs.k8s.io/docs/start/">Minikube</a></li>
 <li><a href="https://kubernetes.io/docs/tasks/tools/">kubectl</a></li>
+<li><a href="https://helm.sh/docs/intro/install/">Helm</a> 3.8+</li>
 </ul>
+<h2 id="deployment-architecture">Deployment Architecture</h2>
+<p>ollyScale uses a modular deployment architecture with the following components deployed in order:</p>
+<ol>
+<li><strong>Infrastructure</strong> (sync wave 10-20): ArgoCD, cert-manager, Gateway API, OpenTelemetry Operator</li>
+<li><strong>Middleware</strong> (sync wave 30-45):</li>
+<li>CloudNativePG Operator (wave 30)</li>
+<li><strong>ollyscale-postgres</strong> chart (wave 45) - PostgreSQL database</li>
+<li>Redis, Kafka operators</li>
+<li><strong>Observability</strong> (sync wave 50+):</li>
+<li><strong>ollyscale</strong> chart (wave 50) - API, Web UI, OpAMP server, OTLP receiver</li>
+<li>Demo applications</li>
+</ol>
+<div class="admonition important">
+<p class="admonition-title">Database Requirement</p>
+<p>The postgres database is now deployed separately via the <code>ollyscale-postgres</code> chart.
+This must be deployed before the main <code>ollyscale</code> chart.</p>
+</div>
 <h2 id="1-deploy-ollyscale-core">1. Deploy ollyScale Core</h2>
 <ol>
 <li>
