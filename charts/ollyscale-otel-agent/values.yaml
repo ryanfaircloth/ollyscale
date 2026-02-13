@@ -14,7 +14,7 @@ ollama:
     # -- Image repository
     repository: ollama/ollama
     # -- Image tag
-    tag: 0.15.4
+    tag: 0.16.1
     # -- Image pull policy
     pullPolicy: IfNotPresent
   # -- Pod annotations
