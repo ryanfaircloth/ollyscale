@@ -2,10 +2,10 @@ module ollyscale-opamp-server
 
 go 1.24.0
 
-toolchain go1.25.6
+toolchain go1.26.0
 
 require (
-	github.com/open-telemetry/opamp-go v0.22.0
+	github.com/open-telemetry/opamp-go v0.23.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.65.0
 	go.opentelemetry.io/otel v1.40.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.40.0
