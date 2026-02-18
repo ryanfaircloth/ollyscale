@@ -28,7 +28,7 @@ resource "helm_release" "argocd" {
   namespace  = kubernetes_namespace_v1.argocd.metadata[0].name
   repository = "https://argoproj.github.io/argo-helm"
   chart      = "argo-cd"
-  version    = "9.4.0"
+  version    = "9.4.3"
 
   # Allow time for CRDs to be created
   timeout = 600
