@@ -284,7 +284,7 @@ ebpfAgent:
   enabled: false
   image:
     repository: docker.io/otel/ebpf-instrument
-    tag: v0.4.1
+    tag: v0.13.0
     pullPolicy: Always
   podAnnotations: {}
   podSecurityContext:
