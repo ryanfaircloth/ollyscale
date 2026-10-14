@@ -26,7 +26,7 @@ COPY src/ ./src/
 RUN npm run build
 
 # Stage 2: Runtime with nginx
-FROM nginx:1.29-alpine
+FROM nginx:1.29.8-alpine
 
 # Install envsubst for runtime config templating
 RUN apk add --no-cache gettext
