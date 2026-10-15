@@ -6,7 +6,7 @@ terraform {
 
     kind = {
       source  = "tehcyx/kind"
-      version = "0.10.0"
+      version = "0.11.0"
     }
   }
 }
