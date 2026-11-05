@@ -19,13 +19,13 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.14"
+          python-version: "3.15"
           cache: "pip"
 
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
-          go-version: "1.25"
+          go-version: "1.27"
 
       - name: Install dependencies
         run: |
@@ -43,12 +43,12 @@ jobs:
       - name: Install Helm
         uses: azure/setup-helm@v4
         with:
-          version: "v3.14.0"
+          version: "v3.22.1"
 
       - name: Install Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: "1.7.0"
+          terraform_version: "v1.17.1"
 
       - name: Install hadolint
         run: |
@@ -75,7 +75,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.14"
+          python-version: "3.15"
           cache: "pip"
           cache-dependency-path: |
             apps/api/pyproject.toml
