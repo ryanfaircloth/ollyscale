@@ -1,5 +1,5 @@
 # Multi-stage build using uv (10-100x faster than Poetry)
-FROM python:3.14-slim as builder
+FROM python:3.15-slim as builder
 
 WORKDIR /app
 
@@ -15,7 +15,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev
 
 # Production stage
-FROM python:3.14-slim as runtime
+FROM python:3.15-slim as runtime
 
 # Copy virtual environment and application from builder stage
 ENV VIRTUAL_ENV=/app/.venv \
