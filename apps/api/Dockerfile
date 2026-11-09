@@ -2,7 +2,7 @@
 # Python 3.14 FastAPI application with sync storage and multi-process workers
 
 # Builder stage - install dependencies with uv (10-100x faster than Poetry)
-FROM python:3.14-slim AS builder
+FROM python:3.15-slim AS builder
 
 WORKDIR /app
 
@@ -25,7 +25,7 @@ COPY receiver/ receiver/
 COPY main.py .
 
 # Production stage - copy dependencies and application code
-FROM python:3.14-slim AS production
+FROM python:3.15-slim AS production
 
 WORKDIR /app
 
