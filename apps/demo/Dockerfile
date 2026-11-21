@@ -1,7 +1,7 @@
 # Unified demo image (frontend or backend) with uv multi-stage build
 
 # Builder: install dependencies via uv into project venv
-FROM python:3.14-slim AS builder
+FROM python:3.15-slim AS builder
 
 WORKDIR /app
 
@@ -17,7 +17,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev
 
 # Runtime: copy the venv and app code; default CMD runs frontend
-FROM python:3.14-slim AS runtime
+FROM python:3.15-slim AS runtime
 
 ENV VIRTUAL_ENV=/app/.venv \
     PATH="/app/.venv/bin:$PATH"
